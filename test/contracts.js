@@ -56,12 +56,13 @@ function testBoot(){
   sub('booting on top of existing data');
   const shared = new Map();
   const seeded = H.loadApp({ sharedStorage: shared });
-  seeded.ctx.items.push({ id: 'i_x', title: 'Existing', note: '', status: 'active',
-                          createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' });
-  seeded.ctx.persistItems();
+  seeded.ctx.notes.push({ id: 'n_2026-01-01', date: '2026-01-01', ref: 'Psalm 23:4',
+                          text: 'Existing', createdAt: '2026-01-01T00:00:00.000Z',
+                          updatedAt: '2026-01-01T00:00:00.000Z' });
+  seeded.ctx.persistNotes();
   const second = H.loadApp({ sharedStorage: shared });
-  T('an existing record survives a reload', second.ctx.items.length === 1);
-  T('and keeps its identity', second.ctx.items[0].title === 'Existing');
+  T('an existing record survives a reload', second.ctx.notes.length === 1);
+  T('and keeps its identity', second.ctx.notes[0].text === 'Existing');
   T('reloading raises no errors', second.errors.length === 0, second.errors.join(' | '));
 
   sub('there is only one script block, so the suite sees all the code');
@@ -186,7 +187,7 @@ function testStorage(){
     /not letting the app store data/.test(js()));
 
   sub('listKeys sees only this app');
-  app.storage.setItem('some-other-app.data.items', '[]');
+  app.storage.setItem('some-other-app.data.saved', '[]');
   const keys = c.Store.listKeys();
   T('a foreign key is invisible', keys.every(k => k.indexOf('some-other-app') === -1));
   T('own keys are still found', keys.indexOf('ui.probe') !== -1);
@@ -214,11 +215,10 @@ function testCollision(){
   T('app-one.listKeys never returns an app-two key',
     one.ctx.Store.listKeys().every(k => shared.get('app-one.' + k) !== undefined));
 
-  one.ctx.items.push({ id: 'i1', title: 'One', note: '', status: 'active',
-                       createdAt: 'a', updatedAt: 'a' });
-  one.ctx.persistItems();
+  one.ctx.savedVerses.push({ id: 's1', ref: 'Psalm 23:4', savedAt: 'a', updatedAt: 'a' });
+  one.ctx.persistSaved();
   T('one app writing records leaves the other empty',
-    two.ctx.Store.getJSON(two.ctx.KEYS.items, []).length === 0);
+    two.ctx.Store.getJSON(two.ctx.KEYS.saved, []).length === 0);
 
   sub('cache identity');
   T('cache names differ', one.ctx.CACHE_NAMESPACE !== two.ctx.CACHE_NAMESPACE);
@@ -252,18 +252,18 @@ function testMigration(){
   T('nothing was migrated on a fresh install', c.runMigrations().migrated === false);
 
   sub('idempotence');
-  c.Store.set(c.KEYS.items, JSON.stringify([{ id: 'a', title: 'A', status: 'active' }]));
-  const before = c.Store.get(c.KEYS.items);
+  c.Store.set(c.KEYS.saved, JSON.stringify([{ id: 's_a', ref: 'Psalm 23:4', savedAt: 'a' }]));
+  const before = c.Store.get(c.KEYS.saved);
   c.runMigrations(); c.runMigrations(); c.runMigrations();
-  T('running migrations repeatedly changes nothing', c.Store.get(c.KEYS.items) === before);
+  T('running migrations repeatedly changes nothing', c.Store.get(c.KEYS.saved) === before);
 
   sub('a corrupt or absent version is handled without data loss');
   c.Store.set(c.KEYS.schemaVersion, 'not-a-number');
   const r = c.runMigrations();
   T('a nonsense version does not throw', r && typeof r === 'object');
-  T('records survive it', c.Store.get(c.KEYS.items) === before);
+  T('records survive it', c.Store.get(c.KEYS.saved) === before);
 
-  sub('the mechanism exists even though the starter has no migrations yet');
+  sub('the mechanism exists even though no data shape has changed yet');
   T('a migration table is declared', typeof c.MIGRATIONS === 'object');
   T('a backup namespace is reserved', typeof c.KEYS.backupPrefix === 'string' &&
     c.KEYS.backupPrefix.indexOf('sys.') === 0);
@@ -282,18 +282,18 @@ function testNavigation(){
   const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab).filter(Boolean);
   T('the tab bar declares tabs', tabs.length >= 2, String(tabs.length));
   tabs.forEach(t => T('tab "' + t + '" has a view', !!d.getElementById('view-' + t)));
-  T('the demo ships only as many tabs as it needs', tabs.length <= 4, String(tabs.length));
+  T('the app ships only as many tabs as it needs', tabs.length <= 4, String(tabs.length));
 
   sub('an unknown tab is a no-op, not a blank screen');
-  c.switchTab('items');
+  c.switchTab('saved');
   const before = c.currentTab;
   c.switchTab('does-not-exist');
   T('currentTab is unchanged', c.currentTab === before);
-  T('the current view is still active', d.getElementById('view-items').classList.contains('active'));
+  T('the current view is still active', d.getElementById('view-saved').classList.contains('active'));
 
   sub('a tab opens at its top, so the same tap gives the same result');
   app.ctx.window && (app.ctx.window.scrollY = 400);
-  c.switchTab('home');
+  c.switchTab('today');
   T('the page is scrolled to top on entry', c.window.scrollY === 0);
   T('and it is instant, not animated', /behavior: 'instant'/.test(js()));
 
@@ -344,13 +344,13 @@ function testOverlays(){
     /body\.scroll-locked\{[\s\S]{0,200}overscroll-behavior: none/.test(style));
 
   sub('opening and closing, for real');
-  open(app, 'itemDetailOverlay');
+  open(app, 'noteOverlay');
   T('the stack records it', c._openSheetStack.length === 1);
   T('the background is locked', d.body.classList.contains('scroll-locked'));
   T('the surface is announced as a dialog',
-    d.getElementById('itemDetailOverlay').getAttribute('aria-modal') === 'true');
+    d.getElementById('noteOverlay').getAttribute('aria-modal') === 'true');
   T('it is painted at the stack base',
-    d.getElementById('itemDetailOverlay').style.zIndex === String(c.OVERLAY_Z_BASE));
+    d.getElementById('noteOverlay').style.zIndex === String(c.OVERLAY_Z_BASE));
 
   sub('stacking is open order, not document order');
   open(app, 'confirmOverlay');
@@ -358,16 +358,16 @@ function testOverlays(){
   T('the newest is on top', c.topOpenSheet().id === 'confirmOverlay');
   T('and painted above the one beneath it',
     Number(d.getElementById('confirmOverlay').style.zIndex) >
-    Number(d.getElementById('itemDetailOverlay').style.zIndex));
+    Number(d.getElementById('noteOverlay').style.zIndex));
   T('the lock counts both layers', c._lockDepth === 2, String(c._lockDepth));
 
   sub('closing a child reveals its parent — the surface below is the way back');
   close(app, 'confirmOverlay');
-  T('the parent is still open', d.getElementById('itemDetailOverlay').classList.contains('open'));
+  T('the parent is still open', d.getElementById('noteOverlay').classList.contains('open'));
   T('the stack shrank to one', c._openSheetStack.length === 1);
   T('the background is still locked', d.body.classList.contains('scroll-locked'));
   T('the closed surface gave back its z-index', d.getElementById('confirmOverlay').style.zIndex === '');
-  close(app, 'itemDetailOverlay');
+  close(app, 'noteOverlay');
   T('closing the last one unlocks', !d.body.classList.contains('scroll-locked'));
   T('the stack is empty', c._openSheetStack.length === 0);
   T('the lock depth is zero', c._lockDepth === 0);
@@ -520,92 +520,124 @@ function testConfirmation(){
    CONTRACT 10 — FORMS AND THE DEMO DOMAIN
    ========================================================= */
 function testForms(){
-  section('CONTRACT 10 — create, edit, validate, persist, delete');
+  section('CONTRACT 10 — keeping a verse, and writing about it');
   const shared = new Map();
   const app = H.loadApp({ sharedStorage: shared });
   const c = app.ctx, d = app.dom.document;
+  const today = c.todayKey();
 
-  sub('validation refuses to save nothing');
-  c.openItemForm(); c.__flush();
-  d.getElementById('itemTitle').value = '   ';
-  c.saveItemForm();
-  T('an empty title does not create a record', c.items.length === 0);
-  T('the field is flagged', d.getElementById('itemTitle').classList.contains('field-error'));
+  sub('saving a verse is a record of a reference, not a copy of the text');
+  const ref = c.SCRIPTURE[0].ref;
+  c.toggleSaved(ref); c.__flush();
+  T('the verse is saved', c.savedVerses.length === 1);
+  T('by reference', c.savedVerses[0].ref === ref);
+  T('the verse text is not duplicated into the record',
+    Object.keys(c.savedVerses[0]).indexOf('text') === -1,
+    Object.keys(c.savedVerses[0]).join(','));
+  T('it was persisted', H.loadApp({ sharedStorage: shared }).ctx.savedVerses.length === 1);
+
+  sub('saving the same verse twice cannot produce two records');
+  const id = c.savedVerses[0].id;
+  c.toggleSaved(ref); c.__flush();
+  T('a second toggle removes it', c.savedVerses.length === 0);
+  c.toggleSaved(ref); c.__flush();
+  T('and saving again restores one record', c.savedVerses.length === 1);
+  T('with the same id, so two devices merge rather than duplicate',
+    c.savedVerses[0].id === id);
+
+  sub('a reference the catalogue does not carry never becomes a record');
+  c.toggleSaved('Book Of Nowhere 1:1'); c.__flush();
+  T('nothing was saved', c.savedVerses.length === 1);
+
+  sub('validation refuses to save an empty reflection');
+  c.openNote(today); c.__flush();
+  d.getElementById('noteText').value = '   ';
+  c.saveNote();
+  T('no reflection was created', c.notes.length === 0);
+  T('the field is flagged', d.getElementById('noteText').classList.contains('field-error'));
   T('and marked invalid for assistive tech',
-    d.getElementById('itemTitle').getAttribute('aria-invalid') === 'true');
+    d.getElementById('noteText').getAttribute('aria-invalid') === 'true');
   T('with a message that says what to do',
-    d.getElementById('itemTitleError').textContent.length > 10);
-  T('the form stays open', d.getElementById('itemFormOverlay').classList.contains('open'));
+    d.getElementById('noteTextError').textContent.length > 10);
+  T('the page stays open', d.getElementById('noteOverlay').classList.contains('open'));
 
-  sub('creating');
-  d.getElementById('itemTitle').value = 'First item';
-  d.getElementById('itemNote').value = 'A note';
-  c.setFormStatus('active');
-  c.saveItemForm(); c.__flush();
-  T('the record exists', c.items.length === 1);
-  T('with its title', c.items[0].title === 'First item');
-  T('with its note', c.items[0].note === 'A note');
-  T('with a status', c.items[0].status === 'active');
-  T('with an id', typeof c.items[0].id === 'string' && c.items[0].id.length > 4);
-  T('with timestamps', !!c.items[0].createdAt && !!c.items[0].updatedAt);
-  T('the form closed', !d.getElementById('itemFormOverlay').classList.contains('open'));
-  T('it was persisted', H.loadApp({ sharedStorage: shared }).ctx.items.length === 1);
+  sub('writing one');
+  d.getElementById('noteText').value = 'A first thought.';
+  c.saveNote(); c.__flush();
+  T('the record exists', c.notes.length === 1);
+  T('with its text', c.notes[0].text === 'A first thought.');
+  T('against the day it was written on', c.notes[0].date === today);
+  T('carrying the reference it was written about',
+    c.notes[0].ref === c.verseForDay(today).ref);
+  T('with an id', typeof c.notes[0].id === 'string' && c.notes[0].id.length > 4);
+  T('with timestamps', !!c.notes[0].createdAt && !!c.notes[0].updatedAt);
+  T('the page closed', !d.getElementById('noteOverlay').classList.contains('open'));
+  T('it was persisted', H.loadApp({ sharedStorage: shared }).ctx.notes.length === 1);
 
-  sub('editing changes the record, not its identity');
-  const id = c.items[0].id, created = c.items[0].createdAt;
-  c.openItemForm(id); c.__flush();
-  T('the form is pre-filled', d.getElementById('itemTitle').value === 'First item');
-  d.getElementById('itemTitle').value = 'Renamed';
-  c.setFormStatus('done');
-  c.saveItemForm(); c.__flush();
-  T('still one record', c.items.length === 1);
-  T('the title changed', c.items[0].title === 'Renamed');
-  T('the status changed', c.items[0].status === 'done');
-  T('the id is unchanged', c.items[0].id === id);
-  T('createdAt is unchanged', c.items[0].createdAt === created);
+  sub('editing changes the writing, not its identity');
+  const noteId = c.notes[0].id, created = c.notes[0].createdAt;
+  c.openNote(today); c.__flush();
+  T('the field is pre-filled', d.getElementById('noteText').value === 'A first thought.');
+  d.getElementById('noteText').value = 'A second thought.';
+  c.saveNote(); c.__flush();
+  T('still one record', c.notes.length === 1);
+  T('the text changed', c.notes[0].text === 'A second thought.');
+  T('the id is unchanged', c.notes[0].id === noteId);
+  T('createdAt is unchanged', c.notes[0].createdAt === created);
+  T('one day cannot hold two reflections',
+    c.notes.filter(n => n.date === today).length === 1);
 
   sub('a draft lives outside the committed collection');
-  c.openItemForm(); c.__flush();
-  d.getElementById('itemTitle').value = 'Half typed';
+  c.openNote(today); c.__flush();
+  d.getElementById('noteText').value = 'Half typed';
   c.flushDraft();
-  T('the draft was written', c.Store.getJSON(c.KEYS.itemDraft, null).title === 'Half typed');
-  T('it is under its own key', c.KEYS.itemDraft.indexOf('draft.') === 0);
-  T('it did not become a record', c.items.length === 1);
+  T('the draft was written', c.Store.getJSON(c.KEYS.noteDraft, null).text === 'Half typed');
+  T('it is under its own key', c.KEYS.noteDraft.indexOf('draft.') === 0);
+  T('it did not become a record', c.notes[0].text === 'A second thought.');
   T('and it cannot be counted as one',
-    c.Store.getJSON(c.KEYS.items, []).length === 1);
+    c.Store.getJSON(c.KEYS.notes, []).length === 1);
+  T('it records which day it belongs to',
+    c.Store.getJSON(c.KEYS.noteDraft, null).date === today);
   const restored = H.loadApp({ sharedStorage: shared });
-  restored.ctx.openItemForm(); restored.ctx.__flush();
-  T('reopening the form restores it',
-    restored.dom.document.getElementById('itemTitle').value === 'Half typed');
-  T('editing an existing record never writes a draft',
-    /if\(editingItemId\) return;\s*\/\/ an edit in progress is not a draft/.test(js()) ||
-    /function scheduleDraftSave\(\)\{\s*if\(editingItemId\) return;/.test(js()));
+  restored.ctx.openNote(today); restored.ctx.__flush();
+  T('reopening the day restores it',
+    restored.dom.document.getElementById('noteText').value === 'Half typed');
 
   sub('saving clears the draft');
-  d.getElementById('itemTitle').value = 'Second item';
-  c.saveItemForm(); c.__flush();
-  T('the draft is gone', c.Store.get(c.KEYS.itemDraft) === null);
-  T('the record was created', c.items.length === 2);
+  d.getElementById('noteText').value = 'Committed.';
+  c.saveNote(); c.__flush();
+  T('the draft is gone', c.Store.get(c.KEYS.noteDraft) === null);
+  T('the record took the text', c.notes[0].text === 'Committed.');
+
+  sub('a draft never leaks onto another day');
+  const earlier = c.railDayKeys()[0];
+  c.openNote(earlier); c.__flush();
+  d.getElementById('noteText').value = 'Belongs to the earlier day';
+  c.flushDraft();
+  c.closeNote(); c.__flush();
+  c.openNote(today); c.__flush();
+  T('today opens with its own saved text, not the other day\'s draft',
+    d.getElementById('noteText').value === 'Committed.');
+  c.closeNote(); c.__flush();
 
   sub('deleting asks first');
-  const target = c.items[1].id;
-  c.openItemDetail(target); c.__flush();
-  const p = c.deleteItemFromDetail();
+  c.openNote(today); c.__flush();
+  const p = c.deleteNote();
   c.__flush();
   T('a confirmation is shown', d.getElementById('confirmOverlay').classList.contains('open'));
   c.closeConfirm(); c.__flush();
   return p.then(() => {
-    T('cancelling keeps the record', c.items.length === 2);
-    c.openItemDetail(target); c.__flush();
-    const p2 = c.deleteItemFromDetail();
+    T('cancelling keeps the reflection', c.notes.length === 1);
+    c.openNote(today); c.__flush();
+    const p2 = c.deleteNote();
     c.__flush();
     c.acceptConfirm(); c.__flush();
     return p2.then(() => {
-      T('confirming removes it', c.items.length === 1);
-      T('the right one went', !c.items.some(i => i.id === target));
-      T('the detail page closed', !d.getElementById('itemDetailOverlay').classList.contains('open'));
+      T('confirming removes it', c.notes.length === 0);
+      T('the page closed', !d.getElementById('noteOverlay').classList.contains('open'));
       T('the removal was persisted',
-        H.loadApp({ sharedStorage: shared }).ctx.items.length === 1);
+        H.loadApp({ sharedStorage: shared }).ctx.notes.length === 0);
+      T('and the verse itself is untouched', c.SCRIPTURE.length > 0);
     });
   });
 }
@@ -828,10 +860,9 @@ function testRelease(){
     c.APP_UPDATES.every(u => (u.newFeatures || []).length + (u.improvements || []).length +
                              (u.fixes || []).length > 0));
 
-  sub('the starter ships a minimal history, not an inherited one');
+  sub('the app ships its own history, not an inherited one');
   T('a small number of entries', c.APP_UPDATES.length <= 3, String(c.APP_UPDATES.length));
   T('the authoring rules travel with the data', /AUTHORING A NEW ENTRY/.test(js()));
-  T('and it says new products replace it', /New products replace this array wholesale/.test(js()));
 
   sub('unread state');
   T('the newest id is what marks it read', /Store\.set\(KEYS\.lastSeenUpdate, APP_UPDATES\[0\]\.id\)/.test(js()));
@@ -856,40 +887,40 @@ function testStress(){
   T('no console errors', app.errors.length === 0, app.errors.join(' | '));
 
   sub('100 overlay open/close cycles');
-  for(let i = 0; i < 100; i++){ open(app, 'itemDetailOverlay'); close(app, 'itemDetailOverlay'); }
+  for(let i = 0; i < 100; i++){ open(app, 'noteOverlay'); close(app, 'noteOverlay'); }
   T('the stack is empty', c._openSheetStack.length === 0, String(c._openSheetStack.length));
   T('the lock depth is zero', c._lockDepth === 0, String(c._lockDepth));
   T('the body is not left locked', !d.body.classList.contains('scroll-locked'));
-  T('no z-index is left painted', d.getElementById('itemDetailOverlay').style.zIndex === '');
+  T('no z-index is left painted', d.getElementById('noteOverlay').style.zIndex === '');
   T('the opener map did not grow', c._sheetOpeners.size === 0, String(c._sheetOpeners.size));
 
   sub('50 nested cycles');
   for(let i = 0; i < 50; i++){
-    open(app, 'itemDetailOverlay');
+    open(app, 'noteOverlay');
     open(app, 'confirmOverlay');
     close(app, 'confirmOverlay');
-    close(app, 'itemDetailOverlay');
+    close(app, 'noteOverlay');
   }
   T('the stack is empty', c._openSheetStack.length === 0, String(c._openSheetStack.length));
   T('the lock depth is zero', c._lockDepth === 0, String(c._lockDepth));
   T('history depth did not run away', Math.abs(c._historyDepth) <= 1, String(c._historyDepth));
 
-  sub('50 create / edit / delete cycles');
-  const before = c.items.length;
+  sub('50 write / edit / delete cycles');
+  const day = c.todayKey();
+  const before = c.notes.length;
   for(let i = 0; i < 50; i++){
-    c.openItemForm();
-    d.getElementById('itemTitle').value = 'Item ' + i;
-    c.saveItemForm();
-    const id = c.items[c.items.length - 1].id;
-    c.openItemForm(id);
-    d.getElementById('itemTitle').value = 'Item ' + i + ' edited';
-    c.saveItemForm();
-    c.items = c.items.filter(x => x.id !== id);
-    c.persistItems();
+    c.openNote(day);
+    d.getElementById('noteText').value = 'Thought ' + i;
+    c.saveNote();
+    c.openNote(day);
+    d.getElementById('noteText').value = 'Thought ' + i + ' edited';
+    c.saveNote();
+    c.notes = c.notes.filter(n => n.date !== day);
+    c.persistNotes();
   }
-  T('the collection returned to its starting size', c.items.length === before,
-    c.items.length + ' vs ' + before);
-  T('no draft was left behind', c.Store.get(c.KEYS.itemDraft) === null);
+  T('the collection returned to its starting size', c.notes.length === before,
+    c.notes.length + ' vs ' + before);
+  T('no draft was left behind', c.Store.get(c.KEYS.noteDraft) === null);
   T('the stack is still empty', c._openSheetStack.length === 0);
   T('storage did not accumulate keys', c.Store.listKeys().length <= 4,
     c.Store.listKeys().join(','));
@@ -928,7 +959,7 @@ function testAccessibility(){
   T('the toggle exposes checked state', /\.toggle\[aria-checked="true"\]/.test(style));
   T('validation errors are announced', /role="alert"/.test(src));
   T('an invalid field is marked', /setAttribute\('aria-invalid', 'true'\)/.test(js()));
-  T('a field points at its own error message', /aria-describedby="itemTitleError"/.test(src));
+  T('a field points at its own error message', /aria-describedby="noteTextError"/.test(src));
 
   sub('focus');
   T('focus is always visible', /\*:focus-visible\{ outline: 2px solid var\(--accent\)/.test(style));
@@ -953,9 +984,7 @@ function testContamination(){
 
   const src = H.readApp();
   T('no legacy brand token in the app', !/\bLOOP\b/.test(src));
-  T('the demo domain is neutral', /const ITEM_STATUSES/.test(js()));
-  T('the demo is small enough to delete easily',
-    (js().match(/DEMO DOMAIN[\s\S]*?SETTINGS — data ownership/) || [''])[0].split('\n').length < 400);
+  T('the domain is this product and not another one', /const SCRIPTURE = \[/.test(js()));
 }
 
 /* =========================================================
@@ -1027,12 +1056,12 @@ const STARTER_DEFAULT_ID = 'app-starter';
 const STARTER_SEED_RELEASE = 'v0-1-0';
 
 function testPortability(){
-  section('CONTRACT 19 — the starter can become a different product');
+  section('CONTRACT 19 — the foundation and the product stay separable');
   const app = H.loadApp();
   const c = app.ctx;
   const src = js();
 
-  sub('the foundation reaches the product through three named seams');
+  sub('the foundation reaches the product through four named seams');
   T('a Domain seam exists', typeof c.Domain === 'object' && c.Domain !== null);
   ['hydrate', 'render', 'wire'].forEach(h =>
     T('Domain.' + h + '() is a function', typeof c.Domain[h] === 'function'));
@@ -1041,21 +1070,23 @@ function testPortability(){
   T('renderAll renders through the seam', /function renderAll\(\)\{\s*Domain\.render\(\);/.test(
     src.replace(/\n\s*/g, m => m.includes('\n') ? '\n  ' : m)) ||
     /Domain\.render\(\);/.test(src));
-  T('the seam defaults are no-ops, so a product boots before it has a domain',
+  T('the seam defaults are no-ops, so the shell boots before it has a domain',
     /const Domain = \{[\s\S]{0,200}hydrate\(\)\{\},/.test(src));
 
   sub('no foundation function names the demo entity');
   /* The boundary is the DEMO DOMAIN banner. Everything above it, plus the
      settings/updates/utilities/boot sections below it, is foundation. */
-  const demoStart = src.indexOf('DEMO DOMAIN — Item');
-  const demoEnd = src.indexOf('SETTINGS — data ownership');
-  T('the demo section is delimited', demoStart > 0 && demoEnd > demoStart);
-  const foundation = src.slice(0, demoStart) + src.slice(demoEnd);
-  /* setItem/getItem/removeItem are the localStorage API, not the demo. */
-  const demoRefs = (foundation.match(/[A-Za-z_$][A-Za-z0-9_$]*[Ii]tem[A-Za-z0-9_$]*/g) || [])
-    .filter(n => !/^(set|get|remove)Item$/.test(n));
-  T('the foundation contains no reference to the demo entity',
-    demoRefs.length === 0, [...new Set(demoRefs)].join(', '));
+  const domainStart = src.indexOf('SCRIPTURE — the quoted text');
+  const domainEnd = src.indexOf('SETTINGS — data ownership');
+  T('the domain section is delimited', domainStart > 0 && domainEnd > domainStart);
+  const foundation = src.slice(0, domainStart) + src.slice(domainEnd);
+  /* Every noun this product invented. If one of these turns up above the seam,
+     the foundation has started to know what a verse is — which is how a reusable
+     shell quietly becomes a Bible framework. */
+  const domainWords = /(SCRIPTURE|REFLECTIONS|SCRIPTURE_SOURCE|savedVerses|verseForDay|verseByRef|reflectionFor|dayKey|todayKey|dayHash|noteFor|selectedDay|showReflections|renderToday|renderSaved|renderDayRail|applyTextSize)/g;
+  const leaks = foundation.match(domainWords) || [];
+  T('the foundation contains no reference to the domain',
+    leaks.length === 0, [...new Set(leaks)].join(', '));
 
   sub('backup import is domain-agnostic');
   T('merge iterates the backup, not a hard-coded key list',
@@ -1131,10 +1162,228 @@ function testPortability(){
   })());
 }
 
+/* =========================================================
+   CONTRACT 20 — THE TEXT IS TRUE
+   ---------------------------------------------------------
+   The contracts this product exists for. Everything else here
+   defends an app; these defend the one claim a Bible app makes
+   by opening at all — that what it shows you is really there,
+   really that reference, and really not its own words.
+   ========================================================= */
+function testScripture(){
+  section('CONTRACT 20 — Scripture is quoted, sourced, and never invented');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const src = js();
+
+  sub('there is a catalogue, and every entry is complete');
+  T('verses are embedded', Array.isArray(c.SCRIPTURE) && c.SCRIPTURE.length > 0,
+    String((c.SCRIPTURE || []).length));
+  const malformed = c.SCRIPTURE.filter(v =>
+    !v || typeof v.ref !== 'string' || !v.ref.trim() ||
+    typeof v.text !== 'string' || v.text.trim().length < 10 ||
+    typeof v.theme !== 'string' || !v.theme.trim());
+  T('every verse has a reference, a theme and real text',
+    malformed.length === 0, malformed.map(v => (v && v.ref) || '?').join(', '));
+  const refs = c.SCRIPTURE.map(v => v.ref);
+  T('no reference appears twice', new Set(refs).size === refs.length);
+  T('every reference names a book, a chapter and a verse',
+    refs.every(r => /^[0-9]?\s?[A-Za-z][A-Za-z ]+\s\d+:\d+(-\d+)?$/.test(r)),
+    refs.filter(r => !/^[0-9]?\s?[A-Za-z][A-Za-z ]+\s\d+:\d+(-\d+)?$/.test(r)).join(', '));
+
+  sub('the text is derived, not authored');
+  /* The whole trust argument rests on this region being machine-written. A
+     hand-edit is invisible in a diff review of 120 near-identical lines, so
+     the markers are asserted instead. */
+  T('the verses live in a marked, generated region',
+    /\/\* SCRIPTURE-BEGIN/.test(src) && /\/\* SCRIPTURE-END \*\//.test(src));
+  T('the region says out loud that it is not to be hand-edited',
+    /SCRIPTURE-BEGIN[\s\S]{0,140}Do not hand-edit/.test(src));
+  T('the sourcing script exists to rewrite it',
+    require('fs').existsSync(require('path').join(H.ROOT, 'scripts', 'scripture.js')));
+
+  sub('every quotation can say where it came from');
+  const s = c.SCRIPTURE_SOURCE;
+  T('a translation is named', !!(s && s.translation));
+  T('with a short form for the screen', !!(s && s.abbr));
+  T('a licence is recorded', !!(s && s.license));
+  T('and the origin it was fetched from', !!(s && /^https?:\/\//.test(s.origin || '')));
+  T('the reader can reach all of that without leaving the app',
+    /function renderSource\(/.test(src) && /SCRIPTURE_SOURCE\.license/.test(src));
+  T('the translation is painted beside the verse, not hidden in a settings page',
+    /verse-translation[\s\S]{0,200}SCRIPTURE_SOURCE\.abbr/.test(src));
+
+  sub('Scripture and this app\'s own words are separate objects');
+  T('reflections are a structure of their own', typeof c.REFLECTIONS === 'object');
+  T('no verse record carries a reflection',
+    c.SCRIPTURE.every(v => v.reflection === undefined));
+  T('every verse has a reflection to sit beside it',
+    refs.every(r => typeof c.REFLECTIONS[r] === 'string' && c.REFLECTIONS[r].trim().length > 0),
+    refs.filter(r => !c.REFLECTIONS[r]).slice(0, 4).join(', '));
+  T('no reflection is written for a verse the catalogue does not carry',
+    Object.keys(c.REFLECTIONS).every(k => refs.indexOf(k) !== -1),
+    Object.keys(c.REFLECTIONS).filter(k => refs.indexOf(k) === -1).join(', '));
+  /* If a reflection ever repeated its verse verbatim, the visual separation
+     would be the only thing left distinguishing them — and someone reading a
+     share, or a screen reader, would have nothing. */
+  const echoed = refs.filter(r => {
+    const t = c.REFLECTIONS[r];
+    return t && c.SCRIPTURE.some(v => t.indexOf(v.text) !== -1);
+  });
+  T('no reflection reproduces a verse as if it were its own sentence',
+    echoed.length === 0, echoed.join(', '));
+
+  sub('the reader may switch the commentary off entirely');
+  T('showing reflections is a stored preference', c.KEYS.showReflections.indexOf('ui.') === 0);
+  T('and the verse renders without one',
+    /showReflections && reflection/.test(src));
+
+  sub('nothing is invented when there is nothing to show');
+  const empty = H.loadApp();
+  empty.ctx.SCRIPTURE.length = 0;
+  empty.ctx.renderToday();
+  const body = empty.dom.document.getElementById('todayBody').innerHTML;
+  T('an empty catalogue produces an honest empty state',
+    /No verse is available/.test(body), body.slice(0, 80));
+  T('and not a fabricated verse', !/verse-text/.test(body));
+}
+
+/* =========================================================
+   CONTRACT 21 — THE SAME DAY IS THE SAME VERSE
+   ---------------------------------------------------------
+   A daily verse that is not the same on two devices, or that
+   changes when you reopen the app, is not a daily verse.
+   ========================================================= */
+function testDays(){
+  section('CONTRACT 21 — the day, and the verse it holds');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const src = js();
+
+  sub('a day key is a local calendar date');
+  const d = new Date(2026, 8, 3, 23, 30);        // 3 September, late evening
+  T('it is built from the local date', c.dayKey(d) === '2026-09-03');
+  /* The failure this prevents: toISOString() on that same moment returns the
+     4th for anyone east of UTC, so half the world reads tomorrow's verse
+     during their evening and the bug never reproduces where it was written. */
+  T('and not from UTC', c.dayKey(d) !== d.toISOString().slice(0, 10) ||
+    d.getTimezoneOffset() === 0);
+  T('a key parses back to local midnight, not UTC midnight',
+    c.dateFromKey('2026-09-03').getDate() === 3 &&
+    c.dateFromKey('2026-09-03').getHours() === 0);
+  T('a malformed key is rejected rather than guessed at',
+    c.dateFromKey('not-a-date') === null && c.dateFromKey('2026-9-3') === null);
+
+  sub('the mapping is a pure function of the date');
+  const a = c.verseForDay('2026-09-03');
+  T('a date resolves to a verse', !!a);
+  T('the same date resolves to the same verse', c.verseForDay('2026-09-03').ref === a.ref);
+  const fresh = H.loadApp().ctx;
+  T('a second, independent load agrees', fresh.verseForDay('2026-09-03').ref === a.ref);
+  T('a different date generally resolves elsewhere',
+    new Set(['2026-01-01', '2026-04-17', '2026-07-30', '2026-11-05']
+      .map(k => c.verseForDay(k).ref)).size > 1);
+  T('every day of a year resolves to something', (() => {
+    for(let i = 0; i < 365; i++){
+      const dt = new Date(2026, 0, 1 + i);
+      if(!c.verseForDay(c.dayKey(dt))) return false;
+    }
+    return true;
+  })());
+  T('and the whole catalogue gets used across a year', (() => {
+    const seen = new Set();
+    for(let i = 0; i < 365; i++) seen.add(c.verseForDay(c.dayKey(new Date(2026, 0, 1 + i))).ref);
+    return seen.size > c.SCRIPTURE.length * 0.5;
+  })(), 'distinct verses in 2026');
+
+  sub('a reflection is never shown against a verse it was not written about');
+  /* The catalogue is allowed to grow, and growth moves `hash % length`. The
+     reference stored on a reflection is what stops someone's words about a
+     passage on grief resurfacing beside a passage about work. */
+  const shared = new Map();
+  const w = H.loadApp({ sharedStorage: shared });
+  const key = w.ctx.todayKey();
+  const originally = w.ctx.verseForDay(key).ref;
+  const elsewhere = w.ctx.SCRIPTURE.find(v => v.ref !== originally).ref;
+  w.ctx.notes.push({ id: 'n_' + key, date: key, ref: elsewhere, text: 'written about that one',
+                     createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' });
+  T('the day shows the verse the reflection records',
+    w.ctx.verseForDayInHistory(key).ref === elsewhere);
+  T('and the bare mapping still reports its own answer',
+    w.ctx.verseForDay(key).ref === originally);
+  T('a day with no reflection falls back to the mapping',
+    w.ctx.verseForDayInHistory('2026-02-14').ref === w.ctx.verseForDay('2026-02-14').ref);
+
+  sub('the rail offers the past, never the future');
+  const rail = c.railDayKeys();
+  const today = c.todayKey();
+  T('it ends on today', rail[rail.length - 1] === today);
+  T('it holds as many days as it claims', rail.length === c.RAIL_DAYS);
+  T('no day in it is in the future', rail.every(k => k <= today));
+  T('they are in order', rail.every((k, i) => i === 0 || rail[i - 1] < k));
+
+  sub('a day that has not happened cannot be opened');
+  const future = c.dayKey(new Date(new Date().getFullYear() + 1, 0, 1));
+  const before = c.selectedDay;
+  c.selectDay(future);
+  T('selecting a future day is a no-op', c.selectedDay === before);
+  c.selectDay('nonsense');
+  T('so is selecting nonsense', c.selectedDay === before);
+  c.openNote(future); c.__flush();
+  T('and no reflection can be written on one',
+    !app.dom.document.getElementById('noteOverlay').classList.contains('open'));
+
+  sub('the rail always lands on the day that was asked for');
+  /* Three separate attempts at animating this rail each turned out to be a
+     silent no-op in a real engine, leaving it parked on a day nobody chose —
+     first cell.scrollIntoView(), then rail.scrollTo({behavior:'smooth'}), then
+     `scroll-behavior: smooth` in CSS, which routes even a plain assignment
+     through the same broken path. The position is now assigned outright.
+     These assert the absence, because the presence is what breaks it. */
+  /* Against the stripped source: the comments above each of these describe
+     exactly what is banned, and a check that its own explanation trips is
+     a check that gets deleted. */
+  const bareJs = stripComments(src);
+  const bareCss = stripComments(css());
+  T('the rail is positioned by assigning scrollLeft',
+    /rail\.scrollLeft = left;/.test(bareJs));
+  T('no animated scroll request is used to place it',
+    !/scrollIntoView/.test(bareJs) && !/behavior:\s*'smooth'/.test(bareJs));
+  T('and the rail does not declare smooth scrolling in CSS either',
+    !/\.day-rail\{[^}]*scroll-behavior:\s*smooth/.test(bareCss));
+
+  sub('repainting the rail does not throw the reader off the day they are on');
+  /* renderAll() repaints the rail after every save, reflection and import.
+     Replacing its children may drop the scroll offset to zero, which would
+     send someone four weeks into the past for tapping Save. */
+  T('the offset is captured before the repaint', /const keepScroll = rail\.scrollLeft;/.test(src));
+  T('and restored after it', /rail\.scrollLeft = keepScroll;/.test(src));
+  T('only selecting a day asks for the position to move',
+    /selectedDay = key;\s*renderToday\(\);\s*centreSelectedDay\(\);/.test(src.replace(/\n\s*/g, ' ')) ||
+    /renderToday\(\);[\s\S]{0,60}centreSelectedDay\(\);/.test(src));
+
+  sub('a share carries the reference and the translation with it');
+  const text = c.shareText(c.SCRIPTURE[0]);
+  T('the verse is in it', text.indexOf(c.SCRIPTURE[0].text) !== -1);
+  T('so is the reference', text.indexOf(c.SCRIPTURE[0].ref) !== -1);
+  T('and the translation', text.indexOf(c.SCRIPTURE_SOURCE.abbr) !== -1);
+
+  sub('a saved verse the catalogue no longer carries is reported, not replaced');
+  const g = H.loadApp();
+  g.ctx.savedVerses = [{ id: 's_gone', ref: 'Gone 1:1', savedAt: '2026-01-01T00:00:00.000Z' }];
+  g.ctx.savedView = 'verses';
+  g.ctx.renderSaved();
+  const html = g.dom.document.getElementById('savedList').innerHTML;
+  T('the reference is kept exactly as saved', html.indexOf('Gone 1:1') !== -1);
+  T('and no other verse is shown under it',
+    !g.ctx.SCRIPTURE.some(v => html.indexOf(v.text) !== -1));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,
-  testAccessibility, testContamination, testSourcesOfTruth
+  testAccessibility, testContamination, testSourcesOfTruth,
+  testScripture, testDays
 };

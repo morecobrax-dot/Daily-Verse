@@ -1,14 +1,14 @@
 {
-  "name": "App Starter",
-  "short_name": "Starter",
-  "description": "An opinionated, offline-capable mobile app foundation.",
+  "name": "Daily Verse",
+  "short_name": "Daily Verse",
+  "description": "A verse, a reflection, and a quiet moment each day.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B0F16",
-  "theme_color": "#0B0F16",
+  "background_color": "#0D0B09",
+  "theme_color": "#0D0B09",
   "icons": [
     {
       "src": "icon-192.png",

@@ -3,47 +3,55 @@
 Instructions for AI coding sessions in this repository. These override default
 behaviour.
 
-Read [STARTER-ARCHITECTURE.md](STARTER-ARCHITECTURE.md) before changing
-architecture, and [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) before changing
-anything a user sees.
+Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing architecture, and
+[PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) before changing anything a user sees.
+
+**This app is Daily Verse: one passage of Scripture per day, a short reflection
+beside it, and a private place to keep both.** It was built on a general mobile
+app foundation, and the two halves of `index.html` are still distinct — the
+foundation above the `FOUNDATION → DOMAIN SEAM` banner, this product below it.
 
 ---
 
-## Before implementing a new product
+## The rules that outrank everything else here
 
-If you are starting a product from this foundation, in this order:
+These are first because getting them wrong does a kind of damage the rest of
+the list cannot.
 
-1. Read [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) — the rules the UI must obey.
-2. Read [STARTER-ARCHITECTURE.md](STARTER-ARCHITECTURE.md) — what already
-   exists, so you do not rebuild it.
-3. Read the product's own requirements. If there aren't any written down, ask
-   for them before writing code.
-4. Follow [NEW-PROJECT.md](NEW-PROJECT.md) step by step.
-5. **Separate foundation from domain before you type.** Name which parts of the
-   change are product-specific and which are genuinely reusable.
+1. **Never write, edit, or "fix" a verse by hand.** Not a typo, not a line that
+   wraps badly, not a trailing semicolon that looks untidy. The `SCRIPTURE`
+   region of `index.html` is written only by `node scripts/scripture.js fetch`.
+   A verse edited by hand is a verse this app asserts on its own authority.
+2. **Never write Scripture from memory.** Remembered verses are usually close
+   and occasionally wrong, and a Bible app does not get to be approximately
+   right. If a passage should change, change the curation in
+   `scripts/scripture.js` and re-fetch.
+3. **A reflection may respond to a verse and may never extend it.** It does not
+   put words in Scripture's mouth, does not promise what the passage does not,
+   and never opens with a phrase that could read as continuing the quotation.
+4. **Scripture and this app's own words stay structurally separate.**
+   `SCRIPTURE` and `REFLECTIONS` are different objects, keyed independently, set
+   in different typefaces, under different labels. Do not merge them for
+   convenience.
+5. **Every quotation carries its reference and its translation.** On screen, in
+   a share, in a saved row. An unsourced verse is the thing this product exists
+   not to produce.
 
-### The foundation-modification rule
+## The foundation-modification rule
 
 **A product-specific need stays in the product.** Do not change generic
-foundation code because one product wants something. Add it in the domain
-section, behind the `Domain` seams.
+foundation code because this app wants something. Add it below the seam.
 
-Only upstream a change to the foundation when it is reusable *on its own terms*
-— when a second, unrelated product would want it identically. If you are
-unsure, it is not reusable yet. Leave it in the product; it can be promoted
-later, by hand, after a second product proves the need.
+Only change the foundation when the change is right *on its own terms* — when
+an unrelated app would want it identically. Never add a domain concept — a
+verse, a reflection, a day key — to the storage adapter, the overlay engine,
+toast, confirmation, or navigation.
 
-This rule exists so a savings app does not slowly turn a general foundation
-into a finance framework. The same applies in the other direction: never add a
-domain concept — a transaction, an account, a category — to the storage
-adapter, the overlay engine, toast, confirmation, or navigation.
+## No dependency linkage
 
-### No dependency linkage
-
-A product created from this starter is **independent**. Never introduce a git
-submodule, an npm package, a shared remote runtime, or any automation that
-pulls starter changes into a product or pushes product changes back. Copy the
-knowledge, then own the product.
+This app is **independent** of the foundation it came from. Never introduce a
+git submodule, an npm package, a shared remote runtime, or any automation that
+pulls foundation changes in or pushes changes back.
 
 ## Workflow
 
@@ -144,5 +152,28 @@ AUDIT → UNDERSTAND → IMPLEMENT → ADVERSARIAL VERIFY → DIFF AUDIT → SHI
 27. **A product-specific need stays in the product.** See the
     foundation-modification rule above. Do not generalise on the first use.
 28. **Stop at the requested phase.** Finish it completely, report, and wait.
-    Do not start the next phase, do not "while I'm here", do not polish the
+    Do not start the next phase, do not "while I'm here", do not polish a
     demo into a product.
+
+## Daily Verse specifics
+
+29. **The day key is a local calendar date**, never derived from
+    `toISOString()`. A UTC-derived "today" gives half the world the wrong
+    verse for part of every day, and the bug is invisible on the machine it
+    was written on.
+30. **The date → verse mapping is a pure function of the date string.** Nothing
+    about the device, the locale, the install or the boot order may enter it,
+    or the same day gives two people two verses.
+31. **A reflection stores the reference it was written against.** The catalogue
+    may grow; if it does, `dayHash % length` moves every past day. A note that
+    carries its own reference can never be re-paired with a passage its author
+    never saw.
+32. **Reflections are opt-out and the app must still be complete without
+    them.** Someone reading Scripture alone is a supported way to use this,
+    not a degraded one.
+33. **Never invent a verse when the catalogue cannot supply one.** An honest
+    empty state is the correct output. Improvising is the single worst failure
+    this product has available to it.
+34. **Re-source, never re-type.** `node scripts/scripture.js fetch` after any
+    curation change; `node scripts/scripture.js verify` to prove the shipped
+    bytes still match the source.

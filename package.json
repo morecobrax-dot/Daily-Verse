@@ -1,14 +1,17 @@
 {
-  "name": "app-starter",
-  "version": "0.1.0",
+  "name": "daily-verse",
+  "version": "1.0.0",
   "private": true,
-  "description": "An opinionated, offline-capable mobile app foundation.",
+  "description": "A verse, a reflection, and a quiet moment each day.",
   "scripts": {
     "verify": "node test/run.js verify",
     "test": "node test/run.js contracts",
     "config:sync": "node scripts/config.js sync",
     "config:verify": "node scripts/config.js verify",
-    "contamination": "node scripts/contamination.js"
+    "contamination": "node scripts/contamination.js",
+    "scripture:fetch": "node scripts/scripture.js fetch",
+    "scripture:verify": "node scripts/scripture.js verify",
+    "icons": "node scripts/icons.js"
   },
   "engines": {
     "node": ">=18"

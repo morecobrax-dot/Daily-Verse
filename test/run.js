@@ -32,6 +32,8 @@ const SUITES = [
   C.testToast,
   C.testConfirmation,
   C.testForms,
+  C.testScripture,
+  C.testDays,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,
@@ -46,7 +48,7 @@ const SUITES = [
 async function main(){
   const started = Date.now();
   console.log('\n' + '='.repeat(64));
-  console.log('  STARTER CONTRACTS — tier: ' + TIER);
+  console.log('  DAILY VERSE CONTRACTS — tier: ' + TIER);
   console.log('='.repeat(64));
 
   for(const suite of SUITES){

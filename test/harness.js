@@ -332,8 +332,10 @@ const BRIDGE = [
   'APP_CONFIG', 'APP_UPDATES', 'APP_VERSION', 'APP_ID_PATTERN',
   'STORAGE_NAMESPACE', 'CACHE_NAMESPACE', 'KEYS',
   'Store', 'DATA_SCHEMA_VERSION', 'MIGRATIONS', 'migrationWarning', 'Domain',
-  'items', 'itemFilter', 'editingItemId', 'detailItemId', 'formStatus',
-  'ITEM_STATUSES', 'STATUS_LABEL', 'currentTab',
+  'SCRIPTURE', 'SCRIPTURE_SOURCE', 'REFLECTIONS',
+  'savedVerses', 'notes', 'selectedDay', 'savedView', 'editingNoteDate',
+  'textSize', 'showReflections', 'TEXT_SIZES', 'SAVED_VIEWS', 'RAIL_DAYS',
+  'DOW', 'MONTHS', 'currentTab',
   'TOAST_MS', 'MAX_TOASTS', 'TOAST_VARIANTS',
   'OVERLAY_Z_BASE', '_openSheetStack', '_sheetOpeners', '_lockDepth', '_lockedScrollY',
   '_historyDepth', '_pendingSelfPops', '_confirmResolve'

@@ -1,10 +1,10 @@
 /* =========================================================
    CONTAMINATION SCAN
    ---------------------------------------------------------
-   This repository was seeded from a copy of a production fitness
-   application. The engineering was worth keeping; the domain was
-   not. This script is the permanent guarantee that none of the
-   domain came along.
+   This app descends, through a general mobile foundation, from a
+   copy of a production fitness application. The engineering was
+   worth keeping; the domain was not. This script is the permanent
+   guarantee that none of that domain came along.
 
      node scripts/contamination.js
 
@@ -25,7 +25,7 @@
      - historical namespaces and branding (loop_, loop-v)
 
    Adding a new pattern is cheap. Adding an ambiguous one is not:
-   if a word could plausibly appear in this starter's own code,
+   if a word could plausibly appear in this app's own code,
    it does not belong here.
    ========================================================= */
 'use strict';
@@ -115,7 +115,7 @@ function run(){
   if(!hits.length){
     console.log('  clean — no fitness-domain residue found');
     console.log('\n  Note: binary assets are checked by filename only. Icons and images');
-    console.log('  still need a human to look at them. See NEW-PROJECT.md.');
+    console.log('  still need a human to look at them. See scripts/icons.js.');
     return 0;
   }
 

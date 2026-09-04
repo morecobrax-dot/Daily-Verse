@@ -1,6 +1,10 @@
-# Starter architecture
+# Architecture
 
-How the pieces fit, and where your product goes.
+How the pieces fit, and where the two halves meet.
+
+The app was built on a general mobile foundation. Everything above the
+`FOUNDATION → DOMAIN SEAM` banner in `index.html` is that foundation and knows
+nothing about Scripture; everything below it is Daily Verse.
 
 ---
 
@@ -13,7 +17,7 @@ The whole application is one file with four blocks, in this order:
 | `<head>` | Meta, viewport, manifest link. The block between `APP-META-BEGIN/END` is **derived** — written by `config:sync`. |
 | One `<style>` | Design tokens, then base, shell, controls, surfaces, overlay presentation, toast, responsive. |
 | `<body>` markup | The shell, the tab views, and every overlay declared statically. All other DOM is generated. |
-| One `<script>` | Config, release notes, storage, migration, overlay engine, toast, confirmation, icons, navigation, demo domain, boot. |
+| One `<script>` | Config, release notes, storage, migration, overlay engine, toast, confirmation, icons, navigation, the Daily Verse domain, boot. |
 
 **Keep it to one substantial `<script>` block.** The test harness evaluates
 only the largest one. Code in a second block, or in a linked `.js` file, is
@@ -65,7 +69,8 @@ Four layers in one `:root`, meant to be edited in order:
    editing to change the look.
 3. **Scale** — type, space, radius, shadow, motion, layout, touch, safe-area
    insets, breakpoints. Rarely changed.
-4. **Domain** — deliberately empty. Your product's own category colours go here.
+4. **Domain** — this app's own: the one warm glow behind the verse, and the
+   slightly warmer paper tone Scripture sits on. Deliberately few.
 
 Two contracts keep the system real rather than aspirational: no `font-family`
 literal outside layer 1, and no `font-size` outside the type scale. Genuine
@@ -115,7 +120,7 @@ site can write an unnamespaced key.
 <APP_ID>.data.<collection>      committed records
 ```
 
-This prefix is the only thing separating two products deployed under the same
+This prefix is the only thing separating two apps deployed under the same
 `username.github.io` — `localStorage` and Cache Storage are keyed by origin,
 not by path. A contract runs two app ids against one shared store and proves
 they cannot see each other.
@@ -174,8 +179,8 @@ Aim for high-value contracts, not volume.
 
 ## The foundation → domain seam
 
-The foundation reaches a product through exactly four points, declared together
-just above the demo section:
+The foundation reaches the product through exactly four points, declared
+together just above the domain section:
 
 ```js
 const Domain = {
@@ -186,10 +191,10 @@ const Domain = {
 };
 ```
 
-They are no-ops by default, so **deleting the demo leaves an app that still
-boots**, into a working but empty shell. `boot()` and `renderAll()` call only
-these, and a contract asserts that no foundation code names anything the demo
-defines.
+They are no-ops by default, so **deleting the whole domain leaves an app that
+still boots**, into a working but empty shell. `boot()` and `renderAll()` call
+only these, and a contract asserts that no foundation code names anything the
+domain defines.
 
 Two more things follow the same rule rather than being special-cased:
 
@@ -197,11 +202,11 @@ Two more things follow the same rule rather than being special-cased:
   reads `data-tab` off each `.tab-btn` and looks the glyph up in
   `Domain.tabIcons`, so adding a tab is a markup edit plus one icon entry.
 - **Backup import** merges whatever collections the backup file itself
-  declares, recognising a record by it having an `id`. A product that replaces
-  the demo does not have to rewrite import — and, more importantly, import
-  cannot silently restore nothing while reporting success.
+  declares, recognising a record by it having an `id`. Adding a collection does
+  not mean rewriting import — and, more importantly, import cannot silently
+  restore nothing while reporting success.
 
-## Where your product goes
+## Where new code goes
 
 | You are adding | Put it |
 |---|---|
@@ -210,9 +215,64 @@ Two more things follow the same rule rather than being special-cased:
 | A decision or short form | A `.overlay` sheet |
 | Persistent state | A key in `KEYS`, under `data.` or `ui.` |
 | A data shape change | Bump `DATA_SCHEMA_VERSION`, add a migration |
-| A category colour | Token layer 4 |
-| A new primitive | Only if the demo or your product actually uses it |
+| A domain colour or light | Token layer 4 |
+| A new primitive | Only if a screen in this app actually uses it |
 | A release | An `APP_UPDATES` entry, then `npm run config:sync` |
 
-Replace the `DEMO DOMAIN` section wholesale. Nothing above it depends on
-anything below it.
+Nothing above the seam depends on anything below it, which is what makes the
+domain replaceable and the foundation auditable on its own.
+
+
+## The Daily Verse domain
+
+What sits below the seam, and the reasoning that is easy to undo by accident.
+
+### Two structures, never one
+
+```js
+const SCRIPTURE   = [ { ref, theme, text }, ... ];   // derived, fetched, never typed
+const REFLECTIONS = { "<ref>": "..." };              // original writing, this app's own
+```
+
+They are kept apart on purpose. `SCRIPTURE` is rewritten wholesale by
+`node scripts/scripture.js fetch` between the `SCRIPTURE-BEGIN`/`SCRIPTURE-END`
+markers; `REFLECTIONS` is keyed by reference so a re-fetch — or a change of
+translation — cannot touch a line of it. Merging them into one array would make
+a re-fetch destructive and would put quoted text and authored text in the same
+object, which is exactly the confusion the product exists to prevent.
+
+### The day is a local date
+
+`dayKey()` builds `YYYY-MM-DD` from `getFullYear/getMonth/getDate`. Using
+`toISOString()` would hand everyone east of UTC tomorrow's verse in the evening
+and everyone west of it yesterday's in the morning. `dateFromKey()` parses back
+to **local midnight** for the same reason.
+
+### The mapping is pure, and history overrides it
+
+`verseForDay(key)` is `SCRIPTURE[fnv1a(key) % SCRIPTURE.length]` — a pure
+function of the date string, so two devices always agree.
+
+But `SCRIPTURE.length` may grow, and when it does that mapping moves every past
+day onto a different verse. So a reflection records the `ref` it was written
+against, and `verseForDayInHistory(key)` prefers it. Without this, someone's
+note about a passage on grief would resurface beside a passage about work.
+
+### Records
+
+| Key | Shape | Why |
+|---|---|---|
+| `data.saved` | `{ id: "s_<slug>", ref, savedAt, updatedAt }` | id derived from the reference, so saving twice is idempotent and two devices merge into one history |
+| `data.notes` | `{ id: "n_<date>", date, ref, text, createdAt, updatedAt }` | one per day; `ref` is a fact about what was being read, not a cached derivation |
+| `draft.note` | `{ date, text }` | in-progress input, outside the committed collection, so a half-typed thought cannot be counted as a reflection |
+| `ui.textSize` | `"standard"` | `"large"` | a preference; absent means never chosen, and the app answers with its own default |
+| `ui.showReflections` | `"1"` | `"0"` | same |
+
+The preference defaults are defaults for *preferences*. Absent **data** is
+still never repaired with a plausible value.
+
+### Type
+
+`--fs-verse` and `--fs-reflect` are the only two sizes the reader can change,
+and `:root[data-text-size="large"]` is the only thing that changes them. The
+shell keeps its size so muscle memory survives the switch.

@@ -1,61 +1,45 @@
-# app-starter
+# Daily Verse
 
-An opinionated foundation for local-first, installable mobile web applications.
+A verse, a reflection, and a quiet moment each day.
 
-It exists so that building a new product means answering *"what should this
-product do?"* rather than solving mobile navigation, overlays, safe areas,
-forms, storage namespacing and PWA installation again from scratch.
+An installable, offline-capable mobile web app. It shows one passage of
+Scripture per day, a short reflection beside it, and gives you somewhere to
+save the verses worth keeping and write your own thoughts. Everything you
+create stays on your device.
 
 ---
 
-## What it is
+## What it does
 
-One HTML file, one service worker, one manifest, two icons. No framework, no
-build step, no dependencies. `npm` is used only for the test and config
-tooling — the app itself runs by opening `index.html`.
+- **Today** — the day's verse, set in serif and carrying its reference and
+  translation. A rail of the last four weeks sits above it, so yesterday is one
+  tap away and today is always one tap back.
+- **Saved** — the verses you kept, and the reflections you wrote, in one place.
+- **Reflections** — an optional private note against any day, with the verse it
+  was written about kept alongside it.
+- **Offline** — the whole app, including every verse, works with no connection.
 
+## Where the Scripture comes from
+
+Every verse is quoted from the **World English Bible** (WEB), which is in the
+public domain. Nothing is paraphrased and nothing is typed from memory.
+
+The text is *derived*, not authored. `scripts/scripture.js` fetches each
+reference from [bible-api.com](https://bible-api.com/), checks that the
+reference returned is the one that was asked for, and writes the result into
+the `SCRIPTURE` region of `index.html`. A fetch that cannot source every
+reference writes nothing at all.
+
+```bash
+npm run scripture:verify
 ```
-index.html              the entire application: tokens, shell, engine, demo
-sw.js                   offline shell, cache identity derived from APP_CONFIG
-manifest.webmanifest    install metadata, derived from APP_CONFIG
-icon-192/512.png        placeholder icons — replace them
-scripts/config.js       sync / verify static files against APP_CONFIG
-scripts/contamination.js permanent domain-residue guard
-test/harness.js         loads the app into a Node vm with a DOM stub
-test/contracts.js       the contract suite
-test/run.js             the runner
-```
 
-## What it includes
+re-fetches all of it and reports any byte that no longer matches the source, so
+the claim above is checkable rather than promised.
 
-- **App shell** — header, bottom navigation, full-page detail flows, safe-area
-  handling on all four edges, landscape and text-scaling behaviour that has
-  been through real devices.
-- **One overlay engine** — a single `MutationObserver` owning background scroll
-  lock, focus trapping and restoration, open-order stacking and ARIA state, for
-  every sheet and page. Adding a surface cannot forget any of it.
-- **Namespaced storage** — one adapter, every key prefixed with `APP_ID`,
-  honest reporting when a write cannot land, versioned migrations, and the rule
-  that absent data stays absent.
-- **Toast and confirmation** — non-blocking feedback and one confirmation
-  sheet. No `alert()`, `confirm()` or `prompt()` anywhere, enforced by a test.
-- **A design system that is enforced** — four token layers, with contracts that
-  fail the build on a raw `font-family` or an off-scale `font-size`.
-- **PWA** — installable, offline-capable, fully relative paths, and a cache
-  identity that cannot collide with another app on the same origin.
-- **A demo domain** — a small `Item` collection proving list, detail, create,
-  edit, delete, validate, persist, confirm and empty state.
-- **Contracts** — a few hundred assertions defending the foundation, not
-  thousands defending a domain.
-
-## What it deliberately does not include
-
-No authentication, no backend, no database, no account system, no API layer, no
-router, no state-management library, no component framework, no CSS framework,
-no icon package, no charting, no date library, no analytics.
-
-Those belong to a product, not to a foundation. Add them when a product
-actually needs them.
+A **Reflection** is this app's own writing and is not Scripture. It is
+labelled, set in the interface typeface rather than the serif, kept in a
+separate structure in the source, and can be switched off entirely in Settings.
 
 ## Run it
 
@@ -72,27 +56,48 @@ the file directly works but will not exercise offline behaviour.
 npm run verify
 ```
 
-That is the one command to remember. It runs the contract suite, checks that
-the static PWA files still match `APP_CONFIG`, and scans for domain residue.
-Run it before every commit and every deploy.
+The one command to remember. It runs the contract suite, checks that the static
+PWA files still match `APP_CONFIG`, and scans for residue from the foundation
+this was built on. Run it before every commit and every deploy.
 
 ```bash
-npm test              # contracts only
-npm run config:verify # identity drift only
-npm run contamination # residue scan only
-npm run config:sync   # write derived values into the static files
+npm test                   # contracts only
+npm run config:verify      # identity drift only
+npm run contamination      # residue scan only
+npm run config:sync        # write derived values into the static files
+npm run scripture:fetch    # re-source every verse from the translation
+npm run scripture:verify   # re-fetch and diff what is shipped
+npm run icons              # redraw the app icons
 ```
 
-## Start a new product
+`npm run verify` is offline and deterministic. The two scripture commands need
+a network, which is why neither is part of it.
 
-Read [NEW-PROJECT.md](NEW-PROJECT.md). The short version: set `APP_ID`, run
-`npm run config:sync`, replace the demo domain.
+## Shape of the code
+
+```
+index.html               the entire application: tokens, shell, engine, domain
+sw.js                    offline shell, cache identity derived from APP_CONFIG
+manifest.webmanifest     install metadata, derived from APP_CONFIG
+icon-192/512.png         generated by scripts/icons.js
+scripts/config.js        sync / verify static files against APP_CONFIG
+scripts/scripture.js     fetch and verify the verse text
+scripts/icons.js         draw the app icon
+scripts/contamination.js residue guard
+test/                    the harness and the contract suite
+```
+
+No framework, no build step, no dependencies. `npm` is used only for the test
+and tooling — the app itself runs by opening `index.html`.
+
+## Releasing
+
+Add an entry to `APP_UPDATES` in `index.html`, then run `npm run config:sync`.
+The newest entry *is* the version, and the service-worker cache name derives
+from it. Skipping this ships an app that cannot invalidate its own cache.
 
 ## The rest of the documentation
 
-- [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) — the UX and visual rules this
-  foundation encodes, and the anti-patterns it refuses.
-- [STARTER-ARCHITECTURE.md](STARTER-ARCHITECTURE.md) — how the pieces fit and
-  where new domain code goes.
-- [NEW-PROJECT.md](NEW-PROJECT.md) — turning this into a real product.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — how the pieces fit and where new code goes.
+- [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) — the UX and visual rules this app obeys.
 - [CLAUDE.md](CLAUDE.md) — development method for AI coding sessions.
