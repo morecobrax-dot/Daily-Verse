@@ -1,0 +1,105 @@
+{
+  "_about": "Guided study content. Teaching text is editorial - it is this app's own words and is never Scripture. Not one word of Scripture lives in this file: lessons name references, and scripture:build resolves them against the same pinned WEB corpus the daily readings come from, then emits canonical ids. A reference here that the corpus cannot resolve fails the build.",
+  "_authoring": {
+    "understandMax": 900,
+    "lookCloserMax": 200,
+    "reflectMax": 140,
+    "rules": [
+      "Ground every explanation in the passage and the context actually read, and list that context in 'basis'.",
+      "Explain what the passage says and what a reader needs to know to follow it. Do not add promises, history or doctrine the passage does not carry.",
+      "Where a reading is genuinely disputed, state it conservatively or keep it off the centre of the lesson.",
+      "Never tell a reader that God selected this lesson for them.",
+      "Teach something. Avoiding all interpretation produces a lesson that is safe and useless."
+    ]
+  },
+  "version": 1,
+  "studies": [
+    {
+      "id": "new-to-the-bible",
+      "title": "New to the Bible",
+      "summary": "What this collection actually is, the story it tells, and where to begin reading.",
+      "audience": "Someone opening it for the first time, or coming back after a long gap.",
+      "lessons": [
+        {
+          "id": "ntb-1",
+          "title": "What kind of book this is",
+          "passages": [
+            "Luke 1:1-4"
+          ],
+          "basis": [
+            "Luke 1:1-4",
+            "Luke 1:5-7"
+          ],
+          "understand": "The Bible is not one book. It is a collection of writings from different times and in different forms — histories, letters, poems, songs, legal codes — brought together as Scripture.\n\nLuke's opening shows what that means in practice. He is a named author writing to a named reader. He says others have already written accounts, that he looked into things himself, and that he is setting them down in order for a stated reason: so that Theophilus can know how reliable the things he was taught really are.\n\nThat is a useful expectation to begin with. You are not opening a single argument. You are opening a library, and each piece has an author, an audience and a purpose. Knowing which kind of writing you are in front of changes how you read it.",
+          "lookCloser": "Luke says he wrote so his reader could know the certainty of what he had been taught. What does that suggest about the kind of confidence he expected reading to produce?",
+          "reflect": "What made you want to open the Bible? Write it down before you begin — it is worth having later."
+        },
+        {
+          "id": "ntb-2",
+          "title": "The story it tells",
+          "passages": [
+            "Genesis 1:1",
+            "Revelation 21:3-4"
+          ],
+          "basis": [
+            "Genesis 1:1",
+            "Genesis 1:2-3",
+            "Revelation 21:1-5"
+          ],
+          "understand": "These two passages are separated by the whole of the Bible — the first line of the first book, and a few paragraphs from the end of the last.\n\nRead together they show that the collection has a shape. It opens with God making a world. It closes with God living among people in a world made new, with grief and death gone. Everything in between sits somewhere on that line: what went wrong, what was promised, and what was done about it.\n\nThis matters for a beginner because the Bible is easy to read as disconnected fragments — a rule here, a story there, a verse on a card. The individual parts are far easier to place once you know the collection is going somewhere, and where.",
+          "lookCloser": "Revelation's picture is of God coming down to live with people, rather than of people going up somewhere else. Does that match what you expected the Bible to be aiming at?",
+          "reflect": "Which end of that story is easier for you to believe today — the beginning, or the end?"
+        },
+        {
+          "id": "ntb-3",
+          "title": "Who Jesus is",
+          "passages": [
+            "John 1:1-5",
+            "John 1:14"
+          ],
+          "basis": [
+            "John 1:1-5",
+            "John 1:10-14",
+            "John 1:17-18",
+            "Genesis 1:1"
+          ],
+          "understand": "John opens his account of Jesus by echoing the first words of Genesis — \"In the beginning\". He is placing Jesus before the creation rather than inside it.\n\n\"The Word\" translates a Greek term his first readers would have met in discussions of the reason or order behind the world. John takes that familiar idea and does something unexpected with it: the Word is not a principle but someone — who was with God, who was God, and through whom everything was made.\n\nThen verse 14 makes the claim the rest of the book rests on: the one John has been describing did not remain outside the world he made, but took on a human life within it. John is not describing a teacher whose reputation grew after his death. He is claiming that God's own self-expression arrived in a body, and that people saw it.",
+          "lookCloser": "Why do you think John chose to open with Jesus as \"the Word\", rather than with his birth or his teaching?",
+          "reflect": "Before today, who did you understand Jesus to be?"
+        },
+        {
+          "id": "ntb-4",
+          "title": "What the good news says",
+          "passages": [
+            "1 Corinthians 15:3-5",
+            "Ephesians 2:8-9"
+          ],
+          "basis": [
+            "1 Corinthians 15:1-8",
+            "Ephesians 2:8-9"
+          ],
+          "understand": "\"Gospel\" is an old word meaning good news, and the first passage is the New Testament's own earliest summary of it. Paul says he is handing on something he himself received, which means these lines were already in circulation before he wrote them down.\n\nThe summary is short and factual: Christ died for our sins, he was buried, he was raised, and he was seen. Paul then lists people who saw him, several by name, and notes that most of them were still alive — an odd detail to include unless he expected readers to be able to ask them.\n\nThe second passage says what this news asks of you, and what it does not. It is described as a gift received rather than a wage earned. The reason given is not that effort is worthless, but that a gift leaves nobody with grounds to boast.",
+          "lookCloser": "Paul names witnesses and points out that most were still living. What kind of claim is he making by adding that detail?",
+          "reflect": "Which is harder to accept — that the news is true, or that it is free?"
+        },
+        {
+          "id": "ntb-5",
+          "title": "How to begin reading",
+          "passages": [
+            "Acts 17:11",
+            "Psalm 119:105"
+          ],
+          "basis": [
+            "Acts 17:10-12",
+            "Psalm 119:105",
+            "Psalm 119:103-104",
+            "Luke 1:1-4"
+          ],
+          "understand": "Luke describes a group in Beroea who heard Paul preach and then went and checked. They are called more noble for it — not for agreeing quickly, but for receiving eagerly and examining daily to see whether it was so. Testing what you are told is treated here as a credit, not a failure of faith.\n\nThe psalm supplies the other half. A lamp at your feet lights the next step, not the whole road. That is a realistic picture of what reading Scripture usually feels like: enough to move by, rarely enough to see the entire route at once.\n\nSo begin somewhere concrete rather than at page one. A Gospel is the usual advice, and Luke — whose opening you read in the first lesson — is a reasonable place to start. Read a section rather than a single line.",
+          "lookCloser": "The Beroeans examined daily rather than once. What would change if you treated reading as something returned to rather than finished?",
+          "reflect": "What is one question you want to keep asking as you read?"
+        }
+      ]
+    }
+  ]
+}

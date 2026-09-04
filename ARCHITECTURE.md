@@ -354,3 +354,78 @@ backup first.
 `--fs-verse` and `--fs-reflect` are the only two sizes the reader can change,
 and `:root[data-text-size="large"]` is the only thing that changes them. The
 shell keeps its size so muscle memory survives the switch.
+
+## Guided study — the data layer
+
+Shipped without an interface. The content, the Scripture pipeline and the
+storage exist and are under contract; no screen reads any of it yet.
+
+### One catalogue, two sources, one verification path
+
+```
+data/curation.json  (daily refs)  ─┐
+                                   ├─► scripture:build ─► SCRIPTURE  (union, daily flagged)
+data/studies.json   (lesson refs) ─┘                   ─► STUDIES   (teaching, ids only)
+```
+
+Both files name **references**. The build resolves the union against the one
+pinned corpus through a single `derivePassage()`, so a daily reading and a
+study reading cannot be produced by different rules and drift apart.
+
+`daily: 1` marks the passages `curation.json` named. `eligiblePassages()` tests
+that flag **first**, then the presence of a reflection. Two independent gates,
+and the flag is the one that matters: relying on a study passage merely
+happening to lack a reflection would be an accident standing in for a rule.
+
+Daily passages are emitted first, in curation order, so adding or changing a
+study cannot reorder or perturb the daily block.
+
+### Two hashes
+
+- `datasetHash` — every passage. Moves whenever a study quotes a new one.
+- `dailyHash` — the daily block alone. This is the one that answers the
+  question anyone actually has after a content change: *did the Today
+  readings move?*
+
+`scripture:verify` reports both.
+
+### Teaching records
+
+```js
+const STUDIES_VERSION = 1;
+const STUDIES = [{ id, title, summary, audience, lessons: [
+  { id, title, passages: ['JHN.1.1-5'], basis: ['John 1:1-18'],
+    understand, lookCloser?, reflect }
+]}];
+```
+
+**No verse text lives here.** A lesson carries ids; `lessonPassages()` is the
+single path from a lesson to words, so teaching and Scripture cannot drift and
+re-deriving Scripture cannot alter a line of teaching.
+
+`basis` records the passages actually read to author each explanation,
+including surrounding context. The build refuses a lesson without one, and a
+contract asserts the basis covers the passage being taught.
+
+Editorial limits live in `data/studies.json` under `_authoring` and are
+enforced by the build, not by a reviewer's judgement.
+
+### Storage — additive, no schema bump
+
+| Key | Shape |
+|---|---|
+| `data.studyProgress` | `{ id: studyId, lesson, done: [lessonId], updatedAt }` |
+| `data.studyNotes` | `{ id: 'studyId:lessonId', study, lesson, text, createdAt, updatedAt }` |
+
+`DATA_SCHEMA_VERSION` stays at **2**. Nothing that already exists changed
+shape; absent keys read as empty collections. Both are arrays of records with
+an `id`, so `exportData` includes them without being taught about them and
+`mergeBackup` merges them by id like everything else.
+
+**Study writing is not a daily reflection.** `data.notes` is one-per-calendar-day
+by construction — `isNoteRecord` requires a day key and the record id *is* the
+date. A lesson is not a day. The collections stay separate; a future Saved
+screen may list them together.
+
+The active study and completion counts are **derived** from
+`data.studyProgress`. There is no second field that can disagree.

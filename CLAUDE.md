@@ -71,6 +71,28 @@ AUDIT → UNDERSTAND → IMPLEMENT → ADVERSARIAL VERIFY → DIFF AUDIT → SHI
 - **Report** what you did, what you verified, and what you did not.
 - **Stop** at the requested phase. Do not begin the next one.
 
+### The default release path
+
+An implementation phase does not stop at a green suite. Unless something below
+says otherwise, carry it through to production:
+
+```
+BUILD → VERIFY → BROWSER QA → COMMIT → PUSH → VERIFY PRODUCTION
+```
+
+Deploy only when **all** of these hold:
+
+- every test passes
+- Scripture verification passes and the daily hash is unchanged
+- no migration or data-safety question is open
+- no explicit STOP condition was given
+- the brief did not ask for review before deployment
+
+If any one of them fails, **do not deploy**. Stop and report the reason. A
+push is not a deployment: confirm production actually serves the new version
+before calling a release done.
+
+
 ## Before changing anything
 
 1. **Run the baseline first.** `npm run verify` before you start, so you know
@@ -190,3 +212,43 @@ AUDIT → UNDERSTAND → IMPLEMENT → ADVERSARIAL VERIFY → DIFF AUDIT → SHI
 38. **The assignment ledger is the only exposure history.** How often something
     has been seen is derived from it. A second counter would be a parallel
     source of truth that can disagree.
+
+## Guided study (Learn)
+
+The first content in this app that *interprets* Scripture rather than quoting
+it. That is a different kind of risk and these rules exist because of it.
+
+39. **A lesson never contains Scripture text.** `STUDIES` carries canonical
+    passage ids; the words come from `SCRIPTURE` at render time. A verse typed
+    into an explanation is a verse this app asserts on its own authority,
+    outside the derived region and outside every check that defends it.
+    The build refuses any run of six shipped words in lesson prose, and a
+    contract checks the shipped bytes too. Naming a phrase is how teaching
+    works and stays legal; six consecutive words is the verse. This is
+    enforced because it happened — John 1:14 shipped inside an explanation.
+40. **Every explanation records its `basis`** — the passages actually read to
+    write it, including the surrounding context. An explanation whose ground
+    cannot be checked cannot be reviewed, and the build refuses one.
+41. **Daily eligibility is the `daily` flag, tested first.** The catalogue
+    holds passages that exist only because a study quotes them. Never rely on
+    such a passage merely happening to have no reflection — that is an
+    accident standing in for a rule.
+42. **Study Scripture goes in `data/studies.json`, never in
+    `data/curation.json`.** Adding it to the curation would enrol it in the
+    Today rotation, where it was never meant to be read alone.
+43. **Teaching stays inside the declared limits** in `data/studies.json`
+    (`understandMax`, `lookCloserMax`, `reflectMax`). The build fails over
+    them. They are the mechanism that keeps a lesson readable on a phone;
+    raising one to fit an explanation is the wrong direction — cut the
+    explanation.
+44. **Where a reading is genuinely disputed**, state it conservatively or keep
+    it off the centre of the lesson. Do not present one tradition's reading as
+    the only one. Equally, do not strip a lesson of all interpretation — a
+    lesson that teaches nothing is not safe, it is useless.
+45. **Study writing is not a daily reflection.** `data.notes` is
+    one-per-calendar-day by construction (`isNoteRecord` requires a day key and
+    the id *is* the date). Lesson writing lives in `data.studyNotes`. Show them
+    together if that helps a reader; never merge the collections.
+46. **Study progress is derived where it can be.** The active study and
+    completion counts come from `data.studyProgress`; do not add a second
+    field that can disagree with it.

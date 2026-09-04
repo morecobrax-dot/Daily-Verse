@@ -110,6 +110,11 @@
      because they are the only sizes the reader is allowed to change, and a
      preference that also resized the tab bar would be a different feature. */
   --fs-verse: 22px;     /* Scripture — the thing the screen exists to show */
+  /* Scripture inside a lesson. Still the largest thing on that page, but a
+     study passage is read within an argument rather than contemplated on its
+     own, and at the hero size a four-verse reading filled a whole phone screen
+     before any teaching appeared. */
+  --fs-verse-lesson: 19px;
   --fs-reflect: 15px;   /* the reflection that sits beside it */
 
   --lh-tight: 1.2;
@@ -181,6 +186,7 @@
    nothing else, so the shell stays exactly where muscle memory left it. */
 :root[data-text-size="large"]{
   --fs-verse: 27px;
+  --fs-verse-lesson: 23px;
   --fs-reflect: 17px;
 }
 
@@ -722,6 +728,170 @@ blockquote.verse-text{
   border-radius: var(--radius-md); padding: var(--space-md);
 }
 
+/* ---- Learn ------------------------------------------------------
+   The rule this section is built on: Scripture keeps the strongest
+   presence, and everything else earns its hierarchy from type, spacing and
+   position rather than from another bordered box. A lesson that put each
+   part in its own card would read as a worksheet.
+
+   Only two surfaces appear here — the verse card, which already exists, and
+   one quiet inset for the observation question. */
+
+/* Resume. A single tap back into the thing already begun, so it is a button
+   rather than a panel with a button inside it. */
+.continue-card{
+  display: block; width: 100%; text-align: left;
+  min-height: var(--touch-min);
+  padding: var(--space-lg);
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md); cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.continue-card:hover{ border-color: var(--accent); }
+.continue-study{
+  display: block; font-size: var(--fs-title); font-weight: 600; color: var(--text);
+}
+.continue-lesson{
+  display: block; margin-top: 2px;
+  font-size: var(--fs-body); color: var(--text-dim);
+}
+.continue-meta{
+  display: block; margin-top: var(--space-sm);
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-faint);
+}
+
+.start-here-body{
+  font-size: var(--fs-support); color: var(--text-dim);
+  margin-bottom: var(--space-lg);
+}
+
+/* A study in the list. The count is a count of lessons, never a percentage —
+   "3 of 5" is a fact, a percentage reads as a score. */
+/* A study row is not a settings row. `.list-row-desc` is a single nowrap line
+   with an ellipsis, which cut the summary mid-word — the one line that tells
+   someone what a guide is for is worth two lines of space. */
+.study-row{ align-items: flex-start; padding-top: var(--space-lg); padding-bottom: var(--space-lg); }
+.study-row .list-row-desc{
+  white-space: normal; line-height: var(--lh-body);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.study-meta{
+  display: block; margin-top: var(--space-sm);
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-faint);
+}
+.progress-track{
+  display: block; margin-top: var(--space-sm);
+  height: 2px; border-radius: var(--radius-pill);
+  background: var(--border); overflow: hidden;
+}
+.progress-fill{
+  display: block; height: 100%; border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+/* The study page. A heading, two lines of orientation, then the lessons. */
+.study-heading{
+  font-size: var(--fs-display); font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: var(--space-sm);
+}
+.study-summary{
+  font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-dim);
+  margin-bottom: var(--space-sm);
+}
+.study-audience{
+  font-size: var(--fs-support); line-height: var(--lh-body); color: var(--text-faint);
+}
+.study-count{
+  margin-top: var(--space-lg);
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-faint);
+}
+
+/* A lesson row. The number is the ordering; state is a mark AND a word, so
+   nothing about progress is carried by colour alone. */
+.lesson-row{ gap: var(--space-md); }
+.lesson-num{
+  flex-shrink: 0; width: 22px;
+  font-family: var(--font-mono); font-size: var(--fs-support); font-weight: 600;
+  color: var(--text-faint); text-align: center;
+}
+.lesson-row.is-done .lesson-num{ color: var(--success); }
+.lesson-state{ flex-shrink: 0; display: inline-flex; align-items: center; }
+.lesson-state.is-done{ color: var(--success); }
+.lesson-state.is-next{
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent);
+}
+
+/* Finishing says so once, quietly, and offers nothing to collect. */
+.study-done{
+  margin-top: var(--space-xl); padding: var(--space-lg);
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--success); border-radius: var(--radius-md);
+}
+.study-done-title{
+  font-size: var(--fs-title); font-weight: 600; color: var(--text);
+  margin-bottom: var(--space-xs);
+}
+.study-done-body{
+  font-size: var(--fs-support); line-height: var(--lh-body); color: var(--text-dim);
+}
+
+/* The lesson page. */
+.lesson-position{
+  flex-shrink: 0; min-width: var(--touch-min); text-align: right;
+  padding-right: var(--space-sm);
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.08em; color: var(--text-faint);
+}
+.lesson-heading{
+  font-size: var(--fs-section); font-weight: 700; letter-spacing: -0.01em;
+  margin-bottom: var(--space-xs);
+}
+.lesson-passage{ margin-bottom: var(--space-sm); box-shadow: var(--shadow-md), inset 0 1px 0 var(--edge-hi); }
+.lesson-passage .verse-text{ font-size: var(--fs-verse-lesson); }
+.lesson-passage:last-of-type{ margin-bottom: 0; }
+
+/* Teaching. Set in the interface face at the reading size, as prose on the
+   page rather than in a card — it relates to the reflection treatment by
+   type and colour, which is enough to mark it as this app's own words
+   without walling it off in another box. */
+.lesson-prose p{
+  font-size: var(--fs-reflect); line-height: var(--lh-body); color: var(--text-dim);
+  margin-bottom: var(--space-md);
+}
+.lesson-prose p:last-child{ margin-bottom: 0; }
+
+/* The one inset on the page. A question to sit with, not a field to fill in. */
+.look-closer{
+  padding: var(--space-md) var(--space-lg);
+  border-left: 2px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: var(--fs-reflect); line-height: var(--lh-body); color: var(--text-dim);
+}
+
+.reflect-prompt{
+  font-size: var(--fs-reflect); line-height: var(--lh-body); color: var(--text);
+  margin-bottom: var(--space-md);
+}
+
+/* Continue sits at the END of the scroll rather than pinned to the sheet.
+   Pinned, it would be visible from the top of a lesson nobody had read yet,
+   and it would compete with the software keyboard for the same strip of
+   screen while someone is writing. */
+.lesson-continue{ margin-top: var(--space-2xl); }
+.lesson-done-note{
+  display: flex; align-items: center; justify-content: center; gap: var(--space-xs);
+  margin-top: var(--space-md);
+  font-size: var(--fs-meta); color: var(--success);
+}
+
+
 /* ---- A saved verse or a written note, in a list ---- */
 .verse-row{
   display: block; width: 100%; text-align: left;
@@ -943,6 +1113,11 @@ body.scroll-locked{
     <div id="todayBody"></div>
   </main>
 
+  <!-- LEARN — guided study, optional and never in Today's way -->
+  <main class="view" id="view-learn">
+    <div id="learnBody"></div>
+  </main>
+
   <!-- SAVED — the verses kept, and the reflections written -->
   <main class="view" id="view-saved">
     <div class="segmented" role="tablist" aria-label="What to show" id="savedFilter">
@@ -1014,13 +1189,16 @@ body.scroll-locked{
   </main>
 
   <nav class="tabbar" aria-label="Main">
-    <button class="tab-btn active" data-tab="today" onclick="switchTab('today')">
+    <button class="tab-btn active" data-tab="today" aria-current="page" onclick="goToTab('today')">
       <span class="glyph" aria-hidden="true"></span>Today
     </button>
-    <button class="tab-btn" data-tab="saved" onclick="switchTab('saved')">
+    <button class="tab-btn" data-tab="learn" onclick="goToTab('learn')">
+      <span class="glyph" aria-hidden="true"></span>Learn
+    </button>
+    <button class="tab-btn" data-tab="saved" onclick="goToTab('saved')">
       <span class="glyph" aria-hidden="true"></span>Saved
     </button>
-    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">
+    <button class="tab-btn" data-tab="settings" onclick="goToTab('settings')">
       <span class="glyph" aria-hidden="true"></span>Settings
     </button>
   </nav>
@@ -1049,6 +1227,30 @@ body.scroll-locked{
       <button class="btn-secondary" onclick="closeNote()">Cancel</button>
       <button class="btn-primary" id="noteSaveBtn" onclick="saveNote()">Save reflection</button>
     </div>
+  </div>
+</div>
+
+<!-- A STUDY — its lessons, and how far through them someone is -->
+<div class="overlay overlay-page" id="studyOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeStudy()" aria-label="Back"></button>
+      <div class="page-topbar-title" id="studyTitle">Study</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="studyBody"></div>
+  </div>
+</div>
+
+<!-- A LESSON — one page, one scroll, opened over its study -->
+<div class="overlay overlay-page" id="lessonOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeLesson()" aria-label="Back"></button>
+      <div class="page-topbar-title" id="lessonTitle">Lesson</div>
+      <span class="lesson-position" id="lessonPosition"></span>
+    </div>
+    <div class="sheet-scroll" id="lessonBody"></div>
   </div>
 </div>
 
@@ -1243,6 +1445,24 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v1-2-0',
+    version: '1.2.0',
+    title: 'Learn',
+    date: '2026-09-04',
+    summary: 'A new place to understand Scripture rather than only read it, ' +
+             'starting with a short guide for anyone who has never known where to begin.',
+    newFeatures: [
+      'Learn — guided studies that walk through a passage and what it is saying',
+      'New to the Bible: five lessons on what this collection is and how to start reading it',
+      'Write a private reflection on any lesson, kept on this device like every other note',
+      'Your place in a study is remembered, so you can put it down and come back'
+    ],
+    improvements: [
+      'Lesson passages use the same verified World English Bible text as the daily reading'
+    ],
+    fixes: []
+  },
+  {
     id: 'v1-1-0',
     version: '1.1.0',
     title: 'A fuller year',
@@ -1306,6 +1526,15 @@ const KEYS = {
      only exposure history kept — how often something has been seen is
      derived from this rather than counted alongside it. */
   assignments:    'data.assignments',
+
+  /* Guided study. Deliberately NOT folded into data.notes: a note there is
+     structurally one-per-calendar-day (isNoteRecord requires a day key, and
+     its id IS the date), and a lesson is not a day. Forcing lesson writing
+     into that collection would break the invariant the daily side depends
+     on. Two collections, and one place to read them both. */
+  studyProgress:  'data.studyProgress',
+  studyNotes:     'data.studyNotes',
+
   noteDraft:      'draft.note'
 };
 
@@ -1848,6 +2077,10 @@ function bookmarkIcon(s){ return svg('<path d="M4.2 2.6h7.6v10.8L8 10.8l-3.8 2.6
 /* The saved state changes the mark AND the word beside it — a fill alone
    would be state carried by nothing but a shape most people never compare. */
 function bookmarkFilledIcon(s){ return svg('<path d="M4.2 2.6h7.6v10.8L8 10.8l-3.8 2.6z" fill="currentColor"/>', s); }
+/* A compass, not a book. Today already carries the open book, and two book
+   glyphs side by side in the tab bar were indistinguishable in testing. A
+   compass also says what this tab is for: knowing where to start. */
+function compassIcon(s){ return svg('<circle cx="8" cy="8" r="5.9"/><path d="M10.4 5.6 9.1 9.1 5.6 10.4 6.9 6.9Z"/>', s); }
 function shareIcon(s){ return svg('<path d="M8 10.2V2.6"/><path d="M5.4 5.2 8 2.6l2.6 2.6"/><path d="M3.6 8.2v4.2a1 1 0 0 0 1 1h6.8a1 1 0 0 0 1-1V8.2"/>', s); }
 
 function tabIcon(name){ return svg((Domain.tabIcons && Domain.tabIcons[name]) || '', 18); }
@@ -1865,7 +2098,14 @@ function switchTab(tab){
   const view = document.getElementById('view-' + tab);
   if(!view) return;
   currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  /* The active tab is announced, not merely tinted. Colour alone leaves a
+     screen reader with four identical buttons and no sense of place, and it
+     is the one cue a colour-blind reader may not receive either. */
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const on = b.dataset.tab === tab;
+    b.classList.toggle('active', on);
+    if(on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   view.classList.add('active');
   /* A top-level tab opens at its top. Restoring an arbitrary scroll position
@@ -1930,25 +2170,40 @@ function renderAll(){
 }
 
 /* =========================================================
-   SCRIPTURE — the quoted text
+   SCRIPTURE AND STUDIES — the quoted text, and the teaching
    ---------------------------------------------------------
    DERIVED, NOT TYPED. Every character between the markers is
-   written by `node scripts/scripture.js fetch`, which pulls each
-   reference from a public-domain translation and refuses to write
-   anything if a single one fails.
+   written by `npm run scripture:build` from the corpus pinned in
+   data/corpus.lock.json, plus the content in data/curation.json
+   and data/studies.json. A build that cannot derive every passage
+   writes nothing at all.
 
    Do not hand-edit a verse here, ever — not to fix a typo, not to
    shorten one that wraps awkwardly. A verse edited by hand is a
    verse this app is asserting on its own authority, which is the
-   one thing a Bible app must never do. Change the curation in the
-   script and re-fetch.
+   one thing a Bible app must never do. Change the curation and
+   rebuild.
 
-   `node scripts/scripture.js verify` re-fetches and diffs, so the
-   claim that these bytes match the source is checkable rather than
-   promised.
+   ONE CATALOGUE, TWO KINDS OF ENTRY
+   `daily: 1` marks a passage data/curation.json named, and only
+   those are candidates for the Today rotation. The rest exist
+   because a study quotes them: identical text, from the same
+   corpus, resolved by the same id, but never offered as a
+   standalone daily reading.
+
+   STUDIES IS TEACHING, NOT SCRIPTURE
+   It carries passage IDS and no verse text, so a lesson and the
+   passage it teaches cannot drift apart, and re-deriving Scripture
+   cannot alter a word of the teaching. `basis` records what was
+   actually read to author each explanation.
+
+   `npm run scripture:verify` re-derives everything from the cached
+   corpus and diffs it, so the claim that these bytes are the
+   published text is checkable rather than promised.
    ========================================================= */
 /* SCRIPTURE-BEGIN
- — derived by `npm run scripture:build` from the corpus in data/corpus.lock.json.
+ — derived by `npm run scripture:build` from the corpus in data/corpus.lock.json
+   and the content in data/curation.json and data/studies.json.
    Do not hand-edit. */
 const SCRIPTURE_SOURCE = {
   edition: 'eng-web',
@@ -1959,767 +2214,831 @@ const SCRIPTURE_SOURCE = {
   publisher: 'eBible.org',
   divineName: 'Yahweh',
   corpusSynced: '2026-09-04',
-  datasetHash: 'c33b03e8e66e0aafb156767a65523548744e936a1f84540f515f528046449d3f',
+  datasetHash: '5266b3b92fa24834aca9dba51426dee1f133f4c5a986f583c8811f0938f8ce98',
+  dailyHash: 'c33b03e8e66e0aafb156767a65523548744e936a1f84540f515f528046449d3f',
+  dailyCount: 378,
+  studyOnlyCount: 7,
   built: '2026-09-04'
 };
 
+/* One catalogue. `daily: 1` marks the passages the Today rotation may
+   draw from; the rest are quoted by a study and are never offered as a
+   day's reading. Both are the same verified text from the same corpus. */
 const SCRIPTURE = [
-  { id: 'GEN.2.2-3', ref: 'Genesis 2:2-3', themes: ['rest'],
+  { id: 'GEN.2.2-3', ref: 'Genesis 2:2-3', themes: ['rest'], daily: 1,
     text: 'On the seventh day God finished his work which he had done; and he rested on the seventh day from all his work which he had done. God blessed the seventh day, and made it holy, because he rested in it from all his work of creation which he had done.' },
-  { id: 'GEN.28.15', ref: 'Genesis 28:15', themes: ['fear', 'direction'],
+  { id: 'GEN.28.15', ref: 'Genesis 28:15', themes: ['fear', 'direction'], daily: 1,
     text: 'Behold, I am with you, and will keep you, wherever you go, and will bring you again into this land. For I will not leave you until I have done that which I have spoken of to you.”' },
-  { id: 'GEN.50.20', ref: 'Genesis 50:20', themes: ['hope', 'forgiveness'],
+  { id: 'GEN.50.20', ref: 'Genesis 50:20', themes: ['hope', 'forgiveness'], daily: 1,
     text: 'As for you, you meant evil against me, but God meant it for good, to save many people alive, as is happening today.' },
-  { id: 'EXO.14.14', ref: 'Exodus 14:14', themes: ['fear', 'peace'],
+  { id: 'EXO.14.14', ref: 'Exodus 14:14', themes: ['fear', 'peace'], daily: 1,
     text: 'Yahweh will fight for you, and you shall be still.”' },
-  { id: 'EXO.15.2', ref: 'Exodus 15:2', themes: ['strength', 'gratitude'],
+  { id: 'EXO.15.2', ref: 'Exodus 15:2', themes: ['strength', 'gratitude'], daily: 1,
     text: 'Yah is my strength and song. He has become my salvation. This is my God, and I will praise him; my father’s God, and I will exalt him.' },
-  { id: 'EXO.20.8-10', ref: 'Exodus 20:8-10', themes: ['rest', 'discipline'],
+  { id: 'EXO.20.8-10', ref: 'Exodus 20:8-10', themes: ['rest', 'discipline'], daily: 1,
     text: '“Remember the Sabbath day, to keep it holy. You shall labor six days, and do all your work, but the seventh day is a Sabbath to Yahweh your God. You shall not do any work in it, you, nor your son, nor your daughter, your male servant, nor your female servant, nor your livestock, nor your stranger who is within your gates;' },
-  { id: 'EXO.33.14', ref: 'Exodus 33:14', themes: ['rest', 'peace'],
+  { id: 'EXO.33.14', ref: 'Exodus 33:14', themes: ['rest', 'peace'], daily: 1,
     text: 'He said, “My presence will go with you, and I will give you rest.”' },
-  { id: 'LEV.19.18', ref: 'Leviticus 19:18', themes: ['love', 'relationships'],
+  { id: 'LEV.19.18', ref: 'Leviticus 19:18', themes: ['love', 'relationships'], daily: 1,
     text: '“‘You shall not take vengeance, nor bear any grudge against the children of your people; but you shall love your neighbor as yourself. I am Yahweh.' },
-  { id: 'NUM.6.24-26', ref: 'Numbers 6:24-26', themes: ['peace'],
+  { id: 'NUM.6.24-26', ref: 'Numbers 6:24-26', themes: ['peace'], daily: 1,
     text: '‘Yahweh bless you, and keep you. Yahweh make his face to shine on you, and be gracious to you. Yahweh lift up his face toward you, and give you peace.’' },
-  { id: 'DEU.6.5-7', ref: 'Deuteronomy 6:5-7', themes: ['love', 'discipline'],
+  { id: 'DEU.6.5-7', ref: 'Deuteronomy 6:5-7', themes: ['love', 'discipline'], daily: 1,
     text: 'You shall love Yahweh your God with all your heart, with all your soul, and with all your might. These words, which I command you today, shall be on your heart; and you shall teach them diligently to your children, and shall talk of them when you sit in your house, and when you walk by the way, and when you lie down, and when you rise up.' },
-  { id: 'DEU.8.2', ref: 'Deuteronomy 8:2', themes: ['direction', 'perseverance'],
+  { id: 'DEU.8.2', ref: 'Deuteronomy 8:2', themes: ['direction', 'perseverance'], daily: 1,
     text: 'You shall remember all the way which Yahweh your God has led you these forty years in the wilderness, that he might humble you, to test you, to know what was in your heart, whether you would keep his commandments or not.' },
-  { id: 'DEU.31.6', ref: 'Deuteronomy 31:6', themes: ['courage', 'fear'],
+  { id: 'DEU.31.6', ref: 'Deuteronomy 31:6', themes: ['courage', 'fear'], daily: 1,
     text: 'Be strong and courageous. Don’t be afraid or scared of them, for Yahweh your God himself is who goes with you. He will not fail you nor forsake you.”' },
-  { id: 'DEU.31.8', ref: 'Deuteronomy 31:8', themes: ['courage', 'fear'],
+  { id: 'DEU.31.8', ref: 'Deuteronomy 31:8', themes: ['courage', 'fear'], daily: 1,
     text: 'Yahweh himself is who goes before you. He will be with you. He will not fail you nor forsake you. Don’t be afraid. Don’t be discouraged.”' },
-  { id: 'JOS.1.7', ref: 'Joshua 1:7', themes: ['courage', 'discipline'],
+  { id: 'JOS.1.7', ref: 'Joshua 1:7', themes: ['courage', 'discipline'], daily: 1,
     text: 'Only be strong and very courageous. Be careful to observe to do according to all the law which Moses my servant commanded you. Don’t turn from it to the right hand or to the left, that you may have good success wherever you go.' },
-  { id: 'JOS.1.9', ref: 'Joshua 1:9', themes: ['courage', 'fear'],
+  { id: 'JOS.1.9', ref: 'Joshua 1:9', themes: ['courage', 'fear'], daily: 1,
     text: 'Haven’t I commanded you? Be strong and courageous. Don’t be afraid. Don’t be dismayed, for Yahweh your God is with you wherever you go.”' },
-  { id: 'JOS.24.15', ref: 'Joshua 24:15', themes: ['purpose', 'discipline'],
+  { id: 'JOS.24.15', ref: 'Joshua 24:15', themes: ['purpose', 'discipline'], daily: 1,
     text: 'If it seems evil to you to serve Yahweh, choose today whom you will serve; whether the gods which your fathers served that were beyond the River, or the gods of the Amorites, in whose land you dwell; but as for me and my house, we will serve Yahweh.”' },
-  { id: 'RUT.1.16', ref: 'Ruth 1:16', themes: ['love', 'relationships'],
+  { id: 'RUT.1.16', ref: 'Ruth 1:16', themes: ['love', 'relationships'], daily: 1,
     text: 'Ruth said, “Don’t urge me to leave you, and to return from following you, for where you go, I will go; and where you stay, I will stay. Your people will be my people, and your God my God.' },
-  { id: '1SA.12.24', ref: '1 Samuel 12:24', themes: ['gratitude', 'purpose'],
+  { id: '1SA.12.24', ref: '1 Samuel 12:24', themes: ['gratitude', 'purpose'], daily: 1,
     text: 'Only fear Yahweh, and serve him in truth with all your heart; for consider what great things he has done for you.' },
-  { id: '1SA.16.7', ref: '1 Samuel 16:7', themes: ['wisdom', 'relationships'],
+  { id: '1SA.16.7', ref: '1 Samuel 16:7', themes: ['wisdom', 'relationships'], daily: 1,
     text: 'But Yahweh said to Samuel, “Don’t look on his face, or on the height of his stature, because I have rejected him; for I don’t see as man sees. For man looks at the outward appearance, but Yahweh looks at the heart.”' },
-  { id: '2SA.22.31', ref: '2 Samuel 22:31', themes: ['faith', 'strength'],
+  { id: '2SA.22.31', ref: '2 Samuel 22:31', themes: ['faith', 'strength'], daily: 1,
     text: 'As for God, his way is perfect. Yahweh’s word is tested. He is a shield to all those who take refuge in him.' },
-  { id: '1CH.16.11', ref: '1 Chronicles 16:11', themes: ['strength', 'direction'],
+  { id: '1CH.16.11', ref: '1 Chronicles 16:11', themes: ['strength', 'direction'], daily: 1,
     text: 'Seek Yahweh and his strength. Seek his face forever more.' },
-  { id: '1CH.16.34', ref: '1 Chronicles 16:34', themes: ['gratitude'],
+  { id: '1CH.16.34', ref: '1 Chronicles 16:34', themes: ['gratitude'], daily: 1,
     text: 'Oh give thanks to Yahweh, for he is good, for his loving kindness endures forever.' },
-  { id: '1CH.28.20', ref: '1 Chronicles 28:20', themes: ['courage', 'perseverance'],
+  { id: '1CH.28.20', ref: '1 Chronicles 28:20', themes: ['courage', 'perseverance'], daily: 1,
     text: 'David said to Solomon his son, “Be strong and courageous, and do it. Don’t be afraid, nor be dismayed, for Yahweh God, even my God, is with you. He will not fail you nor forsake you, until all the work for the service of Yahweh’s house is finished.' },
-  { id: '2CH.15.7', ref: '2 Chronicles 15:7', themes: ['perseverance', 'courage'],
+  { id: '2CH.15.7', ref: '2 Chronicles 15:7', themes: ['perseverance', 'courage'], daily: 1,
     text: 'But you be strong! Don’t let your hands be slack, for your work will be rewarded.”' },
-  { id: '2CH.20.15', ref: '2 Chronicles 20:15', themes: ['fear', 'faith'],
+  { id: '2CH.20.15', ref: '2 Chronicles 20:15', themes: ['fear', 'faith'], daily: 1,
     text: 'and he said, “Listen, all Judah, and you inhabitants of Jerusalem, and you, King Jehoshaphat. Yahweh says to you, ‘Don’t be afraid, and don’t be dismayed because of this great multitude; for the battle is not yours, but God’s.' },
-  { id: 'NEH.8.10', ref: 'Nehemiah 8:10', themes: ['strength', 'gratitude'],
+  { id: 'NEH.8.10', ref: 'Nehemiah 8:10', themes: ['strength', 'gratitude'], daily: 1,
     text: 'Then he said to them, “Go your way. Eat the fat, drink the sweet, and send portions to him for whom nothing is prepared, for today is holy to our Lord. Don’t be grieved, for the joy of Yahweh is your strength.”' },
-  { id: 'NEH.9.17', ref: 'Nehemiah 9:17', themes: ['forgiveness', 'patience'],
+  { id: 'NEH.9.17', ref: 'Nehemiah 9:17', themes: ['forgiveness', 'patience'], daily: 1,
     text: 'and refused to obey. They weren’t mindful of your wonders that you did among them, but hardened their neck, and in their rebellion appointed a captain to return to their bondage. But you are a God ready to pardon, gracious and merciful, slow to anger, and abundant in loving kindness, and didn’t forsake them.' },
-  { id: 'EST.4.14', ref: 'Esther 4:14', themes: ['purpose', 'courage'],
+  { id: 'EST.4.14', ref: 'Esther 4:14', themes: ['purpose', 'courage'], daily: 1,
     text: 'For if you remain silent now, then relief and deliverance will come to the Jews from another place, but you and your father’s house will perish. Who knows if you haven’t come to the kingdom for such a time as this?”' },
-  { id: 'JOB.1.21', ref: 'Job 1:21', themes: ['grief', 'faith'],
+  { id: 'JOB.1.21', ref: 'Job 1:21', themes: ['grief', 'faith'], daily: 1,
     text: 'He said, “Naked I came out of my mother’s womb, and naked will I return there. Yahweh gave, and Yahweh has taken away. Blessed be Yahweh’s name.”' },
-  { id: 'JOB.19.25', ref: 'Job 19:25', themes: ['hope', 'faith'],
+  { id: 'JOB.19.25', ref: 'Job 19:25', themes: ['hope', 'faith'], daily: 1,
     text: 'But as for me, I know that my Redeemer lives. In the end, he will stand upon the earth.' },
-  { id: 'JOB.28.28', ref: 'Job 28:28', themes: ['wisdom'],
+  { id: 'JOB.28.28', ref: 'Job 28:28', themes: ['wisdom'], daily: 1,
     text: 'To man he said, ‘Behold, the fear of the Lord, that is wisdom. To depart from evil is understanding.’”' },
-  { id: 'JOB.42.2', ref: 'Job 42:2', themes: ['faith', 'purpose'],
+  { id: 'JOB.42.2', ref: 'Job 42:2', themes: ['faith', 'purpose'], daily: 1,
     text: '“I know that you can do all things, and that no purpose of yours can be restrained.' },
-  { id: 'PSA.1.1-3', ref: 'Psalm 1:1-3', themes: ['discipline', 'wisdom'],
+  { id: 'PSA.1.1-3', ref: 'Psalm 1:1-3', themes: ['discipline', 'wisdom'], daily: 1,
     text: 'Blessed is the man who doesn’t walk in the counsel of the wicked, nor stand on the path of sinners, nor sit in the seat of scoffers; but his delight is in Yahweh’s law. On his law he meditates day and night. He will be like a tree planted by the streams of water, that produces its fruit in its season, whose leaf also does not wither. Whatever he does shall prosper.' },
-  { id: 'PSA.3.5', ref: 'Psalm 3:5', themes: ['rest', 'fear'],
+  { id: 'PSA.3.5', ref: 'Psalm 3:5', themes: ['rest', 'fear'], daily: 1,
     text: 'I laid myself down and slept. I awakened, for Yahweh sustains me.' },
-  { id: 'PSA.3.6', ref: 'Psalm 3:6', themes: ['courage', 'fear'],
+  { id: 'PSA.3.6', ref: 'Psalm 3:6', themes: ['courage', 'fear'], daily: 1,
     text: 'I will not be afraid of tens of thousands of people who have set themselves against me on every side.' },
-  { id: 'PSA.4.8', ref: 'Psalm 4:8', themes: ['rest', 'peace'],
+  { id: 'PSA.4.8', ref: 'Psalm 4:8', themes: ['rest', 'peace'], daily: 1,
     text: 'In peace I will both lay myself down and sleep, for you alone, Yahweh, make me live in safety.' },
-  { id: 'PSA.5.3', ref: 'Psalm 5:3', themes: ['direction', 'discipline'],
+  { id: 'PSA.5.3', ref: 'Psalm 5:3', themes: ['direction', 'discipline'], daily: 1,
     text: 'Yahweh, in the morning you will hear my voice. In the morning I will lay my requests before you, and will watch expectantly.' },
-  { id: 'PSA.9.1', ref: 'Psalm 9:1', themes: ['gratitude'], sup: 1,
+  { id: 'PSA.9.1', ref: 'Psalm 9:1', themes: ['gratitude'], daily: 1, sup: 1,
     text: 'I will give thanks to Yahweh with my whole heart. I will tell of all your marvelous works.' },
-  { id: 'PSA.9.9-10', ref: 'Psalm 9:9-10', themes: ['faith', 'fear'],
+  { id: 'PSA.9.9-10', ref: 'Psalm 9:9-10', themes: ['faith', 'fear'], daily: 1,
     text: 'Yahweh will also be a high tower for the oppressed; a high tower in times of trouble. Those who know your name will put their trust in you, for you, Yahweh, have not forsaken those who seek you.' },
-  { id: 'PSA.16.7-8', ref: 'Psalm 16:7-8', themes: ['direction', 'peace'],
+  { id: 'PSA.16.7-8', ref: 'Psalm 16:7-8', themes: ['direction', 'peace'], daily: 1,
     text: 'I will bless Yahweh, who has given me counsel. Yes, my heart instructs me in the night seasons. I have set Yahweh always before me. Because he is at my right hand, I shall not be moved.' },
-  { id: 'PSA.16.11', ref: 'Psalm 16:11', themes: ['gratitude', 'hope'],
+  { id: 'PSA.16.11', ref: 'Psalm 16:11', themes: ['gratitude', 'hope'], daily: 1,
     text: 'You will show me the path of life. In your presence is fullness of joy. In your right hand there are pleasures forever more.' },
-  { id: 'PSA.18.1-2', ref: 'Psalm 18:1-2', themes: ['strength', 'love'], sup: 1,
+  { id: 'PSA.18.1-2', ref: 'Psalm 18:1-2', themes: ['strength', 'love'], daily: 1, sup: 1,
     text: 'I love you, Yahweh, my strength. Yahweh is my rock, my fortress, and my deliverer; my God, my rock, in whom I take refuge; my shield, and the horn of my salvation, my high tower.' },
-  { id: 'PSA.18.28', ref: 'Psalm 18:28', themes: ['hope', 'direction'],
+  { id: 'PSA.18.28', ref: 'Psalm 18:28', themes: ['hope', 'direction'], daily: 1,
     text: 'For you will light my lamp, Yahweh. My God will light up my darkness.' },
-  { id: 'PSA.19.1', ref: 'Psalm 19:1', themes: ['gratitude', 'wisdom'], sup: 1,
+  { id: 'PSA.19.1', ref: 'Psalm 19:1', themes: ['gratitude', 'wisdom'], daily: 1, sup: 1,
     text: 'The heavens declare the glory of God. The expanse shows his handiwork.' },
-  { id: 'PSA.19.14', ref: 'Psalm 19:14', themes: ['discipline', 'purpose'],
+  { id: 'PSA.19.14', ref: 'Psalm 19:14', themes: ['discipline', 'purpose'], daily: 1,
     text: 'Let the words of my mouth and the meditation of my heart be acceptable in your sight, Yahweh, my rock, and my redeemer.' },
-  { id: 'PSA.20.7', ref: 'Psalm 20:7', themes: ['faith'],
+  { id: 'PSA.20.7', ref: 'Psalm 20:7', themes: ['faith'], daily: 1,
     text: 'Some trust in chariots, and some in horses, but we trust in the name of Yahweh our God.' },
-  { id: 'PSA.23.1-3', ref: 'Psalm 23:1-3', themes: ['rest', 'peace'], sup: 1,
+  { id: 'PSA.23.1-3', ref: 'Psalm 23:1-3', themes: ['rest', 'peace'], daily: 1, sup: 1,
     text: 'Yahweh is my shepherd; I shall lack nothing. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul. He guides me in the paths of righteousness for his name’s sake.' },
-  { id: 'PSA.23.4', ref: 'Psalm 23:4', themes: ['fear', 'grief'],
+  { id: 'PSA.23.4', ref: 'Psalm 23:4', themes: ['fear', 'grief'], daily: 1,
     text: 'Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me. Your rod and your staff, they comfort me.' },
-  { id: 'PSA.25.4-5', ref: 'Psalm 25:4-5', themes: ['direction'],
+  { id: 'PSA.25.4-5', ref: 'Psalm 25:4-5', themes: ['direction'], daily: 1,
     text: 'Show me your ways, Yahweh. Teach me your paths. Guide me in your truth, and teach me, for you are the God of my salvation. I wait for you all day long.' },
-  { id: 'PSA.27.1', ref: 'Psalm 27:1', themes: ['courage', 'fear'], sup: 1,
+  { id: 'PSA.27.1', ref: 'Psalm 27:1', themes: ['courage', 'fear'], daily: 1, sup: 1,
     text: 'Yahweh is my light and my salvation. Whom shall I fear? Yahweh is the strength of my life. Of whom shall I be afraid?' },
-  { id: 'PSA.27.11', ref: 'Psalm 27:11', themes: ['direction'],
+  { id: 'PSA.27.11', ref: 'Psalm 27:11', themes: ['direction'], daily: 1,
     text: 'Teach me your way, Yahweh. Lead me in a straight path, because of my enemies.' },
-  { id: 'PSA.27.13-14', ref: 'Psalm 27:13-14', themes: ['hope', 'patience'],
+  { id: 'PSA.27.13-14', ref: 'Psalm 27:13-14', themes: ['hope', 'patience'], daily: 1,
     text: 'I am still confident of this: I will see the goodness of Yahweh in the land of the living. Wait for Yahweh. Be strong, and let your heart take courage. Yes, wait for Yahweh.' },
-  { id: 'PSA.28.7', ref: 'Psalm 28:7', themes: ['strength', 'gratitude'],
+  { id: 'PSA.28.7', ref: 'Psalm 28:7', themes: ['strength', 'gratitude'], daily: 1,
     text: 'Yahweh is my strength and my shield. My heart has trusted in him, and I am helped. Therefore my heart greatly rejoices. With my song I will thank him.' },
-  { id: 'PSA.29.11', ref: 'Psalm 29:11', themes: ['peace', 'strength'],
+  { id: 'PSA.29.11', ref: 'Psalm 29:11', themes: ['peace', 'strength'], daily: 1,
     text: 'Yahweh will give strength to his people. Yahweh will bless his people with peace.' },
-  { id: 'PSA.30.5', ref: 'Psalm 30:5', themes: ['grief', 'hope'],
+  { id: 'PSA.30.5', ref: 'Psalm 30:5', themes: ['grief', 'hope'], daily: 1,
     text: 'For his anger is but for a moment. His favor is for a lifetime. Weeping may stay for the night, but joy comes in the morning.' },
-  { id: 'PSA.30.11-12', ref: 'Psalm 30:11-12', themes: ['gratitude', 'grief'],
+  { id: 'PSA.30.11-12', ref: 'Psalm 30:11-12', themes: ['gratitude', 'grief'], daily: 1,
     text: 'You have turned my mourning into dancing for me. You have removed my sackcloth, and clothed me with gladness, to the end that my heart may sing praise to you, and not be silent. Yahweh my God, I will give thanks to you forever!' },
-  { id: 'PSA.31.24', ref: 'Psalm 31:24', themes: ['courage', 'hope'],
+  { id: 'PSA.31.24', ref: 'Psalm 31:24', themes: ['courage', 'hope'], daily: 1,
     text: 'Be strong, and let your heart take courage, all you who hope in Yahweh.' },
-  { id: 'PSA.32.1-2', ref: 'Psalm 32:1-2', themes: ['forgiveness'], sup: 1,
+  { id: 'PSA.32.1-2', ref: 'Psalm 32:1-2', themes: ['forgiveness'], daily: 1, sup: 1,
     text: 'Blessed is he whose disobedience is forgiven, whose sin is covered. Blessed is the man to whom Yahweh doesn’t impute iniquity, in whose spirit there is no deceit.' },
-  { id: 'PSA.32.8', ref: 'Psalm 32:8', themes: ['direction'],
+  { id: 'PSA.32.8', ref: 'Psalm 32:8', themes: ['direction'], daily: 1,
     text: 'I will instruct you and teach you in the way which you shall go. I will counsel you with my eye on you.' },
-  { id: 'PSA.33.20-22', ref: 'Psalm 33:20-22', themes: ['hope', 'patience'],
+  { id: 'PSA.33.20-22', ref: 'Psalm 33:20-22', themes: ['hope', 'patience'], daily: 1,
     text: 'Our soul has waited for Yahweh. He is our help and our shield. For our heart rejoices in him, because we have trusted in his holy name. Let your loving kindness be on us, Yahweh, since we have hoped in you.' },
-  { id: 'PSA.34.1', ref: 'Psalm 34:1', themes: ['gratitude'], sup: 1,
+  { id: 'PSA.34.1', ref: 'Psalm 34:1', themes: ['gratitude'], daily: 1, sup: 1,
     text: 'I will bless Yahweh at all times. His praise will always be in my mouth.' },
-  { id: 'PSA.34.4', ref: 'Psalm 34:4', themes: ['fear'],
+  { id: 'PSA.34.4', ref: 'Psalm 34:4', themes: ['fear'], daily: 1,
     text: 'I sought Yahweh, and he answered me, and delivered me from all my fears.' },
-  { id: 'PSA.34.8', ref: 'Psalm 34:8', themes: ['faith', 'gratitude'],
+  { id: 'PSA.34.8', ref: 'Psalm 34:8', themes: ['faith', 'gratitude'], daily: 1,
     text: 'Oh taste and see that Yahweh is good. Blessed is the man who takes refuge in him.' },
-  { id: 'PSA.34.18', ref: 'Psalm 34:18', themes: ['grief'],
+  { id: 'PSA.34.18', ref: 'Psalm 34:18', themes: ['grief'], daily: 1,
     text: 'Yahweh is near to those who have a broken heart, and saves those who have a crushed spirit.' },
-  { id: 'PSA.36.7', ref: 'Psalm 36:7', themes: ['love', 'rest'],
+  { id: 'PSA.36.7', ref: 'Psalm 36:7', themes: ['love', 'rest'], daily: 1,
     text: 'How precious is your loving kindness, God! The children of men take refuge under the shadow of your wings.' },
-  { id: 'PSA.37.4', ref: 'Psalm 37:4', themes: ['purpose', 'faith'],
+  { id: 'PSA.37.4', ref: 'Psalm 37:4', themes: ['purpose', 'faith'], daily: 1,
     text: 'Also delight yourself in Yahweh, and he will give you the desires of your heart.' },
-  { id: 'PSA.37.5-6', ref: 'Psalm 37:5-6', themes: ['faith', 'direction'],
+  { id: 'PSA.37.5-6', ref: 'Psalm 37:5-6', themes: ['faith', 'direction'], daily: 1,
     text: 'Commit your way to Yahweh. Trust also in him, and he will do this: he will make your righteousness shine out like light, and your justice as the noon day sun.' },
-  { id: 'PSA.37.7', ref: 'Psalm 37:7', themes: ['patience', 'rest'],
+  { id: 'PSA.37.7', ref: 'Psalm 37:7', themes: ['patience', 'rest'], daily: 1,
     text: 'Rest in Yahweh, and wait patiently for him. Don’t fret because of him who prospers in his way, because of the man who makes wicked plots happen.' },
-  { id: 'PSA.37.23-24', ref: 'Psalm 37:23-24', themes: ['direction', 'perseverance'],
+  { id: 'PSA.37.23-24', ref: 'Psalm 37:23-24', themes: ['direction', 'perseverance'], daily: 1,
     text: 'A man’s steps are established by Yahweh. He delights in his way. Though he stumble, he shall not fall, for Yahweh holds him up with his hand.' },
-  { id: 'PSA.40.1', ref: 'Psalm 40:1', themes: ['patience', 'grief'], sup: 1,
+  { id: 'PSA.40.1', ref: 'Psalm 40:1', themes: ['patience', 'grief'], daily: 1, sup: 1,
     text: 'I waited patiently for Yahweh. He turned to me, and heard my cry.' },
-  { id: 'PSA.42.3-5', ref: 'Psalm 42:3-5', themes: ['grief', 'hope'],
+  { id: 'PSA.42.3-5', ref: 'Psalm 42:3-5', themes: ['grief', 'hope'], daily: 1,
     text: 'My tears have been my food day and night, while they continually ask me, “Where is your God?” These things I remember, and pour out my soul within me, how I used to go with the crowd, and led them to God’s house, with the voice of joy and praise, a multitude keeping a holy day. Why are you in despair, my soul? Why are you disturbed within me? Hope in God! For I shall still praise him for the saving help of his presence.' },
-  { id: 'PSA.42.11', ref: 'Psalm 42:11', themes: ['hope', 'grief'],
+  { id: 'PSA.42.11', ref: 'Psalm 42:11', themes: ['hope', 'grief'], daily: 1,
     text: 'Why are you in despair, my soul? Why are you disturbed within me? Hope in God! For I shall still praise him, the saving help of my countenance, and my God.' },
-  { id: 'PSA.46.1', ref: 'Psalm 46:1', themes: ['strength', 'fear'], sup: 1,
+  { id: 'PSA.46.1', ref: 'Psalm 46:1', themes: ['strength', 'fear'], daily: 1, sup: 1,
     text: 'God is our refuge and strength, a very present help in trouble.' },
-  { id: 'PSA.46.10', ref: 'Psalm 46:10', themes: ['rest', 'peace'],
+  { id: 'PSA.46.10', ref: 'Psalm 46:10', themes: ['rest', 'peace'], daily: 1,
     text: '“Be still, and know that I am God. I will be exalted among the nations. I will be exalted on the earth.”' },
-  { id: 'PSA.48.14', ref: 'Psalm 48:14', themes: ['direction', 'faith'],
+  { id: 'PSA.48.14', ref: 'Psalm 48:14', themes: ['direction', 'faith'], daily: 1,
     text: 'For this God is our God forever and ever. He will be our guide even to death.' },
-  { id: 'PSA.51.10', ref: 'Psalm 51:10', themes: ['forgiveness', 'discipline'],
+  { id: 'PSA.51.10', ref: 'Psalm 51:10', themes: ['forgiveness', 'discipline'], daily: 1,
     text: 'Create in me a clean heart, O God. Renew a right spirit within me.' },
-  { id: 'PSA.55.22', ref: 'Psalm 55:22', themes: ['peace', 'fear'],
+  { id: 'PSA.55.22', ref: 'Psalm 55:22', themes: ['peace', 'fear'], daily: 1,
     text: 'Cast your burden on Yahweh and he will sustain you. He will never allow the righteous to be moved.' },
-  { id: 'PSA.56.3-4', ref: 'Psalm 56:3-4', themes: ['fear', 'faith'],
+  { id: 'PSA.56.3-4', ref: 'Psalm 56:3-4', themes: ['fear', 'faith'], daily: 1,
     text: 'When I am afraid, I will put my trust in you. In God, I praise his word. In God, I put my trust. I will not be afraid. What can flesh do to me?' },
-  { id: 'PSA.56.8', ref: 'Psalm 56:8', themes: ['grief', 'love'],
+  { id: 'PSA.56.8', ref: 'Psalm 56:8', themes: ['grief', 'love'], daily: 1,
     text: 'You count my wanderings. You put my tears into your container. Aren’t they in your book?' },
-  { id: 'PSA.57.2', ref: 'Psalm 57:2', themes: ['purpose', 'faith'],
+  { id: 'PSA.57.2', ref: 'Psalm 57:2', themes: ['purpose', 'faith'], daily: 1,
     text: 'I cry out to God Most High, to God who accomplishes my requests for me.' },
-  { id: 'PSA.62.1-2', ref: 'Psalm 62:1-2', themes: ['rest', 'faith'], sup: 1,
+  { id: 'PSA.62.1-2', ref: 'Psalm 62:1-2', themes: ['rest', 'faith'], daily: 1, sup: 1,
     text: 'My soul rests in God alone. My salvation is from him. He alone is my rock, my salvation, and my fortress. I will never be greatly shaken.' },
-  { id: 'PSA.62.5-6', ref: 'Psalm 62:5-6', themes: ['hope', 'rest'],
+  { id: 'PSA.62.5-6', ref: 'Psalm 62:5-6', themes: ['hope', 'rest'], daily: 1,
     text: 'My soul, wait in silence for God alone, for my expectation is from him. He alone is my rock and my salvation, my fortress. I will not be shaken.' },
-  { id: 'PSA.62.8', ref: 'Psalm 62:8', themes: ['faith', 'grief'],
+  { id: 'PSA.62.8', ref: 'Psalm 62:8', themes: ['faith', 'grief'], daily: 1,
     text: 'Trust in him at all times, you people. Pour out your heart before him. God is a refuge for us. Selah.' },
-  { id: 'PSA.63.1', ref: 'Psalm 63:1', themes: ['purpose', 'direction'], sup: 1,
+  { id: 'PSA.63.1', ref: 'Psalm 63:1', themes: ['purpose', 'direction'], daily: 1, sup: 1,
     text: 'God, you are my God. I will earnestly seek you. My soul thirsts for you. My flesh longs for you, in a dry and weary land, where there is no water.' },
-  { id: 'PSA.68.19', ref: 'Psalm 68:19', themes: ['gratitude', 'strength'],
+  { id: 'PSA.68.19', ref: 'Psalm 68:19', themes: ['gratitude', 'strength'], daily: 1,
     text: 'Blessed be the Lord, who daily bears our burdens, even the God who is our salvation. Selah.' },
-  { id: 'PSA.71.14', ref: 'Psalm 71:14', themes: ['hope', 'perseverance'],
+  { id: 'PSA.71.14', ref: 'Psalm 71:14', themes: ['hope', 'perseverance'], daily: 1,
     text: 'But I will always hope, and will add to all of your praise.' },
-  { id: 'PSA.73.26', ref: 'Psalm 73:26', themes: ['strength', 'grief'],
+  { id: 'PSA.73.26', ref: 'Psalm 73:26', themes: ['strength', 'grief'], daily: 1,
     text: 'My flesh and my heart fails, but God is the strength of my heart and my portion forever.' },
-  { id: 'PSA.84.5', ref: 'Psalm 84:5', themes: ['strength', 'direction'],
+  { id: 'PSA.84.5', ref: 'Psalm 84:5', themes: ['strength', 'direction'], daily: 1,
     text: 'Blessed are those whose strength is in you, who have set their hearts on a pilgrimage.' },
-  { id: 'PSA.84.11', ref: 'Psalm 84:11', themes: ['hope', 'gratitude'],
+  { id: 'PSA.84.11', ref: 'Psalm 84:11', themes: ['hope', 'gratitude'], daily: 1,
     text: 'For Yahweh God is a sun and a shield. Yahweh will give grace and glory. He withholds no good thing from those who walk blamelessly.' },
-  { id: 'PSA.86.5', ref: 'Psalm 86:5', themes: ['forgiveness'],
+  { id: 'PSA.86.5', ref: 'Psalm 86:5', themes: ['forgiveness'], daily: 1,
     text: 'For you, Lord, are good, and ready to forgive, abundant in loving kindness to all those who call on you.' },
-  { id: 'PSA.90.12', ref: 'Psalm 90:12', themes: ['wisdom', 'purpose'],
+  { id: 'PSA.90.12', ref: 'Psalm 90:12', themes: ['wisdom', 'purpose'], daily: 1,
     text: 'So teach us to count our days, that we may gain a heart of wisdom.' },
-  { id: 'PSA.91.1-2', ref: 'Psalm 91:1-2', themes: ['rest', 'fear'],
+  { id: 'PSA.91.1-2', ref: 'Psalm 91:1-2', themes: ['rest', 'fear'], daily: 1,
     text: 'He who dwells in the secret place of the Most High will rest in the shadow of the Almighty. I will say of Yahweh, “He is my refuge and my fortress; my God, in whom I trust.”' },
-  { id: 'PSA.91.4', ref: 'Psalm 91:4', themes: ['fear', 'rest'],
+  { id: 'PSA.91.4', ref: 'Psalm 91:4', themes: ['fear', 'rest'], daily: 1,
     text: 'He will cover you with his feathers. Under his wings you will take refuge. His faithfulness is your shield and rampart.' },
-  { id: 'PSA.94.19', ref: 'Psalm 94:19', themes: ['fear', 'peace'],
+  { id: 'PSA.94.19', ref: 'Psalm 94:19', themes: ['fear', 'peace'], daily: 1,
     text: 'In the multitude of my thoughts within me, your comforts delight my soul.' },
-  { id: 'PSA.95.2', ref: 'Psalm 95:2', themes: ['gratitude'],
+  { id: 'PSA.95.2', ref: 'Psalm 95:2', themes: ['gratitude'], daily: 1,
     text: 'Let’s come before his presence with thanksgiving. Let’s extol him with songs!' },
-  { id: 'PSA.100.4', ref: 'Psalm 100:4', themes: ['gratitude'],
+  { id: 'PSA.100.4', ref: 'Psalm 100:4', themes: ['gratitude'], daily: 1,
     text: 'Enter into his gates with thanksgiving, and into his courts with praise. Give thanks to him, and bless his name.' },
-  { id: 'PSA.103.1-2', ref: 'Psalm 103:1-2', themes: ['gratitude'], sup: 1,
+  { id: 'PSA.103.1-2', ref: 'Psalm 103:1-2', themes: ['gratitude'], daily: 1, sup: 1,
     text: 'Praise Yahweh, my soul! All that is within me, praise his holy name! Praise Yahweh, my soul, and don’t forget all his benefits,' },
-  { id: 'PSA.103.12', ref: 'Psalm 103:12', themes: ['forgiveness'],
+  { id: 'PSA.103.12', ref: 'Psalm 103:12', themes: ['forgiveness'], daily: 1,
     text: 'As far as the east is from the west, so far has he removed our transgressions from us.' },
-  { id: 'PSA.105.4', ref: 'Psalm 105:4', themes: ['strength', 'direction'],
+  { id: 'PSA.105.4', ref: 'Psalm 105:4', themes: ['strength', 'direction'], daily: 1,
     text: 'Seek Yahweh and his strength. Seek his face forever more.' },
-  { id: 'PSA.107.1', ref: 'Psalm 107:1', themes: ['gratitude'],
+  { id: 'PSA.107.1', ref: 'Psalm 107:1', themes: ['gratitude'], daily: 1,
     text: 'Give thanks to Yahweh, for he is good, for his loving kindness endures forever.' },
-  { id: 'PSA.111.10', ref: 'Psalm 111:10', themes: ['wisdom'],
+  { id: 'PSA.111.10', ref: 'Psalm 111:10', themes: ['wisdom'], daily: 1,
     text: 'The fear of Yahweh is the beginning of wisdom. All those who do his work have a good understanding. His praise endures forever!' },
-  { id: 'PSA.112.7', ref: 'Psalm 112:7', themes: ['courage', 'fear'],
+  { id: 'PSA.112.7', ref: 'Psalm 112:7', themes: ['courage', 'fear'], daily: 1,
     text: 'He will not be afraid of evil news. His heart is steadfast, trusting in Yahweh.' },
-  { id: 'PSA.116.7', ref: 'Psalm 116:7', themes: ['rest', 'gratitude'],
+  { id: 'PSA.116.7', ref: 'Psalm 116:7', themes: ['rest', 'gratitude'], daily: 1,
     text: 'Return to your rest, my soul, for Yahweh has dealt bountifully with you.' },
-  { id: 'PSA.118.6', ref: 'Psalm 118:6', themes: ['courage', 'fear'],
+  { id: 'PSA.118.6', ref: 'Psalm 118:6', themes: ['courage', 'fear'], daily: 1,
     text: 'Yahweh is on my side. I will not be afraid. What can man do to me?' },
-  { id: 'PSA.118.24', ref: 'Psalm 118:24', themes: ['gratitude'],
+  { id: 'PSA.118.24', ref: 'Psalm 118:24', themes: ['gratitude'], daily: 1,
     text: 'This is the day that Yahweh has made. We will rejoice and be glad in it!' },
-  { id: 'PSA.119.9', ref: 'Psalm 119:9', themes: ['discipline', 'wisdom'],
+  { id: 'PSA.119.9', ref: 'Psalm 119:9', themes: ['discipline', 'wisdom'], daily: 1,
     text: 'How can a young man keep his way pure? By living according to your word.' },
-  { id: 'PSA.119.105', ref: 'Psalm 119:105', themes: ['direction', 'wisdom'],
+  { id: 'PSA.119.105', ref: 'Psalm 119:105', themes: ['direction', 'wisdom'], daily: 1,
     text: 'Your word is a lamp to my feet, and a light for my path.' },
-  { id: 'PSA.121.1-2', ref: 'Psalm 121:1-2', themes: ['strength', 'fear'], sup: 1,
+  { id: 'PSA.121.1-2', ref: 'Psalm 121:1-2', themes: ['strength', 'fear'], daily: 1, sup: 1,
     text: 'I will lift up my eyes to the hills. Where does my help come from? My help comes from Yahweh, who made heaven and earth.' },
-  { id: 'PSA.121.7-8', ref: 'Psalm 121:7-8', themes: ['fear', 'rest'],
+  { id: 'PSA.121.7-8', ref: 'Psalm 121:7-8', themes: ['fear', 'rest'], daily: 1,
     text: 'Yahweh will keep you from all evil. He will keep your soul. Yahweh will keep your going out and your coming in, from this time forward, and forever more.' },
-  { id: 'PSA.126.5-6', ref: 'Psalm 126:5-6', themes: ['grief', 'perseverance'],
+  { id: 'PSA.126.5-6', ref: 'Psalm 126:5-6', themes: ['grief', 'perseverance'], daily: 1,
     text: 'Those who sow in tears will reap in joy. He who goes out weeping, carrying seed for sowing, will certainly come again with joy, carrying his sheaves.' },
-  { id: 'PSA.127.1', ref: 'Psalm 127:1', themes: ['purpose', 'wisdom'], sup: 1,
+  { id: 'PSA.127.1', ref: 'Psalm 127:1', themes: ['purpose', 'wisdom'], daily: 1, sup: 1,
     text: 'Unless Yahweh builds the house, they who build it labor in vain. Unless Yahweh watches over the city, the watchman guards it in vain.' },
-  { id: 'PSA.127.2', ref: 'Psalm 127:2', themes: ['rest'],
+  { id: 'PSA.127.2', ref: 'Psalm 127:2', themes: ['rest'], daily: 1,
     text: 'It is vain for you to rise up early, to stay up late, eating the bread of toil, for he gives sleep to his loved ones.' },
-  { id: 'PSA.130.5', ref: 'Psalm 130:5', themes: ['hope', 'patience'],
+  { id: 'PSA.130.5', ref: 'Psalm 130:5', themes: ['hope', 'patience'], daily: 1,
     text: 'I wait for Yahweh. My soul waits. I hope in his word.' },
-  { id: 'PSA.131.1-2', ref: 'Psalm 131:1-2', themes: ['peace', 'rest'], sup: 1,
+  { id: 'PSA.131.1-2', ref: 'Psalm 131:1-2', themes: ['peace', 'rest'], daily: 1, sup: 1,
     text: 'Yahweh, my heart isn’t arrogant, nor my eyes lofty; nor do I concern myself with great matters, or things too wonderful for me. Surely I have stilled and quieted my soul, like a weaned child with his mother, like a weaned child is my soul within me.' },
-  { id: 'PSA.133.1', ref: 'Psalm 133:1', themes: ['relationships'], sup: 1,
+  { id: 'PSA.133.1', ref: 'Psalm 133:1', themes: ['relationships'], daily: 1, sup: 1,
     text: 'See how good and how pleasant it is for brothers to live together in unity!' },
-  { id: 'PSA.136.1', ref: 'Psalm 136:1', themes: ['gratitude'],
+  { id: 'PSA.136.1', ref: 'Psalm 136:1', themes: ['gratitude'], daily: 1,
     text: 'Give thanks to Yahweh, for he is good, for his loving kindness endures forever.' },
-  { id: 'PSA.138.3', ref: 'Psalm 138:3', themes: ['courage', 'strength'],
+  { id: 'PSA.138.3', ref: 'Psalm 138:3', themes: ['courage', 'strength'], daily: 1,
     text: 'In the day that I called, you answered me. You encouraged me with strength in my soul.' },
-  { id: 'PSA.138.8', ref: 'Psalm 138:8', themes: ['purpose', 'hope'],
+  { id: 'PSA.138.8', ref: 'Psalm 138:8', themes: ['purpose', 'hope'], daily: 1,
     text: 'Yahweh will fulfill that which concerns me. Your loving kindness, Yahweh, endures forever. Don’t forsake the works of your own hands.' },
-  { id: 'PSA.139.1-3', ref: 'Psalm 139:1-3', themes: ['love', 'purpose'], sup: 1,
+  { id: 'PSA.139.1-3', ref: 'Psalm 139:1-3', themes: ['love', 'purpose'], daily: 1, sup: 1,
     text: 'Yahweh, you have searched me, and you know me. You know my sitting down and my rising up. You perceive my thoughts from afar. You search out my path and my lying down, and are acquainted with all my ways.' },
-  { id: 'PSA.139.9-10', ref: 'Psalm 139:9-10', themes: ['direction', 'fear'],
+  { id: 'PSA.139.9-10', ref: 'Psalm 139:9-10', themes: ['direction', 'fear'], daily: 1,
     text: 'If I take the wings of the dawn, and settle in the uttermost parts of the sea, even there your hand will lead me, and your right hand will hold me.' },
-  { id: 'PSA.139.13-14', ref: 'Psalm 139:13-14', themes: ['purpose', 'gratitude'],
+  { id: 'PSA.139.13-14', ref: 'Psalm 139:13-14', themes: ['purpose', 'gratitude'], daily: 1,
     text: 'For you formed my inmost being. You knit me together in my mother’s womb. I will give thanks to you, for I am fearfully and wonderfully made. Your works are wonderful. My soul knows that very well.' },
-  { id: 'PSA.139.23-24', ref: 'Psalm 139:23-24', themes: ['discipline', 'direction'],
+  { id: 'PSA.139.23-24', ref: 'Psalm 139:23-24', themes: ['discipline', 'direction'], daily: 1,
     text: 'Search me, God, and know my heart. Try me, and know my thoughts. See if there is any wicked way in me, and lead me in the everlasting way.' },
-  { id: 'PSA.143.8', ref: 'Psalm 143:8', themes: ['direction', 'hope'],
+  { id: 'PSA.143.8', ref: 'Psalm 143:8', themes: ['direction', 'hope'], daily: 1,
     text: 'Cause me to hear your loving kindness in the morning, for I trust in you. Cause me to know the way in which I should walk, for I lift up my soul to you.' },
-  { id: 'PSA.145.8', ref: 'Psalm 145:8', themes: ['forgiveness', 'patience'],
+  { id: 'PSA.145.8', ref: 'Psalm 145:8', themes: ['forgiveness', 'patience'], daily: 1,
     text: 'Yahweh is gracious, merciful, slow to anger, and of great loving kindness.' },
-  { id: 'PSA.145.18', ref: 'Psalm 145:18', themes: ['faith', 'peace'],
+  { id: 'PSA.145.18', ref: 'Psalm 145:18', themes: ['faith', 'peace'], daily: 1,
     text: 'Yahweh is near to all those who call on him, to all who call on him in truth.' },
-  { id: 'PSA.146.5', ref: 'Psalm 146:5', themes: ['hope'],
+  { id: 'PSA.146.5', ref: 'Psalm 146:5', themes: ['hope'], daily: 1,
     text: 'Happy is he who has the God of Jacob for his help, whose hope is in Yahweh, his God,' },
-  { id: 'PSA.147.3', ref: 'Psalm 147:3', themes: ['grief'],
+  { id: 'PSA.147.3', ref: 'Psalm 147:3', themes: ['grief'], daily: 1,
     text: 'He heals the broken in heart, and binds up their wounds.' },
-  { id: 'PRO.2.6', ref: 'Proverbs 2:6', themes: ['wisdom'],
+  { id: 'PRO.2.6', ref: 'Proverbs 2:6', themes: ['wisdom'], daily: 1,
     text: 'For Yahweh gives wisdom. Out of his mouth comes knowledge and understanding.' },
-  { id: 'PRO.3.3-4', ref: 'Proverbs 3:3-4', themes: ['relationships', 'love'],
+  { id: 'PRO.3.3-4', ref: 'Proverbs 3:3-4', themes: ['relationships', 'love'], daily: 1,
     text: 'Don’t let kindness and truth forsake you. Bind them around your neck. Write them on the tablet of your heart. So you will find favor, and good understanding in the sight of God and man.' },
-  { id: 'PRO.3.5-6', ref: 'Proverbs 3:5-6', themes: ['direction', 'faith'],
+  { id: 'PRO.3.5-6', ref: 'Proverbs 3:5-6', themes: ['direction', 'faith'], daily: 1,
     text: 'Trust in Yahweh with all your heart, and don’t lean on your own understanding. In all your ways acknowledge him, and he will make your paths straight.' },
-  { id: 'PRO.3.24-26', ref: 'Proverbs 3:24-26', themes: ['rest', 'fear'],
+  { id: 'PRO.3.24-26', ref: 'Proverbs 3:24-26', themes: ['rest', 'fear'], daily: 1,
     text: 'When you lie down, you will not be afraid. Yes, you will lie down, and your sleep will be sweet. Don’t be afraid of sudden fear, neither of the desolation of the wicked, when it comes; for Yahweh will be your confidence, and will keep your foot from being taken.' },
-  { id: 'PRO.4.7', ref: 'Proverbs 4:7', themes: ['wisdom'],
+  { id: 'PRO.4.7', ref: 'Proverbs 4:7', themes: ['wisdom'], daily: 1,
     text: 'Wisdom is supreme. Get wisdom. Yes, though it costs all your possessions, get understanding.' },
-  { id: 'PRO.4.23', ref: 'Proverbs 4:23', themes: ['discipline', 'direction'],
+  { id: 'PRO.4.23', ref: 'Proverbs 4:23', themes: ['discipline', 'direction'], daily: 1,
     text: 'Keep your heart with all diligence, for out of it is the wellspring of life.' },
-  { id: 'PRO.4.25-27', ref: 'Proverbs 4:25-27', themes: ['discipline', 'direction'],
+  { id: 'PRO.4.25-27', ref: 'Proverbs 4:25-27', themes: ['discipline', 'direction'], daily: 1,
     text: 'Let your eyes look straight ahead. Fix your gaze directly before you. Make the path of your feet level. Let all of your ways be established. Don’t turn to the right hand nor to the left. Remove your foot from evil.' },
-  { id: 'PRO.9.10', ref: 'Proverbs 9:10', themes: ['wisdom'],
+  { id: 'PRO.9.10', ref: 'Proverbs 9:10', themes: ['wisdom'], daily: 1,
     text: 'The fear of Yahweh is the beginning of wisdom. The knowledge of the Holy One is understanding.' },
-  { id: 'PRO.10.12', ref: 'Proverbs 10:12', themes: ['forgiveness', 'love'],
+  { id: 'PRO.10.12', ref: 'Proverbs 10:12', themes: ['forgiveness', 'love'], daily: 1,
     text: 'Hatred stirs up strife, but love covers all wrongs.' },
-  { id: 'PRO.11.2', ref: 'Proverbs 11:2', themes: ['wisdom', 'discipline'],
+  { id: 'PRO.11.2', ref: 'Proverbs 11:2', themes: ['wisdom', 'discipline'], daily: 1,
     text: 'When pride comes, then comes shame, but with humility comes wisdom.' },
-  { id: 'PRO.11.14', ref: 'Proverbs 11:14', themes: ['wisdom', 'direction'],
+  { id: 'PRO.11.14', ref: 'Proverbs 11:14', themes: ['wisdom', 'direction'], daily: 1,
     text: 'Where there is no wise guidance, the nation falls, but in the multitude of counselors there is victory.' },
-  { id: 'PRO.11.25', ref: 'Proverbs 11:25', themes: ['relationships', 'purpose'],
+  { id: 'PRO.11.25', ref: 'Proverbs 11:25', themes: ['relationships', 'purpose'], daily: 1,
     text: 'The liberal soul shall be made fat. He who waters shall be watered also himself.' },
-  { id: 'PRO.12.1', ref: 'Proverbs 12:1', themes: ['discipline', 'wisdom'],
+  { id: 'PRO.12.1', ref: 'Proverbs 12:1', themes: ['discipline', 'wisdom'], daily: 1,
     text: 'Whoever loves correction loves knowledge, but he who hates reproof is stupid.' },
-  { id: 'PRO.12.18', ref: 'Proverbs 12:18', themes: ['relationships', 'wisdom'],
+  { id: 'PRO.12.18', ref: 'Proverbs 12:18', themes: ['relationships', 'wisdom'], daily: 1,
     text: 'There is one who speaks rashly like the piercing of a sword, but the tongue of the wise heals.' },
-  { id: 'PRO.13.4', ref: 'Proverbs 13:4', themes: ['discipline'],
+  { id: 'PRO.13.4', ref: 'Proverbs 13:4', themes: ['discipline'], daily: 1,
     text: 'The soul of the sluggard desires, and has nothing, but the desire of the diligent shall be fully satisfied.' },
-  { id: 'PRO.13.20', ref: 'Proverbs 13:20', themes: ['relationships', 'wisdom'],
+  { id: 'PRO.13.20', ref: 'Proverbs 13:20', themes: ['relationships', 'wisdom'], daily: 1,
     text: 'One who walks with wise men grows wise, but a companion of fools suffers harm.' },
-  { id: 'PRO.14.29', ref: 'Proverbs 14:29', themes: ['patience'],
+  { id: 'PRO.14.29', ref: 'Proverbs 14:29', themes: ['patience'], daily: 1,
     text: 'He who is slow to anger has great understanding, but he who has a quick temper displays folly.' },
-  { id: 'PRO.15.1', ref: 'Proverbs 15:1', themes: ['relationships', 'patience'],
+  { id: 'PRO.15.1', ref: 'Proverbs 15:1', themes: ['relationships', 'patience'], daily: 1,
     text: 'A gentle answer turns away wrath, but a harsh word stirs up anger.' },
-  { id: 'PRO.15.22', ref: 'Proverbs 15:22', themes: ['wisdom', 'direction'],
+  { id: 'PRO.15.22', ref: 'Proverbs 15:22', themes: ['wisdom', 'direction'], daily: 1,
     text: 'Where there is no counsel, plans fail; but in a multitude of counselors they are established.' },
-  { id: 'PRO.16.3', ref: 'Proverbs 16:3', themes: ['purpose', 'faith'],
+  { id: 'PRO.16.3', ref: 'Proverbs 16:3', themes: ['purpose', 'faith'], daily: 1,
     text: 'Commit your deeds to Yahweh, and your plans shall succeed.' },
-  { id: 'PRO.16.9', ref: 'Proverbs 16:9', themes: ['direction', 'purpose'],
+  { id: 'PRO.16.9', ref: 'Proverbs 16:9', themes: ['direction', 'purpose'], daily: 1,
     text: 'A man’s heart plans his course, but Yahweh directs his steps.' },
-  { id: 'PRO.16.24', ref: 'Proverbs 16:24', themes: ['relationships'],
+  { id: 'PRO.16.24', ref: 'Proverbs 16:24', themes: ['relationships'], daily: 1,
     text: 'Pleasant words are a honeycomb, sweet to the soul, and health to the bones.' },
-  { id: 'PRO.16.32', ref: 'Proverbs 16:32', themes: ['patience', 'discipline'],
+  { id: 'PRO.16.32', ref: 'Proverbs 16:32', themes: ['patience', 'discipline'], daily: 1,
     text: 'One who is slow to anger is better than the mighty; one who rules his spirit, than he who takes a city.' },
-  { id: 'PRO.17.17', ref: 'Proverbs 17:17', themes: ['relationships', 'love'],
+  { id: 'PRO.17.17', ref: 'Proverbs 17:17', themes: ['relationships', 'love'], daily: 1,
     text: 'A friend loves at all times; and a brother is born for adversity.' },
-  { id: 'PRO.17.22', ref: 'Proverbs 17:22', themes: ['gratitude', 'grief'],
+  { id: 'PRO.17.22', ref: 'Proverbs 17:22', themes: ['gratitude', 'grief'], daily: 1,
     text: 'A cheerful heart makes good medicine, but a crushed spirit dries up the bones.' },
-  { id: 'PRO.18.10', ref: 'Proverbs 18:10', themes: ['strength', 'fear'],
+  { id: 'PRO.18.10', ref: 'Proverbs 18:10', themes: ['strength', 'fear'], daily: 1,
     text: 'Yahweh’s name is a strong tower: the righteous run to him, and are safe.' },
-  { id: 'PRO.18.13', ref: 'Proverbs 18:13', themes: ['wisdom', 'relationships'],
+  { id: 'PRO.18.13', ref: 'Proverbs 18:13', themes: ['wisdom', 'relationships'], daily: 1,
     text: 'He who answers before he hears, that is folly and shame to him.' },
-  { id: 'PRO.18.24', ref: 'Proverbs 18:24', themes: ['relationships'],
+  { id: 'PRO.18.24', ref: 'Proverbs 18:24', themes: ['relationships'], daily: 1,
     text: 'A man of many companions may be ruined, but there is a friend who sticks closer than a brother.' },
-  { id: 'PRO.19.11', ref: 'Proverbs 19:11', themes: ['patience', 'forgiveness'],
+  { id: 'PRO.19.11', ref: 'Proverbs 19:11', themes: ['patience', 'forgiveness'], daily: 1,
     text: 'The discretion of a man makes him slow to anger. It is his glory to overlook an offense.' },
-  { id: 'PRO.19.20', ref: 'Proverbs 19:20', themes: ['wisdom', 'discipline'],
+  { id: 'PRO.19.20', ref: 'Proverbs 19:20', themes: ['wisdom', 'discipline'], daily: 1,
     text: 'Listen to counsel and receive instruction, that you may be wise in your latter end.' },
-  { id: 'PRO.19.21', ref: 'Proverbs 19:21', themes: ['purpose', 'direction'],
+  { id: 'PRO.19.21', ref: 'Proverbs 19:21', themes: ['purpose', 'direction'], daily: 1,
     text: 'There are many plans in a man’s heart, but Yahweh’s counsel will prevail.' },
-  { id: 'PRO.20.24', ref: 'Proverbs 20:24', themes: ['direction', 'faith'],
+  { id: 'PRO.20.24', ref: 'Proverbs 20:24', themes: ['direction', 'faith'], daily: 1,
     text: 'A man’s steps are from Yahweh; how then can man understand his way?' },
-  { id: 'PRO.21.5', ref: 'Proverbs 21:5', themes: ['discipline', 'patience'],
+  { id: 'PRO.21.5', ref: 'Proverbs 21:5', themes: ['discipline', 'patience'], daily: 1,
     text: 'The plans of the diligent surely lead to profit; and everyone who is hasty surely rushes to poverty.' },
-  { id: 'PRO.22.24-25', ref: 'Proverbs 22:24-25', themes: ['relationships', 'wisdom'],
+  { id: 'PRO.22.24-25', ref: 'Proverbs 22:24-25', themes: ['relationships', 'wisdom'], daily: 1,
     text: 'Don’t befriend a hot-tempered man. Don’t associate with one who harbors anger, lest you learn his ways and ensnare your soul.' },
-  { id: 'PRO.23.18', ref: 'Proverbs 23:18', themes: ['hope', 'perseverance'],
+  { id: 'PRO.23.18', ref: 'Proverbs 23:18', themes: ['hope', 'perseverance'], daily: 1,
     text: 'Indeed surely there is a future hope, and your hope will not be cut off.' },
-  { id: 'PRO.24.16', ref: 'Proverbs 24:16', themes: ['perseverance'],
+  { id: 'PRO.24.16', ref: 'Proverbs 24:16', themes: ['perseverance'], daily: 1,
     text: 'for a righteous man falls seven times and rises up again, but the wicked are overthrown by calamity.' },
-  { id: 'PRO.25.15', ref: 'Proverbs 25:15', themes: ['patience'],
+  { id: 'PRO.25.15', ref: 'Proverbs 25:15', themes: ['patience'], daily: 1,
     text: 'By patience a ruler is persuaded. A soft tongue breaks the bone.' },
-  { id: 'PRO.25.28', ref: 'Proverbs 25:28', themes: ['discipline'],
+  { id: 'PRO.25.28', ref: 'Proverbs 25:28', themes: ['discipline'], daily: 1,
     text: 'Like a city that is broken down and without walls is a man whose spirit is without restraint.' },
-  { id: 'PRO.27.6', ref: 'Proverbs 27:6', themes: ['relationships'],
+  { id: 'PRO.27.6', ref: 'Proverbs 27:6', themes: ['relationships'], daily: 1,
     text: 'The wounds of a friend are faithful, although the kisses of an enemy are profuse.' },
-  { id: 'PRO.27.17', ref: 'Proverbs 27:17', themes: ['relationships', 'discipline'],
+  { id: 'PRO.27.17', ref: 'Proverbs 27:17', themes: ['relationships', 'discipline'], daily: 1,
     text: 'Iron sharpens iron; so a man sharpens his friend’s countenance.' },
-  { id: 'PRO.28.1', ref: 'Proverbs 28:1', themes: ['courage'],
+  { id: 'PRO.28.1', ref: 'Proverbs 28:1', themes: ['courage'], daily: 1,
     text: 'The wicked flee when no one pursues; but the righteous are as bold as a lion.' },
-  { id: 'PRO.28.13', ref: 'Proverbs 28:13', themes: ['forgiveness', 'discipline'],
+  { id: 'PRO.28.13', ref: 'Proverbs 28:13', themes: ['forgiveness', 'discipline'], daily: 1,
     text: 'He who conceals his sins doesn’t prosper, but whoever confesses and renounces them finds mercy.' },
-  { id: 'ECC.3.1', ref: 'Ecclesiastes 3:1', themes: ['wisdom', 'patience'],
+  { id: 'ECC.3.1', ref: 'Ecclesiastes 3:1', themes: ['wisdom', 'patience'], daily: 1,
     text: 'For everything there is a season, and a time for every purpose under heaven:' },
-  { id: 'ECC.3.4', ref: 'Ecclesiastes 3:4', themes: ['grief', 'wisdom'],
+  { id: 'ECC.3.4', ref: 'Ecclesiastes 3:4', themes: ['grief', 'wisdom'], daily: 1,
     text: 'a time to weep, and a time to laugh; a time to mourn, and a time to dance;' },
-  { id: 'ECC.3.12', ref: 'Ecclesiastes 3:12', themes: ['gratitude', 'purpose'],
+  { id: 'ECC.3.12', ref: 'Ecclesiastes 3:12', themes: ['gratitude', 'purpose'], daily: 1,
     text: 'I know that there is nothing better for them than to rejoice, and to do good as long as they live.' },
-  { id: 'ECC.4.6', ref: 'Ecclesiastes 4:6', themes: ['rest', 'wisdom'],
+  { id: 'ECC.4.6', ref: 'Ecclesiastes 4:6', themes: ['rest', 'wisdom'], daily: 1,
     text: 'Better is a handful, with quietness, than two handfuls with labor and chasing after wind.' },
-  { id: 'ECC.4.9-10', ref: 'Ecclesiastes 4:9-10', themes: ['relationships'],
+  { id: 'ECC.4.9-10', ref: 'Ecclesiastes 4:9-10', themes: ['relationships'], daily: 1,
     text: 'Two are better than one, because they have a good reward for their labor. For if they fall, the one will lift up his fellow; but woe to him who is alone when he falls, and doesn’t have another to lift him up.' },
-  { id: 'ECC.7.8', ref: 'Ecclesiastes 7:8', themes: ['patience', 'perseverance'],
+  { id: 'ECC.7.8', ref: 'Ecclesiastes 7:8', themes: ['patience', 'perseverance'], daily: 1,
     text: 'Better is the end of a thing than its beginning. The patient in spirit is better than the proud in spirit.' },
-  { id: 'ECC.7.12', ref: 'Ecclesiastes 7:12', themes: ['wisdom'],
+  { id: 'ECC.7.12', ref: 'Ecclesiastes 7:12', themes: ['wisdom'], daily: 1,
     text: 'For wisdom is a defense, even as money is a defense; but the excellency of knowledge is that wisdom preserves the life of him who has it.' },
-  { id: 'SNG.8.7', ref: 'Song of Solomon 8:7', themes: ['love'],
+  { id: 'SNG.8.7', ref: 'Song of Solomon 8:7', themes: ['love'], daily: 1,
     text: 'Many waters can’t quench love, neither can floods drown it. If a man would give all the wealth of his house for love, he would be utterly scorned.' },
-  { id: 'ISA.1.18', ref: 'Isaiah 1:18', themes: ['forgiveness'],
+  { id: 'ISA.1.18', ref: 'Isaiah 1:18', themes: ['forgiveness'], daily: 1,
     text: '“Come now, and let’s reason together,” says Yahweh: “Though your sins are as scarlet, they shall be as white as snow. Though they are red like crimson, they shall be as wool.' },
-  { id: 'ISA.6.8', ref: 'Isaiah 6:8', themes: ['purpose', 'courage'],
+  { id: 'ISA.6.8', ref: 'Isaiah 6:8', themes: ['purpose', 'courage'], daily: 1,
     text: 'I heard the Lord’s voice, saying, “Whom shall I send, and who will go for us?” Then I said, “Here I am. Send me!”' },
-  { id: 'ISA.12.2', ref: 'Isaiah 12:2', themes: ['strength', 'fear'],
+  { id: 'ISA.12.2', ref: 'Isaiah 12:2', themes: ['strength', 'fear'], daily: 1,
     text: 'Behold, God is my salvation. I will trust, and will not be afraid; for Yah, Yahweh, is my strength and song; and he has become my salvation.”' },
-  { id: 'ISA.26.3', ref: 'Isaiah 26:3', themes: ['peace', 'faith'],
+  { id: 'ISA.26.3', ref: 'Isaiah 26:3', themes: ['peace', 'faith'], daily: 1,
     text: 'You will keep whoever’s mind is steadfast in perfect peace, because he trusts in you.' },
-  { id: 'ISA.26.4', ref: 'Isaiah 26:4', themes: ['faith', 'strength'],
+  { id: 'ISA.26.4', ref: 'Isaiah 26:4', themes: ['faith', 'strength'], daily: 1,
     text: 'Trust in Yahweh forever; for in Yah, Yahweh, is an everlasting Rock.' },
-  { id: 'ISA.30.15', ref: 'Isaiah 30:15', themes: ['rest', 'faith'],
+  { id: 'ISA.30.15', ref: 'Isaiah 30:15', themes: ['rest', 'faith'], daily: 1,
     text: 'For thus said the Lord Yahweh, the Holy One of Israel, “You will be saved in returning and rest. Your strength will be in quietness and in confidence.” You refused,' },
-  { id: 'ISA.30.21', ref: 'Isaiah 30:21', themes: ['direction'],
+  { id: 'ISA.30.21', ref: 'Isaiah 30:21', themes: ['direction'], daily: 1,
     text: 'and when you turn to the right hand, and when you turn to the left, your ears will hear a voice behind you, saying, “This is the way. Walk in it.”' },
-  { id: 'ISA.32.17', ref: 'Isaiah 32:17', themes: ['peace'],
+  { id: 'ISA.32.17', ref: 'Isaiah 32:17', themes: ['peace'], daily: 1,
     text: 'The work of righteousness will be peace, and the effect of righteousness, quietness and confidence forever.' },
-  { id: 'ISA.35.4', ref: 'Isaiah 35:4', themes: ['fear', 'courage'],
+  { id: 'ISA.35.4', ref: 'Isaiah 35:4', themes: ['fear', 'courage'], daily: 1,
     text: 'Tell those who have a fearful heart, “Be strong! Don’t be afraid! Behold, your God will come with vengeance, God’s retribution. He will come and save you.' },
-  { id: 'ISA.40.8', ref: 'Isaiah 40:8', themes: ['faith', 'hope'],
+  { id: 'ISA.40.8', ref: 'Isaiah 40:8', themes: ['faith', 'hope'], daily: 1,
     text: 'The grass withers, the flower fades; but the word of our God stands forever.”' },
-  { id: 'ISA.40.11', ref: 'Isaiah 40:11', themes: ['rest', 'love'],
+  { id: 'ISA.40.11', ref: 'Isaiah 40:11', themes: ['rest', 'love'], daily: 1,
     text: 'He will feed his flock like a shepherd. He will gather the lambs in his arm, and carry them in his bosom. He will gently lead those who have their young.' },
-  { id: 'ISA.40.29', ref: 'Isaiah 40:29', themes: ['strength', 'hope'],
+  { id: 'ISA.40.29', ref: 'Isaiah 40:29', themes: ['strength', 'hope'], daily: 1,
     text: 'He gives power to the weak. He increases the strength of him who has no might.' },
-  { id: 'ISA.40.31', ref: 'Isaiah 40:31', themes: ['strength', 'patience'],
+  { id: 'ISA.40.31', ref: 'Isaiah 40:31', themes: ['strength', 'patience'], daily: 1,
     text: 'but those who wait for Yahweh will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint.' },
-  { id: 'ISA.41.10', ref: 'Isaiah 41:10', themes: ['fear', 'courage'],
+  { id: 'ISA.41.10', ref: 'Isaiah 41:10', themes: ['fear', 'courage'], daily: 1,
     text: 'Don’t you be afraid, for I am with you. Don’t be dismayed, for I am your God. I will strengthen you. Yes, I will help you. Yes, I will uphold you with the right hand of my righteousness.' },
-  { id: 'ISA.41.13', ref: 'Isaiah 41:13', themes: ['fear', 'strength'],
+  { id: 'ISA.41.13', ref: 'Isaiah 41:13', themes: ['fear', 'strength'], daily: 1,
     text: 'For I, Yahweh your God, will hold your right hand, saying to you, ‘Don’t be afraid. I will help you.’' },
-  { id: 'ISA.42.16', ref: 'Isaiah 42:16', themes: ['direction', 'hope'],
+  { id: 'ISA.42.16', ref: 'Isaiah 42:16', themes: ['direction', 'hope'], daily: 1,
     text: 'I will bring the blind by a way that they don’t know. I will lead them in paths that they don’t know. I will make darkness light before them, and crooked places straight. I will do these things, and I will not forsake them.' },
-  { id: 'ISA.43.1', ref: 'Isaiah 43:1', themes: ['fear', 'love'],
+  { id: 'ISA.43.1', ref: 'Isaiah 43:1', themes: ['fear', 'love'], daily: 1,
     text: 'But now Yahweh who created you, Jacob, and he who formed you, Israel, says: “Don’t be afraid, for I have redeemed you. I have called you by your name. You are mine.' },
-  { id: 'ISA.43.2', ref: 'Isaiah 43:2', themes: ['courage', 'fear'],
+  { id: 'ISA.43.2', ref: 'Isaiah 43:2', themes: ['courage', 'fear'], daily: 1,
     text: 'When you pass through the waters, I will be with you, and through the rivers, they will not overflow you. When you walk through the fire, you will not be burned, and flame will not scorch you.' },
-  { id: 'ISA.43.19', ref: 'Isaiah 43:19', themes: ['hope', 'perseverance'],
+  { id: 'ISA.43.19', ref: 'Isaiah 43:19', themes: ['hope', 'perseverance'], daily: 1,
     text: 'Behold, I will do a new thing. It springs out now. Don’t you know it? I will even make a way in the wilderness, and rivers in the desert.' },
-  { id: 'ISA.53.3-4', ref: 'Isaiah 53:3-4', themes: ['grief'],
+  { id: 'ISA.53.3-4', ref: 'Isaiah 53:3-4', themes: ['grief'], daily: 1,
     text: 'He was despised and rejected by men, a man of suffering and acquainted with disease. He was despised as one from whom men hide their face; and we didn’t respect him. Surely he has borne our sickness and carried our suffering; yet we considered him plagued, struck by God, and afflicted.' },
-  { id: 'ISA.55.8-9', ref: 'Isaiah 55:8-9', themes: ['wisdom', 'faith'],
+  { id: 'ISA.55.8-9', ref: 'Isaiah 55:8-9', themes: ['wisdom', 'faith'], daily: 1,
     text: '“For my thoughts are not your thoughts, and your ways are not my ways,” says Yahweh. “For as the heavens are higher than the earth, so are my ways higher than your ways, and my thoughts than your thoughts.' },
-  { id: 'ISA.58.11', ref: 'Isaiah 58:11', themes: ['direction', 'strength'],
+  { id: 'ISA.58.11', ref: 'Isaiah 58:11', themes: ['direction', 'strength'], daily: 1,
     text: 'and Yahweh will guide you continually, satisfy your soul in dry places, and make your bones strong. You will be like a watered garden, and like a spring of water whose waters don’t fail.' },
-  { id: 'ISA.61.1-3', ref: 'Isaiah 61:1-3', themes: ['grief', 'hope'],
+  { id: 'ISA.61.1-3', ref: 'Isaiah 61:1-3', themes: ['grief', 'hope'], daily: 1,
     text: 'The Lord Yahweh’s Spirit is on me, because Yahweh has anointed me to preach good news to the humble. He has sent me to bind up the broken hearted, to proclaim liberty to the captives and release to those who are bound, to proclaim the year of Yahweh’s favor and the day of vengeance of our God, to comfort all who mourn, to provide for those who mourn in Zion, to give to them a garland for ashes, the oil of joy for mourning, the garment of praise for the spirit of heaviness, that they may be called trees of righteousness, the planting of Yahweh, that he may be glorified.' },
-  { id: 'JER.1.5', ref: 'Jeremiah 1:5', themes: ['purpose'],
+  { id: 'JER.1.5', ref: 'Jeremiah 1:5', themes: ['purpose'], daily: 1,
     text: '“Before I formed you in the womb, I knew you. Before you were born, I sanctified you. I have appointed you a prophet to the nations.”' },
-  { id: 'JER.6.16', ref: 'Jeremiah 6:16', themes: ['rest', 'direction'],
+  { id: 'JER.6.16', ref: 'Jeremiah 6:16', themes: ['rest', 'direction'], daily: 1,
     text: 'Yahweh says, “Stand in the ways and see, and ask for the old paths, ‘Where is the good way?’ and walk in it, and you will find rest for your souls. But they said, ‘We will not walk in it.’' },
-  { id: 'JER.17.7-8', ref: 'Jeremiah 17:7-8', themes: ['faith', 'perseverance'],
+  { id: 'JER.17.7-8', ref: 'Jeremiah 17:7-8', themes: ['faith', 'perseverance'], daily: 1,
     text: '“Blessed is the man who trusts in Yahweh, and whose confidence is in Yahweh. For he will be as a tree planted by the waters, who spreads out its roots by the river, and will not fear when heat comes, but its leaf will be green, and will not be concerned in the year of drought. It won’t cease from yielding fruit.' },
-  { id: 'JER.29.11', ref: 'Jeremiah 29:11', themes: ['hope', 'purpose'],
+  { id: 'JER.29.11', ref: 'Jeremiah 29:11', themes: ['hope', 'purpose'], daily: 1,
     text: 'For I know the thoughts that I think toward you,” says Yahweh, “thoughts of peace, and not of evil, to give you hope and a future.' },
-  { id: 'JER.31.34', ref: 'Jeremiah 31:34', themes: ['forgiveness'],
+  { id: 'JER.31.34', ref: 'Jeremiah 31:34', themes: ['forgiveness'], daily: 1,
     text: 'They will no longer each teach his neighbor, and every man teach his brother, saying, ‘Know Yahweh;’ for they will all know me, from their least to their greatest,” says Yahweh, “for I will forgive their iniquity, and I will remember their sin no more.”' },
-  { id: 'LAM.3.22-23', ref: 'Lamentations 3:22-23', themes: ['hope'],
+  { id: 'LAM.3.22-23', ref: 'Lamentations 3:22-23', themes: ['hope'], daily: 1,
     text: 'It is because of Yahweh’s loving kindnesses that we are not consumed, because his mercies don’t fail. They are new every morning. Great is your faithfulness.' },
-  { id: 'LAM.3.25-26', ref: 'Lamentations 3:25-26', themes: ['patience', 'hope'],
+  { id: 'LAM.3.25-26', ref: 'Lamentations 3:25-26', themes: ['patience', 'hope'], daily: 1,
     text: 'Yahweh is good to those who wait for him, to the soul who seeks him. It is good that a man should hope and quietly wait for the salvation of Yahweh.' },
-  { id: 'LAM.3.31-33', ref: 'Lamentations 3:31-33', themes: ['grief', 'hope'],
+  { id: 'LAM.3.31-33', ref: 'Lamentations 3:31-33', themes: ['grief', 'hope'], daily: 1,
     text: 'For the Lord will not cast off forever. For though he causes grief, yet he will have compassion according to the multitude of his loving kindnesses. For he does not afflict willingly, nor grieve the children of men.' },
-  { id: 'EZK.36.26', ref: 'Ezekiel 36:26', themes: ['forgiveness', 'purpose'],
+  { id: 'EZK.36.26', ref: 'Ezekiel 36:26', themes: ['forgiveness', 'purpose'], daily: 1,
     text: 'I will also give you a new heart, and I will put a new spirit within you. I will take away the stony heart out of your flesh, and I will give you a heart of flesh.' },
-  { id: 'DAN.3.17-18', ref: 'Daniel 3:17-18', themes: ['courage', 'faith'],
+  { id: 'DAN.3.17-18', ref: 'Daniel 3:17-18', themes: ['courage', 'faith'], daily: 1,
     text: 'If it happens, our God whom we serve is able to deliver us from the burning fiery furnace; and he will deliver us out of your hand, O king. But if not, let it be known to you, O king, that we will not serve your gods or worship the golden image which you have set up.”' },
-  { id: 'JOL.2.25', ref: 'Joel 2:25', themes: ['hope', 'grief'],
+  { id: 'JOL.2.25', ref: 'Joel 2:25', themes: ['hope', 'grief'], daily: 1,
     text: 'I will restore to you the years that the swarming locust has eaten, the great locust, the grasshopper, and the caterpillar, my great army, which I sent among you.' },
-  { id: 'MIC.6.8', ref: 'Micah 6:8', themes: ['purpose', 'wisdom'],
+  { id: 'MIC.6.8', ref: 'Micah 6:8', themes: ['purpose', 'wisdom'], daily: 1,
     text: 'He has shown you, O man, what is good. What does Yahweh require of you, but to act justly, to love mercy, and to walk humbly with your God?' },
-  { id: 'MIC.7.7', ref: 'Micah 7:7', themes: ['hope', 'patience'],
+  { id: 'MIC.7.7', ref: 'Micah 7:7', themes: ['hope', 'patience'], daily: 1,
     text: 'But as for me, I will look to Yahweh. I will wait for the God of my salvation. My God will hear me.' },
-  { id: 'MIC.7.18', ref: 'Micah 7:18', themes: ['forgiveness'],
+  { id: 'MIC.7.18', ref: 'Micah 7:18', themes: ['forgiveness'], daily: 1,
     text: 'Who is a God like you, who pardons iniquity, and passes over the disobedience of the remnant of his heritage? He doesn’t retain his anger forever, because he delights in loving kindness.' },
-  { id: 'NAM.1.7', ref: 'Nahum 1:7', themes: ['faith', 'fear'],
+  { id: 'NAM.1.7', ref: 'Nahum 1:7', themes: ['faith', 'fear'], daily: 1,
     text: 'Yahweh is good, a stronghold in the day of trouble; and he knows those who take refuge in him.' },
-  { id: 'HAB.2.4', ref: 'Habakkuk 2:4', themes: ['faith'],
+  { id: 'HAB.2.4', ref: 'Habakkuk 2:4', themes: ['faith'], daily: 1,
     text: 'Behold, his soul is puffed up. It is not upright in him, but the righteous will live by his faith.' },
-  { id: 'ZEP.3.17', ref: 'Zephaniah 3:17', themes: ['love', 'fear'],
+  { id: 'ZEP.3.17', ref: 'Zephaniah 3:17', themes: ['love', 'fear'], daily: 1,
     text: 'Yahweh, your God, is among you, a mighty one who will save. He will rejoice over you with joy. He will calm you in his love. He will rejoice over you with singing.' },
-  { id: 'ZEC.4.6', ref: 'Zechariah 4:6', themes: ['strength', 'faith'],
+  { id: 'ZEC.4.6', ref: 'Zechariah 4:6', themes: ['strength', 'faith'], daily: 1,
     text: 'Then he answered and spoke to me, saying, “This is Yahweh’s word to Zerubbabel, saying, ‘Not by might, nor by power, but by my Spirit,’ says Yahweh of Armies.' },
-  { id: 'MAL.3.6', ref: 'Malachi 3:6', themes: ['faith', 'hope'],
+  { id: 'MAL.3.6', ref: 'Malachi 3:6', themes: ['faith', 'hope'], daily: 1,
     text: '“For I, Yahweh, don’t change; therefore you, sons of Jacob, are not consumed.' },
-  { id: 'MAT.5.4', ref: 'Matthew 5:4', themes: ['grief'],
+  { id: 'MAT.5.4', ref: 'Matthew 5:4', themes: ['grief'], daily: 1,
     text: 'Blessed are those who mourn, for they shall be comforted.' },
-  { id: 'MAT.5.9', ref: 'Matthew 5:9', themes: ['peace', 'relationships'],
+  { id: 'MAT.5.9', ref: 'Matthew 5:9', themes: ['peace', 'relationships'], daily: 1,
     text: 'Blessed are the peacemakers, for they shall be called children of God.' },
-  { id: 'MAT.5.16', ref: 'Matthew 5:16', themes: ['purpose'],
+  { id: 'MAT.5.16', ref: 'Matthew 5:16', themes: ['purpose'], daily: 1,
     text: 'Even so, let your light shine before men, that they may see your good works and glorify your Father who is in heaven.' },
-  { id: 'MAT.6.14-15', ref: 'Matthew 6:14-15', themes: ['forgiveness', 'relationships'],
+  { id: 'MAT.6.14-15', ref: 'Matthew 6:14-15', themes: ['forgiveness', 'relationships'], daily: 1,
     text: '“For if you forgive men their trespasses, your heavenly Father will also forgive you. But if you don’t forgive men their trespasses, neither will your Father forgive your trespasses.' },
-  { id: 'MAT.6.26', ref: 'Matthew 6:26', themes: ['fear', 'rest'],
+  { id: 'MAT.6.26', ref: 'Matthew 6:26', themes: ['fear', 'rest'], daily: 1,
     text: 'See the birds of the sky, that they don’t sow, neither do they reap, nor gather into barns. Your heavenly Father feeds them. Aren’t you of much more value than they?' },
-  { id: 'MAT.6.33', ref: 'Matthew 6:33', themes: ['purpose', 'direction'],
+  { id: 'MAT.6.33', ref: 'Matthew 6:33', themes: ['purpose', 'direction'], daily: 1,
     text: 'But seek first God’s Kingdom and his righteousness; and all these things will be given to you as well.' },
-  { id: 'MAT.6.34', ref: 'Matthew 6:34', themes: ['fear', 'peace'],
+  { id: 'MAT.6.34', ref: 'Matthew 6:34', themes: ['fear', 'peace'], daily: 1,
     text: 'Therefore don’t be anxious for tomorrow, for tomorrow will be anxious for itself. Each day’s own evil is sufficient.' },
-  { id: 'MAT.7.7-8', ref: 'Matthew 7:7-8', themes: ['faith', 'perseverance'],
+  { id: 'MAT.7.7-8', ref: 'Matthew 7:7-8', themes: ['faith', 'perseverance'], daily: 1,
     text: '“Ask, and it will be given you. Seek, and you will find. Knock, and it will be opened for you. For everyone who asks receives. He who seeks finds. To him who knocks it will be opened.' },
-  { id: 'MAT.7.12', ref: 'Matthew 7:12', themes: ['relationships', 'love'],
+  { id: 'MAT.7.12', ref: 'Matthew 7:12', themes: ['relationships', 'love'], daily: 1,
     text: 'Therefore, whatever you desire for men to do to you, you shall also do to them; for this is the law and the prophets.' },
-  { id: 'MAT.7.24-25', ref: 'Matthew 7:24-25', themes: ['wisdom', 'discipline'],
+  { id: 'MAT.7.24-25', ref: 'Matthew 7:24-25', themes: ['wisdom', 'discipline'], daily: 1,
     text: '“Everyone therefore who hears these words of mine and does them, I will liken him to a wise man who built his house on the rock. The rain came down, the floods came, and the winds blew and beat on that house; and it didn’t fall, for it was founded on the rock.' },
-  { id: 'MAT.11.28-30', ref: 'Matthew 11:28-30', themes: ['rest'],
+  { id: 'MAT.11.28-30', ref: 'Matthew 11:28-30', themes: ['rest'], daily: 1,
     text: '“Come to me, all you who labor and are heavily burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart; and you will find rest for your souls. For my yoke is easy, and my burden is light.”' },
-  { id: 'MAT.17.20', ref: 'Matthew 17:20', themes: ['faith'],
+  { id: 'MAT.17.20', ref: 'Matthew 17:20', themes: ['faith'], daily: 1,
     text: 'He said to them, “Because of your unbelief. For most certainly I tell you, if you have faith as a grain of mustard seed, you will tell this mountain, ‘Move from here to there,’ and it will move; and nothing will be impossible for you.' },
-  { id: 'MAT.18.21-22', ref: 'Matthew 18:21-22', themes: ['forgiveness', 'relationships'],
+  { id: 'MAT.18.21-22', ref: 'Matthew 18:21-22', themes: ['forgiveness', 'relationships'], daily: 1,
     text: 'Then Peter came and said to him, “Lord, how often shall my brother sin against me, and I forgive him? Until seven times?” Jesus said to him, “I don’t tell you until seven times, but, until seventy times seven.' },
-  { id: 'MAT.22.37-39', ref: 'Matthew 22:37-39', themes: ['love', 'purpose'],
+  { id: 'MAT.22.37-39', ref: 'Matthew 22:37-39', themes: ['love', 'purpose'], daily: 1,
     text: 'Jesus said to him, “‘You shall love the Lord your God with all your heart, with all your soul, and with all your mind.’ This is the first and great commandment. A second likewise is this, ‘You shall love your neighbor as yourself.’' },
-  { id: 'MAT.24.13', ref: 'Matthew 24:13', themes: ['perseverance'],
+  { id: 'MAT.24.13', ref: 'Matthew 24:13', themes: ['perseverance'], daily: 1,
     text: 'But he who endures to the end will be saved.' },
-  { id: 'MAT.28.20', ref: 'Matthew 28:20', themes: ['fear', 'hope'],
+  { id: 'MAT.28.20', ref: 'Matthew 28:20', themes: ['fear', 'hope'], daily: 1,
     text: 'teaching them to observe all things that I commanded you. Behold, I am with you always, even to the end of the age.” Amen.' },
-  { id: 'MRK.2.27', ref: 'Mark 2:27', themes: ['rest'],
+  { id: 'MRK.2.27', ref: 'Mark 2:27', themes: ['rest'], daily: 1,
     text: 'He said to them, “The Sabbath was made for man, not man for the Sabbath.' },
-  { id: 'MRK.4.39', ref: 'Mark 4:39', themes: ['peace', 'fear'],
+  { id: 'MRK.4.39', ref: 'Mark 4:39', themes: ['peace', 'fear'], daily: 1,
     text: 'He awoke and rebuked the wind, and said to the sea, “Peace! Be still!” The wind ceased and there was a great calm.' },
-  { id: 'MRK.6.31', ref: 'Mark 6:31', themes: ['rest'],
+  { id: 'MRK.6.31', ref: 'Mark 6:31', themes: ['rest'], daily: 1,
     text: 'He said to them, “Come away into a deserted place, and rest awhile.” For there were many coming and going, and they had no leisure so much as to eat.' },
-  { id: 'MRK.9.24', ref: 'Mark 9:24', themes: ['faith'],
+  { id: 'MRK.9.24', ref: 'Mark 9:24', themes: ['faith'], daily: 1,
     text: 'Immediately the father of the child cried out with tears, “I believe. Help my unbelief!”' },
-  { id: 'MRK.10.27', ref: 'Mark 10:27', themes: ['faith', 'hope'],
+  { id: 'MRK.10.27', ref: 'Mark 10:27', themes: ['faith', 'hope'], daily: 1,
     text: 'Jesus, looking at them, said, “With men it is impossible, but not with God, for all things are possible with God.”' },
-  { id: 'MRK.11.24', ref: 'Mark 11:24', themes: ['faith'],
+  { id: 'MRK.11.24', ref: 'Mark 11:24', themes: ['faith'], daily: 1,
     text: 'Therefore I tell you, all things whatever you pray and ask for, believe that you have received them, and you shall have them.' },
-  { id: 'MRK.12.31', ref: 'Mark 12:31', themes: ['love', 'relationships'],
+  { id: 'MRK.12.31', ref: 'Mark 12:31', themes: ['love', 'relationships'], daily: 1,
     text: 'The second is like this: ‘You shall love your neighbor as yourself.’ There is no other commandment greater than these.”' },
-  { id: 'LUK.6.37', ref: 'Luke 6:37', themes: ['forgiveness', 'relationships'],
+  { id: 'LUK.6.37', ref: 'Luke 6:37', themes: ['forgiveness', 'relationships'], daily: 1,
     text: 'Don’t judge, and you won’t be judged. Don’t condemn, and you won’t be condemned. Set free, and you will be set free.' },
-  { id: 'LUK.6.38', ref: 'Luke 6:38', themes: ['relationships', 'gratitude'],
+  { id: 'LUK.6.38', ref: 'Luke 6:38', themes: ['relationships', 'gratitude'], daily: 1,
     text: '“Give, and it will be given to you: good measure, pressed down, shaken together, and running over, will be given to you. For with the same measure you measure it will be measured back to you.”' },
-  { id: 'LUK.9.23', ref: 'Luke 9:23', themes: ['discipline', 'purpose'],
+  { id: 'LUK.9.23', ref: 'Luke 9:23', themes: ['discipline', 'purpose'], daily: 1,
     text: 'He said to all, “If anyone desires to come after me, let him deny himself, take up his cross, and follow me.' },
-  { id: 'LUK.10.41-42', ref: 'Luke 10:41-42', themes: ['rest', 'direction'],
+  { id: 'LUK.10.41-42', ref: 'Luke 10:41-42', themes: ['rest', 'direction'], daily: 1,
     text: 'Jesus answered her, “Martha, Martha, you are anxious and troubled about many things, but one thing is needed. Mary has chosen the good part, which will not be taken away from her.”' },
-  { id: 'LUK.12.22-26', ref: 'Luke 12:22-26', themes: ['fear', 'rest'],
+  { id: 'LUK.12.22-26', ref: 'Luke 12:22-26', themes: ['fear', 'rest'], daily: 1,
     text: 'He said to his disciples, “Therefore I tell you, don’t be anxious for your life, what you will eat, nor yet for your body, what you will wear. Life is more than food, and the body is more than clothing. Consider the ravens: they don’t sow, they don’t reap, they have no warehouse or barn, and God feeds them. How much more valuable are you than birds! Which of you by being anxious can add a cubit to his height? If then you aren’t able to do even the least things, why are you anxious about the rest?' },
-  { id: 'LUK.18.1', ref: 'Luke 18:1', themes: ['perseverance', 'patience'],
+  { id: 'LUK.18.1', ref: 'Luke 18:1', themes: ['perseverance', 'patience'], daily: 1,
     text: 'He also spoke a parable to them that they must always pray and not give up,' },
-  { id: 'JHN.3.16', ref: 'John 3:16', themes: ['love'],
+  { id: 'JHN.3.16', ref: 'John 3:16', themes: ['love'], daily: 1,
     text: 'For God so loved the world, that he gave his only born Son, that whoever believes in him should not perish, but have eternal life.' },
-  { id: 'JHN.8.12', ref: 'John 8:12', themes: ['direction', 'hope'],
+  { id: 'JHN.8.12', ref: 'John 8:12', themes: ['direction', 'hope'], daily: 1,
     text: 'Again, therefore, Jesus spoke to them, saying, “I am the light of the world. He who follows me will not walk in the darkness, but will have the light of life.”' },
-  { id: 'JHN.13.34', ref: 'John 13:34', themes: ['love', 'relationships'],
+  { id: 'JHN.13.34', ref: 'John 13:34', themes: ['love', 'relationships'], daily: 1,
     text: 'A new commandment I give to you, that you love one another. Just as I have loved you, you also love one another.' },
-  { id: 'JHN.14.1', ref: 'John 14:1', themes: ['fear', 'peace'],
+  { id: 'JHN.14.1', ref: 'John 14:1', themes: ['fear', 'peace'], daily: 1,
     text: '“Don’t let your heart be troubled. Believe in God. Believe also in me.' },
-  { id: 'JHN.14.27', ref: 'John 14:27', themes: ['peace', 'fear'],
+  { id: 'JHN.14.27', ref: 'John 14:27', themes: ['peace', 'fear'], daily: 1,
     text: 'Peace I leave with you. My peace I give to you; not as the world gives, I give to you. Don’t let your heart be troubled, neither let it be fearful.' },
-  { id: 'JHN.15.12', ref: 'John 15:12', themes: ['love'],
+  { id: 'JHN.15.12', ref: 'John 15:12', themes: ['love'], daily: 1,
     text: '“This is my commandment, that you love one another, even as I have loved you.' },
-  { id: 'JHN.15.16', ref: 'John 15:16', themes: ['purpose'],
+  { id: 'JHN.15.16', ref: 'John 15:16', themes: ['purpose'], daily: 1,
     text: 'You didn’t choose me, but I chose you and appointed you, that you should go and bear fruit, and that your fruit should remain; that whatever you will ask of the Father in my name, he may give it to you.' },
-  { id: 'JHN.16.13', ref: 'John 16:13', themes: ['direction', 'wisdom'],
+  { id: 'JHN.16.13', ref: 'John 16:13', themes: ['direction', 'wisdom'], daily: 1,
     text: 'However, when he, the Spirit of truth, has come, he will guide you into all truth, for he will not speak from himself; but whatever he hears, he will speak. He will declare to you things that are coming.' },
-  { id: 'JHN.16.33', ref: 'John 16:33', themes: ['peace', 'courage'],
+  { id: 'JHN.16.33', ref: 'John 16:33', themes: ['peace', 'courage'], daily: 1,
     text: 'I have told you these things, that in me you may have peace. In the world you have trouble; but cheer up! I have overcome the world.”' },
-  { id: 'ACT.3.19', ref: 'Acts 3:19', themes: ['forgiveness', 'rest'],
+  { id: 'ACT.3.19', ref: 'Acts 3:19', themes: ['forgiveness', 'rest'], daily: 1,
     text: '“Repent therefore, and turn again, that your sins may be blotted out, so that there may come times of refreshing from the presence of the Lord,' },
-  { id: 'ACT.4.31', ref: 'Acts 4:31', themes: ['courage'],
+  { id: 'ACT.4.31', ref: 'Acts 4:31', themes: ['courage'], daily: 1,
     text: 'When they had prayed, the place was shaken where they were gathered together. They were all filled with the Holy Spirit, and they spoke the word of God with boldness.' },
-  { id: 'ACT.20.24', ref: 'Acts 20:24', themes: ['purpose', 'perseverance'],
+  { id: 'ACT.20.24', ref: 'Acts 20:24', themes: ['purpose', 'perseverance'], daily: 1,
     text: 'But these things don’t count; nor do I hold my life dear to myself, so that I may finish my race with joy, and the ministry which I received from the Lord Jesus, to fully testify to the Good News of the grace of God.' },
-  { id: 'ACT.20.35', ref: 'Acts 20:35', themes: ['relationships', 'gratitude'],
+  { id: 'ACT.20.35', ref: 'Acts 20:35', themes: ['relationships', 'gratitude'], daily: 1,
     text: 'In all things I gave you an example, that so laboring you ought to help the weak, and to remember the words of the Lord Jesus, that he himself said, ‘It is more blessed to give than to receive.’ ”' },
-  { id: 'ROM.3.23-24', ref: 'Romans 3:23-24', themes: ['forgiveness'],
+  { id: 'ROM.3.23-24', ref: 'Romans 3:23-24', themes: ['forgiveness'], daily: 1,
     text: 'for all have sinned, and fall short of the glory of God; being justified freely by his grace through the redemption that is in Christ Jesus,' },
-  { id: 'ROM.5.1', ref: 'Romans 5:1', themes: ['peace', 'forgiveness'],
+  { id: 'ROM.5.1', ref: 'Romans 5:1', themes: ['peace', 'forgiveness'], daily: 1,
     text: 'Being therefore justified by faith, we have peace with God through our Lord Jesus Christ;' },
-  { id: 'ROM.5.3-5', ref: 'Romans 5:3-5', themes: ['hope', 'perseverance'],
+  { id: 'ROM.5.3-5', ref: 'Romans 5:3-5', themes: ['hope', 'perseverance'], daily: 1,
     text: 'Not only this, but we also rejoice in our sufferings, knowing that suffering produces perseverance; and perseverance, proven character; and proven character, hope; and hope doesn’t disappoint us, because God’s love has been poured into our hearts through the Holy Spirit who was given to us.' },
-  { id: 'ROM.8.1', ref: 'Romans 8:1', themes: ['forgiveness'],
+  { id: 'ROM.8.1', ref: 'Romans 8:1', themes: ['forgiveness'], daily: 1,
     text: 'There is therefore now no condemnation to those who are in Christ Jesus, who don’t walk according to the flesh, but according to the Spirit.' },
-  { id: 'ROM.8.6', ref: 'Romans 8:6', themes: ['peace', 'discipline'],
+  { id: 'ROM.8.6', ref: 'Romans 8:6', themes: ['peace', 'discipline'], daily: 1,
     text: 'For the mind of the flesh is death, but the mind of the Spirit is life and peace;' },
-  { id: 'ROM.8.24-25', ref: 'Romans 8:24-25', themes: ['hope', 'patience'],
+  { id: 'ROM.8.24-25', ref: 'Romans 8:24-25', themes: ['hope', 'patience'], daily: 1,
     text: 'For we were saved in hope, but hope that is seen is not hope. For who hopes for that which he sees? But if we hope for that which we don’t see, we wait for it with patience.' },
-  { id: 'ROM.8.28', ref: 'Romans 8:28', themes: ['hope', 'faith'],
+  { id: 'ROM.8.28', ref: 'Romans 8:28', themes: ['hope', 'faith'], daily: 1,
     text: 'We know that all things work together for good for those who love God, for those who are called according to his purpose.' },
-  { id: 'ROM.8.38-39', ref: 'Romans 8:38-39', themes: ['love', 'fear'],
+  { id: 'ROM.8.38-39', ref: 'Romans 8:38-39', themes: ['love', 'fear'], daily: 1,
     text: 'For I am persuaded that neither death, nor life, nor angels, nor principalities, nor things present, nor things to come, nor powers, nor height, nor depth, nor any other created thing will be able to separate us from God’s love which is in Christ Jesus our Lord.' },
-  { id: 'ROM.10.17', ref: 'Romans 10:17', themes: ['faith'],
+  { id: 'ROM.10.17', ref: 'Romans 10:17', themes: ['faith'], daily: 1,
     text: 'So faith comes by hearing, and hearing by the word of God.' },
-  { id: 'ROM.12.2', ref: 'Romans 12:2', themes: ['purpose', 'discipline'],
+  { id: 'ROM.12.2', ref: 'Romans 12:2', themes: ['purpose', 'discipline'], daily: 1,
     text: 'Don’t be conformed to this world, but be transformed by the renewing of your mind, so that you may prove what is the good, well-pleasing, and perfect will of God.' },
-  { id: 'ROM.12.10', ref: 'Romans 12:10', themes: ['relationships', 'love'],
+  { id: 'ROM.12.10', ref: 'Romans 12:10', themes: ['relationships', 'love'], daily: 1,
     text: 'In love of the brothers be tenderly affectionate to one another; in honor prefer one another,' },
-  { id: 'ROM.12.12', ref: 'Romans 12:12', themes: ['hope', 'perseverance'],
+  { id: 'ROM.12.12', ref: 'Romans 12:12', themes: ['hope', 'perseverance'], daily: 1,
     text: 'rejoicing in hope, enduring in troubles, continuing steadfastly in prayer,' },
-  { id: 'ROM.12.15', ref: 'Romans 12:15', themes: ['grief', 'relationships'],
+  { id: 'ROM.12.15', ref: 'Romans 12:15', themes: ['grief', 'relationships'], daily: 1,
     text: 'Rejoice with those who rejoice. Weep with those who weep.' },
-  { id: 'ROM.12.18', ref: 'Romans 12:18', themes: ['peace', 'relationships'],
+  { id: 'ROM.12.18', ref: 'Romans 12:18', themes: ['peace', 'relationships'], daily: 1,
     text: 'If it is possible, as much as it is up to you, be at peace with all men.' },
-  { id: 'ROM.13.10', ref: 'Romans 13:10', themes: ['love'],
+  { id: 'ROM.13.10', ref: 'Romans 13:10', themes: ['love'], daily: 1,
     text: 'Love doesn’t harm a neighbor. Love therefore is the fulfillment of the law.' },
-  { id: 'ROM.15.5', ref: 'Romans 15:5', themes: ['patience', 'relationships'],
+  { id: 'ROM.15.5', ref: 'Romans 15:5', themes: ['patience', 'relationships'], daily: 1,
     text: 'Now the God of perseverance and of encouragement grant you to be of the same mind with one another according to Christ Jesus,' },
-  { id: 'ROM.15.13', ref: 'Romans 15:13', themes: ['hope', 'peace'],
+  { id: 'ROM.15.13', ref: 'Romans 15:13', themes: ['hope', 'peace'], daily: 1,
     text: 'Now may the God of hope fill you with all joy and peace in believing, that you may abound in hope in the power of the Holy Spirit.' },
-  { id: '1CO.1.25', ref: '1 Corinthians 1:25', themes: ['wisdom'],
+  { id: '1CO.1.25', ref: '1 Corinthians 1:25', themes: ['wisdom'], daily: 1,
     text: 'because the foolishness of God is wiser than men, and the weakness of God is stronger than men.' },
-  { id: '1CO.6.19-20', ref: '1 Corinthians 6:19-20', themes: ['discipline', 'purpose'],
+  { id: '1CO.6.19-20', ref: '1 Corinthians 6:19-20', themes: ['discipline', 'purpose'], daily: 1,
     text: 'Or don’t you know that your body is a temple of the Holy Spirit who is in you, whom you have from God? You are not your own, for you were bought with a price. Therefore glorify God in your body and in your spirit, which are God’s.' },
-  { id: '1CO.9.24', ref: '1 Corinthians 9:24', themes: ['perseverance', 'discipline'],
+  { id: '1CO.9.24', ref: '1 Corinthians 9:24', themes: ['perseverance', 'discipline'], daily: 1,
     text: 'Don’t you know that those who run in a race all run, but one receives the prize? Run like that, so that you may win.' },
-  { id: '1CO.10.13', ref: '1 Corinthians 10:13', themes: ['perseverance', 'faith'],
+  { id: '1CO.10.13', ref: '1 Corinthians 10:13', themes: ['perseverance', 'faith'], daily: 1,
     text: 'No temptation has taken you except what is common to man. God is faithful, who will not allow you to be tempted above what you are able, but will with the temptation also make the way of escape, that you may be able to endure it.' },
-  { id: '1CO.10.31', ref: '1 Corinthians 10:31', themes: ['purpose', 'gratitude'],
+  { id: '1CO.10.31', ref: '1 Corinthians 10:31', themes: ['purpose', 'gratitude'], daily: 1,
     text: 'Whether therefore you eat or drink, or whatever you do, do all to the glory of God.' },
-  { id: '1CO.12.4-6', ref: '1 Corinthians 12:4-6', themes: ['purpose', 'relationships'],
+  { id: '1CO.12.4-6', ref: '1 Corinthians 12:4-6', themes: ['purpose', 'relationships'], daily: 1,
     text: 'Now there are various kinds of gifts, but the same Spirit. There are various kinds of service, and the same Lord. There are various kinds of workings, but the same God who works all things in all.' },
-  { id: '1CO.13.4-7', ref: '1 Corinthians 13:4-7', themes: ['love', 'patience'],
+  { id: '1CO.13.4-7', ref: '1 Corinthians 13:4-7', themes: ['love', 'patience'], daily: 1,
     text: 'Love is patient and is kind. Love doesn’t envy. Love doesn’t brag, is not proud, doesn’t behave itself inappropriately, doesn’t seek its own way, is not provoked, takes no account of evil; doesn’t rejoice in unrighteousness, but rejoices with the truth; bears all things, believes all things, hopes all things, and endures all things.' },
-  { id: '1CO.15.58', ref: '1 Corinthians 15:58', themes: ['perseverance', 'purpose'],
+  { id: '1CO.15.58', ref: '1 Corinthians 15:58', themes: ['perseverance', 'purpose'], daily: 1,
     text: 'Therefore, my beloved brothers, be steadfast, immovable, always abounding in the Lord’s work, because you know that your labor is not in vain in the Lord.' },
-  { id: '1CO.16.13', ref: '1 Corinthians 16:13', themes: ['courage'],
+  { id: '1CO.16.13', ref: '1 Corinthians 16:13', themes: ['courage'], daily: 1,
     text: 'Watch! Stand firm in the faith! Be courageous! Be strong!' },
-  { id: '1CO.16.14', ref: '1 Corinthians 16:14', themes: ['love'],
+  { id: '1CO.16.14', ref: '1 Corinthians 16:14', themes: ['love'], daily: 1,
     text: 'Let all that you do be done in love.' },
-  { id: '2CO.1.3-4', ref: '2 Corinthians 1:3-4', themes: ['grief', 'relationships'],
+  { id: '2CO.1.3-4', ref: '2 Corinthians 1:3-4', themes: ['grief', 'relationships'], daily: 1,
     text: 'Blessed be the God and Father of our Lord Jesus Christ, the Father of mercies and God of all comfort, who comforts us in all our affliction, that we may be able to comfort those who are in any affliction, through the comfort with which we ourselves are comforted by God.' },
-  { id: '2CO.4.8-9', ref: '2 Corinthians 4:8-9', themes: ['perseverance', 'grief'],
+  { id: '2CO.4.8-9', ref: '2 Corinthians 4:8-9', themes: ['perseverance', 'grief'], daily: 1,
     text: 'We are pressed on every side, yet not crushed; perplexed, yet not to despair; pursued, yet not forsaken; struck down, yet not destroyed;' },
-  { id: '2CO.4.16-17', ref: '2 Corinthians 4:16-17', themes: ['perseverance', 'hope'],
+  { id: '2CO.4.16-17', ref: '2 Corinthians 4:16-17', themes: ['perseverance', 'hope'], daily: 1,
     text: 'Therefore we don’t faint, but though our outward person is decaying, yet our inward person is renewed day by day. For our light affliction, which is for the moment, works for us more and more exceedingly an eternal weight of glory,' },
-  { id: '2CO.4.18', ref: '2 Corinthians 4:18', themes: ['faith', 'hope'],
+  { id: '2CO.4.18', ref: '2 Corinthians 4:18', themes: ['faith', 'hope'], daily: 1,
     text: 'while we don’t look at the things which are seen, but at the things which are not seen. For the things which are seen are temporal, but the things which are not seen are eternal.' },
-  { id: '2CO.5.7', ref: '2 Corinthians 5:7', themes: ['faith'],
+  { id: '2CO.5.7', ref: '2 Corinthians 5:7', themes: ['faith'], daily: 1,
     text: 'for we walk by faith, not by sight.' },
-  { id: '2CO.5.17', ref: '2 Corinthians 5:17', themes: ['forgiveness', 'hope'],
+  { id: '2CO.5.17', ref: '2 Corinthians 5:17', themes: ['forgiveness', 'hope'], daily: 1,
     text: 'Therefore if anyone is in Christ, he is a new creation. The old things have passed away. Behold, all things have become new.' },
-  { id: '2CO.9.15', ref: '2 Corinthians 9:15', themes: ['gratitude'],
+  { id: '2CO.9.15', ref: '2 Corinthians 9:15', themes: ['gratitude'], daily: 1,
     text: 'Now thanks be to God for his unspeakable gift!' },
-  { id: '2CO.12.9', ref: '2 Corinthians 12:9', themes: ['strength', 'grief'],
+  { id: '2CO.12.9', ref: '2 Corinthians 12:9', themes: ['strength', 'grief'], daily: 1,
     text: 'He has said to me, “My grace is sufficient for you, for my power is made perfect in weakness.” Most gladly therefore I will rather glory in my weaknesses, that the power of Christ may rest on me.' },
-  { id: 'GAL.5.13', ref: 'Galatians 5:13', themes: ['love', 'relationships'],
+  { id: 'GAL.5.13', ref: 'Galatians 5:13', themes: ['love', 'relationships'], daily: 1,
     text: 'For you, brothers, were called for freedom. Only don’t use your freedom as an opportunity for the flesh, but through love be servants to one another.' },
-  { id: 'GAL.5.22-23', ref: 'Galatians 5:22-23', themes: ['patience', 'love'],
+  { id: 'GAL.5.22-23', ref: 'Galatians 5:22-23', themes: ['patience', 'love'], daily: 1,
     text: 'But the fruit of the Spirit is love, joy, peace, patience, kindness, goodness, faith, gentleness, and self-control. Against such things there is no law.' },
-  { id: 'GAL.6.2', ref: 'Galatians 6:2', themes: ['relationships', 'love'],
+  { id: 'GAL.6.2', ref: 'Galatians 6:2', themes: ['relationships', 'love'], daily: 1,
     text: 'Bear one another’s burdens, and so fulfill the law of Christ.' },
-  { id: 'GAL.6.7-8', ref: 'Galatians 6:7-8', themes: ['discipline', 'wisdom'],
+  { id: 'GAL.6.7-8', ref: 'Galatians 6:7-8', themes: ['discipline', 'wisdom'], daily: 1,
     text: 'Don’t be deceived. God is not mocked, for whatever a man sows, that he will also reap. For he who sows to his own flesh will from the flesh reap corruption. But he who sows to the Spirit will from the Spirit reap eternal life.' },
-  { id: 'GAL.6.9', ref: 'Galatians 6:9', themes: ['perseverance'],
+  { id: 'GAL.6.9', ref: 'Galatians 6:9', themes: ['perseverance'], daily: 1,
     text: 'Let’s not be weary in doing good, for we will reap in due season if we don’t give up.' },
-  { id: 'EPH.1.7', ref: 'Ephesians 1:7', themes: ['forgiveness'],
+  { id: 'EPH.1.7', ref: 'Ephesians 1:7', themes: ['forgiveness'], daily: 1,
     text: 'In him we have our redemption through his blood, the forgiveness of our trespasses, according to the riches of his grace' },
-  { id: 'EPH.2.8-9', ref: 'Ephesians 2:8-9', themes: ['forgiveness', 'faith'],
+  { id: 'EPH.2.8-9', ref: 'Ephesians 2:8-9', themes: ['forgiveness', 'faith'], daily: 1,
     text: 'for by grace you have been saved through faith, and that not of yourselves; it is the gift of God, not of works, that no one would boast.' },
-  { id: 'EPH.2.10', ref: 'Ephesians 2:10', themes: ['purpose'],
+  { id: 'EPH.2.10', ref: 'Ephesians 2:10', themes: ['purpose'], daily: 1,
     text: 'For we are his workmanship, created in Christ Jesus for good works, which God prepared before that we would walk in them.' },
-  { id: 'EPH.3.16', ref: 'Ephesians 3:16', themes: ['strength'],
+  { id: 'EPH.3.16', ref: 'Ephesians 3:16', themes: ['strength'], daily: 1,
     text: 'that he would grant you, according to the riches of his glory, that you may be strengthened with power through his Spirit in the inner person,' },
-  { id: 'EPH.4.2-3', ref: 'Ephesians 4:2-3', themes: ['patience', 'relationships'],
+  { id: 'EPH.4.2-3', ref: 'Ephesians 4:2-3', themes: ['patience', 'relationships'], daily: 1,
     text: 'with all lowliness and humility, with patience, bearing with one another in love, being eager to keep the unity of the Spirit in the bond of peace.' },
-  { id: 'EPH.4.29', ref: 'Ephesians 4:29', themes: ['relationships', 'discipline'],
+  { id: 'EPH.4.29', ref: 'Ephesians 4:29', themes: ['relationships', 'discipline'], daily: 1,
     text: 'Let no corrupt speech proceed out of your mouth, but only what is good for building others up as the need may be, that it may give grace to those who hear.' },
-  { id: 'EPH.4.32', ref: 'Ephesians 4:32', themes: ['forgiveness', 'relationships'],
+  { id: 'EPH.4.32', ref: 'Ephesians 4:32', themes: ['forgiveness', 'relationships'], daily: 1,
     text: 'And be kind to one another, tender hearted, forgiving each other, just as God also in Christ forgave you.' },
-  { id: 'EPH.5.15-16', ref: 'Ephesians 5:15-16', themes: ['wisdom', 'discipline'],
+  { id: 'EPH.5.15-16', ref: 'Ephesians 5:15-16', themes: ['wisdom', 'discipline'], daily: 1,
     text: 'Therefore watch carefully how you walk, not as unwise, but as wise, redeeming the time, because the days are evil.' },
-  { id: 'EPH.5.20', ref: 'Ephesians 5:20', themes: ['gratitude'],
+  { id: 'EPH.5.20', ref: 'Ephesians 5:20', themes: ['gratitude'], daily: 1,
     text: 'giving thanks always concerning all things in the name of our Lord Jesus Christ to God, even the Father;' },
-  { id: 'EPH.6.10-11', ref: 'Ephesians 6:10-11', themes: ['strength', 'courage'],
+  { id: 'EPH.6.10-11', ref: 'Ephesians 6:10-11', themes: ['strength', 'courage'], daily: 1,
     text: 'Finally, be strong in the Lord and in the strength of his might. Put on the whole armor of God, that you may be able to stand against the wiles of the devil.' },
-  { id: 'PHP.1.6', ref: 'Philippians 1:6', themes: ['hope', 'purpose'],
+  { id: 'PHP.1.6', ref: 'Philippians 1:6', themes: ['hope', 'purpose'], daily: 1,
     text: 'being confident of this very thing, that he who began a good work in you will complete it until the day of Jesus Christ.' },
-  { id: 'PHP.2.3-4', ref: 'Philippians 2:3-4', themes: ['relationships', 'love'],
+  { id: 'PHP.2.3-4', ref: 'Philippians 2:3-4', themes: ['relationships', 'love'], daily: 1,
     text: 'doing nothing through rivalry or through conceit, but in humility, each counting others better than himself; each of you not just looking to his own things, but each of you also to the things of others.' },
-  { id: 'PHP.3.13-14', ref: 'Philippians 3:13-14', themes: ['perseverance', 'purpose'],
+  { id: 'PHP.3.13-14', ref: 'Philippians 3:13-14', themes: ['perseverance', 'purpose'], daily: 1,
     text: 'Brothers, I don’t regard myself as yet having taken hold, but one thing I do: forgetting the things which are behind and stretching forward to the things which are before, I press on toward the goal for the prize of the high calling of God in Christ Jesus.' },
-  { id: 'PHP.4.4', ref: 'Philippians 4:4', themes: ['gratitude'],
+  { id: 'PHP.4.4', ref: 'Philippians 4:4', themes: ['gratitude'], daily: 1,
     text: 'Rejoice in the Lord always! Again I will say, “Rejoice!”' },
-  { id: 'PHP.4.6-7', ref: 'Philippians 4:6-7', themes: ['peace', 'fear'],
+  { id: 'PHP.4.6-7', ref: 'Philippians 4:6-7', themes: ['peace', 'fear'], daily: 1,
     text: 'In nothing be anxious, but in everything, by prayer and petition with thanksgiving, let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your thoughts in Christ Jesus.' },
-  { id: 'PHP.4.8', ref: 'Philippians 4:8', themes: ['discipline', 'peace'],
+  { id: 'PHP.4.8', ref: 'Philippians 4:8', themes: ['discipline', 'peace'], daily: 1,
     text: 'Finally, brothers, whatever things are true, whatever things are honorable, whatever things are just, whatever things are pure, whatever things are lovely, whatever things are of good report: if there is any virtue and if there is anything worthy of praise, think about these things.' },
-  { id: 'PHP.4.11-13', ref: 'Philippians 4:11-13', themes: ['strength', 'gratitude'],
+  { id: 'PHP.4.11-13', ref: 'Philippians 4:11-13', themes: ['strength', 'gratitude'], daily: 1,
     text: 'Not that I speak because of lack, for I have learned in whatever state I am, to be content in it. I know how to be humbled, and I also know how to abound. In any and all circumstances I have learned the secret both to be filled and to be hungry, both to abound and to be in need. I can do all things through Christ who strengthens me.' },
-  { id: 'COL.2.6-7', ref: 'Colossians 2:6-7', themes: ['gratitude', 'discipline'],
+  { id: 'COL.2.6-7', ref: 'Colossians 2:6-7', themes: ['gratitude', 'discipline'], daily: 1,
     text: 'As therefore you received Christ Jesus the Lord, walk in him, rooted and built up in him and established in the faith, even as you were taught, abounding in it in thanksgiving.' },
-  { id: 'COL.3.12', ref: 'Colossians 3:12', themes: ['patience', 'relationships'],
+  { id: 'COL.3.12', ref: 'Colossians 3:12', themes: ['patience', 'relationships'], daily: 1,
     text: 'Put on therefore, as God’s chosen ones, holy and beloved, a heart of compassion, kindness, lowliness, humility, and perseverance;' },
-  { id: 'COL.3.13', ref: 'Colossians 3:13', themes: ['forgiveness', 'relationships'],
+  { id: 'COL.3.13', ref: 'Colossians 3:13', themes: ['forgiveness', 'relationships'], daily: 1,
     text: 'bearing with one another, and forgiving each other, if any man has a complaint against any; even as Christ forgave you, so you also do.' },
-  { id: 'COL.3.14', ref: 'Colossians 3:14', themes: ['love'],
+  { id: 'COL.3.14', ref: 'Colossians 3:14', themes: ['love'], daily: 1,
     text: 'Above all these things, walk in love, which is the bond of perfection.' },
-  { id: 'COL.3.15', ref: 'Colossians 3:15', themes: ['peace', 'gratitude'],
+  { id: 'COL.3.15', ref: 'Colossians 3:15', themes: ['peace', 'gratitude'], daily: 1,
     text: 'And let the peace of God rule in your hearts, to which also you were called in one body, and be thankful.' },
-  { id: 'COL.3.17', ref: 'Colossians 3:17', themes: ['gratitude', 'purpose'],
+  { id: 'COL.3.17', ref: 'Colossians 3:17', themes: ['gratitude', 'purpose'], daily: 1,
     text: 'Whatever you do, in word or in deed, do all in the name of the Lord Jesus, giving thanks to God the Father through him.' },
-  { id: 'COL.3.23-24', ref: 'Colossians 3:23-24', themes: ['purpose', 'discipline'],
+  { id: 'COL.3.23-24', ref: 'Colossians 3:23-24', themes: ['purpose', 'discipline'], daily: 1,
     text: 'And whatever you do, work heartily, as for the Lord and not for men, knowing that from the Lord you will receive the reward of the inheritance; for you serve the Lord Christ.' },
-  { id: 'COL.4.5-6', ref: 'Colossians 4:5-6', themes: ['wisdom', 'relationships'],
+  { id: 'COL.4.5-6', ref: 'Colossians 4:5-6', themes: ['wisdom', 'relationships'], daily: 1,
     text: 'Walk in wisdom toward those who are outside, redeeming the time. Let your speech always be with grace, seasoned with salt, that you may know how you ought to answer each one.' },
-  { id: '1TH.5.11', ref: '1 Thessalonians 5:11', themes: ['relationships'],
+  { id: '1TH.5.11', ref: '1 Thessalonians 5:11', themes: ['relationships'], daily: 1,
     text: 'Therefore exhort one another, and build each other up, even as you also do.' },
-  { id: '1TH.5.14', ref: '1 Thessalonians 5:14', themes: ['patience', 'relationships'],
+  { id: '1TH.5.14', ref: '1 Thessalonians 5:14', themes: ['patience', 'relationships'], daily: 1,
     text: 'We exhort you, brothers: Admonish the disorderly; encourage the faint-hearted; support the weak; be patient toward all.' },
-  { id: '1TH.5.16-18', ref: '1 Thessalonians 5:16-18', themes: ['gratitude'],
+  { id: '1TH.5.16-18', ref: '1 Thessalonians 5:16-18', themes: ['gratitude'], daily: 1,
     text: 'Always rejoice. Pray without ceasing. In everything give thanks, for this is the will of God in Christ Jesus toward you.' },
-  { id: '2TH.3.13', ref: '2 Thessalonians 3:13', themes: ['perseverance'],
+  { id: '2TH.3.13', ref: '2 Thessalonians 3:13', themes: ['perseverance'], daily: 1,
     text: 'But you, brothers, don’t be weary in doing what is right.' },
-  { id: '2TH.3.16', ref: '2 Thessalonians 3:16', themes: ['peace'],
+  { id: '2TH.3.16', ref: '2 Thessalonians 3:16', themes: ['peace'], daily: 1,
     text: 'Now may the Lord of peace himself give you peace at all times in all ways. The Lord be with you all.' },
-  { id: '1TI.4.7-8', ref: '1 Timothy 4:7-8', themes: ['discipline'],
+  { id: '1TI.4.7-8', ref: '1 Timothy 4:7-8', themes: ['discipline'], daily: 1,
     text: 'But refuse profane and old wives’ fables. Exercise yourself toward godliness. For bodily exercise has some value, but godliness has value in all things, having the promise of the life which is now and of that which is to come.' },
-  { id: '1TI.6.6-7', ref: '1 Timothy 6:6-7', themes: ['gratitude', 'wisdom'],
+  { id: '1TI.6.6-7', ref: '1 Timothy 6:6-7', themes: ['gratitude', 'wisdom'], daily: 1,
     text: 'But godliness with contentment is great gain. For we brought nothing into the world, and we certainly can’t carry anything out.' },
-  { id: '2TI.1.7', ref: '2 Timothy 1:7', themes: ['courage', 'fear'],
+  { id: '2TI.1.7', ref: '2 Timothy 1:7', themes: ['courage', 'fear'], daily: 1,
     text: 'For God didn’t give us a spirit of fear, but of power, love, and self-control.' },
-  { id: '2TI.1.9', ref: '2 Timothy 1:9', themes: ['purpose'],
+  { id: '2TI.1.9', ref: '2 Timothy 1:9', themes: ['purpose'], daily: 1,
     text: 'who saved us and called us with a holy calling, not according to our works, but according to his own purpose and grace, which was given to us in Christ Jesus before times eternal,' },
-  { id: '2TI.4.7', ref: '2 Timothy 4:7', themes: ['perseverance'],
+  { id: '2TI.4.7', ref: '2 Timothy 4:7', themes: ['perseverance'], daily: 1,
     text: 'I have fought the good fight. I have finished the course. I have kept the faith.' },
-  { id: 'TIT.2.11-12', ref: 'Titus 2:11-12', themes: ['discipline', 'forgiveness'],
+  { id: 'TIT.2.11-12', ref: 'Titus 2:11-12', themes: ['discipline', 'forgiveness'], daily: 1,
     text: 'For the grace of God has appeared, bringing salvation to all men, instructing us to the intent that, denying ungodliness and worldly lusts, we would live soberly, righteously, and godly in this present age;' },
-  { id: 'TIT.3.5', ref: 'Titus 3:5', themes: ['forgiveness'],
+  { id: 'TIT.3.5', ref: 'Titus 3:5', themes: ['forgiveness'], daily: 1,
     text: 'not by works of righteousness which we did ourselves, but according to his mercy, he saved us through the washing of regeneration and renewing by the Holy Spirit,' },
-  { id: 'HEB.4.9-10', ref: 'Hebrews 4:9-10', themes: ['rest'],
+  { id: 'HEB.4.9-10', ref: 'Hebrews 4:9-10', themes: ['rest'], daily: 1,
     text: 'There remains therefore a Sabbath rest for the people of God. For he who has entered into his rest has himself also rested from his works, as God did from his.' },
-  { id: 'HEB.4.16', ref: 'Hebrews 4:16', themes: ['forgiveness', 'courage'],
+  { id: 'HEB.4.16', ref: 'Hebrews 4:16', themes: ['forgiveness', 'courage'], daily: 1,
     text: 'Let’s therefore draw near with boldness to the throne of grace, that we may receive mercy and may find grace for help in time of need.' },
-  { id: 'HEB.6.19', ref: 'Hebrews 6:19', themes: ['hope', 'faith'],
+  { id: 'HEB.6.19', ref: 'Hebrews 6:19', themes: ['hope', 'faith'], daily: 1,
     text: 'This hope we have as an anchor of the soul, a hope both sure and steadfast and entering into that which is within the veil,' },
-  { id: 'HEB.10.24-25', ref: 'Hebrews 10:24-25', themes: ['relationships'],
+  { id: 'HEB.10.24-25', ref: 'Hebrews 10:24-25', themes: ['relationships'], daily: 1,
     text: 'Let’s consider how to provoke one another to love and good works, not forsaking our own assembling together, as the custom of some is, but exhorting one another, and so much the more as you see the Day approaching.' },
-  { id: 'HEB.10.36', ref: 'Hebrews 10:36', themes: ['perseverance', 'patience'],
+  { id: 'HEB.10.36', ref: 'Hebrews 10:36', themes: ['perseverance', 'patience'], daily: 1,
     text: 'For you need endurance so that, having done the will of God, you may receive the promise.' },
-  { id: 'HEB.11.1', ref: 'Hebrews 11:1', themes: ['faith', 'hope'],
+  { id: 'HEB.11.1', ref: 'Hebrews 11:1', themes: ['faith', 'hope'], daily: 1,
     text: 'Now faith is assurance of things hoped for, proof of things not seen.' },
-  { id: 'HEB.11.6', ref: 'Hebrews 11:6', themes: ['faith'],
+  { id: 'HEB.11.6', ref: 'Hebrews 11:6', themes: ['faith'], daily: 1,
     text: 'Without faith it is impossible to be well pleasing to him, for he who comes to God must believe that he exists, and that he is a rewarder of those who seek him.' },
-  { id: 'HEB.12.1', ref: 'Hebrews 12:1', themes: ['perseverance', 'discipline'],
+  { id: 'HEB.12.1', ref: 'Hebrews 12:1', themes: ['perseverance', 'discipline'], daily: 1,
     text: 'Therefore let’s also, seeing we are surrounded by so great a cloud of witnesses, lay aside every weight and the sin which so easily entangles us, and let’s run with perseverance the race that is set before us,' },
-  { id: 'HEB.12.2-3', ref: 'Hebrews 12:2-3', themes: ['perseverance', 'hope'],
+  { id: 'HEB.12.2-3', ref: 'Hebrews 12:2-3', themes: ['perseverance', 'hope'], daily: 1,
     text: 'looking to Jesus, the author and perfecter of faith, who for the joy that was set before him endured the cross, despising its shame, and has sat down at the right hand of the throne of God. For consider him who has endured such contradiction of sinners against himself, that you don’t grow weary, fainting in your souls.' },
-  { id: 'HEB.12.11', ref: 'Hebrews 12:11', themes: ['discipline', 'patience'],
+  { id: 'HEB.12.11', ref: 'Hebrews 12:11', themes: ['discipline', 'patience'], daily: 1,
     text: 'All chastening seems for the present to be not joyous but grievous; yet afterward it yields the peaceful fruit of righteousness to those who have been trained by it.' },
-  { id: 'HEB.13.5', ref: 'Hebrews 13:5', themes: ['gratitude', 'fear'],
+  { id: 'HEB.13.5', ref: 'Hebrews 13:5', themes: ['gratitude', 'fear'], daily: 1,
     text: 'Be free from the love of money, content with such things as you have, for he has said, “I will in no way leave you, neither will I in any way forsake you.”' },
-  { id: 'HEB.13.6', ref: 'Hebrews 13:6', themes: ['courage', 'fear'],
+  { id: 'HEB.13.6', ref: 'Hebrews 13:6', themes: ['courage', 'fear'], daily: 1,
     text: 'So that with good courage we say, “The Lord is my helper. I will not fear. What can man do to me?”' },
-  { id: 'JAS.1.2-4', ref: 'James 1:2-4', themes: ['perseverance', 'patience'],
+  { id: 'JAS.1.2-4', ref: 'James 1:2-4', themes: ['perseverance', 'patience'], daily: 1,
     text: 'Count it all joy, my brothers, when you fall into various temptations, knowing that the testing of your faith produces endurance. Let endurance have its perfect work, that you may be perfect and complete, lacking in nothing.' },
-  { id: 'JAS.1.5', ref: 'James 1:5', themes: ['wisdom'],
+  { id: 'JAS.1.5', ref: 'James 1:5', themes: ['wisdom'], daily: 1,
     text: 'But if any of you lacks wisdom, let him ask of God, who gives to all liberally and without reproach, and it will be given to him.' },
-  { id: 'JAS.1.12', ref: 'James 1:12', themes: ['perseverance'],
+  { id: 'JAS.1.12', ref: 'James 1:12', themes: ['perseverance'], daily: 1,
     text: 'Blessed is a person who endures temptation, for when he has been approved, he will receive the crown of life which the Lord promised to those who love him.' },
-  { id: 'JAS.1.17', ref: 'James 1:17', themes: ['gratitude'],
+  { id: 'JAS.1.17', ref: 'James 1:17', themes: ['gratitude'], daily: 1,
     text: 'Every good gift and every perfect gift is from above, coming down from the Father of lights, with whom can be no variation nor turning shadow.' },
-  { id: 'JAS.1.19-20', ref: 'James 1:19-20', themes: ['patience', 'relationships'],
+  { id: 'JAS.1.19-20', ref: 'James 1:19-20', themes: ['patience', 'relationships'], daily: 1,
     text: 'So, then, my beloved brothers, let every man be swift to hear, slow to speak, and slow to anger; for the anger of man doesn’t produce the righteousness of God.' },
-  { id: 'JAS.2.17', ref: 'James 2:17', themes: ['faith', 'purpose'],
+  { id: 'JAS.2.17', ref: 'James 2:17', themes: ['faith', 'purpose'], daily: 1,
     text: 'Even so faith, if it has no works, is dead in itself.' },
-  { id: 'JAS.3.17', ref: 'James 3:17', themes: ['wisdom', 'peace'],
+  { id: 'JAS.3.17', ref: 'James 3:17', themes: ['wisdom', 'peace'], daily: 1,
     text: 'But the wisdom that is from above is first pure, then peaceful, gentle, reasonable, full of mercy and good fruits, without partiality, and without hypocrisy.' },
-  { id: 'JAS.4.7-8', ref: 'James 4:7-8', themes: ['discipline', 'faith'],
+  { id: 'JAS.4.7-8', ref: 'James 4:7-8', themes: ['discipline', 'faith'], daily: 1,
     text: 'Be subject therefore to God. Resist the devil, and he will flee from you. Draw near to God, and he will draw near to you. Cleanse your hands, you sinners. Purify your hearts, you double-minded.' },
-  { id: 'JAS.4.13-15', ref: 'James 4:13-15', themes: ['wisdom', 'direction'],
+  { id: 'JAS.4.13-15', ref: 'James 4:13-15', themes: ['wisdom', 'direction'], daily: 1,
     text: 'Come now, you who say, “Today or tomorrow let’s go into this city and spend a year there, trade, and make a profit.” Yet you don’t know what your life will be like tomorrow. For what is your life? For you are a vapor that appears for a little time and then vanishes away. For you ought to say, “If the Lord wills, we will both live, and do this or that.”' },
-  { id: 'JAS.5.7-8', ref: 'James 5:7-8', themes: ['patience'],
+  { id: 'JAS.5.7-8', ref: 'James 5:7-8', themes: ['patience'], daily: 1,
     text: 'Be patient therefore, brothers, until the coming of the Lord. Behold, the farmer waits for the precious fruit of the earth, being patient over it, until it receives the early and late rain. You also be patient. Establish your hearts, for the coming of the Lord is at hand.' },
-  { id: 'JAS.5.16', ref: 'James 5:16', themes: ['forgiveness', 'relationships'],
+  { id: 'JAS.5.16', ref: 'James 5:16', themes: ['forgiveness', 'relationships'], daily: 1,
     text: 'Confess your sins to one another and pray for one another, that you may be healed. The insistent prayer of a righteous person is powerfully effective.' },
-  { id: '1PE.1.3', ref: '1 Peter 1:3', themes: ['hope'],
+  { id: '1PE.1.3', ref: '1 Peter 1:3', themes: ['hope'], daily: 1,
     text: 'Blessed be the God and Father of our Lord Jesus Christ, who according to his great mercy caused us to be born again to a living hope through the resurrection of Jesus Christ from the dead,' },
-  { id: '1PE.3.8', ref: '1 Peter 3:8', themes: ['relationships', 'love'],
+  { id: '1PE.3.8', ref: '1 Peter 3:8', themes: ['relationships', 'love'], daily: 1,
     text: 'Finally, all of you be like-minded, compassionate, loving as brothers, tenderhearted, courteous,' },
-  { id: '1PE.4.8', ref: '1 Peter 4:8', themes: ['love', 'forgiveness'],
+  { id: '1PE.4.8', ref: '1 Peter 4:8', themes: ['love', 'forgiveness'], daily: 1,
     text: 'And above all things be earnest in your love among yourselves, for love covers a multitude of sins.' },
-  { id: '1PE.4.10', ref: '1 Peter 4:10', themes: ['purpose', 'relationships'],
+  { id: '1PE.4.10', ref: '1 Peter 4:10', themes: ['purpose', 'relationships'], daily: 1,
     text: 'As each has received a gift, employ it in serving one another, as good managers of the grace of God in its various forms.' },
-  { id: '1PE.5.6-7', ref: '1 Peter 5:6-7', themes: ['fear', 'rest'],
+  { id: '1PE.5.6-7', ref: '1 Peter 5:6-7', themes: ['fear', 'rest'], daily: 1,
     text: 'Humble yourselves therefore under the mighty hand of God, that he may exalt you in due time, casting all your worries on him, because he cares for you.' },
-  { id: '1PE.5.10', ref: '1 Peter 5:10', themes: ['strength', 'grief'],
+  { id: '1PE.5.10', ref: '1 Peter 5:10', themes: ['strength', 'grief'], daily: 1,
     text: 'But may the God of all grace, who called you to his eternal glory by Christ Jesus, after you have suffered a little while, perfect, establish, strengthen, and settle you.' },
-  { id: '2PE.1.5-7', ref: '2 Peter 1:5-7', themes: ['discipline', 'love'],
+  { id: '2PE.1.5-7', ref: '2 Peter 1:5-7', themes: ['discipline', 'love'], daily: 1,
     text: 'Yes, and for this very cause adding on your part all diligence, in your faith supply moral excellence; and in moral excellence, knowledge; and in knowledge, self-control; and in self-control, perseverance; and in perseverance, godliness; and in godliness, brotherly affection; and in brotherly affection, love.' },
-  { id: '2PE.3.9', ref: '2 Peter 3:9', themes: ['patience'],
+  { id: '2PE.3.9', ref: '2 Peter 3:9', themes: ['patience'], daily: 1,
     text: 'The Lord is not slow concerning his promise, as some count slowness; but he is patient with us, not wishing that anyone should perish, but that all should come to repentance.' },
-  { id: '1JN.1.9', ref: '1 John 1:9', themes: ['forgiveness'],
+  { id: '1JN.1.9', ref: '1 John 1:9', themes: ['forgiveness'], daily: 1,
     text: 'If we confess our sins, he is faithful and righteous to forgive us the sins and to cleanse us from all unrighteousness.' },
-  { id: '1JN.3.18', ref: '1 John 3:18', themes: ['love', 'relationships'],
+  { id: '1JN.3.18', ref: '1 John 3:18', themes: ['love', 'relationships'], daily: 1,
     text: 'My little children, let’s not love in word only, or with the tongue only, but in deed and truth.' },
-  { id: '1JN.4.7', ref: '1 John 4:7', themes: ['love'],
+  { id: '1JN.4.7', ref: '1 John 4:7', themes: ['love'], daily: 1,
     text: 'Beloved, let’s love one another, for love is of God; and everyone who loves has been born of God and knows God.' },
-  { id: '1JN.4.11', ref: '1 John 4:11', themes: ['love', 'relationships'],
+  { id: '1JN.4.11', ref: '1 John 4:11', themes: ['love', 'relationships'], daily: 1,
     text: 'Beloved, if God loved us in this way, we also ought to love one another.' },
-  { id: '1JN.4.18', ref: '1 John 4:18', themes: ['love', 'fear'],
+  { id: '1JN.4.18', ref: '1 John 4:18', themes: ['love', 'fear'], daily: 1,
     text: 'There is no fear in love; but perfect love casts out fear, because fear has punishment. He who fears is not made perfect in love.' },
-  { id: '1JN.4.19', ref: '1 John 4:19', themes: ['love'],
+  { id: '1JN.4.19', ref: '1 John 4:19', themes: ['love'], daily: 1,
     text: 'We love him, because he first loved us.' },
-  { id: '1JN.5.4', ref: '1 John 5:4', themes: ['faith', 'perseverance'],
+  { id: '1JN.5.4', ref: '1 John 5:4', themes: ['faith', 'perseverance'], daily: 1,
     text: 'For whatever is born of God overcomes the world. This is the victory that has overcome the world: your faith.' },
-  { id: '3JN.1.4', ref: '3 John 1:4', themes: ['relationships', 'gratitude'],
+  { id: '3JN.1.4', ref: '3 John 1:4', themes: ['relationships', 'gratitude'], daily: 1,
     text: 'I have no greater joy than this: to hear about my children walking in truth.' },
-  { id: 'REV.21.4', ref: 'Revelation 21:4', themes: ['grief', 'hope'],
-    text: 'He will wipe away every tear from their eyes. Death will be no more; neither will there be mourning, nor crying, nor pain any more. The first things have passed away.”' }
+  { id: 'REV.21.4', ref: 'Revelation 21:4', themes: ['grief', 'hope'], daily: 1,
+    text: 'He will wipe away every tear from their eyes. Death will be no more; neither will there be mourning, nor crying, nor pain any more. The first things have passed away.”' },
+  { id: 'LUK.1.1-4', ref: 'Luke 1:1-4', themes: [],
+    text: 'Since many have undertaken to set in order a narrative concerning those matters which have been fulfilled among us, even as those who from the beginning were eyewitnesses and servants of the word delivered them to us, it seemed good to me also, having traced the course of all things accurately from the first, to write to you in order, most excellent Theophilus; that you might know the certainty concerning the things in which you were instructed.' },
+  { id: 'GEN.1.1', ref: 'Genesis 1:1', themes: [],
+    text: 'In the beginning, God created the heavens and the earth.' },
+  { id: 'REV.21.3-4', ref: 'Revelation 21:3-4', themes: [],
+    text: 'I heard a loud voice out of heaven saying, “Behold, God’s dwelling is with people; and he will dwell with them, and they will be his people, and God himself will be with them as their God. He will wipe away every tear from their eyes. Death will be no more; neither will there be mourning, nor crying, nor pain any more. The first things have passed away.”' },
+  { id: 'JHN.1.1-5', ref: 'John 1:1-5', themes: [],
+    text: 'In the beginning was the Word, and the Word was with God, and the Word was God. The same was in the beginning with God. All things were made through him. Without him, nothing was made that has been made. In him was life, and the life was the light of men. The light shines in the darkness, and the darkness hasn’t overcome it.' },
+  { id: 'JHN.1.14', ref: 'John 1:14', themes: [],
+    text: 'The Word became flesh and lived among us. We saw his glory, such glory as of the only born Son of the Father, full of grace and truth.' },
+  { id: '1CO.15.3-5', ref: '1 Corinthians 15:3-5', themes: [],
+    text: 'For I delivered to you first of all that which I also received: that Christ died for our sins according to the Scriptures, that he was buried, that he was raised on the third day according to the Scriptures, and that he appeared to Cephas, then to the twelve.' },
+  { id: 'ACT.17.11', ref: 'Acts 17:11', themes: [],
+    text: 'Now these were more noble than those in Thessalonica, in that they received the word with all readiness of mind, examining the Scriptures daily to see whether these things were so.' }
+];
+
+/* Teaching content — this app's own words, never Scripture. Lessons carry
+   canonical passage ids; the text itself is looked up in SCRIPTURE, so a
+   lesson and the passage it teaches cannot drift apart. `basis` records
+   the passages actually read to author each explanation. */
+const STUDIES_VERSION = 1;
+
+const STUDIES = [
+  { id: 'new-to-the-bible', title: 'New to the Bible',
+    summary: 'What this collection actually is, the story it tells, and where to begin reading.',
+    audience: 'Someone opening it for the first time, or coming back after a long gap.',
+    lessons: [
+      { id: 'ntb-1', title: 'What kind of book this is',
+        passages: ['LUK.1.1-4'],
+        basis: ['Luke 1:1-4', 'Luke 1:5-7'],
+        understand: 'The Bible is not one book. It is a collection of writings from different times and in different forms — histories, letters, poems, songs, legal codes — brought together as Scripture.\n\nLuke\'s opening shows what that means in practice. He is a named author writing to a named reader. He says others have already written accounts, that he looked into things himself, and that he is setting them down in order for a stated reason: so that Theophilus can know how reliable the things he was taught really are.\n\nThat is a useful expectation to begin with. You are not opening a single argument. You are opening a library, and each piece has an author, an audience and a purpose. Knowing which kind of writing you are in front of changes how you read it.',
+        lookCloser: 'Luke says he wrote so his reader could know the certainty of what he had been taught. What does that suggest about the kind of confidence he expected reading to produce?',
+        reflect: 'What made you want to open the Bible? Write it down before you begin — it is worth having later.' },
+      { id: 'ntb-2', title: 'The story it tells',
+        passages: ['GEN.1.1', 'REV.21.3-4'],
+        basis: ['Genesis 1:1', 'Genesis 1:2-3', 'Revelation 21:1-5'],
+        understand: 'These two passages are separated by the whole of the Bible — the first line of the first book, and a few paragraphs from the end of the last.\n\nRead together they show that the collection has a shape. It opens with God making a world. It closes with God living among people in a world made new, with grief and death gone. Everything in between sits somewhere on that line: what went wrong, what was promised, and what was done about it.\n\nThis matters for a beginner because the Bible is easy to read as disconnected fragments — a rule here, a story there, a verse on a card. The individual parts are far easier to place once you know the collection is going somewhere, and where.',
+        lookCloser: 'Revelation\'s picture is of God coming down to live with people, rather than of people going up somewhere else. Does that match what you expected the Bible to be aiming at?',
+        reflect: 'Which end of that story is easier for you to believe today — the beginning, or the end?' },
+      { id: 'ntb-3', title: 'Who Jesus is',
+        passages: ['JHN.1.1-5', 'JHN.1.14'],
+        basis: ['John 1:1-5', 'John 1:10-14', 'John 1:17-18', 'Genesis 1:1'],
+        understand: 'John opens his account of Jesus by echoing the first words of Genesis — "In the beginning". He is placing Jesus before the creation rather than inside it.\n\n"The Word" translates a Greek term his first readers would have met in discussions of the reason or order behind the world. John takes that familiar idea and does something unexpected with it: the Word is not a principle but someone — who was with God, who was God, and through whom everything was made.\n\nThen verse 14 makes the claim the rest of the book rests on: the one John has been describing did not remain outside the world he made, but took on a human life within it. John is not describing a teacher whose reputation grew after his death. He is claiming that God\'s own self-expression arrived in a body, and that people saw it.',
+        lookCloser: 'Why do you think John chose to open with Jesus as "the Word", rather than with his birth or his teaching?',
+        reflect: 'Before today, who did you understand Jesus to be?' },
+      { id: 'ntb-4', title: 'What the good news says',
+        passages: ['1CO.15.3-5', 'EPH.2.8-9'],
+        basis: ['1 Corinthians 15:1-8', 'Ephesians 2:8-9'],
+        understand: '"Gospel" is an old word meaning good news, and the first passage is the New Testament\'s own earliest summary of it. Paul says he is handing on something he himself received, which means these lines were already in circulation before he wrote them down.\n\nThe summary is short and factual: Christ died for our sins, he was buried, he was raised, and he was seen. Paul then lists people who saw him, several by name, and notes that most of them were still alive — an odd detail to include unless he expected readers to be able to ask them.\n\nThe second passage says what this news asks of you, and what it does not. It is described as a gift received rather than a wage earned. The reason given is not that effort is worthless, but that a gift leaves nobody with grounds to boast.',
+        lookCloser: 'Paul names witnesses and points out that most were still living. What kind of claim is he making by adding that detail?',
+        reflect: 'Which is harder to accept — that the news is true, or that it is free?' },
+      { id: 'ntb-5', title: 'How to begin reading',
+        passages: ['ACT.17.11', 'PSA.119.105'],
+        basis: ['Acts 17:10-12', 'Psalm 119:105', 'Psalm 119:103-104', 'Luke 1:1-4'],
+        understand: 'Luke describes a group in Beroea who heard Paul preach and then went and checked. They are called more noble for it — not for agreeing quickly, but for receiving eagerly and examining daily to see whether it was so. Testing what you are told is treated here as a credit, not a failure of faith.\n\nThe psalm supplies the other half. A lamp at your feet lights the next step, not the whole road. That is a realistic picture of what reading Scripture usually feels like: enough to move by, rarely enough to see the entire route at once.\n\nSo begin somewhere concrete rather than at page one. A Gospel is the usual advice, and Luke — whose opening you read in the first lesson — is a reasonable place to start. Read a section rather than a single line.',
+        lookCloser: 'The Beroeans examined daily rather than once. What would change if you treated reading as something returned to rather than finished?',
+        reflect: 'What is one question you want to keep asking as you read?' }
+    ] }
 ];
 /* SCRIPTURE-END */
 
@@ -3634,6 +3953,8 @@ const RAIL_DAYS = 28;
 let savedVerses = [];
 let notes = [];
 let assignments = [];
+let studyProgress = [];
+let studyNotes = [];
 let selectedDay = null;
 let savedView = 'verses';
 let textSize = 'standard';
@@ -3642,6 +3963,8 @@ let focusThemes = [];
 let focusStrength = 'variety';
 let onboarded = false;
 let editingNoteDate = null;
+let openStudyId = null;
+let openLessonId = null;
 let _draftTimer = null;
 /* The calendar day the shell was last painted for. An app left open overnight
    is otherwise still showing yesterday under a heading that says today. */
@@ -3715,17 +4038,29 @@ function reflectionFor(id){
   return Object.prototype.hasOwnProperty.call(REFLECTIONS, id) ? REFLECTIONS[id] : null;
 }
 
-/* A passage is only allowed into the daily rotation once it has a reflection
-   written for it. Scripture without one is still real Scripture and still
-   searchable by a saved reference — it is simply not a finished daily unit,
-   and shipping it as one would put an empty panel under the verse. This is
-   the line that lets the catalogue grow ahead of the editorial work without
-   the editorial standard being the thing that gives. */
+/* Two independent gates, and a passage needs both.
+
+   1. `daily` — set by the build only for passages data/curation.json named.
+      The catalogue also carries passages that exist because a study quotes
+      them. Those are the same verified text and resolve by the same id, but
+      they were chosen to be read inside an argument, not as a standalone
+      reading, and they are never offered as one.
+
+   2. A reflection. Scripture without one is still real Scripture and still
+      reachable by a saved reference — it is simply not a finished daily
+      unit, and shipping it as one would put an empty panel under the verse.
+
+   The second gate alone used to be enough, because everything in the
+   catalogue was a daily candidate. It no longer is, and relying on a study
+   passage merely happening to lack a reflection would be an accident
+   standing in for a rule. */
 function eligiblePassages(){
   const out = [];
   for(let i = 0; i < SCRIPTURE.length; i++){
-    const r = reflectionFor(SCRIPTURE[i].id);
-    if(typeof r === 'string' && r.trim()) out.push(SCRIPTURE[i]);
+    const p = SCRIPTURE[i];
+    if(!p.daily) continue;
+    const r = reflectionFor(p.id);
+    if(typeof r === 'string' && r.trim()) out.push(p);
   }
   return out;
 }
@@ -3975,6 +4310,74 @@ function isAssignmentRecord(r){
   return r && typeof r === 'object' && isDayKey(r.id) && typeof r.passage === 'string';
 }
 
+/* ---------- guided study ----------
+   No interface reads any of this yet. It is here, loaded, sanitised,
+   persisted and under contract, so that the storage foundation is proven
+   safe against real backup, import and migration behaviour before a screen
+   exists to depend on it. */
+function isStudyProgressRecord(r){
+  return r && typeof r === 'object' && typeof r.id === 'string' && r.id &&
+         Array.isArray(r.done) && r.done.every(function(x){ return typeof x === 'string'; });
+}
+function isStudyNoteRecord(r){
+  return r && typeof r === 'object' && typeof r.id === 'string' && r.id &&
+         typeof r.study === 'string' && typeof r.lesson === 'string' &&
+         typeof r.text === 'string';
+}
+
+/* A study note is addressed by the pair it belongs to, so the id is derived
+   rather than generated — writing the same lesson twice updates one record
+   instead of accumulating duplicates, and two devices merge by id. */
+function studyNoteIdFor(studyId, lessonId){ return studyId + ':' + lessonId; }
+
+function studyById(id){
+  for(let i = 0; i < STUDIES.length; i++){ if(STUDIES[i].id === id) return STUDIES[i]; }
+  return null;
+}
+function lessonById(studyId, lessonId){
+  const s = studyById(studyId);
+  if(!s) return null;
+  for(let i = 0; i < s.lessons.length; i++){ if(s.lessons[i].id === lessonId) return s.lessons[i]; }
+  return null;
+}
+/* Every passage a lesson quotes, resolved out of the one catalogue. Teaching
+   records carry ids only, so this is the single path from a lesson to text. */
+function lessonPassages(lesson){
+  if(!lesson || !Array.isArray(lesson.passages)) return [];
+  const out = [];
+  lesson.passages.forEach(function(id){
+    const p = passageById(id);
+    if(p) out.push(p);
+  });
+  return out;
+}
+
+function studyProgressFor(studyId){
+  for(let i = 0; i < studyProgress.length; i++){
+    if(studyProgress[i].id === studyId) return studyProgress[i];
+  }
+  return null;
+}
+function studyNoteFor(studyId, lessonId){
+  const id = studyNoteIdFor(studyId, lessonId);
+  for(let i = 0; i < studyNotes.length; i++){ if(studyNotes[i].id === id) return studyNotes[i]; }
+  return null;
+}
+
+/* The study to offer as "continue" — the most recently touched one that is
+   not finished. Derived rather than stored, so there is no second opinion
+   about which study is active. */
+function activeStudy(){
+  let best = null;
+  studyProgress.forEach(function(r){
+    const s = studyById(r.id);
+    if(!s) return;
+    if(r.done.length >= s.lessons.length) return;      // finished
+    if(!best || String(r.updatedAt || '') > String(best.updatedAt || '')) best = r;
+  });
+  return best;
+}
+
 function loadVerseData(){
   const s = Store.getJSON(KEYS.saved, []);
   savedVerses = Array.isArray(s) ? s.filter(isSavedRecord) : [];
@@ -3982,6 +4385,12 @@ function loadVerseData(){
   notes = Array.isArray(n) ? n.filter(isNoteRecord) : [];
   const a = Store.getJSON(KEYS.assignments, []);
   assignments = Array.isArray(a) ? a.filter(isAssignmentRecord) : [];
+  /* Absent reads as an empty collection, which is what a reader who has not
+     opened a study looks like. Nothing is invented to fill it. */
+  const sp = Store.getJSON(KEYS.studyProgress, []);
+  studyProgress = Array.isArray(sp) ? sp.filter(isStudyProgressRecord) : [];
+  const sn = Store.getJSON(KEYS.studyNotes, []);
+  studyNotes = Array.isArray(sn) ? sn.filter(isStudyNoteRecord) : [];
   loadPrefs();
   /* Absent is a new reader, not a broken one: the app opens on today. */
   if(!isDayKey(selectedDay)) selectedDay = todayKey();
@@ -4018,6 +4427,17 @@ function persistNotes(){
    the day simply gets chosen again next time. */
 function persistAssignments(){ return Store.setJSON(KEYS.assignments, assignments); }
 
+function persistStudyProgress(){
+  const ok = Store.setJSON(KEYS.studyProgress, studyProgress);
+  if(!ok) toast('Could not save — this browser is not storing data.', 'error');
+  return ok;
+}
+function persistStudyNotes(){
+  const ok = Store.setJSON(KEYS.studyNotes, studyNotes);
+  if(!ok) toast('Could not save — this browser is not storing data.', 'error');
+  return ok;
+}
+
 function isSaved(id){
   for(let i = 0; i < savedVerses.length; i++){
     if(savedVerses[i].passage === id) return true;
@@ -4027,6 +4447,15 @@ function isSaved(id){
 function noteFor(key){
   for(let i = 0; i < notes.length; i++){ if(notes[i].date === key) return notes[i]; }
   return null;
+}
+
+/* switchTab belongs to the foundation and knows nothing about a day rail.
+   Coming back to Today after its view has been hidden needs the rail put back
+   where it belongs: while hidden it could not be measured, so nothing could
+   have kept it right while the reader was on another tab. */
+function goToTab(tab){
+  switchTab(tab);
+  if(tab === 'today'){ renderToday(); centreSelectedDay(); }
 }
 
 /* ---------- day selection ---------- */
@@ -4166,7 +4595,14 @@ function renderDayRail(){
      tapping Save. Some browsers happen to keep it; that is not something to
      depend on. The one caller that WANTS the position to move — selectDay —
      asks for it afterwards, through centreSelectedDay(). */
-  const keepScroll = rail.scrollLeft;
+  /* Paint always — boot renders this before the app is revealed, so refusing
+     to paint while unmeasurable left the rail permanently empty.
+     What must NOT happen is writing back an offset READ while hidden: a
+     hidden element measures zero, and restoring that zero would park the rail
+     four weeks in the past. So the offset is only preserved when it was real.
+     goToTab() re-centres on the way back into Today. */
+  const measurable = rail.clientWidth > 0;
+  const keepScroll = measurable ? rail.scrollLeft : null;
 
   rail.innerHTML = railDayKeys().map(function(k){
     const d = dateFromKey(k);
@@ -4181,7 +4617,7 @@ function renderDayRail(){
     '</button>';
   }).join('');
 
-  rail.scrollLeft = keepScroll;
+  if(keepScroll !== null) rail.scrollLeft = keepScroll;
 }
 
 /* ---------- saving a passage ---------- */
@@ -4419,7 +4855,7 @@ function renderSaved(){
         title: 'No reflections yet',
         body: 'Anything you write on a day is kept here, alongside the verse it was ' +
               'written about. Nothing you write leaves this device.',
-        action: 'Go to today', onAction: "switchTab('today')"
+        action: 'Go to today', onAction: "goToTab('today')"
       });
       return;
     }
@@ -4445,7 +4881,7 @@ function renderSaved(){
       title: 'No saved verses yet',
       body: 'Save a verse from the Today screen and it will wait here for you, ' +
             'with its reference and translation.',
-      action: 'Go to today', onAction: "switchTab('today')"
+      action: 'Go to today', onAction: "goToTab('today')"
     });
     return;
   }
@@ -4721,9 +5157,421 @@ function clearFieldError(inputId){
   if(msg){ msg.textContent = ''; msg.classList.remove('show'); }
 }
 
+/* ---------- guided study: progress ----------
+   `done` is the only truth. Everything a screen needs — how far through a
+   study someone is, whether it is finished, which lesson to resume — is
+   derived from it, so there is no second field that can disagree with the
+   list of lessons actually completed.
+
+   Opening a lesson is not completing it. Progress moves only when someone
+   chooses Continue at the end of one. */
+function ensureStudyStarted(studyId){
+  let rec = studyProgressFor(studyId);
+  if(rec) return rec;
+  const now = new Date().toISOString();
+  rec = { id: studyId, done: [], startedAt: now, updatedAt: now };
+  studyProgress.push(rec);
+  persistStudyProgress();
+  return rec;
+}
+
+function isLessonDone(studyId, lessonId){
+  const rec = studyProgressFor(studyId);
+  return !!(rec && rec.done.indexOf(lessonId) !== -1);
+}
+function completedCount(study){
+  const rec = studyProgressFor(study.id);
+  if(!rec) return 0;
+  /* Counted against the study's own lessons, so a lesson removed from the
+     content in a later version cannot inflate someone's progress past the
+     number of lessons that exist. */
+  return study.lessons.filter(function(l){ return rec.done.indexOf(l.id) !== -1; }).length;
+}
+function isStudyComplete(study){ return completedCount(study) >= study.lessons.length; }
+
+/* The natural place to pick up: the first lesson not yet finished. Someone
+   who re-opens an earlier lesson to read it again is not moved backwards,
+   because this is derived from what is done rather than from what was last
+   opened. */
+function resumeLessonId(study){
+  const rec = studyProgressFor(study.id);
+  if(!rec) return study.lessons[0].id;
+  for(let i = 0; i < study.lessons.length; i++){
+    if(rec.done.indexOf(study.lessons[i].id) === -1) return study.lessons[i].id;
+  }
+  return study.lessons[study.lessons.length - 1].id;
+}
+
+function lessonNumber(study, lessonId){
+  for(let i = 0; i < study.lessons.length; i++){
+    if(study.lessons[i].id === lessonId) return i + 1;
+  }
+  return 0;
+}
+function nextLessonId(study, lessonId){
+  const n = lessonNumber(study, lessonId);
+  return (n > 0 && n < study.lessons.length) ? study.lessons[n].id : null;
+}
+
+/* ---------- guided study: the reader's own writing ----------
+   Its own collection, never data.notes — a daily reflection is keyed by
+   calendar date and a lesson is not a day. */
+function saveStudyNote(studyId, lessonId, text){
+  const clean = String(text == null ? '' : text).trim();
+  const id = studyNoteIdFor(studyId, lessonId);
+  const existing = studyNoteFor(studyId, lessonId);
+  const now = new Date().toISOString();
+
+  if(!clean){
+    /* Clearing the field removes the record rather than storing an empty
+       one, so an emptied note does not later render as a blank entry. */
+    if(existing){
+      studyNotes = studyNotes.filter(function(n){ return n.id !== id; });
+      persistStudyNotes();
+    }
+    return true;
+  }
+  if(existing){
+    if(existing.text === clean) return true;
+    existing.text = clean;
+    existing.updatedAt = now;
+  } else {
+    studyNotes.push({ id: id, study: studyId, lesson: lessonId, text: clean,
+                      createdAt: now, updatedAt: now });
+  }
+  return persistStudyNotes();
+}
+
+/* Called on Continue, on the way out of a lesson, and when the page is torn
+   down. There is no separate draft key: the lesson field is committed to the
+   note itself on every exit, so nothing typed is lost and there is no second
+   copy of it to reconcile. */
+function flushLessonNote(){
+  if(!openStudyId || !openLessonId) return;
+  const field = document.getElementById('lessonNote');
+  if(!field) return;
+  saveStudyNote(openStudyId, openLessonId, field.value);
+}
+
+/* ---------- Learn: the landing screen ---------- */
+function renderLearn(){
+  const host = document.getElementById('learnBody');
+  if(!host) return;
+
+  if(!STUDIES.length){
+    host.innerHTML = emptyStateHtml({
+      mark: compassIcon(30),
+      title: 'Nothing to study yet',
+      body: 'Guided studies will appear here.'
+    });
+    return;
+  }
+
+  const active = activeStudy();
+  const activeStudyRecord = active ? studyById(active.id) : null;
+
+  let html = '<p class="page-intro">Understand Scripture, one guided lesson at a time.</p>';
+
+  /* Continue, only when there is something to continue. */
+  if(activeStudyRecord){
+    const lessonId = resumeLessonId(activeStudyRecord);
+    const lesson = lessonById(activeStudyRecord.id, lessonId);
+    const n = lessonNumber(activeStudyRecord, lessonId);
+    html +=
+      '<div class="section-label">Continue</div>' +
+      '<button class="continue-card" onclick="openLesson(\'' + escapeAttr(activeStudyRecord.id) +
+        '\', \'' + escapeAttr(lessonId) + '\')">' +
+        '<span class="continue-study">' + escapeHtml(activeStudyRecord.title) + '</span>' +
+        '<span class="continue-lesson">' + escapeHtml(lesson ? lesson.title : '') + '</span>' +
+        '<span class="continue-meta">Lesson ' + n + ' of ' + activeStudyRecord.lessons.length + '</span>' +
+      '</button>';
+  }
+
+  /* The way in for someone who has not started anything. Once they have, the
+     Continue card above is doing this job and a second prompt is noise. */
+  if(!studyProgress.length){
+    const first = STUDIES[0];
+    html +=
+      '<div class="section-label">New here?</div>' +
+      '<div class="panel start-here">' +
+        '<p class="start-here-body">Start with a short guide to what the Bible is and ' +
+          'how to begin reading it.</p>' +
+        '<button class="btn-primary btn-block" onclick="openStudy(\'' + escapeAttr(first.id) + '\')">' +
+          'Start here</button>' +
+      '</div>';
+  }
+
+  html += '<div class="section-label">Studies</div><div class="list">' +
+    STUDIES.map(studyRowHtml).join('') + '</div>';
+
+  host.innerHTML = html;
+}
+
+function studyRowHtml(study){
+  const done = completedCount(study);
+  const total = study.lessons.length;
+  const started = done > 0 || !!studyProgressFor(study.id);
+  const complete = isStudyComplete(study);
+
+  /* A count, never a percentage. "3 of 5" is a fact about lessons; a
+     percentage is a number the data does not really support and reads as a
+     score. */
+  const meta = complete ? 'Complete · ' + total + ' lessons'
+             : started ? done + ' of ' + total + ' lessons'
+             : total + ' lessons';
+
+  return '<button class="list-row study-row" onclick="openStudy(\'' + escapeAttr(study.id) + '\')">' +
+    '<span class="list-row-main">' +
+      '<span class="list-row-title">' + escapeHtml(study.title) + '</span>' +
+      '<span class="list-row-desc">' + escapeHtml(study.summary) + '</span>' +
+      '<span class="study-meta">' + escapeHtml(meta) + '</span>' +
+      (started && !complete ? progressBarHtml(done, total) : '') +
+    '</span>' +
+    '<span class="list-row-arrow" aria-hidden="true">' + chevronRight(15) + '</span>' +
+  '</button>';
+}
+
+/* A hairline, and it carries its numbers to assistive technology as lessons
+   rather than as a percentage. */
+function progressBarHtml(done, total){
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return '<span class="progress-track" role="progressbar" aria-valuemin="0" ' +
+    'aria-valuemax="' + total + '" aria-valuenow="' + done + '" ' +
+    'aria-label="' + done + ' of ' + total + ' lessons complete">' +
+    '<span class="progress-fill" style="width:' + pct + '%"></span></span>';
+}
+
+/* ---------- Learn: a study ---------- */
+function openStudy(studyId){
+  const study = studyById(studyId);
+  if(!study) return;
+  openStudyId = studyId;
+  renderStudy();
+  pushOverlayHistory();
+  openOverlay('studyOverlay');
+}
+function closeStudy(){
+  closeOverlay('studyOverlay');
+  releaseOverlayHistory();
+  openStudyId = null;
+  renderLearn();
+}
+
+function renderStudy(){
+  const study = studyById(openStudyId);
+  if(!study) return;
+  const title = document.getElementById('studyTitle');
+  if(title) title.textContent = study.title;
+
+  const host = document.getElementById('studyBody');
+  if(!host) return;
+
+  const done = completedCount(study);
+  const total = study.lessons.length;
+  const complete = isStudyComplete(study);
+
+  host.innerHTML =
+    '<h2 class="study-heading">' + escapeHtml(study.title) + '</h2>' +
+    '<p class="study-summary">' + escapeHtml(study.summary) + '</p>' +
+    '<p class="study-audience">' + escapeHtml(study.audience) + '</p>' +
+    /* Only once there is progress to report. On an unstarted study this line
+       said "5 lessons" directly above a section headed Lessons containing a
+       list numbered 1 to 5 — three signals for one fact. */
+    (done || complete
+      ? '<div class="study-count">' +
+          (complete ? 'Complete · ' + total + ' lessons' : done + ' of ' + total + ' lessons') +
+        '</div>'
+      : '') +
+    '<div class="section-label">Lessons</div>' +
+    '<div class="list">' + study.lessons.map(function(l, i){
+      return lessonRowHtml(study, l, i + 1);
+    }).join('') + '</div>' +
+    (complete ? studyCompleteHtml() : '');
+}
+
+/* Every lesson is openable. Locking them would make this a course with
+   prerequisites, which is not what someone browsing a guide wants — and the
+   resume point is remembered anyway, so nothing is lost by allowing it. */
+function lessonRowHtml(study, lesson, n){
+  const done = isLessonDone(study.id, lesson.id);
+  const isNext = !done && resumeLessonId(study) === lesson.id && !isStudyComplete(study);
+
+  /* State is carried by a word and a mark, never by colour alone. */
+  const state = done ? '<span class="lesson-state is-done">' + checkIcon(14) +
+                         '<span class="sr-only">Completed</span></span>'
+              : isNext ? '<span class="lesson-state is-next">Next</span>'
+              : '';
+
+  return '<button class="list-row lesson-row' + (done ? ' is-done' : '') + '" ' +
+    'onclick="openLesson(\'' + escapeAttr(study.id) + '\', \'' + escapeAttr(lesson.id) + '\')">' +
+    '<span class="lesson-num" aria-hidden="true">' + n + '</span>' +
+    '<span class="list-row-main">' +
+      '<span class="list-row-title">' + escapeHtml(lesson.title) + '</span>' +
+    '</span>' +
+    state +
+    '<span class="list-row-arrow" aria-hidden="true">' + chevronRight(15) + '</span>' +
+  '</button>';
+}
+
+function studyCompleteHtml(){
+  return '<div class="study-done">' +
+    '<div class="study-done-title">Study complete</div>' +
+    '<p class="study-done-body">You have read every lesson in this guide. ' +
+      'The passages are still here whenever you want to come back to them.</p>' +
+  '</div>';
+}
+
+/* ---------- Learn: a lesson ----------
+   One page, one scroll. A wizard would add state and taps to something that
+   is meant to be read straight through. */
+function openLesson(studyId, lessonId){
+  const study = studyById(studyId);
+  const lesson = lessonById(studyId, lessonId);
+  if(!study || !lesson) return;
+
+  /* If a lesson is opened from the Learn screen rather than from inside the
+     study, put the study page underneath it, so Back lands somewhere that
+     makes sense instead of skipping a level. */
+  if(!document.getElementById('studyOverlay').classList.contains('open')){
+    openStudy(studyId);
+  }
+
+  openStudyId = studyId;
+  openLessonId = lessonId;
+  ensureStudyStarted(studyId);
+  renderLesson();
+  pushOverlayHistory();
+  openOverlay('lessonOverlay');
+}
+
+function closeLesson(){
+  flushLessonNote();
+  closeOverlay('lessonOverlay');
+  releaseOverlayHistory();
+  openLessonId = null;
+  renderStudy();
+  renderLearn();
+}
+
+function renderLesson(){
+  const study = studyById(openStudyId);
+  const lesson = lessonById(openStudyId, openLessonId);
+  if(!study || !lesson) return;
+
+  const n = lessonNumber(study, openLessonId);
+  const total = study.lessons.length;
+
+  const title = document.getElementById('lessonTitle');
+  if(title) title.textContent = study.title;
+  const pos = document.getElementById('lessonPosition');
+  if(pos){
+    pos.textContent = n + ' of ' + total;
+    /* Navigational context, not a score — said plainly for a screen reader. */
+    pos.setAttribute('aria-label', 'Lesson ' + n + ' of ' + total);
+  }
+
+  const host = document.getElementById('lessonBody');
+  if(!host) return;
+
+  const passages = lessonPassages(lesson);
+  const note = studyNoteFor(study.id, lesson.id);
+  const done = isLessonDone(study.id, lesson.id);
+  const next = nextLessonId(study, lesson.id);
+
+  host.innerHTML =
+    '<h2 class="lesson-heading">' + escapeHtml(lesson.title) + '</h2>' +
+
+    '<div class="section-label">Read</div>' +
+    (passages.length
+      ? passages.map(passageCardHtml).join('')
+      : '<p class="field-hint">This lesson\'s passage is not in the current Scripture set.</p>') +
+
+    '<div class="section-label">Understand</div>' +
+    '<div class="lesson-prose">' + paragraphsHtml(lesson.understand) + '</div>' +
+
+    (lesson.lookCloser
+      ? '<div class="section-label">Look closer</div>' +
+        '<p class="look-closer">' + escapeHtml(lesson.lookCloser) + '</p>'
+      : '') +
+
+    '<div class="section-label">Reflect</div>' +
+    '<p class="reflect-prompt">' + escapeHtml(lesson.reflect) + '</p>' +
+    '<div class="field">' +
+      '<label class="sr-only" for="lessonNote">Your reflection on this lesson</label>' +
+      '<textarea id="lessonNote" maxlength="1000" placeholder="A sentence is enough."></textarea>' +
+      '<div class="field-hint">Your reflection stays on this device.</div>' +
+    '</div>' +
+
+    '<div class="lesson-continue">' +
+      '<button class="btn-primary btn-block" onclick="completeLesson()">' +
+        (next ? 'Continue' : (done ? 'Done' : 'Finish study')) +
+      '</button>' +
+      (done ? '<p class="lesson-done-note">' + checkIcon(13) + ' Completed</p>' : '') +
+    '</div>';
+
+  /* Set after the markup so a value containing markup characters is never
+     parsed as markup. */
+  const field = document.getElementById('lessonNote');
+  if(field) field.value = note ? note.text : '';
+}
+
+function passageCardHtml(p){
+  return '<article class="verse-card lesson-passage">' +
+    '<blockquote class="verse-text">' + escapeHtml(p.text) + '</blockquote>' +
+    '<div class="verse-cite">' +
+      '<cite class="verse-ref">' + escapeHtml(p.ref) + '</cite>' +
+      '<span class="verse-translation">' + escapeHtml(SCRIPTURE_SOURCE.abbr) + '</span>' +
+    '</div>' +
+  '</article>';
+}
+
+/* Teaching arrives with paragraph breaks preserved from the source file. */
+function paragraphsHtml(text){
+  return String(text).split(/\n{2,}/).map(function(para){
+    return '<p>' + escapeHtml(para.trim()) + '</p>';
+  }).join('');
+}
+
+/* Completion is an intentional act, and it is idempotent — pressing Continue
+   on a lesson already finished does not add a second entry or move anything
+   backwards. */
+function completeLesson(){
+  const study = studyById(openStudyId);
+  const lessonId = openLessonId;
+  if(!study || !lessonId) return;
+
+  flushLessonNote();
+
+  const rec = ensureStudyStarted(study.id);
+  if(rec.done.indexOf(lessonId) === -1){
+    rec.done.push(lessonId);
+    rec.updatedAt = new Date().toISOString();
+    persistStudyProgress();
+  }
+
+  const next = nextLessonId(study, lessonId);
+  if(next){
+    openLessonId = next;
+    renderLesson();
+    /* Back to the top: a lesson opens at its beginning, the same way a tab
+       does, so the same tap always gives the same result. */
+    const scroll = document.querySelector('#lessonOverlay .sheet-scroll');
+    if(scroll) scroll.scrollTop = 0;
+    renderStudy();
+    renderLearn();
+    return;
+  }
+
+  /* The last lesson. Close back to the study, which now shows its completed
+     state — no celebration, no reward screen. */
+  closeLesson();
+  toast('Study complete', 'success');
+}
+
 /* ---------- this product claims the foundation's four seams ---------- */
 Domain.tabIcons = {
   today:    '<path d="M2.4 4.2c1.9-.9 3.7-.9 5.6 0 1.9-.9 3.7-.9 5.6 0v7.9c-1.9-.9-3.7-.9-5.6 0-1.9-.9-3.7-.9-5.6 0z"/><path d="M8 4.2v7.9"/>',
+  learn:    '<circle cx="8" cy="8" r="5.9"/><path d="M10.4 5.6 9.1 9.1 5.6 10.4 6.9 6.9Z"/>',
   saved:    '<path d="M4.2 2.6h7.6v10.8L8 10.8l-3.8 2.6z"/>',
   settings: '<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M14.2 8h-1.6M3.4 8H1.8M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1M12.4 12.4l-1.1-1.1M4.7 4.7 3.6 3.6"/>'
 };
@@ -4731,7 +5579,7 @@ Domain.hydrate = loadVerseData;
 /* applyTextSize() runs on every render rather than only when the control is
    touched, so the root attribute cannot end up disagreeing with the stored
    preference after a reset, an import, or a restored backup. */
-Domain.render  = function(){ applyTextSize(); renderToday(); renderSaved(); paintPrefControls(); };
+Domain.render  = function(){ applyTextSize(); renderToday(); renderLearn(); renderSaved(); paintPrefControls(); };
 Domain.wire    = function(){
   applyTextSize();
   _paintedToday = todayKey();
@@ -4744,6 +5592,7 @@ Domain.wire    = function(){
     form.addEventListener('change', scheduleDraftSave);
   }
   window.addEventListener('pagehide', flushDraft);
+  window.addEventListener('pagehide', flushLessonNote);
 
   /* Rotating a phone changes the rail's width, and the offset computed for the
      old width can leave the selected day — often today — scrolled off the
@@ -4754,7 +5603,7 @@ Domain.wire    = function(){
   window.addEventListener('visibilitychange', function(){
     /* Going away: last-chance flush if the page is about to be torn down
        mid-sentence. */
-    if(document.visibilityState === 'hidden'){ flushDraft(); return; }
+    if(document.visibilityState === 'hidden'){ flushDraft(); flushLessonNote(); return; }
     rolloverIfDayChanged();
   });
 };

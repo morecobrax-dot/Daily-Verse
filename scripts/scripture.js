@@ -48,6 +48,7 @@ const corpus = require('./corpus.js');
 const ROOT = path.join(__dirname, '..');
 const APP_PATH = path.join(ROOT, 'index.html');
 const CURATION = path.join(ROOT, 'data', 'curation.json');
+const STUDIES = path.join(ROOT, 'data', 'studies.json');
 
 /* Standard SIL/UBS book codes, which is what the corpus is keyed by. */
 const BOOKS = {
@@ -93,67 +94,243 @@ function collapse(s){ return String(s).replace(/\s+/g, ' ').trim(); }
 /* ---------------------------------------------------------
    DERIVE
    --------------------------------------------------------- */
+function readStudies(){ return JSON.parse(fs.readFileSync(STUDIES, 'utf8')); }
+
+/* Derive one passage from the corpus. The single place text is produced, so
+   a daily reading and a study reading cannot be built by different rules and
+   drift apart. Returns a record or pushes a reason and returns null. */
+function derivePassage(ref, verses, supers, errors){
+  const p = parseRef(ref);
+  if(!p){ errors.push(ref + ' — cannot be parsed as a reference'); return null; }
+
+  const parts = [];
+  for(let v = p.from; v <= p.to; v++){
+    const key = p.code + ' ' + p.chapter + ':' + v;
+    if(!verses.has(key)){ errors.push(ref + ' — ' + key + ' is not in the corpus'); return null; }
+    parts.push(verses.get(key));
+  }
+
+  let text = collapse(parts.join(' '));
+  let stripped = false;
+
+  /* Rule 2. Only ever at verse 1, only where the publisher recorded a
+     title, and only as an exact prefix. Anything else is a failure. */
+  const sup = p.from === 1 ? supers.get(p.code + ' ' + p.chapter) : null;
+  if(sup){
+    const prefix = collapse(sup);
+    if(text.indexOf(prefix) !== 0){
+      errors.push(ref + ' — a superscription is recorded for this chapter but the ' +
+                  'passage does not begin with it; refusing to guess');
+      return null;
+    }
+    text = collapse(text.slice(prefix.length));
+    stripped = true;
+  }
+
+  if(text.length < 8){ errors.push(ref + ' — derived text is implausibly short'); return null; }
+
+  const rec = { id: canonicalId(p), ref: ref, text: text };
+  if(stripped) rec.sup = 1;
+  return rec;
+}
+
+/* One catalogue, two sources.
+
+   data/curation.json names the passages eligible for the daily rotation.
+   data/studies.json names the passages its lessons quote. Both are resolved
+   against the same pinned corpus, in one pass, into one SCRIPTURE array — so
+   there is one Bible table, one verification path and one dataset hash.
+
+   Daily eligibility is EXPLICIT: only a passage the curation named carries
+   `daily: 1`. A passage a lesson quotes is real Scripture, is looked up by
+   the same id, and is never offered as a day's reading. Study text entering
+   the rotation would put passages in front of readers as standalone daily
+   readings when they were chosen to be read inside an argument.
+
+   Daily passages are emitted first and in curation order, so the daily block
+   stays byte-stable when studies are added or changed. */
 function build(){
   const cur = readCuration();
+  const studyDoc = readStudies();
   const verses = corpus.verses();
   const supers = corpus.superscriptions();
   const lock = corpus.readLock();
   if(!lock) throw new Error('no data/corpus.lock.json — run `npm run corpus:sync` first');
 
   const themes = new Set(cur._themes);
-  const out = [];
   const errors = [];
-  const seen = new Set();
+  const daily = [];
+  const study = [];
+  const byId = new Map();
 
+  /* ---- 1. the daily rotation ---- */
   cur.passages.forEach(entry => {
     const p = parseRef(entry.ref);
     if(!p){ errors.push(entry.ref + ' — cannot be parsed as a reference'); return; }
-
     const id = canonicalId(p);
-    if(seen.has(id)){ errors.push(entry.ref + ' — duplicate canonical id ' + id); return; }
-    seen.add(id);
+    if(byId.has(id)){ errors.push(entry.ref + ' — duplicate canonical id ' + id); return; }
 
     if(!entry.themes || !entry.themes.length){ errors.push(entry.ref + ' — no theme tags'); return; }
     const badTheme = entry.themes.filter(t => !themes.has(t));
     if(badTheme.length){ errors.push(entry.ref + ' — unknown theme(s): ' + badTheme.join(', ')); return; }
 
-    const parts = [];
-    for(let v = p.from; v <= p.to; v++){
-      const key = p.code + ' ' + p.chapter + ':' + v;
-      if(!verses.has(key)){ errors.push(entry.ref + ' — ' + key + ' is not in the corpus'); return; }
-      parts.push(verses.get(key));
-    }
-
-    let text = collapse(parts.join(' '));
-    let stripped = false;
-
-    /* Rule 2. Only ever at verse 1, only where the publisher recorded a
-       title, and only as an exact prefix. Anything else is a failure. */
-    const sup = p.from === 1 ? supers.get(p.code + ' ' + p.chapter) : null;
-    if(sup){
-      const prefix = collapse(sup);
-      if(text.indexOf(prefix) !== 0){
-        errors.push(entry.ref + ' — a superscription is recorded for this chapter but the ' +
-                    'passage does not begin with it; refusing to guess');
-        return;
-      }
-      text = collapse(text.slice(prefix.length));
-      stripped = true;
-    }
-
-    if(text.length < 8){ errors.push(entry.ref + ' — derived text is implausibly short'); return; }
-
-    const rec = { id: id, ref: entry.ref, themes: entry.themes.slice(), text: text };
-    if(stripped) rec.sup = 1;
-    out.push(rec);
+    const rec = derivePassage(entry.ref, verses, supers, errors);
+    if(!rec) return;
+    rec.themes = entry.themes.slice();
+    rec.daily = 1;
+    byId.set(id, rec);
+    daily.push(rec);
   });
+
+  /* ---- 2. everything the lessons quote ---- */
+  const built = buildStudies(studyDoc, errors);
+  built.passageRefs.forEach(ref => {
+    const p = parseRef(ref);
+    if(!p) return;                       // already reported by buildStudies
+    const id = canonicalId(p);
+    if(byId.has(id)) return;             // a lesson quoting a daily reading reuses it
+    const rec = derivePassage(ref, verses, supers, errors);
+    if(!rec) return;
+    /* No theme tags: themes exist to order the daily rotation, and a passage
+       that is never rotated has no use for them. */
+    rec.themes = [];
+    byId.set(id, rec);
+    study.push(rec);
+  });
+
+  assertNoEmbeddedScripture(built.studies, byId, errors);
 
   if(errors.length){
     const e = new Error(errors.length + ' passage(s) failed to derive');
     e.detail = errors;
     throw e;
   }
-  return { passages: out, lock: lock, curation: cur };
+  return { passages: daily.concat(study), daily: daily, study: study,
+           studies: built.studies, studyDoc: studyDoc, lock: lock, curation: cur };
+}
+
+/* Validate the teaching content and resolve its references to canonical ids.
+   Scripture is NOT copied in here — a lesson carries ids, and the text comes
+   from SCRIPTURE at render time, so teaching and Scripture cannot drift. */
+function buildStudies(doc, errors){
+  const studies = [];
+  const passageRefs = [];
+  const studyIds = new Set();
+  const max = (doc._authoring || {});
+  const understandMax = max.understandMax || 900;
+  const lookMax = max.lookCloserMax || 200;
+  const reflectMax = max.reflectMax || 140;
+
+  (doc.studies || []).forEach(s => {
+    if(!s.id || !s.title || !s.summary){ errors.push('study ' + (s.id || '?') + ' — missing id, title or summary'); return; }
+    if(studyIds.has(s.id)){ errors.push('study ' + s.id + ' — duplicate study id'); return; }
+    studyIds.add(s.id);
+    if(!Array.isArray(s.lessons) || !s.lessons.length){ errors.push('study ' + s.id + ' — no lessons'); return; }
+
+    const lessonIds = new Set();
+    const lessons = [];
+
+    s.lessons.forEach((l, i) => {
+      const where = s.id + '/' + (l.id || ('#' + (i + 1)));
+      if(!l.id){ errors.push(where + ' — missing lesson id'); return; }
+      if(lessonIds.has(l.id)){ errors.push(where + ' — duplicate lesson id within its study'); return; }
+      lessonIds.add(l.id);
+      if(!l.title){ errors.push(where + ' — missing title'); return; }
+
+      if(!Array.isArray(l.passages) || !l.passages.length){ errors.push(where + ' — no passages'); return; }
+      const ids = [];
+      l.passages.forEach(ref => {
+        const p = parseRef(ref);
+        if(!p){ errors.push(where + ' — cannot parse passage reference "' + ref + '"'); return; }
+        passageRefs.push(ref);
+        ids.push(canonicalId(p));
+      });
+
+      if(!Array.isArray(l.basis) || !l.basis.length){
+        errors.push(where + ' — no basis recorded; an explanation with no stated ground cannot be audited');
+        return;
+      }
+      l.basis.forEach(ref => {
+        if(!parseRef(ref)) errors.push(where + ' — basis reference "' + ref + '" does not resolve');
+      });
+
+      if(!l.understand || !l.understand.trim()){ errors.push(where + ' — no understand text'); return; }
+      if(!l.reflect || !l.reflect.trim()){ errors.push(where + ' — no reflect prompt'); return; }
+
+      if(l.understand.length > understandMax){
+        errors.push(where + ' — understand is ' + l.understand.length + ' chars, over the ' + understandMax + ' limit');
+      }
+      if(l.lookCloser && l.lookCloser.length > lookMax){
+        errors.push(where + ' — lookCloser is ' + l.lookCloser.length + ' chars, over the ' + lookMax + ' limit');
+      }
+      if(l.reflect.length > reflectMax){
+        errors.push(where + ' — reflect is ' + l.reflect.length + ' chars, over the ' + reflectMax + ' limit');
+      }
+
+      const lesson = { id: l.id, title: l.title, passages: ids,
+                       basis: l.basis.slice(), understand: l.understand, reflect: l.reflect };
+      if(l.lookCloser) lesson.lookCloser = l.lookCloser;
+      lessons.push(lesson);
+    });
+
+    studies.push({ id: s.id, title: s.title, summary: s.summary,
+                   audience: s.audience || '', lessons: lessons });
+  });
+
+  return { studies: studies, passageRefs: passageRefs };
+}
+
+
+/* Refuse a lesson that reproduces Scripture inside its own prose.
+
+   A lesson carries passage ids and the words are pulled from SCRIPTURE at
+   render time — that is what keeps teaching and Scripture from drifting, and
+   what puts every quoted word under scripture:verify. A verse retyped into an
+   explanation escapes all of it: it sits outside the derived region, carries
+   no reference and no translation, and reads to a reader as this app's own
+   sentence. One got through review (John 1:14, in 'Who Jesus is') and was
+   only found by scanning for it, so the scan is now part of the build.
+
+   Six words is the threshold, and it is a judgement rather than a constant.
+   Naming a phrase is how teaching works — a lesson may say the book opens
+   with \"In the beginning\" — and short marked citations sit beside the verse
+   card that carries the reference. A six-word run of the shipped text is no
+   longer a citation; it is the verse. */
+function assertNoEmbeddedScripture(studies, byId, errors){
+  const RUN = 6;
+  const norm = t => t.toLowerCase()
+    .replace(/[‘’']/g, "'")
+    .replace(/[^a-z' ]+/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+
+  /* Every run of the whole catalogue, not merely of the passages this lesson
+     quotes — a lesson reproducing some other passage is the same failure. */
+  const runs = new Map();
+  byId.forEach(p => {
+    const w = norm(p.text).split(' ');
+    for(let i = 0; i + RUN <= w.length; i++){
+      const k = w.slice(i, i + RUN).join(' ');
+      if(!runs.has(k)) runs.set(k, p.ref);
+    }
+  });
+
+  studies.forEach(s => {
+    s.lessons.forEach(l => {
+      ['understand', 'lookCloser', 'reflect', 'title'].forEach(field => {
+        if(typeof l[field] !== 'string') return;
+        const w = norm(l[field]).split(' ');
+        const seen = new Set();
+        for(let i = 0; i + RUN <= w.length; i++){
+          const k = w.slice(i, i + RUN).join(' ');
+          if(runs.has(k) && !seen.has(k)){
+            seen.add(k);
+            errors.push(s.id + '/' + l.id + ' — ' + field + ' reproduces Scripture (' +
+              runs.get(k) + '): "' + k + '". Cite the passage; do not retype it.');
+          }
+        }
+      });
+    });
+  });
 }
 
 /* A hash over the content that matters — id and text, in catalogue order.
@@ -180,20 +357,54 @@ function datasetHash(passages){
 const BEGIN = '/* SCRIPTURE-BEGIN';
 const END = '/* SCRIPTURE-END */';
 
-function esc(s){ return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+/* Newlines are escaped rather than stripped: a paragraph break in a lesson
+   explanation is meaningful, and the renderer splits on it. Scripture text
+   has already been collapsed to one line, so this only ever affects teaching. */
+function esc(s){
+  return String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '')
+    .replace(/\n/g, '\\n');
+}
+
+function passageRow(p){
+  return "  { id: '" + esc(p.id) + "', ref: '" + esc(p.ref) + "'," +
+    " themes: [" + p.themes.map(t => "'" + esc(t) + "'").join(', ') + "]," +
+    (p.daily ? " daily: 1," : "") +
+    (p.sup ? " sup: 1," : "") + "\n" +
+    "    text: '" + esc(p.text) + "' }";
+}
 
 function region(built){
   const hash = datasetHash(built.passages);
+  /* A second digest over the daily block alone. The whole-dataset hash moves
+     whenever a study quotes a new passage, which is correct but useless for
+     answering the one question that matters after such a change: did the
+     daily readings move? This one answers it. */
+  const dailyHash = datasetHash(built.daily);
   const ed = built.lock.edition;
-  const rows = built.passages.map(p =>
-    "  { id: '" + esc(p.id) + "', ref: '" + esc(p.ref) + "'," +
-    " themes: [" + p.themes.map(t => "'" + esc(t) + "'").join(', ') + "]," +
-    (p.sup ? " sup: 1," : "") + "\n" +
-    "    text: '" + esc(p.text) + "' }"
-  ).join(',\n');
+
+  const rows = built.passages.map(passageRow).join(',\n');
+
+  const studyRows = built.studies.map(s => {
+    const lessons = s.lessons.map(l =>
+      "      { id: '" + esc(l.id) + "', title: '" + esc(l.title) + "',\n" +
+      "        passages: [" + l.passages.map(x => "'" + esc(x) + "'").join(', ') + "],\n" +
+      "        basis: [" + l.basis.map(x => "'" + esc(x) + "'").join(', ') + "],\n" +
+      "        understand: '" + esc(l.understand) + "',\n" +
+      (l.lookCloser ? "        lookCloser: '" + esc(l.lookCloser) + "',\n" : "") +
+      "        reflect: '" + esc(l.reflect) + "' }"
+    ).join(',\n');
+    return "  { id: '" + esc(s.id) + "', title: '" + esc(s.title) + "',\n" +
+           "    summary: '" + esc(s.summary) + "',\n" +
+           "    audience: '" + esc(s.audience) + "',\n" +
+           "    lessons: [\n" + lessons + "\n    ] }";
+  }).join(',\n');
 
   return [
-    ' — derived by `npm run scripture:build` from the corpus in data/corpus.lock.json.',
+    ' — derived by `npm run scripture:build` from the corpus in data/corpus.lock.json',
+    '   and the content in data/curation.json and data/studies.json.',
     '   Do not hand-edit. */',
     'const SCRIPTURE_SOURCE = {',
     "  edition: '" + esc(ed.id) + "',",
@@ -205,11 +416,27 @@ function region(built){
     "  divineName: '" + esc(ed.divineName) + "',",
     "  corpusSynced: '" + esc(built.lock.syncedAt) + "',",
     "  datasetHash: '" + hash + "',",
+    "  dailyHash: '" + dailyHash + "',",
+    "  dailyCount: " + built.daily.length + ',',
+    "  studyOnlyCount: " + built.study.length + ',',
     "  built: '" + new Date().toISOString().slice(0, 10) + "'",
     '};',
     '',
+    '/* One catalogue. `daily: 1` marks the passages the Today rotation may',
+    '   draw from; the rest are quoted by a study and are never offered as a',
+    "   day's reading. Both are the same verified text from the same corpus. */",
     'const SCRIPTURE = [',
     rows,
+    '];',
+    '',
+    "/* Teaching content — this app's own words, never Scripture. Lessons carry",
+    '   canonical passage ids; the text itself is looked up in SCRIPTURE, so a',
+    '   lesson and the passage it teaches cannot drift apart. `basis` records',
+    '   the passages actually read to author each explanation. */',
+    'const STUDIES_VERSION = ' + Number(built.studyDoc.version || 1) + ';',
+    '',
+    'const STUDIES = [',
+    studyRows,
     '];'
   ].join('\n');
 }
@@ -244,9 +471,15 @@ function run(mode){
     const built = build();
     writeRegion(region(built));
     console.log('scripture:build  ' + built.lock.edition.title + ' (' + built.lock.edition.id + ')');
-    console.log('  passages     : ' + built.passages.length);
+    console.log('  daily        : ' + built.daily.length + ' passages (Today rotation)');
+    console.log('  study-only   : ' + built.study.length + ' passages (quoted by lessons)');
+    console.log('  total        : ' + built.passages.length);
     console.log('  superscript. : ' + built.passages.filter(p => p.sup).length + ' normalised');
+    console.log('  studies      : ' + built.studies.length + ' (' +
+      built.studies.reduce((n, s) => n + s.lessons.length, 0) + ' lessons), content v' +
+      Number(built.studyDoc.version || 1));
     console.log('  dataset hash : ' + datasetHash(built.passages));
+    console.log('  daily hash   : ' + datasetHash(built.daily));
     return 0;
   }
 
@@ -258,6 +491,14 @@ function run(mode){
     console.log('scripture:verify  re-derived from the cached official corpus');
     console.log('  shipped   : ' + have.length + ' passages, hash ' + haveHash.slice(0, 16) + '…');
     console.log('  re-derived: ' + built.passages.length + ' passages, hash ' + wantHash.slice(0, 16) + '…');
+    /* Reported separately, because after a study is added the only question
+       anyone actually has is whether the DAILY readings moved. */
+    const haveDaily = have.filter(p => p.daily);
+    console.log('  daily     : ' + haveDaily.length + ' shipped / ' + built.daily.length + ' re-derived, hash ' +
+                datasetHash(haveDaily).slice(0, 16) + '… vs ' + datasetHash(built.daily).slice(0, 16) + '…');
+    if(datasetHash(haveDaily) !== datasetHash(built.daily)){
+      console.error('  DAILY DRIFT — the Today rotation is not what the curation produces.');
+    }
     if(wantHash === haveHash){
       console.log('  ok — every shipped character matches the published edition');
       return 0;
@@ -278,16 +519,20 @@ function run(mode){
 
   if(mode === 'audit'){
     const s = shipped();
-    const withRefl = s.passages.filter(p => typeof s.reflections[p.id] === 'string' && s.reflections[p.id].trim());
+    const dailyPassages = s.passages.filter(p => p.daily);
+    const studyOnly = s.passages.filter(p => !p.daily);
+    const withRefl = dailyPassages.filter(p => typeof s.reflections[p.id] === 'string' && s.reflections[p.id].trim());
     const themes = {};
     s.passages.forEach(p => (p.themes || []).forEach(t => { themes[t] = (themes[t] || 0) + 1; }));
     const books = new Set(s.passages.map(p => p.id.split('.')[0]));
     console.log('scripture:audit');
     console.log('  edition      : ' + s.source.title + ' (' + s.source.edition + ')');
     console.log('  dataset hash : ' + s.source.datasetHash);
-    console.log('  passages     : ' + s.passages.length);
-    console.log('  with a reflection (daily-eligible) : ' + withRefl.length);
-    console.log('  awaiting a reflection              : ' + (s.passages.length - withRefl.length));
+    console.log('  daily hash   : ' + s.source.dailyHash);
+    console.log('  passages     : ' + s.passages.length + '  (daily ' + dailyPassages.length +
+                ', study-only ' + studyOnly.length + ')');
+    console.log('  daily with a reflection (rotation-eligible) : ' + withRefl.length);
+    console.log('  daily awaiting a reflection                 : ' + (dailyPassages.length - withRefl.length));
     console.log('  distinct books : ' + books.size);
     console.log('  themes       : ' + Object.keys(themes).sort().map(t => t + ':' + themes[t]).join('  '));
     return 0;

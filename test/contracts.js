@@ -1089,7 +1089,7 @@ function testPortability(){
   sub('no foundation function names the demo entity');
   /* The boundary is the DEMO DOMAIN banner. Everything above it, plus the
      settings/updates/utilities/boot sections below it, is foundation. */
-  const domainStart = src.indexOf('SCRIPTURE — the quoted text');
+  const domainStart = src.indexOf('SCRIPTURE AND STUDIES — the quoted text');
   const domainEnd = src.indexOf('SETTINGS — data ownership');
   T('the domain section is delimited', domainStart > 0 && domainEnd > domainStart);
   const foundation = src.slice(0, domainStart) + src.slice(domainEnd);
@@ -1196,9 +1196,14 @@ function testScripture(){
     !p || typeof p.id !== 'string' || !p.id.trim() ||
     typeof p.ref !== 'string' || !p.ref.trim() ||
     typeof p.text !== 'string' || p.text.trim().length < 8 ||
-    !Array.isArray(p.themes) || !p.themes.length);
-  T('every passage has an id, a reference, theme tags and real text',
+    !Array.isArray(p.themes));
+  T('every passage has an id, a reference and real text',
     malformed.length === 0, malformed.slice(0, 4).map(p => (p && p.ref) || '?').join(', '));
+  /* Themes order the daily rotation. A passage that is never rotated has no
+     use for them, so the requirement belongs to the daily set alone. */
+  const untagged = c.SCRIPTURE.filter(p => p.daily && !p.themes.length);
+  T('every DAILY passage carries theme tags',
+    untagged.length === 0, untagged.slice(0, 4).map(p => p.ref).join(', '));
 
   const ids = c.SCRIPTURE.map(p => p.id);
   T('no canonical id appears twice', new Set(ids).size === ids.length);
@@ -1481,8 +1486,10 @@ function testDays(){
     !/\.day-rail\{[^}]*scroll-behavior:\s*smooth/.test(bareCss));
 
   sub('repainting the rail does not throw the reader off the day they are on');
-  T('the offset is captured before the repaint', /const keepScroll = rail\.scrollLeft;/.test(src));
-  T('and restored after it', /rail\.scrollLeft = keepScroll;/.test(src));
+  T('the offset is captured before the repaint',
+    /const keepScroll = measurable \? rail\.scrollLeft : null;/.test(src));
+  T('and restored after it, but only when it was a real measurement',
+    /if\(keepScroll !== null\) rail\.scrollLeft = keepScroll;/.test(src));
   /* Rotating a phone changes the rail's width, and an offset computed for the
      old one can leave today scrolled off the screen entirely. */
   T('and a change of viewport width re-centres the chosen day',
@@ -1709,11 +1716,911 @@ function testUpgrade(){
   T('data.notes still holds the reflections', c.KEYS.notes === 'data.notes');
 }
 
+/* =========================================================
+   CONTRACT 24 — TEACHING IS GROUNDED, AND IS NOT SCRIPTURE
+   ---------------------------------------------------------
+   Guided study introduces the first content in this app that
+   INTERPRETS Scripture rather than quoting it. These defend the
+   line between the two, and the requirement that every
+   explanation names the text it rests on.
+   ========================================================= */
+function testStudies(){
+  section('CONTRACT 24 — study teaching is grounded, and never mistaken for Scripture');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const src = js();
+
+  sub('there is teaching, and it declares its version');
+  T('studies are embedded', Array.isArray(c.STUDIES) && c.STUDIES.length > 0,
+    String((c.STUDIES || []).length));
+  T('the content carries an explicit version', Number.isInteger(c.STUDIES_VERSION) && c.STUDIES_VERSION >= 1,
+    String(c.STUDIES_VERSION));
+  T('every study has an id, a title and a summary',
+    c.STUDIES.every(s => s.id && s.title && s.summary));
+  T('every study says who it is for', c.STUDIES.every(s => typeof s.audience === 'string' && s.audience.trim()));
+
+  sub('identifiers are stable and unique');
+  const studyIds = c.STUDIES.map(s => s.id);
+  T('no study id appears twice', new Set(studyIds).size === studyIds.length);
+  T('study ids are slugs, so they can be stored and linked',
+    studyIds.every(id => /^[a-z][a-z0-9-]*$/.test(id)), studyIds.join(', '));
+  let dupLesson = [];
+  c.STUDIES.forEach(s => {
+    const ids = s.lessons.map(l => l.id);
+    if(new Set(ids).size !== ids.length) dupLesson.push(s.id);
+  });
+  T('no lesson id repeats within its study', dupLesson.length === 0, dupLesson.join(', '));
+  T('every lesson id is a slug', c.STUDIES.every(s => s.lessons.every(l => /^[a-z0-9][a-z0-9-]*$/.test(l.id))));
+  T('lesson order is the array order, with no second ordering field to drift',
+    c.STUDIES.every(s => s.lessons.every(l => l.order === undefined && l.index === undefined)));
+
+  sub('every lesson resolves to real Scripture');
+  const lessons = [];
+  c.STUDIES.forEach(s => s.lessons.forEach(l => lessons.push({ s: s.id, l: l })));
+  T('there are lessons to check', lessons.length > 0, String(lessons.length));
+  const badPassage = [];
+  lessons.forEach(x => {
+    if(!Array.isArray(x.l.passages) || !x.l.passages.length){ badPassage.push(x.s + '/' + x.l.id + ' (none)'); return; }
+    x.l.passages.forEach(id => { if(!c.passageById(id)) badPassage.push(x.s + '/' + x.l.id + ' -> ' + id); });
+  });
+  T('every lesson passage id resolves in the one catalogue',
+    badPassage.length === 0, badPassage.slice(0, 5).join(', '));
+  T('lessonPassages() returns the text for every lesson',
+    lessons.every(x => c.lessonPassages(x.l).length === x.l.passages.length));
+
+  sub('teaching carries no Scripture of its own');
+  /* The failure this prevents: a lesson quoting a verse inline, which would
+     then be Scripture this app asserts on its own authority, outside the
+     derived region and outside every check that defends it.
+
+     This began as a whole-text comparison and MISSED a real defect: 'Who
+     Jesus is' reproduced the first clause of John 1:14 and nothing else, so
+     no complete passage ever appeared and the check stayed green. Partial
+     reproduction is the same failure — the reader still receives Scripture
+     as this app's unattributed prose. It now matches the build's rule: any
+     run of six shipped words. Naming a phrase is how teaching works and
+     stays legal; six consecutive words is no longer a citation, it is the
+     verse. */
+  const RUN = 6;
+  const normRun = t => t.toLowerCase()
+    .replace(/[\u2018\u2019']/g, "'")
+    .replace(/[^a-z' ]+/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+  const scriptureRuns = new Map();
+  c.SCRIPTURE.forEach(p => {
+    const w = normRun(p.text).split(' ');
+    for(let i = 0; i + RUN <= w.length; i++){
+      const k = w.slice(i, i + RUN).join(' ');
+      if(!scriptureRuns.has(k)) scriptureRuns.set(k, p.ref);
+    }
+  });
+  const inlined = [];
+  lessons.forEach(x => {
+    ['understand', 'lookCloser', 'reflect', 'title'].forEach(field => {
+      if(typeof x.l[field] !== 'string') return;
+      const w = normRun(x.l[field]).split(' ');
+      for(let i = 0; i + RUN <= w.length; i++){
+        const k = w.slice(i, i + RUN).join(' ');
+        if(scriptureRuns.has(k)){ inlined.push(x.s + '/' + x.l.id + '.' + field + ' <- ' + scriptureRuns.get(k)); return; }
+      }
+    });
+  });
+  T('no lesson field reproduces a run of Scripture', inlined.length === 0, inlined.slice(0, 5).join(', '));
+  T('and the build refuses one before it can ship',
+    /reproduces Scripture/.test(require('fs').readFileSync('scripts/scripture.js', 'utf8')));
+  T('a lesson record carries ids, never a text field',
+    lessons.every(x => x.l.text === undefined && x.l.scripture === undefined));
+
+  sub('every explanation says what it rests on');
+  const noBasis = lessons.filter(x => !Array.isArray(x.l.basis) || !x.l.basis.length);
+  T('every lesson records a basis', noBasis.length === 0,
+    noBasis.map(x => x.s + '/' + x.l.id).join(', '));
+  /* A basis nobody can resolve is decoration. Parsed with the build's own
+     reference parser so the two cannot disagree about what is valid. */
+  const S = require('../scripts/scripture.js');
+  const badBasis = [];
+  lessons.forEach(x => (x.l.basis || []).forEach(ref => {
+    if(!S.parseRef(ref)) badBasis.push(x.s + '/' + x.l.id + ' -> "' + ref + '"');
+  }));
+  T('every basis reference is a resolvable reference', badBasis.length === 0, badBasis.slice(0, 5).join(', '));
+  /* The passage being taught must itself be among what was read. */
+  const basisMissesPassage = [];
+  lessons.forEach(x => {
+    const basisIds = (x.l.basis || []).map(r => { const p = S.parseRef(r); return p ? S.canonicalId(p) : null; });
+    const basisBooks = (x.l.basis || []).map(r => { const p = S.parseRef(r); return p ? p.code + '.' + p.chapter : null; });
+    x.l.passages.forEach(id => {
+      const chap = id.split('.').slice(0, 2).join('.');
+      if(basisIds.indexOf(id) === -1 && basisBooks.indexOf(chap) === -1){
+        basisMissesPassage.push(x.s + '/' + x.l.id + ' -> ' + id);
+      }
+    });
+  });
+  T('the basis covers the passage the lesson teaches',
+    basisMissesPassage.length === 0, basisMissesPassage.slice(0, 5).join(', '));
+
+  sub('every lesson actually teaches, and stays short enough to read on a phone');
+  const doc = JSON.parse(require('fs').readFileSync(
+    require('path').join(H.ROOT, 'data', 'studies.json'), 'utf8'));
+  const lim = doc._authoring || {};
+  const uMax = lim.understandMax || 900, kMax = lim.lookCloserMax || 200, rMax = lim.reflectMax || 140;
+  T('the editorial limits are declared in the source file',
+    !!(lim.understandMax && lim.lookCloserMax && lim.reflectMax));
+  T('every lesson has an explanation',
+    lessons.every(x => typeof x.l.understand === 'string' && x.l.understand.trim().length > 120),
+    lessons.filter(x => !x.l.understand || x.l.understand.trim().length <= 120).map(x => x.s + '/' + x.l.id).join(', '));
+  T('every lesson has a reflection prompt',
+    lessons.every(x => typeof x.l.reflect === 'string' && x.l.reflect.trim().length > 10));
+  T('no explanation exceeds the declared limit',
+    lessons.every(x => x.l.understand.length <= uMax),
+    lessons.filter(x => x.l.understand.length > uMax).map(x => x.s + '/' + x.l.id + ':' + x.l.understand.length).join(', '));
+  T('no look-closer question exceeds its limit',
+    lessons.every(x => !x.l.lookCloser || x.l.lookCloser.length <= kMax));
+  T('no reflection prompt exceeds its limit',
+    lessons.every(x => x.l.reflect.length <= rMax));
+
+  sub('teaching never claims the reading was chosen for the reader');
+  const teaching = lessons.map(x => [x.l.understand, x.l.lookCloser || '', x.l.reflect].join(' ')).join(' ').toLowerCase();
+  ['god chose', 'chosen for you', 'god selected', 'meant for you', 'god wants you',
+   'god is telling you', 'god gave you this'].forEach(phrase =>
+    T('it never says "' + phrase + '"', teaching.indexOf(phrase) === -1));
+
+  sub('the study source file is human-reviewable and holds no Scripture');
+  const rawDoc = require('fs').readFileSync(require('path').join(H.ROOT, 'data', 'studies.json'), 'utf8');
+  T('lessons are authored as references, not ids, so a reviewer can read them',
+    doc.studies.every(s => s.lessons.every(l => l.passages.every(r => /\d+:\d+/.test(r)))));
+  const leaked = c.SCRIPTURE.filter(p => p.text.length > 24 && rawDoc.indexOf(p.text) !== -1);
+  T('the source file contains no verse text either',
+    leaked.length === 0, leaked.slice(0, 3).map(p => p.id).join(', '));
+}
+
+/* =========================================================
+   CONTRACT 25 — ONE CATALOGUE, TWO KINDS OF ENTRY
+   ---------------------------------------------------------
+   Study passages share the daily catalogue. These prove they
+   cannot leak into the daily rotation, and that adding them
+   moved nothing that was already there.
+   ========================================================= */
+function testCatalogueSplit(){
+  section('CONTRACT 25 — study Scripture shares the catalogue without entering the rotation');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const src = js();
+  const S = require('../scripts/scripture.js');
+
+  sub('there is exactly one Bible table');
+  T('one SCRIPTURE declaration', (src.match(/const SCRIPTURE = \[/g) || []).length === 1);
+  T('one source record', (src.match(/const SCRIPTURE_SOURCE = \{/g) || []).length === 1);
+  T('and no second table for studies',
+    !/const STUDY_SCRIPTURE|const LESSON_TEXT|const STUDY_VERSES/.test(src));
+  T('every passage names the same edition through one source record',
+    typeof c.SCRIPTURE_SOURCE.edition === 'string' && c.SCRIPTURE_SOURCE.edition.length > 0);
+
+  sub('daily eligibility is explicit, not inferred');
+  const daily = c.SCRIPTURE.filter(p => p.daily);
+  const studyOnly = c.SCRIPTURE.filter(p => !p.daily);
+  T('the catalogue carries both kinds', daily.length > 0 && studyOnly.length > 0,
+    daily.length + ' daily / ' + studyOnly.length + ' study-only');
+  T('the shipped counts match what is in the array',
+    c.SCRIPTURE_SOURCE.dailyCount === daily.length &&
+    c.SCRIPTURE_SOURCE.studyOnlyCount === studyOnly.length,
+    c.SCRIPTURE_SOURCE.dailyCount + '/' + c.SCRIPTURE_SOURCE.studyOnlyCount);
+  /* The gate is the flag, checked first — not the accident of a study
+     passage happening to have no reflection written for it. */
+  T('eligibility tests the daily flag',
+    /if\(!p\.daily\) continue;/.test(src));
+  const eligible = c.eligiblePassages();
+  T('every eligible passage is a daily one', eligible.every(p => p.daily === 1));
+  T('no study-only passage is ever eligible',
+    studyOnly.every(p => eligible.indexOf(p) === -1),
+    studyOnly.filter(p => eligible.indexOf(p) !== -1).map(p => p.id).join(', '));
+
+  sub('a study-only passage stays out of the rotation even if one acquires a reflection');
+  /* Guards the ordering of the two gates. If eligibility ever checked the
+     reflection first, writing one for a study passage would quietly enrol it
+     as a day's reading. */
+  const probe = H.loadApp();
+  const victim = probe.ctx.SCRIPTURE.find(p => !p.daily);
+  probe.ctx.REFLECTIONS[victim.id] = 'A reflection written for a study-only passage.';
+  T('it still does not enter the rotation',
+    probe.ctx.eligiblePassages().every(p => p.id !== victim.id), victim.id);
+
+  sub('the daily block is unchanged by the presence of studies');
+  const dailyHash = S.datasetHash(daily);
+  T('the shipped daily hash is honest', c.SCRIPTURE_SOURCE.dailyHash === dailyHash,
+    c.SCRIPTURE_SOURCE.dailyHash + ' vs ' + dailyHash);
+  T('the whole-dataset hash covers everything, so it differs from the daily one',
+    c.SCRIPTURE_SOURCE.datasetHash !== c.SCRIPTURE_SOURCE.dailyHash);
+  const cur = JSON.parse(require('fs').readFileSync(
+    require('path').join(H.ROOT, 'data', 'curation.json'), 'utf8'));
+  T('the daily set is exactly what the curation names, no more and no less',
+    daily.length === cur.passages.length, daily.length + ' vs ' + cur.passages.length);
+  T('and in the curation\'s own order, so the block stays byte-stable',
+    daily.every((p, i) => p.ref === cur.passages[i].ref),
+    daily.filter((p, i) => p.ref !== cur.passages[i].ref).slice(0, 3).map(p => p.ref).join(', '));
+  T('daily passages come first, so appending studies cannot reorder them',
+    c.SCRIPTURE.findIndex(p => !p.daily) === daily.length);
+
+  sub('study passages are the same verified text as everything else');
+  T('each has a canonical id', studyOnly.every(p => /^[A-Z0-9]{3}\.\d+\.\d+(-\d+)?$/.test(p.id)));
+  T('each has real text', studyOnly.every(p => typeof p.text === 'string' && p.text.trim().length >= 8));
+  T('each has a printed reference', studyOnly.every(p => /^(?:[123] )?[A-Za-z][A-Za-z ]+ \d+:\d+(-\d+)?$/.test(p.ref)));
+  T('none carries theme tags, because none is ever rotated',
+    studyOnly.every(p => Array.isArray(p.themes) && p.themes.length === 0));
+  T('a lesson quoting a daily reading reuses it rather than duplicating it', (() => {
+    const ids = c.SCRIPTURE.map(p => p.id);
+    return new Set(ids).size === ids.length;
+  })());
+
+  sub('Today is untouched');
+  const fresh = H.loadApp({ sharedStorage: new Map() });
+  const seen = [];
+  for(let i = 0; i < 30; i++){
+    const k = fresh.ctx.dayKey(new Date(2026, 0, 1 + i));
+    seen.push(fresh.ctx.passageForDay(k));
+  }
+  T('every day still resolves to a reading', seen.every(p => !!p));
+  T('none of them is a study-only passage', seen.every(p => p.daily === 1));
+  T('and none repeated', new Set(seen.map(p => p.id)).size === seen.length);
+}
+
+/* =========================================================
+   CONTRACT 26 — STUDY STORAGE IS ADDITIVE AND SAFE
+   ---------------------------------------------------------
+   The study collections were added without a schema bump. These
+   prove that was the right call rather than a lucky one.
+   ========================================================= */
+function testStudyStorage(){
+  section('CONTRACT 26 — study storage is additive and cannot disturb existing data');
+  const app = H.loadApp();
+  const c = app.ctx;
+
+  sub('the new collections are separate from the daily reflection system');
+  T('study progress has its own key', c.KEYS.studyProgress === 'data.studyProgress');
+  T('study notes have their own key', c.KEYS.studyNotes === 'data.studyNotes');
+  T('the daily reflection key is untouched', c.KEYS.notes === 'data.notes');
+  /* A note in data.notes is structurally one-per-calendar-day: its id IS the
+     date. A lesson is not a day, so forcing study writing in there would
+     break the invariant the whole daily side rests on. */
+  T('a daily note is still required to be a day record',
+    c.isNoteRecord({ id: 'n_2026-01-01', date: '2026-01-01', text: 'x' }) === true &&
+    c.isNoteRecord({ id: 'ntb-1', study: 's', lesson: 'l', text: 'x' }) === false);
+  T('a study note is not accepted as a daily note',
+    c.isNoteRecord({ id: 'new-to-the-bible:ntb-1', study: 'new-to-the-bible',
+                     lesson: 'ntb-1', text: 'x' }) === false);
+
+  sub('absent means empty, and is never repaired with an invention');
+  const blank = H.loadApp({ sharedStorage: new Map() });
+  T('a reader who has opened no study has no progress', blank.ctx.studyProgress.length === 0);
+  T('and no study notes', blank.ctx.studyNotes.length === 0);
+  T('and no active study is claimed', blank.ctx.activeStudy() === null);
+  T('nothing was written to storage just by looking',
+    blank.ctx.Store.get(blank.ctx.KEYS.studyProgress) === null &&
+    blank.ctx.Store.get(blank.ctx.KEYS.studyNotes) === null);
+
+  sub('corrupt entries are dropped rather than thrown on');
+  const dirty = new Map();
+  const P = c.STORAGE_NAMESPACE;
+  dirty.set(P + 'data.studyProgress', JSON.stringify([
+    { id: 'new-to-the-bible', lesson: 'ntb-2', done: ['ntb-1'], updatedAt: 'a' },
+    { id: 'broken' },                                  // no done array
+    null, 42, { done: ['x'] }                          // no id
+  ]));
+  dirty.set(P + 'data.studyNotes', JSON.stringify([
+    { id: 'new-to-the-bible:ntb-1', study: 'new-to-the-bible', lesson: 'ntb-1', text: 'kept' },
+    { id: 'no-study', text: 'dropped' }
+  ]));
+  const messy = H.loadApp({ sharedStorage: dirty });
+  T('only well-formed progress survives', messy.ctx.studyProgress.length === 1);
+  T('and it is the right one', messy.ctx.studyProgress[0].id === 'new-to-the-bible');
+  T('only well-formed notes survive', messy.ctx.studyNotes.length === 1);
+  T('boot raised no errors on corrupt study data', messy.errors.length === 0, messy.errors.join(' | '));
+
+  sub('a study note is addressed by its pair, so it cannot duplicate');
+  T('the id derives from study and lesson',
+    c.studyNoteIdFor('new-to-the-bible', 'ntb-3') === 'new-to-the-bible:ntb-3');
+  T('lookup finds it', messy.ctx.studyNoteFor('new-to-the-bible', 'ntb-1').text === 'kept');
+  T('and misses cleanly', messy.ctx.studyNoteFor('new-to-the-bible', 'ntb-9') === null);
+
+  sub('progress and the active study are derived, not second-guessed');
+  T('progress is found by study id', messy.ctx.studyProgressFor('new-to-the-bible').lesson === 'ntb-2');
+  T('an unfinished study is offered as active', messy.ctx.activeStudy().id === 'new-to-the-bible');
+  const done = H.loadApp({ sharedStorage: new Map() });
+  const study = done.ctx.STUDIES[0];
+  done.ctx.studyProgress.push({ id: study.id, lesson: study.lessons[study.lessons.length - 1].id,
+                                done: study.lessons.map(l => l.id), updatedAt: 'z' });
+  T('a finished study is not offered as active', done.ctx.activeStudy() === null);
+
+  sub('the schema did not move, because nothing existing changed shape');
+  T('the schema version is still 2', c.DATA_SCHEMA_VERSION === 2, String(c.DATA_SCHEMA_VERSION));
+  T('no migration was added for it', Object.keys(c.MIGRATIONS).join(',') === '1');
+  /* The v1 upgrade still works and still touches only what it always did. */
+  const legacy = new Map();
+  const sample = c.SCRIPTURE.find(p => p.daily);
+  legacy.set(P + 'sys.schemaVersion', '1');
+  legacy.set(P + 'data.saved', JSON.stringify([{ id: 's_x', ref: sample.ref, savedAt: 'a', updatedAt: 'a' }]));
+  legacy.set(P + 'data.notes', JSON.stringify([{ id: 'n_2026-01-02', date: '2026-01-02',
+    ref: sample.ref, text: 'still here', createdAt: 'a', updatedAt: 'a' }]));
+  const up = H.loadApp({ sharedStorage: legacy });
+  T('a v1 store still upgrades', up.ctx.Store.get(up.ctx.KEYS.schemaVersion) === '2');
+  T('its saved verse survived', up.ctx.savedVerses.length === 1);
+  T('its reflection survived', up.ctx.notes[0].text === 'still here');
+  T('and it gained empty study collections rather than nothing',
+    up.ctx.studyProgress.length === 0 && up.ctx.studyNotes.length === 0);
+
+  sub('backup carries the new collections, and an old backup cannot erase them');
+  const live = new Map();
+  const w = H.loadApp({ sharedStorage: live });
+  w.ctx.studyProgress.push({ id: 'new-to-the-bible', lesson: 'ntb-2', done: ['ntb-1'], updatedAt: 'b' });
+  w.ctx.persistStudyProgress();
+  w.ctx.studyNotes.push({ id: 'new-to-the-bible:ntb-1', study: 'new-to-the-bible',
+                          lesson: 'ntb-1', text: 'mine', createdAt: 'a', updatedAt: 'a' });
+  w.ctx.persistStudyNotes();
+  T('progress persisted', H.loadApp({ sharedStorage: live }).ctx.studyProgress.length === 1);
+  T('notes persisted', H.loadApp({ sharedStorage: live }).ctx.studyNotes.length === 1);
+
+  /* exportData walks every namespaced key, so a new collection is included
+     without the exporter being taught about it. */
+  const exported = {};
+  w.ctx.Store.listKeys().forEach(k => {
+    if(k.indexOf(w.ctx.KEYS.backupPrefix) === 0) return;
+    exported[k] = w.ctx.Store.get(k);
+  });
+  T('an export includes study progress', typeof exported['data.studyProgress'] === 'string');
+  T('an export includes study notes', typeof exported['data.studyNotes'] === 'string');
+
+  /* A backup taken before studies existed has no such keys. Importing it
+     must leave what is on the device alone. */
+  const older = w.ctx.mergeBackup({ 'data.saved': JSON.stringify([]) });
+  T('importing an older backup touches nothing it does not mention',
+    w.ctx.Store.getJSON(w.ctx.KEYS.studyProgress, []).length === 1 &&
+    w.ctx.Store.getJSON(w.ctx.KEYS.studyNotes, []).length === 1);
+
+  /* And a study backup merges by id like every other record collection. */
+  const merged = w.ctx.mergeBackup({
+    'data.studyNotes': JSON.stringify([
+      { id: 'new-to-the-bible:ntb-2', study: 'new-to-the-bible', lesson: 'ntb-2',
+        text: 'from another device', updatedAt: '2030-01-01' }
+    ])
+  });
+  T('a study note from a backup is added', merged.added >= 1);
+  T('without disturbing the one already there',
+    w.ctx.Store.getJSON(w.ctx.KEYS.studyNotes, []).length === 2);
+  const re = w.ctx.mergeBackup({
+    'data.studyNotes': JSON.stringify([
+      { id: 'new-to-the-bible:ntb-2', study: 'new-to-the-bible', lesson: 'ntb-2',
+        text: 'from another device', updatedAt: '2030-01-01' }
+    ])
+  });
+  T('re-importing the same backup changes nothing', re.added === 0 && re.updated === 0);
+}
+
+/* =========================================================
+   CONTRACT 27 — LEARN NAVIGATES WITHOUT A ROUTER
+   ---------------------------------------------------------
+   Learn is three levels deep — a tab, a study, a lesson — and
+   all of it runs on the overlay engine that already existed.
+   These defend that, and defend Today's place at the front.
+   ========================================================= */
+function testLearnNavigation(){
+  section('CONTRACT 27 — Learn navigates on the existing engine');
+  const app = H.loadApp();
+  const c = app.ctx, d = app.dom.document;
+  const src = H.readApp();
+
+  sub('four tabs, and Today is still the one you land on');
+  const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab).filter(Boolean);
+  T('there are exactly four', tabs.length === 4, tabs.join(', '));
+  T('and the ceiling is not raised', tabs.length <= 4);
+  T('Today is first', tabs[0] === 'today');
+  T('Learn is second', tabs[1] === 'learn');
+  T('the app boots on Today', c.currentTab === 'today', c.currentTab);
+  T('Today is the view marked active in the markup',
+    /<main class="view active" id="view-today">/.test(src));
+  T('every tab still has a view', tabs.every(t => !!d.getElementById('view-' + t)));
+
+  sub('leaving Today and coming back does not strand the day rail');
+  /* Found in visual QA, not by a test. A second tab means Today's view can be
+     display:none, and a hidden element measures zero — so the rail repaint
+     that runs on every renderAll() was writing a scroll offset into something
+     it could not measure. Chrome happened to restore the old value; an engine
+     that kept the write would have shown the rail four weeks in the past. */
+  const bare = stripComments(js());
+  /* The rail must ALWAYS paint — boot renders it before the app is revealed.
+     A first attempt at this fix skipped painting whenever the container was
+     unmeasurable, which left the rail permanently empty on load. The stub has
+     no layout, so nothing caught it until it was looked at in a browser. */
+  /* Colour alone is not a state. A screen reader must be told which tab it
+     is on, and so must a reader who does not receive the accent. */
+  (function(){
+    const cur = () => [...app.dom.document.querySelectorAll('.tab-btn')]
+      .filter(b => b.getAttribute('aria-current') === 'page').map(b => b.dataset.tab);
+    c.goToTab('learn');
+    T('the active tab is announced, not only tinted', cur().length === 1 && cur()[0] === 'learn', cur().join());
+    c.goToTab('today');
+    T('and the mark moves with the tab, never accumulating', cur().length === 1 && cur()[0] === 'today', cur().join());
+  })();
+
+  T('the rail paints its cells even before the app is revealed',
+    (app.dom.document.getElementById('dayRail').innerHTML.match(/day-cell/g) || []).length === c.RAIL_DAYS,
+    String((app.dom.document.getElementById('dayRail').innerHTML.match(/day-cell/g) || []).length));
+  T('a scroll offset read while hidden is never written back',
+    /const measurable = rail\.clientWidth > 0;/.test(bare) &&
+    /if\(keepScroll !== null\) rail\.scrollLeft = keepScroll;/.test(bare));
+  T('entering a tab goes through one place that can settle it',
+    /function goToTab\(tab\)\{/.test(bare));
+  T('and that place re-centres the rail on the way back into Today',
+    /if\(tab === 'today'\)\{ renderToday\(\); centreSelectedDay\(\); \}/.test(bare));
+  T('every tab button routes through it',
+    (src.match(/onclick="goToTab\('/g) || []).length === 4,
+    String((src.match(/onclick="goToTab\('/g) || []).length));
+  T('and none still calls switchTab directly from the tab bar',
+    !/data-tab="[a-z]+" onclick="switchTab\(/.test(src));
+
+  sub('Learn has its own mark, not the one Today already uses');
+  T('a compass icon exists', /function compassIcon\(/.test(js()));
+  T('Learn is registered with it', /learn:\s*'<circle cx="8" cy="8" r="5\.9"\/>/.test(js()));
+  T('and it is not the book Today uses',
+    c.Domain.tabIcons.learn !== c.Domain.tabIcons.today);
+  T('nor the bookmark Saved uses',
+    c.Domain.tabIcons.learn !== c.Domain.tabIcons.saved);
+
+  sub('switching to Learn behaves like every other tab');
+  c.switchTab('learn');
+  T('the tab is current', c.currentTab === 'learn');
+  T('its view is the only active one', (() => {
+    const active = [...d.querySelectorAll('.view')].filter(v => v.classList.contains('active'));
+    return active.length === 1 && active[0].id === 'view-learn';
+  })());
+  c.switchTab('today');
+  T('and Today comes back', c.currentTab === 'today');
+
+  sub('a study opens over the tab, and a lesson over the study');
+  const study = c.STUDIES[0];
+  c.openStudy(study.id); c.__flush();
+  T('the study page is open', d.getElementById('studyOverlay').classList.contains('open'));
+  T('the stack records one surface', c._openSheetStack.length === 1);
+  T('and one history entry', c._historyDepth === 1);
+
+  c.openLesson(study.id, study.lessons[0].id); c.__flush();
+  T('the lesson page is open', d.getElementById('lessonOverlay').classList.contains('open'));
+  T('the study is still open beneath it',
+    d.getElementById('studyOverlay').classList.contains('open'));
+  T('two surfaces are stacked', c._openSheetStack.length === 2, c._openSheetStack.join(' > '));
+  T('the lesson paints above the study',
+    Number(d.getElementById('lessonOverlay').style.zIndex) >
+    Number(d.getElementById('studyOverlay').style.zIndex));
+  T('the background is locked once, at depth two', c._lockDepth === 2, String(c._lockDepth));
+  T('history is two deep', c._historyDepth === 2, String(c._historyDepth));
+
+  sub('back closes one level at a time');
+  c.closeLesson(); c.__flush();
+  T('the lesson closed', !d.getElementById('lessonOverlay').classList.contains('open'));
+  T('the study did not', d.getElementById('studyOverlay').classList.contains('open'));
+  T('the stack shrank to one', c._openSheetStack.length === 1);
+  T('the page behind is still locked', d.body.classList.contains('scroll-locked'));
+  c.closeStudy(); c.__flush();
+  T('the study closed', !d.getElementById('studyOverlay').classList.contains('open'));
+  T('nothing is left open', d.querySelectorAll('.overlay.open').length === 0);
+  T('the lock released', c._lockDepth === 0 && !d.body.classList.contains('scroll-locked'));
+  T('and history unwound', c._historyDepth === 0, String(c._historyDepth));
+
+  sub('a lesson opened from Learn still has its study underneath');
+  /* Otherwise Back from a lesson would drop straight to the tab, skipping
+     the page the reader would expect to return to. */
+  const j = H.loadApp();
+  j.ctx.openLesson(study.id, study.lessons[2].id); j.ctx.__flush();
+  T('the study opened too',
+    j.dom.document.getElementById('studyOverlay').classList.contains('open'));
+  T('and the lesson sits on top', j.ctx.topOpenSheet().id === 'lessonOverlay');
+
+  sub('both pages declare a way out, so Escape and device back work');
+  ['studyOverlay', 'lessonOverlay'].forEach(id => {
+    const k = H.loadApp();
+    k.ctx.openStudy(study.id); k.ctx.__flush();
+    if(id === 'lessonOverlay'){ k.ctx.openLesson(study.id, study.lessons[0].id); k.ctx.__flush(); }
+    T(id + ' has a discoverable close path',
+      !!k.ctx.sheetCloser(k.dom.document.getElementById(id)));
+  });
+}
+
+/* =========================================================
+   CONTRACT 28 — A LESSON TEACHES FROM THE CANONICAL TEXT
+   ---------------------------------------------------------
+   The screen a reader actually looks at must get its Scripture
+   from the verified catalogue and nowhere else.
+   ========================================================= */
+function testLessonRendering(){
+  section('CONTRACT 28 — a lesson renders verified Scripture and clearly-separate teaching');
+  const app = H.loadApp();
+  const c = app.ctx, d = app.dom.document;
+  const src = js();
+  const study = c.STUDIES[0];
+
+  sub('the landing screen');
+  c.renderLearn();
+  let learn = d.getElementById('learnBody').innerHTML;
+  T('it names the study', learn.indexOf(study.title) !== -1);
+  T('it shows the lesson count', /5 lessons/.test(learn));
+  T('with no progress there is nothing to continue', learn.indexOf('Continue<') === -1);
+  T('and a way in for someone new', learn.indexOf('Start here') !== -1);
+  T('it shows no percentage anywhere', !/\d+%/.test(learn.replace(/width:\s*\d+%/g, '')));
+
+  sub('once something is under way, Continue appears and points at the right lesson');
+  const p = H.loadApp({ sharedStorage: new Map() });
+  p.ctx.ensureStudyStarted(study.id);
+  const rec = p.ctx.studyProgressFor(study.id);
+  rec.done.push(study.lessons[0].id, study.lessons[1].id);
+  p.ctx.persistStudyProgress();
+  p.ctx.renderLearn();
+  learn = p.dom.document.getElementById('learnBody').innerHTML;
+  T('Continue is offered', learn.indexOf('Continue') !== -1);
+  T('it names the next unfinished lesson', learn.indexOf(study.lessons[2].title) !== -1);
+  T('and says where that is in the study', /Lesson 3 of 5/.test(learn));
+  T('the study row shows a count of lessons, not a percentage',
+    /2 of 5 lessons/.test(learn));
+  T('the "new here" prompt is gone once something is started',
+    learn.indexOf('Start here') === -1);
+
+  sub('the study page lists every lesson and marks their state');
+  p.ctx.openStudy(study.id);
+  const body = p.dom.document.getElementById('studyBody').innerHTML;
+  study.lessons.forEach(l => T('lesson "' + l.title + '" is listed', body.indexOf(l.title) !== -1));
+  T('completed lessons are marked', (body.match(/lesson-state is-done/g) || []).length === 2);
+  T('the next one is marked too', /lesson-state is-next/.test(body));
+  T('state is never colour alone — the marks carry a word',
+    /<span class="sr-only">Completed<\/span>/.test(body) && />Next</.test(body));
+  T('no lesson is locked', !/disabled/.test(body));
+
+  sub('Scripture on a lesson comes from the catalogue, never from the teaching');
+  const lesson = study.lessons[0];
+  p.ctx.openLesson(study.id, lesson.id);
+  const html = p.dom.document.getElementById('lessonBody').innerHTML;
+  const passages = c.lessonPassages(lesson);
+  T('the lesson has passages', passages.length > 0);
+  passages.forEach(x => {
+    T('the text of ' + x.id + ' is on screen', html.indexOf(c.escapeHtml(x.text)) !== -1);
+    T('so is its reference', html.indexOf(x.ref) !== -1);
+  });
+  T('the translation identity is shown', html.indexOf(c.SCRIPTURE_SOURCE.abbr) !== -1);
+  T('Scripture is rendered through the verse primitive',
+    /<blockquote class="verse-text">/.test(html));
+  /* The renderer must reach the catalogue, not read a string off the lesson. */
+  T('the renderer resolves passages through lessonPassages()',
+    /const passages = lessonPassages\(lesson\);/.test(src));
+  T('and no lesson record carries text to render',
+    study.lessons.every(l => l.text === undefined && l.scripture === undefined));
+
+  sub('teaching is present and visibly not Scripture');
+  T('the explanation renders', html.indexOf(c.escapeHtml(lesson.understand.split('\n')[0])) !== -1);
+  T('it is prose rather than another verse card',
+    /<div class="lesson-prose">/.test(html));
+  T('Scripture keeps the only card on the page',
+    (html.match(/class="verse-card lesson-passage"/g) || []).length === passages.length);
+  T('sections are labelled', /Read<\/div>/.test(html) && /Understand<\/div>/.test(html));
+
+  sub('look closer appears only when the lesson has one');
+  const withLook = study.lessons.find(l => l.lookCloser);
+  const withoutLook = study.lessons.find(l => !l.lookCloser);
+  T('at least one lesson has one', !!withLook);
+  p.ctx.openLesson(study.id, withLook.id);
+  T('it renders when present',
+    p.dom.document.getElementById('lessonBody').innerHTML.indexOf('Look closer') !== -1);
+  if(withoutLook){
+    p.ctx.openLesson(study.id, withoutLook.id);
+    T('and is absent when the lesson has none',
+      p.dom.document.getElementById('lessonBody').innerHTML.indexOf('Look closer') === -1);
+  } else {
+    T('every lesson in this study has one, so the absent case is untested here', true);
+  }
+  T('it asks rather than tests — nothing to submit',
+    !/type="radio"|type="checkbox"|Submit|Check answer/i.test(html));
+
+  sub('reflect offers a private field and says so');
+  p.ctx.openLesson(study.id, lesson.id);
+  const lh = p.dom.document.getElementById('lessonBody').innerHTML;
+  T('the prompt renders', lh.indexOf(c.escapeHtml(lesson.reflect)) !== -1);
+  T('there is a field', lh.indexOf('id="lessonNote"') !== -1);
+  T('it has a label for assistive tech', /<label class="sr-only" for="lessonNote">/.test(lh));
+  T('and the privacy line is shown', /stays on this device/.test(lh));
+  T('the field is at the iOS zoom floor by inheriting the global input rule',
+    /input\[type="text"\][^{]*\{[^}]*font-size: 16px;/.test(css()));
+
+  sub('continue is reachable rather than pinned under the keyboard');
+  T('it sits at the end of the scroll', /<div class="lesson-continue">/.test(lh));
+  T('the lesson page declares no fixed footer',
+    !/id="lessonOverlay"[\s\S]{0,900}sheet-actions/.test(H.readApp()));
+
+  sub('nothing here is a game');
+  /* Bounded to the Learn code itself. An earlier version sliced to the end of
+     the file and flagged "export" for containing "xp" — a check that cries
+     wolf is a check that gets deleted. Whole words only, same reason. */
+  const learnStart = src.indexOf('/* ---------- guided study: progress ----------');
+  const learnEnd = src.indexOf("/* ---------- this product claims the foundation's four seams ----------");
+  T('the Learn section is delimited', learnStart > 0 && learnEnd > learnStart);
+  /* Comments stripped too: the code carries a comment saying there is no
+     reward screen, and a check that its own explanation trips is useless.
+     String literals survive, which is where any user-facing copy would be. */
+  const learnSrc = stripComments(src.slice(learnStart, learnEnd)).toLowerCase();
+  ['streak', 'xp', 'badge', 'trophy', 'achievement', 'confetti', 'points',
+   'leaderboard', 'coins', 'reward', 'unlock']
+    .forEach(w => T('no "' + w + '"', !new RegExp('\\b' + w + '\\b').test(learnSrc)));
+}
+
+/* =========================================================
+   CONTRACT 29 — PROGRESS IS INTENTIONAL AND DERIVED
+   ---------------------------------------------------------
+   Reading a lesson is not finishing it, finishing twice is
+   finishing once, and everything a screen shows about progress
+   comes from the one list of completed lessons.
+   ========================================================= */
+function testLearnProgress(){
+  section('CONTRACT 29 — study progress is intentional, idempotent and derived');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const study = c.STUDIES[0];
+
+  sub('opening a lesson is not completing it');
+  const shared = new Map();
+  const a = H.loadApp({ sharedStorage: shared });
+  a.ctx.openLesson(study.id, study.lessons[0].id); a.ctx.__flush();
+  T('a progress record was started', !!a.ctx.studyProgressFor(study.id));
+  T('but nothing is marked done', a.ctx.completedCount(study) === 0);
+  T('and the resume point is still the first lesson',
+    a.ctx.resumeLessonId(study) === study.lessons[0].id);
+
+  sub('completing is a deliberate act, and it advances');
+  a.ctx.completeLesson(); a.ctx.__flush();
+  T('one lesson is done', a.ctx.completedCount(study) === 1);
+  T('the reader is moved to the next one', a.ctx.openLessonId === study.lessons[1].id);
+  T('the lesson page is still open', a.dom.document.getElementById('lessonOverlay').classList.contains('open'));
+  T('it did not open a third surface', a.ctx._openSheetStack.length === 2,
+    a.ctx._openSheetStack.join(' > '));
+
+  sub('completing the same lesson twice completes it once');
+  a.ctx.openLesson(study.id, study.lessons[0].id); a.ctx.__flush();
+  a.ctx.completeLesson(); a.ctx.__flush();
+  a.ctx.openLesson(study.id, study.lessons[0].id); a.ctx.__flush();
+  a.ctx.completeLesson(); a.ctx.__flush();
+  const rec = a.ctx.studyProgressFor(study.id);
+  T('no duplicate entry', rec.done.filter(x => x === study.lessons[0].id).length === 1);
+  T('the count is unchanged', a.ctx.completedCount(study) === 1);
+
+  sub('revisiting a finished lesson does not move the reader backwards');
+  const b = H.loadApp({ sharedStorage: new Map() });
+  const r = b.ctx.ensureStudyStarted(study.id);
+  r.done.push(study.lessons[0].id, study.lessons[1].id, study.lessons[2].id);
+  b.ctx.persistStudyProgress();
+  T('resume points at the first unfinished lesson',
+    b.ctx.resumeLessonId(study) === study.lessons[3].id);
+  b.ctx.openLesson(study.id, study.lessons[0].id); b.ctx.__flush();
+  T('opening an old lesson leaves resume where it was',
+    b.ctx.resumeLessonId(study) === study.lessons[3].id);
+  T('and its completion is intact', b.ctx.isLessonDone(study.id, study.lessons[0].id));
+
+  sub('finishing the last lesson finishes the study, quietly');
+  const e = H.loadApp({ sharedStorage: new Map() });
+  const er = e.ctx.ensureStudyStarted(study.id);
+  study.lessons.slice(0, study.lessons.length - 1).forEach(l => er.done.push(l.id));
+  e.ctx.persistStudyProgress();
+  e.ctx.openLesson(study.id, study.lessons[study.lessons.length - 1].id); e.ctx.__flush();
+  e.ctx.completeLesson(); e.ctx.__flush();
+  T('every lesson is done', e.ctx.completedCount(study) === study.lessons.length);
+  T('the study reports complete', e.ctx.isStudyComplete(study) === true);
+  T('the lesson page closed', !e.dom.document.getElementById('lessonOverlay').classList.contains('open'));
+  T('the study page is what you land back on',
+    e.dom.document.getElementById('studyOverlay').classList.contains('open'));
+  T('the study page says so plainly',
+    e.dom.document.getElementById('studyBody').innerHTML.indexOf('Study complete') !== -1);
+  T('a finished study is no longer offered as the active one', e.ctx.activeStudy() === null);
+
+  sub('everything shown about progress is derived from the completed list');
+  T('the record carries no count', Object.keys(er).indexOf('completed') === -1);
+  T('nor a percentage', Object.keys(er).indexOf('percent') === -1);
+  T('nor a stored resume pointer that could disagree with it',
+    /function resumeLessonId\(study\)\{[\s\S]{0,400}rec\.done\.indexOf/.test(js()));
+  T('a lesson dropped from the content cannot inflate a count', (() => {
+    const g = H.loadApp({ sharedStorage: new Map() });
+    const gr = g.ctx.ensureStudyStarted(study.id);
+    gr.done.push(study.lessons[0].id, 'a-lesson-that-no-longer-exists');
+    return g.ctx.completedCount(study) === 1;
+  })());
+
+  sub('progress survives a relaunch');
+  const persist = new Map();
+  const s1 = H.loadApp({ sharedStorage: persist });
+  s1.ctx.openLesson(study.id, study.lessons[0].id); s1.ctx.__flush();
+  s1.ctx.completeLesson(); s1.ctx.__flush();
+  const s2 = H.loadApp({ sharedStorage: persist });
+  T('the completed lesson is still complete', s2.ctx.isLessonDone(study.id, study.lessons[0].id));
+  T('resume is where it was left', s2.ctx.resumeLessonId(study) === study.lessons[1].id);
+  T('and Learn offers to continue', !!s2.ctx.activeStudy());
+}
+
+/* =========================================================
+   CONTRACT 30 — LESSON WRITING IS PRIVATE AND ITS OWN
+   ---------------------------------------------------------
+   What someone writes in a lesson is kept, is theirs, and
+   never touches the daily reflection collection.
+   ========================================================= */
+function testLearnNotes(){
+  section('CONTRACT 30 — lesson reflections are private, kept, and separate from the daily ones');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const study = c.STUDIES[0];
+  const lesson = study.lessons[0];
+
+  sub('writing, keeping, editing and clearing');
+  const shared = new Map();
+  const a = H.loadApp({ sharedStorage: shared });
+  a.ctx.openLesson(study.id, lesson.id); a.ctx.__flush();
+  a.dom.document.getElementById('lessonNote').value = 'What I thought about it.';
+  a.ctx.flushLessonNote();
+  T('the note was written', a.ctx.studyNotes.length === 1);
+  T('under the study:lesson id',
+    a.ctx.studyNotes[0].id === study.id + ':' + lesson.id);
+  T('it survives a relaunch',
+    H.loadApp({ sharedStorage: shared }).ctx.studyNoteFor(study.id, lesson.id).text === 'What I thought about it.');
+
+  a.dom.document.getElementById('lessonNote').value = 'Changed my mind.';
+  a.ctx.flushLessonNote();
+  T('editing updates the same record', a.ctx.studyNotes.length === 1);
+  T('with the new text', a.ctx.studyNoteFor(study.id, lesson.id).text === 'Changed my mind.');
+
+  a.dom.document.getElementById('lessonNote').value = '   ';
+  a.ctx.flushLessonNote();
+  T('clearing removes the record rather than storing an empty one',
+    a.ctx.studyNotes.length === 0);
+  T('and that is persisted', H.loadApp({ sharedStorage: shared }).ctx.studyNotes.length === 0);
+
+  sub('a reopened lesson shows what was written');
+  const b = H.loadApp({ sharedStorage: new Map() });
+  b.ctx.openLesson(study.id, lesson.id); b.ctx.__flush();
+  b.dom.document.getElementById('lessonNote').value = 'Kept text.';
+  b.ctx.flushLessonNote();
+  b.ctx.closeLesson(); b.ctx.__flush();
+  b.ctx.openLesson(study.id, lesson.id); b.ctx.__flush();
+  T('the field is repopulated',
+    b.dom.document.getElementById('lessonNote').value === 'Kept text.');
+  T('leaving a lesson keeps what was typed without a separate draft key',
+    b.ctx.KEYS.studyNoteDraft === undefined);
+
+  sub('lesson writing never lands in the daily reflections');
+  const c2 = H.loadApp({ sharedStorage: new Map() });
+  c2.ctx.notes.push({ id: 'n_2026-01-01', date: '2026-01-01', passage: c2.ctx.SCRIPTURE[0].id,
+                      ref: c2.ctx.SCRIPTURE[0].ref, text: 'my daily one',
+                      createdAt: 'a', updatedAt: 'a' });
+  c2.ctx.persistNotes();
+  c2.ctx.openLesson(study.id, lesson.id); c2.ctx.__flush();
+  c2.dom.document.getElementById('lessonNote').value = 'my lesson one';
+  c2.ctx.flushLessonNote();
+  T('the daily reflection is untouched', c2.ctx.notes.length === 1);
+  T('and still says what it said', c2.ctx.notes[0].text === 'my daily one');
+  T('the lesson note went to its own collection', c2.ctx.studyNotes.length === 1);
+  T('nothing from the lesson leaked into data.notes',
+    c2.ctx.Store.getJSON(c2.ctx.KEYS.notes, []).every(n => n.text !== 'my lesson one'));
+
+  sub('the note stores what was written, not the passage');
+  const note = c2.ctx.studyNoteFor(study.id, lesson.id);
+  T('no verse text is copied into it',
+    c2.ctx.SCRIPTURE.every(p => p.text.length > 24 && note.text.indexOf(p.text) === -1));
+  T('it records the pair it belongs to, and nothing more',
+    Object.keys(note).sort().join(',') === 'createdAt,id,lesson,study,text,updatedAt');
+
+  sub('lesson writing is never an input to anything');
+  const src = js();
+  const selector = src.slice(src.indexOf('function selectionContext('),
+                             src.indexOf('function selectPassage('));
+  T('the daily selector does not read study notes',
+    selector.indexOf('studyNote') === -1 && selector.indexOf('studyNotes') === -1);
+  T('nor does the engagement signal',
+    src.slice(src.indexOf('function themeSignals('),
+              src.indexOf('function scorePassage(')).indexOf('studyNote') === -1);
+
+  sub('backups carry lesson writing, and cannot lose it');
+  const live = new Map();
+  const w = H.loadApp({ sharedStorage: live });
+  w.ctx.openLesson(study.id, lesson.id); w.ctx.__flush();
+  w.dom.document.getElementById('lessonNote').value = 'for the backup';
+  w.ctx.flushLessonNote();
+  w.ctx.completeLesson(); w.ctx.__flush();
+
+  const exported = {};
+  w.ctx.Store.listKeys().forEach(k => {
+    if(k.indexOf(w.ctx.KEYS.backupPrefix) === 0) return;
+    exported[k] = w.ctx.Store.get(k);
+  });
+  T('an export carries study notes', typeof exported['data.studyNotes'] === 'string');
+  T('and study progress', typeof exported['data.studyProgress'] === 'string');
+
+  const before = w.ctx.Store.getJSON(w.ctx.KEYS.studyNotes, []).length;
+  w.ctx.mergeBackup({ 'data.saved': JSON.stringify([]) });
+  T('an older backup that predates Learn erases neither',
+    w.ctx.Store.getJSON(w.ctx.KEYS.studyNotes, []).length === before &&
+    w.ctx.Store.getJSON(w.ctx.KEYS.studyProgress, []).length === 1);
+
+  const again = w.ctx.mergeBackup({ 'data.studyNotes': exported['data.studyNotes'] });
+  T('re-importing the same export changes nothing',
+    again.added === 0 && again.updated === 0);
+}
+
+/* =========================================================
+   CONTRACT 31 — LEARN DID NOT COST TODAY ANYTHING
+   ---------------------------------------------------------
+   A fourth tab and a new surface are exactly the kind of change
+   that quietly moves the thing the app is actually for.
+   ========================================================= */
+function testTodayUnharmed(){
+  section('CONTRACT 31 — Today is unchanged by the arrival of Learn');
+  const app = H.loadApp();
+  const c = app.ctx;
+  const S = require('../scripts/scripture.js');
+
+  sub('the catalogue is where it was');
+  const daily = c.SCRIPTURE.filter(p => p.daily);
+  T('378 daily passages', daily.length === 378, String(daily.length));
+  T('7 study-only passages', c.SCRIPTURE.filter(p => !p.daily).length === 7);
+  T('385 in total', c.SCRIPTURE.length === 385, String(c.SCRIPTURE.length));
+  T('all 378 are still eligible', c.eligiblePassages().length === 378);
+  /* Recomputed here rather than trusted from the shipped metadata. */
+  T('the daily hash is unchanged by this phase',
+    S.datasetHash(daily) === 'c33b03e8e66e0aafb156767a65523548744e936a1f84540f515f528046449d3f',
+    S.datasetHash(daily));
+
+  sub('the daily reading still resolves the same way');
+  const fresh = H.loadApp({ sharedStorage: new Map() });
+  const seen = [];
+  for(let i = 0; i < 30; i++){
+    const k = fresh.ctx.dayKey(new Date(2026, 0, 1 + i));
+    seen.push(fresh.ctx.passageForDay(k));
+  }
+  T('every day resolves', seen.every(p => !!p));
+  T('never to a study-only passage', seen.every(p => p.daily === 1));
+  T('and never repeats', new Set(seen.map(p => p.id)).size === seen.length);
+  T('tomorrow is still blocked', (() => {
+    const k = fresh.ctx.dayKey(new Date(new Date().getFullYear() + 1, 0, 1));
+    const before = fresh.ctx.selectedDay;
+    fresh.ctx.selectDay(k);
+    return fresh.ctx.selectedDay === before;
+  })());
+
+  sub('Today still saves, shares and reflects');
+  const t = H.loadApp({ sharedStorage: new Map() });
+  const today = t.ctx.todayKey();
+  const passage = t.ctx.passageForDay(today);
+  t.ctx.toggleSaved(passage.id); t.ctx.__flush();
+  T('save works', t.ctx.savedVerses.length === 1 && t.ctx.savedVerses[0].passage === passage.id);
+  T('share text still carries reference and translation', (() => {
+    const s = t.ctx.shareText(passage);
+    return s.indexOf(passage.ref) !== -1 && s.indexOf(t.ctx.SCRIPTURE_SOURCE.abbr) !== -1;
+  })());
+  t.ctx.openNote(today); t.ctx.__flush();
+  t.dom.document.getElementById('noteText').value = 'daily reflection';
+  t.ctx.saveNote(); t.ctx.__flush();
+  T('the daily reflection saves', t.ctx.notes.length === 1);
+  T('against the passage it was written about', t.ctx.notes[0].passage === passage.id);
+  T('and the day rail still spans the right number of days',
+    t.ctx.railDayKeys().length === t.ctx.RAIL_DAYS);
+
+  sub('Learn state does not disturb the daily records');
+  const study = t.ctx.STUDIES[0];
+  t.ctx.openLesson(study.id, study.lessons[0].id); t.ctx.__flush();
+  t.dom.document.getElementById('lessonNote').value = 'lesson thought';
+  t.ctx.completeLesson(); t.ctx.__flush();
+  T('the saved verse is still there', t.ctx.savedVerses.length === 1);
+  T('the daily reflection is still there', t.ctx.notes.length === 1);
+  T('and still says what it said', t.ctx.notes[0].text === 'daily reflection');
+  T('the assignment ledger was not rewritten',
+    t.ctx.assignmentFor(today).passage === passage.id);
+  T('the schema did not move', t.ctx.DATA_SCHEMA_VERSION === 2);
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,
   testAccessibility, testContamination, testSourcesOfTruth,
-  testScripture, testDays, testPersonalisation, testUpgrade
+  testScripture, testDays, testPersonalisation, testUpgrade,
+  testStudies, testCatalogueSplit, testStudyStorage,
+  testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed
 };
