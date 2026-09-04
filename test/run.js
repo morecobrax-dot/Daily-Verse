@@ -34,6 +34,8 @@ const SUITES = [
   C.testForms,
   C.testScripture,
   C.testDays,
+  C.testPersonalisation,
+  C.testUpgrade,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,

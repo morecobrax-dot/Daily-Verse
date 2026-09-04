@@ -1,0 +1,26 @@
+{
+  "edition": {
+    "id": "eng-web",
+    "title": "World English Bible Classic",
+    "abbr": "WEB",
+    "language": "English (United States)",
+    "license": "Public Domain",
+    "publisher": "eBible.org",
+    "divineName": "Yahweh"
+  },
+  "archives": {
+    "vpl": {
+      "url": "https://ebible.org/Scriptures/eng-web_vpl.zip",
+      "bytes": 5343520,
+      "sha256": "2dee3ce71cd1e459bbad81c0195f0121690f5364c4b391c64282018106d60f53",
+      "entries": 5
+    },
+    "usfx": {
+      "url": "https://ebible.org/Scriptures/eng-web_usfx.zip",
+      "bytes": 3298550,
+      "sha256": "d1de86950c40da97ccf10f17809a0b8ed99e3062617b739e21ee6d9b4aa8d2cd",
+      "entries": 8
+    }
+  },
+  "syncedAt": "2026-09-04"
+}

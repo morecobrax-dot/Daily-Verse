@@ -1,6 +1,6 @@
 {
   "name": "daily-verse",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "A verse, a reflection, and a quiet moment each day.",
   "scripts": {
@@ -9,9 +9,12 @@
     "config:sync": "node scripts/config.js sync",
     "config:verify": "node scripts/config.js verify",
     "contamination": "node scripts/contamination.js",
-    "scripture:fetch": "node scripts/scripture.js fetch",
     "scripture:verify": "node scripts/scripture.js verify",
-    "icons": "node scripts/icons.js"
+    "icons": "node scripts/icons.js",
+    "corpus:sync": "node scripts/corpus.js sync",
+    "corpus:status": "node scripts/corpus.js status",
+    "scripture:build": "node scripts/scripture.js build",
+    "scripture:audit": "node scripts/scripture.js audit"
   },
   "engines": {
     "node": ">=18"

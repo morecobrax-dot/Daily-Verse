@@ -230,46 +230,124 @@ What sits below the seam, and the reasoning that is easy to undo by accident.
 ### Two structures, never one
 
 ```js
-const SCRIPTURE   = [ { ref, theme, text }, ... ];   // derived, fetched, never typed
-const REFLECTIONS = { "<ref>": "..." };              // original writing, this app's own
+const SCRIPTURE   = [ { id, ref, themes, text, sup? }, ... ]; // derived, never typed
+const REFLECTIONS = { "<id>": "..." };                        // original writing
 ```
 
-They are kept apart on purpose. `SCRIPTURE` is rewritten wholesale by
-`node scripts/scripture.js fetch` between the `SCRIPTURE-BEGIN`/`SCRIPTURE-END`
-markers; `REFLECTIONS` is keyed by reference so a re-fetch — or a change of
-translation — cannot touch a line of it. Merging them into one array would make
-a re-fetch destructive and would put quoted text and authored text in the same
-object, which is exactly the confusion the product exists to prevent.
+Kept apart on purpose. `SCRIPTURE` is rewritten wholesale by
+`npm run scripture:build` between the `SCRIPTURE-BEGIN`/`SCRIPTURE-END`
+markers; `REFLECTIONS` is keyed by canonical id, so a rebuild — or a change of
+edition — cannot touch a line of it. Merging them would make a rebuild
+destructive and would put quoted text and authored text in one object, which is
+exactly the confusion this product exists to prevent.
+
+### Where the text comes from
+
+`scripts/corpus.js` downloads eBible.org's own release of **World English Bible
+Classic** (`eng-web`) and pins each archive by SHA-256 in
+`data/corpus.lock.json`. The cache is gitignored; the lock is not, so any
+machine can re-download and prove it received the same bytes.
+
+Two archives are needed, and each carries something the other does not:
+
+| Archive | Used for |
+|---|---|
+| `_vpl.xml` | verse text, one verse per element, standard SIL/UBS book codes |
+| `_usfx.xml` | the `<d style="d">` elements — the only place a psalm superscription is *marked* as one rather than guessed at from the sentence |
+
+**Edition matters more than it looks.** `engwebp` and `engwebu` are also called
+World English Bible, and both print "the LORD" where Classic prints "Yahweh".
+Repointing the id in `corpus.js` would silently rewrite Scripture for every
+existing reader. It is a decision to be announced, never a side effect.
+
+### Normalisation — the only two changes made to the source text
+
+1. **Whitespace.** Runs collapse to a single space, then trim. The corpus keeps
+   poetry line structure as whitespace; collapsing it changes no word.
+2. **Psalm superscriptions.** "For the Chief Musician. By the sons of Korah."
+   is liturgical apparatus attached to verse 1, not the sentence a reader came
+   for. Removed where a passage starts at verse 1 of a psalm that carries one,
+   by exact prefix match against the publisher's own `<d>` markup. A recorded
+   superscription that is *not* found at the start is a build failure, not a
+   silent pass. Passages this touched carry `sup: 1`.
+
+### Canonical ids
+
+`PSA.34.18`, `1CO.13.4-7` — USFM book code, chapter, verse or range, derived
+from the reference. Stable across rebuilds, retagging and edition changes,
+which is what lets a saved verse or a written reflection keep pointing at the
+right passage however the catalogue moves underneath it.
+
+### Eligibility
+
+`eligiblePassages()` returns only passages that have a reflection. Verified
+Scripture may sit in the catalogue ahead of the editorial work; it is simply
+not served as a day's reading. This is the seam that lets the collection grow
+without the editorial standard being the thing that gives way.
 
 ### The day is a local date
 
 `dayKey()` builds `YYYY-MM-DD` from `getFullYear/getMonth/getDate`. Using
-`toISOString()` would hand everyone east of UTC tomorrow's verse in the evening
-and everyone west of it yesterday's in the morning. `dateFromKey()` parses back
-to **local midnight** for the same reason.
+`toISOString()` would hand everyone east of UTC tomorrow's reading during their
+evening. `dateFromKey()` parses back to **local midnight** for the same reason.
 
-### The mapping is pure, and history overrides it
+### What a day holds, in strict order
 
-`verseForDay(key)` is `SCRIPTURE[fnv1a(key) % SCRIPTURE.length]` — a pure
-function of the date string, so two devices always agree.
+1. **A reflection written that day** records the passage it was written
+   against. That wins over everything — without it, someone's words about a
+   passage on grief could resurface beside a passage about work.
+2. **The assignment ledger** (`data.assignments`, one record per day shown),
+   for a day already seen.
+3. **Otherwise choose one**, and write it to the ledger, so the day is never in
+   question again.
 
-But `SCRIPTURE.length` may grow, and when it does that mapping moves every past
-day onto a different verse. So a reflection records the `ref` it was written
-against, and `verseForDayInHistory(key)` prefers it. Without this, someone's
-note about a passage on grief would resurface beside a passage about work.
+`peekPassageForDay()` is the read-only form, used wherever a day is inspected
+rather than opened, so that scrolling the saved list cannot silently consume
+unseen readings.
+
+### Selection
+
+Deterministic given (day, stored state). No model, no randomness.
+
+- **No repeat while anything is unseen** — a hard gate rather than a score, so
+  no preference can out-argue it.
+- **Explicit focus** (`ui.focusThemes`) adds 3 or 6 per matching tag, depending
+  on `ui.focusStrength`.
+- **Learned signal** from saves (weight 2) and reflections written (weight 1),
+  capped so it can never outvote what the reader actually asked for.
+- **Diversity** subtracts for themes and books seen in the last fortnight.
+- **Exploration** — one day in four drops focus weighting entirely, so a reader
+  cannot be sealed into a single theme.
+- **Tie-break** from a hash of day and id: small, and decisive on a flat field.
+
+With the pool exhausted it falls back to the longest-waiting quarter rather
+than restarting at random.
+
+**The text of a private reflection is never an input.** Writing counts as a
+yes/no signal about a passage; the words inside it are read by nothing.
+Contract 22 asserts this against the source of the selector, not merely against
+its behaviour.
 
 ### Records
 
 | Key | Shape | Why |
 |---|---|---|
-| `data.saved` | `{ id: "s_<slug>", ref, savedAt, updatedAt }` | id derived from the reference, so saving twice is idempotent and two devices merge into one history |
-| `data.notes` | `{ id: "n_<date>", date, ref, text, createdAt, updatedAt }` | one per day; `ref` is a fact about what was being read, not a cached derivation |
-| `draft.note` | `{ date, text }` | in-progress input, outside the committed collection, so a half-typed thought cannot be counted as a reflection |
-| `ui.textSize` | `"standard"` | `"large"` | a preference; absent means never chosen, and the app answers with its own default |
-| `ui.showReflections` | `"1"` | `"0"` | same |
+| `data.saved` | `{ id: "s_<slug>", passage, ref, savedAt, updatedAt }` | id derived from the passage, so saving twice is idempotent; `ref` survives a passage leaving the catalogue |
+| `data.notes` | `{ id: "n_<date>", date, passage, ref, text, createdAt, updatedAt }` | one per day; `passage` is a fact about what was being read, not a cached derivation |
+| `data.assignments` | `{ id: <dayKey>, passage, updatedAt }` | the day ledger, and the only exposure history — how often something has been seen is derived from it |
+| `draft.note` | `{ date, text }` | in-progress input, outside the committed collection |
+| `ui.*` | preferences | absent means never chosen, and the app answers with its own default |
 
-The preference defaults are defaults for *preferences*. Absent **data** is
-still never repaired with a plausible value.
+Preference defaults are defaults for *preferences*. Absent **data** is still
+never repaired with a plausible value.
+
+### Migration v1 → v2
+
+v1 addressed passages by printed reference. v2 adds `passage` (canonical id) to
+saved records and reflections, **keeping `ref`**, and seeds the assignment
+ledger from existing reflections so every day someone wrote on keeps the
+passage it actually held. Idempotent, and the migration engine takes its own
+backup first.
 
 ### Type
 

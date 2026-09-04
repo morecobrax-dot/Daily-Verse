@@ -37,7 +37,12 @@ const ROOT = path.join(__dirname, '..');
 /* Files that are allowed to describe the check itself. */
 const SELF = ['scripts/contamination.js'];
 
-const SKIP_DIRS = new Set(['.git', 'node_modules']);
+/* .corpus-cache holds the publisher's release of the whole Bible, downloaded
+   on demand and never committed. Scanning it is meaningless and actively
+   misleading: Joshua 11:6 says "hamstring" and 4 Maccabees says "athlete",
+   so the fitness patterns fire on Scripture itself. What this scan defends
+   is the repository's own content, and the cache is not that. */
+const SKIP_DIRS = new Set(['.git', 'node_modules', '.corpus-cache']);
 const TEXT_EXT = new Set(['.html', '.js', '.json', '.md', '.css', '.webmanifest', '.txt', '.yml', '.yaml']);
 
 /* Each rule: a label, a regex, and whether case matters. */

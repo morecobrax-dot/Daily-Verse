@@ -20,12 +20,11 @@ the list cannot.
 
 1. **Never write, edit, or "fix" a verse by hand.** Not a typo, not a line that
    wraps badly, not a trailing semicolon that looks untidy. The `SCRIPTURE`
-   region of `index.html` is written only by `node scripts/scripture.js fetch`.
-   A verse edited by hand is a verse this app asserts on its own authority.
+   region of `index.html` is written only by `npm run scripture:build`. A verse
+   edited by hand is a verse this app asserts on its own authority.
 2. **Never write Scripture from memory.** Remembered verses are usually close
    and occasionally wrong, and a Bible app does not get to be approximately
-   right. If a passage should change, change the curation in
-   `scripts/scripture.js` and re-fetch.
+   right. If a passage should change, change `data/curation.json` and rebuild.
 3. **A reflection may respond to a verse and may never extend it.** It does not
    put words in Scripture's mouth, does not promise what the passage does not,
    and never opens with a phrase that could read as continuing the quotation.
@@ -174,6 +173,20 @@ AUDIT → UNDERSTAND → IMPLEMENT → ADVERSARIAL VERIFY → DIFF AUDIT → SHI
 33. **Never invent a verse when the catalogue cannot supply one.** An honest
     empty state is the correct output. Improvising is the single worst failure
     this product has available to it.
-34. **Re-source, never re-type.** `node scripts/scripture.js fetch` after any
-    curation change; `node scripts/scripture.js verify` to prove the shipped
-    bytes still match the source.
+34. **Re-source, never re-type.** `npm run scripture:build` after any curation
+    change; `npm run scripture:verify` to prove the shipped bytes still match
+    the published edition.
+35. **Never change WEB edition casually.** `eng-web` (Classic) prints "Yahweh";
+    `engwebp` and `engwebu` print "the LORD". They are different texts under
+    similar names. Changing the pin in `scripts/corpus.js` silently rewrites
+    Scripture for everyone who already reads this app, and is a decision to be
+    announced, never a side effect of a rebuild.
+36. **A passage is only a daily reading once it has a reflection.** Verified
+    Scripture may sit in the catalogue ahead of the editorial work;
+    `eligiblePassages()` is the gate. Never widen the gate to hit a number.
+37. **Personalisation may never read a private note.** Saving and writing are
+    signals about a passage; the words inside a reflection are not an input to
+    anything. A contract asserts it structurally — keep it that way.
+38. **The assignment ledger is the only exposure history.** How often something
+    has been seen is derived from it. A second counter would be a parallel
+    source of truth that can disagree.

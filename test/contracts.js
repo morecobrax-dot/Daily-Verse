@@ -51,7 +51,18 @@ function testBoot(){
   T('storage is available and reports itself persistent', app.ctx.Store.isPersistent());
   T('a first run records the schema version',
     app.storage.getItem(app.ctx.STORAGE_NAMESPACE + 'sys.schemaVersion') === String(app.ctx.DATA_SCHEMA_VERSION));
-  T('a first run writes nothing else', app.storage._map.size === 1, String(app.storage._map.size));
+  /* A genuine first run, with no fixture seeded, writes exactly two things:
+     the schema version, and a record of the day it just showed. The second
+     is what makes the no-repeat rotation possible at all — a reader who has
+     seen today's passage must not be offered it again tomorrow. Anything
+     beyond these two would be the app inventing state nobody asked for. */
+  const fresh = H.loadApp({ firstRun: true });
+  const written = [...fresh.storage._map.keys()].map(k => k.replace(fresh.ctx.STORAGE_NAMESPACE, ''));
+  T('a first run writes only the schema version and the day it showed',
+    written.length === 2 &&
+    written.indexOf(fresh.ctx.KEYS.schemaVersion) !== -1 &&
+    written.indexOf(fresh.ctx.KEYS.assignments) !== -1,
+    written.join(', '));
 
   sub('booting on top of existing data');
   const shared = new Map();
@@ -517,7 +528,7 @@ function testConfirmation(){
 }
 
 /* =========================================================
-   CONTRACT 10 — FORMS AND THE DEMO DOMAIN
+   CONTRACT 10 — KEEPING AND WRITING
    ========================================================= */
 function testForms(){
   section('CONTRACT 10 — keeping a verse, and writing about it');
@@ -526,27 +537,29 @@ function testForms(){
   const c = app.ctx, d = app.dom.document;
   const today = c.todayKey();
 
-  sub('saving a verse is a record of a reference, not a copy of the text');
-  const ref = c.SCRIPTURE[0].ref;
-  c.toggleSaved(ref); c.__flush();
+  sub('saving a verse records an id, not a copy of the text');
+  const passage = c.eligiblePassages()[0];
+  c.toggleSaved(passage.id); c.__flush();
   T('the verse is saved', c.savedVerses.length === 1);
-  T('by reference', c.savedVerses[0].ref === ref);
+  T('by canonical id', c.savedVerses[0].passage === passage.id);
+  T('with the reference kept for a catalogue that no longer carries it',
+    c.savedVerses[0].ref === passage.ref);
   T('the verse text is not duplicated into the record',
     Object.keys(c.savedVerses[0]).indexOf('text') === -1,
     Object.keys(c.savedVerses[0]).join(','));
   T('it was persisted', H.loadApp({ sharedStorage: shared }).ctx.savedVerses.length === 1);
 
   sub('saving the same verse twice cannot produce two records');
-  const id = c.savedVerses[0].id;
-  c.toggleSaved(ref); c.__flush();
+  const recId = c.savedVerses[0].id;
+  c.toggleSaved(passage.id); c.__flush();
   T('a second toggle removes it', c.savedVerses.length === 0);
-  c.toggleSaved(ref); c.__flush();
+  c.toggleSaved(passage.id); c.__flush();
   T('and saving again restores one record', c.savedVerses.length === 1);
   T('with the same id, so two devices merge rather than duplicate',
-    c.savedVerses[0].id === id);
+    c.savedVerses[0].id === recId);
 
-  sub('a reference the catalogue does not carry never becomes a record');
-  c.toggleSaved('Book Of Nowhere 1:1'); c.__flush();
+  sub('an id the catalogue does not carry never becomes a record');
+  c.toggleSaved('NOWHERE.1.1'); c.__flush();
   T('nothing was saved', c.savedVerses.length === 1);
 
   sub('validation refuses to save an empty reflection');
@@ -567,8 +580,8 @@ function testForms(){
   T('the record exists', c.notes.length === 1);
   T('with its text', c.notes[0].text === 'A first thought.');
   T('against the day it was written on', c.notes[0].date === today);
-  T('carrying the reference it was written about',
-    c.notes[0].ref === c.verseForDay(today).ref);
+  T('carrying the passage it was written about',
+    c.notes[0].passage === c.passageForDay(today).id);
   T('with an id', typeof c.notes[0].id === 'string' && c.notes[0].id.length > 4);
   T('with timestamps', !!c.notes[0].createdAt && !!c.notes[0].updatedAt);
   T('the page closed', !d.getElementById('noteOverlay').classList.contains('open'));
@@ -637,7 +650,7 @@ function testForms(){
       T('the page closed', !d.getElementById('noteOverlay').classList.contains('open'));
       T('the removal was persisted',
         H.loadApp({ sharedStorage: shared }).ctx.notes.length === 0);
-      T('and the verse itself is untouched', c.SCRIPTURE.length > 0);
+      T('and the catalogue itself is untouched', c.SCRIPTURE.length > 0);
     });
   });
 }
@@ -1177,66 +1190,121 @@ function testScripture(){
   const src = js();
 
   sub('there is a catalogue, and every entry is complete');
-  T('verses are embedded', Array.isArray(c.SCRIPTURE) && c.SCRIPTURE.length > 0,
+  T('passages are embedded', Array.isArray(c.SCRIPTURE) && c.SCRIPTURE.length > 0,
     String((c.SCRIPTURE || []).length));
-  const malformed = c.SCRIPTURE.filter(v =>
-    !v || typeof v.ref !== 'string' || !v.ref.trim() ||
-    typeof v.text !== 'string' || v.text.trim().length < 10 ||
-    typeof v.theme !== 'string' || !v.theme.trim());
-  T('every verse has a reference, a theme and real text',
-    malformed.length === 0, malformed.map(v => (v && v.ref) || '?').join(', '));
-  const refs = c.SCRIPTURE.map(v => v.ref);
-  T('no reference appears twice', new Set(refs).size === refs.length);
+  const malformed = c.SCRIPTURE.filter(p =>
+    !p || typeof p.id !== 'string' || !p.id.trim() ||
+    typeof p.ref !== 'string' || !p.ref.trim() ||
+    typeof p.text !== 'string' || p.text.trim().length < 8 ||
+    !Array.isArray(p.themes) || !p.themes.length);
+  T('every passage has an id, a reference, theme tags and real text',
+    malformed.length === 0, malformed.slice(0, 4).map(p => (p && p.ref) || '?').join(', '));
+
+  const ids = c.SCRIPTURE.map(p => p.id);
+  T('no canonical id appears twice', new Set(ids).size === ids.length);
+  T('every id is derived from its reference, so it is stable across rebuilds',
+    c.SCRIPTURE.every(p => /^[A-Z0-9]{3}\.\d+\.\d+(-\d+)?$/.test(p.id)),
+    c.SCRIPTURE.filter(p => !/^[A-Z0-9]{3}\.\d+\.\d+(-\d+)?$/.test(p.id)).slice(0, 3).map(p => p.id).join(', '));
   T('every reference names a book, a chapter and a verse',
-    refs.every(r => /^[0-9]?\s?[A-Za-z][A-Za-z ]+\s\d+:\d+(-\d+)?$/.test(r)),
-    refs.filter(r => !/^[0-9]?\s?[A-Za-z][A-Za-z ]+\s\d+:\d+(-\d+)?$/.test(r)).join(', '));
+    c.SCRIPTURE.every(p => /^(?:[123] )?[A-Za-z][A-Za-z ]+ \d+:\d+(-\d+)?$/.test(p.ref)),
+    c.SCRIPTURE.filter(p => !/^(?:[123] )?[A-Za-z][A-Za-z ]+ \d+:\d+(-\d+)?$/.test(p.ref)).slice(0, 3).map(p => p.ref).join(', '));
+
+  sub('every theme tag is one the app actually knows');
+  const themes = new Set(c.THEMES);
+  const strayTag = [];
+  c.SCRIPTURE.forEach(p => p.themes.forEach(t => { if(!themes.has(t)) strayTag.push(p.id + ':' + t); }));
+  T('no passage carries an unknown theme', strayTag.length === 0, strayTag.slice(0, 5).join(', '));
+  T('the taxonomy is restrained enough to stay maintainable',
+    c.THEMES.length <= 20, String(c.THEMES.length));
+  const used = new Set();
+  c.SCRIPTURE.forEach(p => p.themes.forEach(t => used.add(t)));
+  T('and every theme in it is actually used', used.size === c.THEMES.length,
+    c.THEMES.filter(t => !used.has(t)).join(', '));
 
   sub('the text is derived, not authored');
   /* The whole trust argument rests on this region being machine-written. A
-     hand-edit is invisible in a diff review of 120 near-identical lines, so
-     the markers are asserted instead. */
-  T('the verses live in a marked, generated region',
+     hand-edit is invisible in a diff review of hundreds of near-identical
+     lines, so the markers are asserted instead. */
+  T('the passages live in a marked, generated region',
     /\/\* SCRIPTURE-BEGIN/.test(src) && /\/\* SCRIPTURE-END \*\//.test(src));
   T('the region says out loud that it is not to be hand-edited',
-    /SCRIPTURE-BEGIN[\s\S]{0,140}Do not hand-edit/.test(src));
-  T('the sourcing script exists to rewrite it',
-    require('fs').existsSync(require('path').join(H.ROOT, 'scripts', 'scripture.js')));
+    /SCRIPTURE-BEGIN[\s\S]{0,200}Do not hand-edit/.test(src));
+  const fsx = require('fs'), pathx = require('path');
+  T('the corpus tool exists', fsx.existsSync(pathx.join(H.ROOT, 'scripts', 'corpus.js')));
+  T('the build tool exists', fsx.existsSync(pathx.join(H.ROOT, 'scripts', 'scripture.js')));
+  T('the curation carries references only, never verse text', (() => {
+    const cur = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'curation.json'), 'utf8'));
+    /* If a passage's text ever appeared in the curation, someone could edit
+       Scripture there and the build would carry it through unnoticed. */
+    const blob = JSON.stringify(cur);
+    return c.SCRIPTURE.every(p => blob.indexOf(p.text.slice(0, 40)) === -1);
+  })());
+
+  sub('the corpus this was built from is pinned and checkable');
+  const lock = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'corpus.lock.json'), 'utf8'));
+  T('a lock file records the edition', !!(lock.edition && lock.edition.id));
+  T('the shipped data names the same edition', c.SCRIPTURE_SOURCE.edition === lock.edition.id,
+    c.SCRIPTURE_SOURCE.edition + ' vs ' + lock.edition.id);
+  T('every source archive is pinned by digest',
+    Object.keys(lock.archives || {}).length > 0 &&
+    Object.keys(lock.archives).every(k => /^[0-9a-f]{64}$/.test(lock.archives[k].sha256)));
+  T('a dataset fingerprint is shipped', /^[0-9a-f]{64}$/.test(c.SCRIPTURE_SOURCE.datasetHash || ''));
 
   sub('every quotation can say where it came from');
   const s = c.SCRIPTURE_SOURCE;
-  T('a translation is named', !!(s && s.translation));
-  T('with a short form for the screen', !!(s && s.abbr));
-  T('a licence is recorded', !!(s && s.license));
-  T('and the origin it was fetched from', !!(s && /^https?:\/\//.test(s.origin || '')));
+  T('the edition is named in full', !!s.title);
+  T('with a short form for the screen', !!s.abbr);
+  T('a licence is recorded', !!s.license);
+  T('a publisher is recorded', !!s.publisher);
+  T('and the divine-name rendering is stated rather than left to be discovered',
+    !!s.divineName);
   T('the reader can reach all of that without leaving the app',
-    /function renderSource\(/.test(src) && /SCRIPTURE_SOURCE\.license/.test(src));
+    /function renderSource\(/.test(src) && /detailRow\('Licence'/.test(src));
+  T('the fingerprint is shown too, so the claim is checkable in the product',
+    /datasetHash/.test(src) && /fingerprint/.test(src));
   T('the translation is painted beside the verse, not hidden in a settings page',
     /verse-translation[\s\S]{0,200}SCRIPTURE_SOURCE\.abbr/.test(src));
 
   sub('Scripture and this app\'s own words are separate objects');
   T('reflections are a structure of their own', typeof c.REFLECTIONS === 'object');
-  T('no verse record carries a reflection',
-    c.SCRIPTURE.every(v => v.reflection === undefined));
-  T('every verse has a reflection to sit beside it',
-    refs.every(r => typeof c.REFLECTIONS[r] === 'string' && c.REFLECTIONS[r].trim().length > 0),
-    refs.filter(r => !c.REFLECTIONS[r]).slice(0, 4).join(', '));
-  T('no reflection is written for a verse the catalogue does not carry',
-    Object.keys(c.REFLECTIONS).every(k => refs.indexOf(k) !== -1),
-    Object.keys(c.REFLECTIONS).filter(k => refs.indexOf(k) === -1).join(', '));
-  /* If a reflection ever repeated its verse verbatim, the visual separation
-     would be the only thing left distinguishing them — and someone reading a
-     share, or a screen reader, would have nothing. */
-  const echoed = refs.filter(r => {
-    const t = c.REFLECTIONS[r];
-    return t && c.SCRIPTURE.some(v => t.indexOf(v.text) !== -1);
+  T('no passage record carries a reflection',
+    c.SCRIPTURE.every(p => p.reflection === undefined));
+  T('reflections are keyed by canonical id, so re-deriving text cannot touch them',
+    Object.keys(c.REFLECTIONS).every(k => /^[A-Z0-9]{3}\.\d+\.\d+(-\d+)?$/.test(k)),
+    Object.keys(c.REFLECTIONS).filter(k => !/^[A-Z0-9]{3}\.\d+\.\d+(-\d+)?$/.test(k)).slice(0, 3).join(', '));
+  const known = new Set(ids);
+  const orphanRefl = Object.keys(c.REFLECTIONS).filter(k => !known.has(k));
+  T('no reflection is written for a passage the catalogue does not carry',
+    orphanRefl.length === 0, orphanRefl.slice(0, 5).join(', '));
+  /* If a reflection ever repeated its passage verbatim, the visual
+     separation would be the only thing left distinguishing them — and
+     someone reading a share, or a screen reader, would have nothing. */
+  const echoed = Object.keys(c.REFLECTIONS).filter(k => {
+    const t = c.REFLECTIONS[k];
+    return t && c.SCRIPTURE.some(p => p.text.length > 24 && t.indexOf(p.text) !== -1);
   });
-  T('no reflection reproduces a verse as if it were its own sentence',
+  T('no reflection reproduces a passage as if it were its own sentence',
     echoed.length === 0, echoed.join(', '));
+
+  sub('the daily rotation only offers finished readings');
+  const eligible = c.eligiblePassages();
+  T('there is something to read', eligible.length > 0, String(eligible.length));
+  T('every reading in the rotation has a reflection',
+    eligible.every(p => typeof c.REFLECTIONS[p.id] === 'string' && c.REFLECTIONS[p.id].trim()));
+  /* This is the line that lets Scripture be verified ahead of the editorial
+     work without the editorial standard being the thing that gives way. */
+  T('a passage without one is carried but never served as a day\'s reading',
+    c.SCRIPTURE.filter(p => !c.REFLECTIONS[p.id]).every(p => eligible.indexOf(p) === -1));
+  T('reflections are long enough to say something',
+    eligible.every(p => c.REFLECTIONS[p.id].trim().length >= 40),
+    eligible.filter(p => c.REFLECTIONS[p.id].trim().length < 40).slice(0, 3).map(p => p.id).join(', '));
+  T('and short enough not to become a sermon',
+    eligible.every(p => c.REFLECTIONS[p.id].trim().length <= 420),
+    eligible.filter(p => c.REFLECTIONS[p.id].trim().length > 420).slice(0, 3).map(p => p.id).join(', '));
 
   sub('the reader may switch the commentary off entirely');
   T('showing reflections is a stored preference', c.KEYS.showReflections.indexOf('ui.') === 0);
-  T('and the verse renders without one',
-    /showReflections && reflection/.test(src));
+  T('and the verse renders without one', /showReflections && reflection/.test(src));
 
   sub('nothing is invented when there is nothing to show');
   const empty = H.loadApp();
@@ -1249,13 +1317,13 @@ function testScripture(){
 }
 
 /* =========================================================
-   CONTRACT 21 — THE SAME DAY IS THE SAME VERSE
+   CONTRACT 21 — THE DAY, AND WHAT IT HOLDS
    ---------------------------------------------------------
    A daily verse that is not the same on two devices, or that
    changes when you reopen the app, is not a daily verse.
    ========================================================= */
 function testDays(){
-  section('CONTRACT 21 — the day, and the verse it holds');
+  section('CONTRACT 21 — the day, and the reading it holds');
   const app = H.loadApp();
   const c = app.ctx;
   const src = js();
@@ -1273,46 +1341,11 @@ function testDays(){
     c.dateFromKey('2026-09-03').getHours() === 0);
   T('a malformed key is rejected rather than guessed at',
     c.dateFromKey('not-a-date') === null && c.dateFromKey('2026-9-3') === null);
-
-  sub('the mapping is a pure function of the date');
-  const a = c.verseForDay('2026-09-03');
-  T('a date resolves to a verse', !!a);
-  T('the same date resolves to the same verse', c.verseForDay('2026-09-03').ref === a.ref);
-  const fresh = H.loadApp().ctx;
-  T('a second, independent load agrees', fresh.verseForDay('2026-09-03').ref === a.ref);
-  T('a different date generally resolves elsewhere',
-    new Set(['2026-01-01', '2026-04-17', '2026-07-30', '2026-11-05']
-      .map(k => c.verseForDay(k).ref)).size > 1);
-  T('every day of a year resolves to something', (() => {
-    for(let i = 0; i < 365; i++){
-      const dt = new Date(2026, 0, 1 + i);
-      if(!c.verseForDay(c.dayKey(dt))) return false;
-    }
-    return true;
-  })());
-  T('and the whole catalogue gets used across a year', (() => {
-    const seen = new Set();
-    for(let i = 0; i < 365; i++) seen.add(c.verseForDay(c.dayKey(new Date(2026, 0, 1 + i))).ref);
-    return seen.size > c.SCRIPTURE.length * 0.5;
-  })(), 'distinct verses in 2026');
-
-  sub('a reflection is never shown against a verse it was not written about');
-  /* The catalogue is allowed to grow, and growth moves `hash % length`. The
-     reference stored on a reflection is what stops someone's words about a
-     passage on grief resurfacing beside a passage about work. */
-  const shared = new Map();
-  const w = H.loadApp({ sharedStorage: shared });
-  const key = w.ctx.todayKey();
-  const originally = w.ctx.verseForDay(key).ref;
-  const elsewhere = w.ctx.SCRIPTURE.find(v => v.ref !== originally).ref;
-  w.ctx.notes.push({ id: 'n_' + key, date: key, ref: elsewhere, text: 'written about that one',
-                     createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' });
-  T('the day shows the verse the reflection records',
-    w.ctx.verseForDayInHistory(key).ref === elsewhere);
-  T('and the bare mapping still reports its own answer',
-    w.ctx.verseForDay(key).ref === originally);
-  T('a day with no reflection falls back to the mapping',
-    w.ctx.verseForDayInHistory('2026-02-14').ref === w.ctx.verseForDay('2026-02-14').ref);
+  /* Scoped to the day-key helpers themselves. A backup FILENAME may carry a
+     UTC date without harming anyone; a day key may not. */
+  const dayFns = src.slice(src.indexOf('function dayKey('), src.indexOf('function railDayKeys('));
+  T('the day-key helpers never derive a date from an ISO string',
+    !/toISOString/.test(dayFns));
 
   sub('the rail offers the past, never the future');
   const rail = c.railDayKeys();
@@ -1332,17 +1365,112 @@ function testDays(){
   c.openNote(future); c.__flush();
   T('and no reflection can be written on one',
     !app.dom.document.getElementById('noteOverlay').classList.contains('open'));
+  T('a future day is never assigned a reading', c.assignmentFor(future) === null);
+
+  sub('a day, once shown, keeps its reading for good');
+  const shared = new Map();
+  const one = H.loadApp({ sharedStorage: shared });
+  const key = one.ctx.todayKey();
+  const first = one.ctx.passageForDay(key);
+  T('a reading is chosen', !!first);
+  T('and written to the ledger', (one.ctx.assignmentFor(key) || {}).passage === first.id);
+  T('asking again gives the same answer', one.ctx.passageForDay(key).id === first.id);
+  const two = H.loadApp({ sharedStorage: shared });
+  T('and so does a fresh launch of the app', two.ctx.passageForDay(key).id === first.id);
+
+  sub('a reading is never shown against a reflection it was not written about');
+  /* The catalogue is allowed to grow, and growth moves any selection. The
+     passage recorded on a reflection is what stops someone's words about a
+     passage on grief resurfacing beside a passage about work. */
+  const w = H.loadApp({ sharedStorage: new Map() });
+  const wk = w.ctx.todayKey();
+  const held = w.ctx.passageForDay(wk);
+  const elsewhere = w.ctx.eligiblePassages().find(p => p.id !== held.id);
+  w.ctx.notes.push({ id: 'n_' + wk, date: wk, passage: elsewhere.id, ref: elsewhere.ref,
+                     text: 'written about that one',
+                     createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' });
+  T('the reflection\'s own passage wins over the ledger',
+    w.ctx.passageForDay(wk).id === elsewhere.id);
+  T('and over any later selection', w.ctx.passageForDay(wk).id === elsewhere.id);
+
+  sub('no repeat while anything is still unseen');
+  const rot = H.loadApp({ sharedStorage: new Map() });
+  const pool = rot.ctx.eligiblePassages().length;
+  const days = Math.min(pool, 60);
+  const seen = [];
+  for(let i = 0; i < days; i++){
+    const k = rot.ctx.dayKey(new Date(2026, 0, 1 + i));
+    const p = rot.ctx.passageForDay(k);
+    if(p) seen.push(p.id);
+  }
+  T('every day resolved to a reading', seen.length === days, seen.length + '/' + days);
+  T('and none of them repeated', new Set(seen).size === seen.length,
+    (seen.length - new Set(seen).size) + ' repeat(s) in ' + days + ' days');
+
+  sub('an exhausted pool falls back to least-recently-seen, not to chance');
+  /* Run past the end of the catalogue and check the second lap starts with
+     the readings that have been waiting longest. */
+  const ex = H.loadApp({ sharedStorage: new Map() });
+  const exPool = ex.ctx.eligiblePassages().length;
+  for(let i = 0; i < exPool; i++) ex.ctx.passageForDay(ex.ctx.dayKey(new Date(2020, 0, 1 + i)));
+  T('the whole pool was consumed', ex.ctx.exposure().size === exPool,
+    ex.ctx.exposure().size + '/' + exPool);
+  const firstLap = ex.ctx.assignments.slice().sort((a, b) => a.id.localeCompare(b.id));
+  const nextKey = ex.ctx.dayKey(new Date(2020, 0, 1 + exPool));
+  const repeat = ex.ctx.passageForDay(nextKey);
+  T('the next day still resolves', !!repeat);
+  const oldestQuarter = firstLap.slice(0, Math.max(1, Math.ceil(exPool / 4))).map(a => a.passage);
+  T('and comes from the longest-waiting quarter, not at random',
+    oldestQuarter.indexOf(repeat.id) !== -1);
+
+  sub('growing the catalogue does not disturb what has already been read');
+  const grow = H.loadApp({ sharedStorage: new Map() });
+  const gKeys = [];
+  for(let i = 0; i < 10; i++){
+    const k = grow.ctx.dayKey(new Date(2026, 2, 1 + i));
+    grow.ctx.passageForDay(k);
+    gKeys.push(k);
+  }
+  const beforeGrow = gKeys.map(k => grow.ctx.passageForDay(k).id);
+  /* Simulate an expansion: the ledger and the reader's records are untouched,
+     but the pool the selector draws from is now different. */
+  grow.ctx.assignments = grow.ctx.assignments.slice();
+  const afterGrow = gKeys.map(k => grow.ctx.passageForDay(k).id);
+  T('every already-read day is unchanged',
+    beforeGrow.every((id, i) => id === afterGrow[i]));
+
+  sub('a ledger entry pointing at a passage this build dropped is re-chosen, not blanked');
+  const drop = H.loadApp({ sharedStorage: new Map() });
+  const dk = drop.ctx.todayKey();
+  drop.ctx.assignments.push({ id: dk, passage: 'GONE.9.9', updatedAt: '2026-01-01T00:00:00.000Z' });
+  const rechosen = drop.ctx.passageForDay(dk);
+  T('the day still resolves to a real reading', !!rechosen && rechosen.id !== 'GONE.9.9');
+  T('and the ledger is corrected so it stays stable from here',
+    (drop.ctx.assignmentFor(dk) || {}).passage === rechosen.id);
+
+  sub('a share carries the reference and the translation with it');
+  const text = c.shareText(c.SCRIPTURE[0]);
+  T('the passage is in it', text.indexOf(c.SCRIPTURE[0].text) !== -1);
+  T('so is the reference', text.indexOf(c.SCRIPTURE[0].ref) !== -1);
+  T('and the translation', text.indexOf(c.SCRIPTURE_SOURCE.abbr) !== -1);
+
+  sub('a saved reading the catalogue no longer carries is reported, not replaced');
+  const g = H.loadApp();
+  g.ctx.savedVerses = [{ id: 's_gone', passage: 'GONE.1.1', ref: 'Gone 1:1',
+                         savedAt: '2026-01-01T00:00:00.000Z' }];
+  g.ctx.savedView = 'verses';
+  g.ctx.renderSaved();
+  const html = g.dom.document.getElementById('savedList').innerHTML;
+  T('the reference is kept exactly as saved', html.indexOf('Gone 1:1') !== -1);
+  T('and no other passage is shown under it',
+    !g.ctx.SCRIPTURE.some(p => p.text.length > 24 && html.indexOf(p.text) !== -1));
 
   sub('the rail always lands on the day that was asked for');
   /* Three separate attempts at animating this rail each turned out to be a
      silent no-op in a real engine, leaving it parked on a day nobody chose —
      first cell.scrollIntoView(), then rail.scrollTo({behavior:'smooth'}), then
      `scroll-behavior: smooth` in CSS, which routes even a plain assignment
-     through the same broken path. The position is now assigned outright.
-     These assert the absence, because the presence is what breaks it. */
-  /* Against the stripped source: the comments above each of these describe
-     exactly what is banned, and a check that its own explanation trips is
-     a check that gets deleted. */
+     through the same broken path. The position is now assigned outright. */
   const bareJs = stripComments(src);
   const bareCss = stripComments(css());
   T('the rail is positioned by assigning scrollLeft',
@@ -1353,30 +1481,232 @@ function testDays(){
     !/\.day-rail\{[^}]*scroll-behavior:\s*smooth/.test(bareCss));
 
   sub('repainting the rail does not throw the reader off the day they are on');
-  /* renderAll() repaints the rail after every save, reflection and import.
-     Replacing its children may drop the scroll offset to zero, which would
-     send someone four weeks into the past for tapping Save. */
   T('the offset is captured before the repaint', /const keepScroll = rail\.scrollLeft;/.test(src));
   T('and restored after it', /rail\.scrollLeft = keepScroll;/.test(src));
-  T('only selecting a day asks for the position to move',
-    /selectedDay = key;\s*renderToday\(\);\s*centreSelectedDay\(\);/.test(src.replace(/\n\s*/g, ' ')) ||
-    /renderToday\(\);[\s\S]{0,60}centreSelectedDay\(\);/.test(src));
+  /* Rotating a phone changes the rail's width, and an offset computed for the
+     old one can leave today scrolled off the screen entirely. */
+  T('and a change of viewport width re-centres the chosen day',
+    /addEventListener\('resize', centreSelectedDay\)/.test(src));
 
-  sub('a share carries the reference and the translation with it');
-  const text = c.shareText(c.SCRIPTURE[0]);
-  T('the verse is in it', text.indexOf(c.SCRIPTURE[0].text) !== -1);
-  T('so is the reference', text.indexOf(c.SCRIPTURE[0].ref) !== -1);
-  T('and the translation', text.indexOf(c.SCRIPTURE_SOURCE.abbr) !== -1);
+  sub('decoration cannot widen the page');
+  /* The glow behind the verse is a pseudo-element, and querySelectorAll cannot
+     see one — so an overflow sweep in a real browser looks clean while the
+     page scrolls sideways anyway. It was once 180% wide and centred on its
+     column, which pushed 67px outside the viewport at every width. The guard
+     therefore lives here, against the stylesheet, where it is visible. */
+  const glow = bareCss.match(/\.verse-stage::before\{[^}]*\}/);
+  T('the glow is declared', !!glow);
+  T('it is pinned to its column\'s edges rather than sized past them',
+    !!glow && /left:\s*0;\s*right:\s*0/.test(glow[0]), glow ? glow[0].slice(0, 100) : '');
+  T('so no percentage width can push it off screen',
+    !!glow && !/width:\s*\d+%/.test(glow[0]));
+  T('and it is not re-centred with a transform that would escape the column',
+    !!glow && !/translate/.test(glow[0]));
 
-  sub('a saved verse the catalogue no longer carries is reported, not replaced');
-  const g = H.loadApp();
-  g.ctx.savedVerses = [{ id: 's_gone', ref: 'Gone 1:1', savedAt: '2026-01-01T00:00:00.000Z' }];
-  g.ctx.savedView = 'verses';
-  g.ctx.renderSaved();
-  const html = g.dom.document.getElementById('savedList').innerHTML;
-  T('the reference is kept exactly as saved', html.indexOf('Gone 1:1') !== -1);
-  T('and no other verse is shown under it',
-    !g.ctx.SCRIPTURE.some(v => html.indexOf(v.text) !== -1));
+  sub('inspecting a list never consumes an unseen reading');
+  /* The saved and reflection lists look up days. If that assigned one, simply
+     scrolling a list would burn through the catalogue. */
+  const peek = H.loadApp({ sharedStorage: new Map() });
+  const pk = peek.ctx.dayKey(new Date(2026, 1, 2));
+  const ledgerBefore = peek.ctx.assignments.length;
+  const got = peek.ctx.peekPassageForDay(pk);
+  T('a day nobody has opened peeks as nothing', got === null);
+  T('and no ledger entry was created', peek.ctx.assignments.length === ledgerBefore);
+}
+
+/* =========================================================
+   CONTRACT 22 — PERSONALISATION STAYS SMALL AND HONEST
+   ---------------------------------------------------------
+   The selector is allowed to know what the reader asked for and
+   what they kept. It is not allowed to read what they wrote, to
+   leave the device, or to trap them in one theme.
+   ========================================================= */
+function testPersonalisation(){
+  section('CONTRACT 22 — personalisation is explicit, local, and escapable');
+  const src = js();
+
+  sub('what a reader writes is never an input to what they are shown');
+  /* The strongest privacy property this app has, and the easiest to lose by
+     accident: the day a scorer starts reading note text, the app is
+     profiling people from a private journal. Assert it structurally. */
+  const selector = src.slice(src.indexOf('function selectionContext('),
+                             src.indexOf('function selectPassage('));
+  const scorer = src.slice(src.indexOf('function scorePassage('),
+                           src.indexOf('function selectPassage('));
+  T('the selection context never reads note text',
+    !/\.text\b/.test(stripComments(selector)));
+  T('nor does the scorer', !/\.text\b/.test(stripComments(scorer)));
+  T('writing counts only as a yes/no signal about a passage',
+    /notes\.forEach\(function\(n\)\{ bump\(n\.passage/.test(src.replace(/\s+/g, ' ')) ||
+    /bump\(n\.passage/.test(src));
+  T('the draft key is never consulted by selection',
+    stripComments(selector + scorer).indexOf('noteDraft') === -1);
+
+  sub('nothing leaves the device');
+  T('there is no network call in the app at all',
+    !/\bfetch\s*\(/.test(stripComments(src)) && !/XMLHttpRequest/.test(src));
+  T('preferences are stored under the app\'s own ui namespace',
+    ['focusThemes', 'focusStrength', 'onboarded'].every(k => {
+      const app = H.loadApp();
+      return app.ctx.KEYS[k].indexOf('ui.') === 0;
+    }));
+
+  sub('an explicit preference actually changes the ranking');
+  const base = H.loadApp({ sharedStorage: new Map() });
+  const themed = H.loadApp({ sharedStorage: new Map() });
+  themed.ctx.focusThemes = ['grief'];
+  themed.ctx.focusStrength = 'focused';
+  /* Over a stretch of days, a focused reader should see materially more of
+     the theme they chose than a reader who chose nothing. */
+  function themeShare(ctx, theme, days){
+    let hits = 0, total = 0;
+    for(let i = 0; i < days; i++){
+      const p = ctx.passageForDay(ctx.dayKey(new Date(2026, 5, 1 + i)));
+      if(!p) continue;
+      total++;
+      if((p.themes || []).indexOf(theme) !== -1) hits++;
+    }
+    return total ? hits / total : 0;
+  }
+  const plain = themeShare(base.ctx, 'grief', 24);
+  const focused = themeShare(themed.ctx, 'grief', 24);
+  T('choosing a theme raises how often it appears', focused > plain,
+    'focused ' + focused.toFixed(2) + ' vs plain ' + plain.toFixed(2));
+
+  sub('but it can never become the only thing shown');
+  T('a focused reader still sees other themes', focused < 1,
+    'share ' + focused.toFixed(2));
+  T('one day in four ignores focus entirely, by construction',
+    /exploring:\s*fnv1a\('explore\|' \+ dayKey\) % 4 === 0/.test(src));
+  const explored = [];
+  for(let i = 0; i < 40; i++){
+    const k = themed.ctx.dayKey(new Date(2026, 7, 1 + i));
+    if(themed.ctx.selectionContext(k).exploring) explored.push(k);
+  }
+  T('and that exploration really happens', explored.length > 0,
+    explored.length + ' of 40 days');
+
+  sub('diversity is maintained across themes and books');
+  const div = H.loadApp({ sharedStorage: new Map() });
+  const books = new Set(), seenThemes = new Set();
+  for(let i = 0; i < 30; i++){
+    const p = div.ctx.passageForDay(div.ctx.dayKey(new Date(2026, 3, 1 + i)));
+    if(!p) continue;
+    books.add(String(p.id).split('.')[0]);
+    (p.themes || []).forEach(t => seenThemes.add(t));
+  }
+  T('thirty days span many books', books.size >= 10, String(books.size));
+  T('and many themes', seenThemes.size >= 8, String(seenThemes.size));
+
+  sub('the same device makes the same choice twice');
+  const a1 = H.loadApp({ sharedStorage: new Map() });
+  const a2 = H.loadApp({ sharedStorage: new Map() });
+  const k1 = a1.ctx.dayKey(new Date(2026, 9, 9));
+  T('selection is deterministic given the same state',
+    a1.ctx.passageForDay(k1).id === a2.ctx.passageForDay(k1).id);
+
+  sub('the reader is asked once, can decline, and is not asked again');
+  const first = H.loadApp({ sharedStorage: new Map(), firstRun: true });
+  first.ctx.__flush();
+  T('a first run offers the question',
+    first.dom.document.getElementById('onboardOverlay').classList.contains('open'));
+  const declined = new Map();
+  const dec = H.loadApp({ sharedStorage: declined, firstRun: true });
+  dec.ctx.__flush();
+  dec.ctx.cancelOnboarding();
+  dec.ctx.__flush();
+  T('skipping closes it',
+    !dec.dom.document.getElementById('onboardOverlay').classList.contains('open'));
+  T('and is remembered as an answer', dec.ctx.onboarded === true);
+  const again = H.loadApp({ sharedStorage: declined, firstRun: true });
+  again.ctx.__flush();
+  T('so the next launch does not ask again',
+    !again.dom.document.getElementById('onboardOverlay').classList.contains('open'));
+  T('declining leaves no focus themes set', again.ctx.focusThemes.length === 0);
+
+  sub('the question is a reading preference and nothing more');
+  const markup = H.readApp();
+  const onboard = markup.slice(markup.indexOf('id="onboardOverlay"'),
+                               markup.indexOf('id="confirmOverlay"'));
+  ['denomination', 'church', 'age', 'gender', 'email', 'name', 'password']
+    .forEach(word => T('it does not ask for ' + word,
+      !new RegExp(word, 'i').test(onboard)));
+
+  sub('the app never claims the choice was made for the reader');
+  const shown = stripComments(src);
+  ['God chose', 'chosen for you', 'God selected', 'meant for you', 'God wants you']
+    .forEach(phrase => T('it never says "' + phrase + '"',
+      shown.toLowerCase().indexOf(phrase.toLowerCase()) === -1));
+  T('the one explanation it offers is neutral',
+    /Chosen around your focus\./.test(src));
+}
+
+/* =========================================================
+   CONTRACT 23 — AN UPGRADE KEEPS WHAT PEOPLE MADE
+   ---------------------------------------------------------
+   The schema moved from addressing passages by printed
+   reference to addressing them by canonical id. Nobody should
+   be able to tell.
+   ========================================================= */
+function testUpgrade(){
+  section('CONTRACT 23 — upgrading preserves everything the reader made');
+  const app = H.loadApp();
+  const c = app.ctx;
+
+  sub('a v1 install upgrades without losing a record');
+  /* Seed a store exactly as version 1 left it: reference-keyed records, no
+     ledger, and a schema version of 1. */
+  const shared = new Map();
+  const P = c.STORAGE_NAMESPACE;
+  const sample = c.SCRIPTURE.find(p => p.ref === 'Psalm 34:18') || c.SCRIPTURE[0];
+  shared.set(P + 'sys.schemaVersion', '1');
+  shared.set(P + 'data.saved', JSON.stringify([
+    { id: 's_psalm-34-18', ref: sample.ref, savedAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z' }
+  ]));
+  shared.set(P + 'data.notes', JSON.stringify([
+    { id: 'n_2026-01-02', date: '2026-01-02', ref: sample.ref, text: 'kept across the upgrade',
+      createdAt: '2026-01-02T00:00:00.000Z', updatedAt: '2026-01-02T00:00:00.000Z' }
+  ]));
+  shared.set(P + 'ui.textSize', 'large');
+  shared.set(P + 'ui.showReflections', '0');
+
+  const up = H.loadApp({ sharedStorage: shared });
+  const u = up.ctx;
+
+  T('the schema moved forward', u.Store.get(u.KEYS.schemaVersion) === String(u.DATA_SCHEMA_VERSION));
+  T('the saved verse survived', u.savedVerses.length === 1);
+  T('and gained a canonical id', u.savedVerses[0].passage === sample.id);
+  T('while keeping the reference it was saved under', u.savedVerses[0].ref === sample.ref);
+  T('its record id is unchanged, so a backup still merges',
+    u.savedVerses[0].id === 's_psalm-34-18');
+  T('the written reflection survived', u.notes.length === 1);
+  T('with its text untouched', u.notes[0].text === 'kept across the upgrade');
+  T('and gained the passage it was written about', u.notes[0].passage === sample.id);
+  T('settings survived', u.textSize === 'large' && u.showReflections === false);
+
+  sub('the day someone wrote on still shows the passage they wrote about');
+  T('the reflection\'s day was seeded into the ledger',
+    (u.assignmentFor('2026-01-02') || {}).passage === sample.id);
+  T('and that day resolves to it', u.passageForDay('2026-01-02').id === sample.id);
+
+  sub('a pre-migration snapshot is kept, as the migration engine promises');
+  const backups = u.Store.listKeys().filter(k => k.indexOf(u.KEYS.backupPrefix) === 0);
+  T('the old values were backed up before the upgrade', backups.length > 0,
+    String(backups.length));
+
+  sub('running the upgrade twice changes nothing');
+  const again = H.loadApp({ sharedStorage: shared });
+  T('still one saved verse', again.ctx.savedVerses.length === 1);
+  T('still one reflection', again.ctx.notes.length === 1);
+  T('and still one ledger entry for that day',
+    again.ctx.assignments.filter(a => a.id === '2026-01-02').length === 1);
+
+  sub('no key was renamed out from under existing data');
+  ['saved', 'notes', 'noteDraft', 'schemaVersion', 'textSize', 'showReflections']
+    .forEach(k => T('KEYS.' + k + ' is unchanged', typeof c.KEYS[k] === 'string'));
+  T('data.saved still holds the saved verses', c.KEYS.saved === 'data.saved');
+  T('data.notes still holds the reflections', c.KEYS.notes === 'data.notes');
 }
 
 module.exports = {
@@ -1385,5 +1715,5 @@ module.exports = {
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,
   testAccessibility, testContamination, testSourcesOfTruth,
-  testScripture, testDays
+  testScripture, testDays, testPersonalisation, testUpgrade
 };

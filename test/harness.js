@@ -332,9 +332,10 @@ const BRIDGE = [
   'APP_CONFIG', 'APP_UPDATES', 'APP_VERSION', 'APP_ID_PATTERN',
   'STORAGE_NAMESPACE', 'CACHE_NAMESPACE', 'KEYS',
   'Store', 'DATA_SCHEMA_VERSION', 'MIGRATIONS', 'migrationWarning', 'Domain',
-  'SCRIPTURE', 'SCRIPTURE_SOURCE', 'REFLECTIONS',
-  'savedVerses', 'notes', 'selectedDay', 'savedView', 'editingNoteDate',
-  'textSize', 'showReflections', 'TEXT_SIZES', 'SAVED_VIEWS', 'RAIL_DAYS',
+  'SCRIPTURE', 'SCRIPTURE_SOURCE', 'REFLECTIONS', 'THEMES', 'FOCUS_CHOICES',
+  'savedVerses', 'notes', 'assignments', 'selectedDay', 'savedView', 'editingNoteDate',
+  'textSize', 'showReflections', 'focusThemes', 'focusStrength', 'onboarded',
+  'TEXT_SIZES', 'SAVED_VIEWS', 'FOCUS_STRENGTHS', 'RAIL_DAYS',
   'DOW', 'MONTHS', 'currentTab',
   'TOAST_MS', 'MAX_TOASTS', 'TOAST_VARIANTS',
   'OVERLAY_Z_BASE', '_openSheetStack', '_sheetOpeners', '_lockDepth', '_lockedScrollY',
@@ -354,6 +355,21 @@ function loadApp(opts){
 
   const dom = buildDom(src);
   const storage = makeLocalStorage(o.sharedStorage, o.failWrites);
+
+  /* The app asks a first-run question, once, and that sheet is open on the
+     stack from the moment boot finishes. Almost no contract is about
+     onboarding, and every one of them would otherwise have to close it
+     before it could assert on anything else. So the fixture is "a reader who
+     has already answered", and the contracts that ARE about onboarding ask
+     for a genuine first run with { firstRun: true }. */
+  if(!o.firstRun){
+    /* The prefix is read back out of the code being loaded, never written
+       here: a harness that pinned the app's id would turn green into red the
+       moment someone renamed the product. */
+    const idMatch = code.match(/\bid:\s*'([^']*)'/);
+    const appId = o.appId || (idMatch ? idMatch[1] : null);
+    if(appId){ try{ storage.setItem(appId + '.ui.onboarded', '1'); }catch(e){} }
+  }
   const errors = [];
   const logs = [];
   const timers = { count: 0, live: 0 };
