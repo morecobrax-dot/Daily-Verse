@@ -881,7 +881,10 @@ function testRelease(){
      rules out an inherited list is the check below: every version here must
      be one this app itself released. The count stays bounded only so that a
      wholesale foreign list cannot arrive unnoticed. */
-  T('the history stays short enough to read', c.APP_UPDATES.length <= 8,
+  /* Raised 3 -> 8 -> 20 as the app kept shipping. The bound is not a limit on
+     releasing; it exists so a wholesale foreign history cannot arrive
+     unnoticed, and the check below is the one doing that work. */
+  T('the history stays short enough to read', c.APP_UPDATES.length <= 20,
     String(c.APP_UPDATES.length));
   T('and every entry is a release this app actually made',
     c.APP_UPDATES.every(u => /^1.[0-9]+.[0-9]+$/.test(u.version)),
@@ -2613,10 +2616,35 @@ function testTodayUnharmed(){
     String(c.SCRIPTURE.filter(p => !p.daily).length));
   T('415 in total', c.SCRIPTURE.length === 415, String(c.SCRIPTURE.length));
   T('all 378 are still eligible', c.eligiblePassages().length === 378);
-  /* Recomputed here rather than trusted from the shipped metadata. */
-  T('the daily hash is unchanged by this phase',
-    S.datasetHash(daily) === 'c33b03e8e66e0aafb156767a65523548744e936a1f84540f515f528046449d3f',
+  /* Recomputed here rather than trusted from the shipped metadata.
+
+     THIS VALUE CHANGED ONCE, DELIBERATELY, IN v1.6.1.
+
+       was  c33b03e8e66e0aafb156767a65523548744e936a1f84540f515f528046449d3f
+       now  0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41
+
+     The build had been DELETING psalm superscriptions — the publisher's own
+     title lines, “For the Chief Musician. A Psalm by David.” and the like —
+     from 19 shipped passages, 17 of them daily readings, while still calling
+     the result the World English Bible. eBible's own metadata restricts that
+     name to faithful copies. The lines are now kept.
+
+     The delta was proved exhaustively before this value was changed: same 415
+     passages, same ids, same order, same references, same themes, same daily
+     flags, and ZERO changes to verse text. The only difference is that those
+     19 passages carry a superscription they previously had removed. The hash
+     appends the superscription after STX and only when one exists, so a
+     passage without one hashes byte-for-byte as it always did — which is what
+     made the delta attributable rather than merely plausible.
+
+     That was a one-time authorised correction. From here this value is
+     protected again: an unexplained change fails this contract. */
+  T('the daily hash is exactly the faithful-copy baseline',
+    S.datasetHash(daily) === '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41',
     S.datasetHash(daily));
+  T('and the whole dataset hash is pinned too',
+    S.datasetHash(c.SCRIPTURE) === 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916',
+    S.datasetHash(c.SCRIPTURE));
 
   sub('the daily reading still resolves the same way');
   const fresh = H.loadApp({ sharedStorage: new Map() });
@@ -3318,6 +3346,121 @@ function testKnowledgeChecks(){
   T('no timer anywhere near a check', !/setTimeout[\s\S]{0,40}check/i.test(learn));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 36 — A FAITHFUL COPY, AND A TRANSLATION-PORTABLE VOICE
+
+   Until v1.6.1 the build deleted psalm superscriptions and shipped the result
+   under the publisher's name. Nothing failed, because nothing was looking.
+   These are the checks that would have caught it, plus the ones that keep the
+   next translation from arriving on top of English-only teaching.
+   --------------------------------------------------------- */
+function testFaithfulCopy(){
+  section('CONTRACT 36 — faithful copy and translation readiness');
+  const app = H.loadApp();
+  const c = app.ctx;
+
+  sub('the publisher’s title lines are carried, not deleted');
+  const withSup = c.SCRIPTURE.filter(p => p.sup);
+  T('19 passages carry a superscription', withSup.length === 19, String(withSup.length));
+  T('17 of them are daily readings',
+    withSup.filter(p => p.daily).length === 17,
+    String(withSup.filter(p => p.daily).length));
+  /* The old bug shipped `sup: 1` — a flag meaning "we removed one". A number
+     here means the deletion is back. */
+  T('every one holds the text, not a deletion flag',
+    withSup.every(p => typeof p.sup === 'string' && p.sup.trim().length > 3),
+    withSup.filter(p => typeof p.sup !== 'string').map(p => p.id).join(', '));
+  T('every one belongs to a Psalm', withSup.every(p => /^PSA\./.test(p.id)),
+    withSup.filter(p => !/^PSA\./.test(p.id)).map(p => p.id).join(', '));
+  /* A superscription can only ever attach where the passage starts at verse 1. */
+  T('and only where the passage begins at verse 1',
+    withSup.every(p => /^PSA\.\d+\.1(-\d+)?$/.test(p.id)),
+    withSup.filter(p => !/^PSA\.\d+\.1(-\d+)?$/.test(p.id)).map(p => p.id).join(', '));
+  T('none of them was left inside the verse body',
+    withSup.every(p => p.text.indexOf(p.sup) === -1),
+    withSup.filter(p => p.text.indexOf(p.sup) !== -1).map(p => p.id).join(', '));
+
+  sub('and the reader is shown them');
+  const src = stripComments(js());
+  T('a superscription has its own renderer', /function superscriptionHtml/.test(src));
+  /* Four surfaces show a passage. Missing one would hide the line on that
+     screen only, which is the failure mode hardest to notice. */
+  T('every passage surface renders it',
+    (src.match(/superscriptionHtml\(/g) || []).length >= 5,
+    String((src.match(/superscriptionHtml\(/g) || []).length));
+  /* The one thing it must never be: switchable off with this app's own words. */
+  T('it is not tied to the show-reflections preference',
+    !/showReflections[\s\S]{0,120}superscriptionHtml/.test(src) &&
+    !/superscriptionHtml[\s\S]{0,120}showReflections/.test(src));
+  T('it is set in the Scripture face, never the interface face',
+    /\.verse-sup\{[\s\S]{0,200}var\(--font-scripture\)/.test(css()));
+
+  sub('the divine name is never normalised');
+  /* WEB prints Yahweh; other editions print the LORD, Jehova, l’Eternel.
+     Whichever edition is shown, its own wording stands. The failure this
+     prevents is a well-meant map that "helps" by making them agree. */
+  const yahweh = c.SCRIPTURE.filter(p => /Yahweh/.test(p.text) || /Yahweh/.test(p.sup || ''));
+  T('the shipped text prints the edition’s own divine name', yahweh.length > 100,
+    String(yahweh.length) + ' passages');
+  const BANNED = [
+    /replace\([^)]*Yahweh/i, /Yahweh[^\n]{0,40}=>[^\n]{0,20}LORD/i,
+    /divineName\s*:\s*\{/, /normali[sz]eDivine/i, /DIVINE_NAME_MAP/i, /substituteName/i
+  ];
+  const offenders = BANNED.filter(re => re.test(src));
+  T('no substitution of the divine name exists in the app',
+    offenders.length === 0, offenders.map(String).join(' | '));
+  T('nor in the build', !/replace\([^)]*Yahweh/i.test(
+    require('fs').readFileSync('scripts/scripture.js', 'utf8')));
+  T('and no preference can rewrite wording inside a translation',
+    Object.keys(c.KEYS).every(k => !/divine|name-?style|wording/i.test(c.KEYS[k])),
+    Object.keys(c.KEYS).filter(k => /divine|wording/i.test(c.KEYS[k])).join(', '));
+
+  sub('teaching does not depend on one edition’s English');
+  /* The audit that made this phase necessary, kept running. A lesson that
+     quotes an English rendering, or asks a question only answerable in one,
+     becomes wrong the moment a second translation is offered. */
+  const lessons = [];
+  c.STUDIES.forEach(s => s.lessons.forEach(l => lessons.push({ s: s.id, l: l })));
+
+  /* 1. no teaching field may name the divine name of any single edition */
+  const NAMES = /\bYahweh\b|\bJehovah\b|\bl’Éternel\b/;
+  const named = [];
+  lessons.forEach(x => {
+    const fields = [x.l.understand, x.l.lookCloser || '', x.l.reflect, x.l.title];
+    (x.l.checks || []).forEach(ch => fields.push(ch.prompt, ch.explain, ch.options.join(' ')));
+    if (x.l.figure) fields.push(x.l.figure.heading, x.l.figure.rows.map(r => r.label + ' ' + r.value).join(' '));
+    if (fields.some(f => NAMES.test(f))) named.push(x.s + '/' + x.l.id);
+  });
+  T('no lesson names one edition’s rendering of the divine name',
+    named.length === 0, named.join(', '));
+
+  /* 2. a check must not be answerable only by recalling an English phrase.
+        Options are the sharp end: a quoted rendering in an option makes the
+        question unanswerable beside another translation. */
+  const quotedOption = [];
+  lessons.forEach(x => (x.l.checks || []).forEach(ch => {
+    ch.options.forEach(o => {
+      if (/[“”]/.test(o)) quotedOption.push(x.s + '/' + ch.id + ': ' + o.slice(0, 40));
+    });
+  }));
+  T('no answer option quotes a rendering', quotedOption.length === 0, quotedOption.join(' | '));
+
+  /* 3. reflections were already portable; keep them that way. */
+  const norm = t => String(t).toLowerCase().replace(/[‘’“”]/g, "'")
+    .replace(/[^a-z' ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const echo = [];
+  Object.keys(c.REFLECTIONS).forEach(id => {
+    const p = c.passageById(id); if (!p) return;
+    const vt = norm(p.text);
+    const words = norm(c.REFLECTIONS[id]).split(' ');
+    for (let i = 0; i + 6 <= words.length; i++) {
+      if (vt.indexOf(words.slice(i, i + 6).join(' ')) !== -1) { echo.push(id); return; }
+    }
+  });
+  T('no reflection reproduces a run of the verse it responds to',
+    echo.length === 0, echo.slice(0, 5).join(', '));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -3327,5 +3470,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy
 };

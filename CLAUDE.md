@@ -213,6 +213,28 @@ before calling a release done.
     has been seen is derived from it. A second counter would be a parallel
     source of truth that can disagree.
 
+## Translations and the words they use
+
+47. **Never normalise the divine name, or any wording, across editions.**
+    If a translation publishes `Yahweh`, show `Yahweh`. If it publishes
+    `the LORD`, show `the LORD`. `Jehová`, `l'Éternel`, and every other
+    published form are shown exactly as that edition renders them. There
+    is no substitution map, no "familiar wording" override, and no
+    preference that rewrites words inside a translation. A reader who
+    dislikes an edition's choices changes edition; the app does not
+    quietly change the edition's text on their behalf.
+48. **Never remove part of a passage the publisher released.** Psalm
+    superscriptions were deleted from 19 shipped passages until v1.6.1
+    while the result still carried the publisher's name for the
+    translation — and eBible restricts that name to faithful copies.
+    Structure that the source marks distinctly may be carried in its own
+    field and presented distinctly. It may not be dropped.
+49. **Teaching may not depend on one edition's English.** A lesson that
+    quotes a rendering, explains an English word as though it were the
+    text, or asks a question only answerable in one translation becomes
+    wrong the moment a second is offered. Teach the concept; let the
+    verse card supply the words. Contract 36 enforces this.
+
 ## Guided study (Learn)
 
 The first content in this app that *interprets* Scripture rather than quoting

@@ -111,10 +111,22 @@ function derivePassage(ref, verses, supers, errors){
   }
 
   let text = collapse(parts.join(' '));
-  let stripped = false;
+  let stripped = null;
 
-  /* Rule 2. Only ever at verse 1, only where the publisher recorded a
-     title, and only as an exact prefix. Anything else is a failure. */
+  /* Rule 2. SEPARATED, never removed.
+
+     This used to delete the superscription outright, which made 19 shipped
+     passages something other than a faithful copy of the publisher's text
+     while still carrying the publisher's name for it. The line is now kept
+     in its own field and rendered above the verse body.
+
+     Separating rather than merging follows the source: USFX marks these as
+     <d> title elements, distinct from verse content, so a distinct field is
+     closer to what the publisher released than running it into verse 1
+     would be. Nothing is rewritten, and nothing is typed here.
+
+     Still only ever at verse 1, only where the publisher recorded a title,
+     and only as an exact prefix. Anything else is a failure. */
   const sup = p.from === 1 ? supers.get(p.code + ' ' + p.chapter) : null;
   if(sup){
     const prefix = collapse(sup);
@@ -124,13 +136,13 @@ function derivePassage(ref, verses, supers, errors){
       return null;
     }
     text = collapse(text.slice(prefix.length));
-    stripped = true;
+    stripped = prefix;
   }
 
   if(text.length < 8){ errors.push(ref + ' — derived text is implausibly short'); return null; }
 
   const rec = { id: canonicalId(p), ref: ref, text: text };
-  if(stripped) rec.sup = 1;
+  if(stripped) rec.sup = stripped;
   return rec;
 }
 
@@ -458,8 +470,15 @@ function assertNoEmbeddedScripture(studies, byId, errors){
    the right separators because neither can occur in a reference or in
    Scripture, so no passage can forge a boundary and two different catalogues
    cannot be made to collide onto a single digest. */
+/* The superscription is appended after STX, and ONLY when one exists. A
+   passage without one therefore hashes byte-for-byte as it always did,
+   which is what makes the delta from the previous dataset attributable:
+   exactly the passages that regained a superscription can change, and
+   nothing else can change without the difference being visible. */
 function datasetHash(passages){
-  const canon = passages.map(p => p.id + '\u0000' + p.text).join('\u0001');
+  const canon = passages
+    .map(p => p.id + '\u0000' + p.text + (p.sup ? '\u0002' + p.sup : ''))
+    .join('\u0001');
   return crypto.createHash('sha256').update(canon, 'utf8').digest('hex');
 }
 
@@ -484,7 +503,7 @@ function passageRow(p){
   return "  { id: '" + esc(p.id) + "', ref: '" + esc(p.ref) + "'," +
     " themes: [" + p.themes.map(t => "'" + esc(t) + "'").join(', ') + "]," +
     (p.daily ? " daily: 1," : "") +
-    (p.sup ? " sup: 1," : "") + "\n" +
+    (p.sup ? " sup: '" + esc(p.sup) + "'," : "") + "\n" +
     "    text: '" + esc(p.text) + "' }";
 }
 
@@ -598,7 +617,7 @@ function run(mode){
     console.log('  daily        : ' + built.daily.length + ' passages (Today rotation)');
     console.log('  study-only   : ' + built.study.length + ' passages (quoted by lessons)');
     console.log('  total        : ' + built.passages.length);
-    console.log('  superscript. : ' + built.passages.filter(p => p.sup).length + ' normalised');
+    console.log('  superscript. : ' + built.passages.filter(p => p.sup).length + ' preserved');
     console.log('  studies      : ' + built.studies.length + ' (' +
       built.studies.reduce((n, s) => n + s.lessons.length, 0) + ' lessons), content v' +
       Number(built.studyDoc.version || 1));

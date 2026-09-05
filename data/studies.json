@@ -70,8 +70,8 @@
             "John 1:17-18",
             "Genesis 1:1"
           ],
-          "understand": "John opens his account of Jesus by echoing the first words of Genesis — \"In the beginning\". He is placing Jesus before the creation rather than inside it.\n\n\"The Word\" translates a Greek term his first readers would have met in discussions of the reason or order behind the world. John takes that familiar idea and does something unexpected with it: the Word is not a principle but someone — who was with God, who was God, and through whom everything was made.\n\nThen verse 14 makes the claim the rest of the book rests on: the one John has been describing did not remain outside the world he made, but took on a human life within it. John is not describing a teacher whose reputation grew after his death. He is claiming that God's own self-expression arrived in a body, and that people saw it.",
-          "lookCloser": "Why do you think John chose to open with Jesus as \"the Word\", rather than with his birth or his teaching?",
+          "understand": "John opens his account of Jesus by deliberately echoing the first line of Genesis. He is placing Jesus before the creation rather than inside it, and any reader who knew the Hebrew Scriptures would have heard it at once.\n\nHe then introduces Jesus with a title his first readers already used for the reason or order behind the world — the principle by which everything holds together. John takes that familiar idea and does something unexpected with it: this is not a principle but someone, who was with God, who was God, and through whom everything was made.\n\nThen verse 14 makes the claim the rest of the book rests on: the one John has been describing did not remain outside the world he made, but took on a human life within it. John is not describing a teacher whose reputation grew after his death. He is claiming that God’s own self-expression arrived in a body, and that people saw it.",
+          "lookCloser": "Why might John open with Jesus described as a title and an idea, rather than with his birth or his teaching?",
           "reflect": "Before today, who did you understand Jesus to be?"
         },
         {
@@ -157,7 +157,7 @@
             "Luke 4:14-30",
             "Isaiah 61:1-2"
           ],
-          "understand": "Mark compresses Jesus’ message into one sentence, and what is missing from it matters. There is no instruction, no doctrine, no programme. There is news — that the waiting is over and God’s reign has arrived — and then an invitation to turn around and trust it.\n\nThe word kingdom misleads a modern reader, who hears a place. It is closer to a rule actively arriving: what things look like where God is genuinely in charge.\n\nLuke shows the same claim made in a specific room. Jesus reads aloud from Isaiah about someone anointed to bring good news to the poor and freedom to prisoners, hands the scroll back, sits down, and says it has happened today.\n\nRead Isaiah’s sentence to its end and it carries on into judgement. Jesus stops before that clause. What he announces first is release.",
+          "understand": "Mark compresses Jesus’ message into one sentence, and what is missing from it matters. There is no instruction, no doctrine, no programme. There is news — that the waiting is over and God’s reign has arrived — and then an invitation to turn around and trust it.\n\nWhat he announces is easy to mishear as a place. It is closer to a rule actively arriving — what things look like where God is genuinely in charge.\n\nLuke shows the same claim made in a specific room. Jesus reads aloud from Isaiah about someone anointed to bring good news to the poor and freedom to prisoners, hands the scroll back, sits down, and says it has happened today.\n\nRead Isaiah’s sentence to its end and it carries on into judgement. Jesus stops before that clause. What he announces first is release.",
           "lookCloser": "Make a list of what Jesus says he was sent to do. Who are the people named in it?",
           "reflect": "What changes if this is treated as news rather than as advice?"
         },
@@ -189,7 +189,7 @@
             "Isaiah 53:1-12",
             "Acts 8:32-35"
           ],
-          "understand": "Jesus explains his own death before it happens, and he does it in the middle of an argument about rank. His followers want position. He tells them greatness runs the other way, then offers himself as the example — not a leader who serves, but one whose life is handed over for other people.\n\nThe word translated ransom carries the sense of a price paid to release someone. Christians have explained how that works in more than one way, and the New Testament uses several images for it. The claim in the passage is narrower and firmer: his death does something for others. It is not merely something done to him.\n\nIsaiah’s poem, far older, describes a figure who suffers in the place of others. The earliest Christians read it as a description of Jesus. In Acts, a man reading this poem asks whether the prophet means himself or someone else, and is told about Jesus.",
+          "understand": "Jesus explains his own death before it happens, and he does it in the middle of an argument about rank. His followers want position. He tells them greatness runs the other way, then offers himself as the example — not a leader who serves, but one whose life is handed over for other people.\n\nThe term he uses carries the sense of a price paid to release someone. Christians have explained how that works in more than one way, and the New Testament uses several images for it. The claim in the passage is narrower and firmer: his death does something for others. It is not merely something done to him.\n\nIsaiah’s poem, far older, describes a figure who suffers in the place of others. The earliest Christians read it as a description of Jesus. In Acts, a man reading this poem asks whether the prophet means himself or someone else, and is told about Jesus.",
           "lookCloser": "Isaiah’s lines move between “he” and “we”. Trace which words belong to which.",
           "reflect": "What difference does it make whether his death was a defeat or something he intended?"
         },
@@ -1022,12 +1022,12 @@
               "id": "sd-c3",
               "prompt": "This saying comes straight after Jesus predicts his own rejection and death. What does that placement most affect?",
               "options": [
-                "What \"take up his cross\" would have meant to the people listening",
+                "How the image of carrying a cross would have landed on the people listening",
                 "Which chapter number the passage is given",
                 "Nothing — a verse means the same wherever it sits"
               ],
               "answer": 0,
-              "explain": "The surrounding paragraph is what makes the phrase concrete rather than figurative. Placement is not decoration; it is part of how the sentence was meant to be heard.",
+              "explain": "The surrounding paragraph is what makes the image concrete rather than figurative — these listeners had seen crucifixions. Placement is not decoration; it is part of how a saying was meant to be heard.",
               "basis": [
                 "Mark 8:27-38"
               ]

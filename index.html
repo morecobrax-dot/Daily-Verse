@@ -735,6 +735,18 @@ input.field-error, textarea.field-error{ border-color: var(--danger); box-shadow
   font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
   letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint);
 }
+/* Scripture face, so it can never be mistaken for the app’s own writing;
+   smaller and dimmer than the psalm, so it never competes with it. */
+.verse-sup{
+  margin: 0 0 var(--space-md);
+  font-family: var(--font-scripture);
+  font-size: var(--fs-meta);
+  line-height: var(--lh-body);
+  font-style: italic;
+  color: var(--text-dim);
+}
+.verse-sup-compact{ margin-bottom: var(--space-sm); font-size: var(--fs-micro); }
+
 blockquote.verse-text{
   margin: 0; font-family: var(--font-scripture);
   font-size: var(--fs-verse); line-height: 1.45; letter-spacing: -0.005em;
@@ -1654,6 +1666,22 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v1-6-1',
+    version: '1.6.1',
+    title: 'The psalms, in full',
+    date: '2026-09-05',
+    summary: 'Nineteen psalms were missing their opening line — the one naming ' +
+             'an author or a tune. They are back.',
+    newFeatures: [],
+    improvements: [
+      'Psalms that open with a line naming an author or a tune now show it, above the psalm',
+      'Scripture & sources explains what is kept from the publisher and what is this app’s own'
+    ],
+    fixes: [
+      'Nineteen passages were showing slightly less than the publisher released'
+    ]
+  },
+  {
     id: 'v1-6-0',
     version: '1.6.0',
     title: 'Bible skills',
@@ -2525,8 +2553,8 @@ const SCRIPTURE_SOURCE = {
   publisher: 'eBible.org',
   divineName: 'Yahweh',
   corpusSynced: '2026-09-04',
-  datasetHash: '3a9873a7b1a1cdb3d2632599637ccae22d5fcd67e6fe23866a3c84b66ea853c4',
-  dailyHash: 'c33b03e8e66e0aafb156767a65523548744e936a1f84540f515f528046449d3f',
+  datasetHash: 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916',
+  dailyHash: '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41',
   dailyCount: 378,
   studyOnlyCount: 37,
   built: '2026-09-05'
@@ -2610,7 +2638,7 @@ const SCRIPTURE = [
     text: 'In peace I will both lay myself down and sleep, for you alone, Yahweh, make me live in safety.' },
   { id: 'PSA.5.3', ref: 'Psalm 5:3', themes: ['direction', 'discipline'], daily: 1,
     text: 'Yahweh, in the morning you will hear my voice. In the morning I will lay my requests before you, and will watch expectantly.' },
-  { id: 'PSA.9.1', ref: 'Psalm 9:1', themes: ['gratitude'], daily: 1, sup: 1,
+  { id: 'PSA.9.1', ref: 'Psalm 9:1', themes: ['gratitude'], daily: 1, sup: 'For the Chief Musician. Set to “The Death of the Son.” A Psalm by David.',
     text: 'I will give thanks to Yahweh with my whole heart. I will tell of all your marvelous works.' },
   { id: 'PSA.9.9-10', ref: 'Psalm 9:9-10', themes: ['faith', 'fear'], daily: 1,
     text: 'Yahweh will also be a high tower for the oppressed; a high tower in times of trouble. Those who know your name will put their trust in you, for you, Yahweh, have not forsaken those who seek you.' },
@@ -2618,23 +2646,23 @@ const SCRIPTURE = [
     text: 'I will bless Yahweh, who has given me counsel. Yes, my heart instructs me in the night seasons. I have set Yahweh always before me. Because he is at my right hand, I shall not be moved.' },
   { id: 'PSA.16.11', ref: 'Psalm 16:11', themes: ['gratitude', 'hope'], daily: 1,
     text: 'You will show me the path of life. In your presence is fullness of joy. In your right hand there are pleasures forever more.' },
-  { id: 'PSA.18.1-2', ref: 'Psalm 18:1-2', themes: ['strength', 'love'], daily: 1, sup: 1,
+  { id: 'PSA.18.1-2', ref: 'Psalm 18:1-2', themes: ['strength', 'love'], daily: 1, sup: 'For the Chief Musician. By David the servant of Yahweh, who spoke to Yahweh the words of this song in the day that Yahweh delivered him from the hand of all his enemies, and from the hand of Saul. He said,',
     text: 'I love you, Yahweh, my strength. Yahweh is my rock, my fortress, and my deliverer; my God, my rock, in whom I take refuge; my shield, and the horn of my salvation, my high tower.' },
   { id: 'PSA.18.28', ref: 'Psalm 18:28', themes: ['hope', 'direction'], daily: 1,
     text: 'For you will light my lamp, Yahweh. My God will light up my darkness.' },
-  { id: 'PSA.19.1', ref: 'Psalm 19:1', themes: ['gratitude', 'wisdom'], daily: 1, sup: 1,
+  { id: 'PSA.19.1', ref: 'Psalm 19:1', themes: ['gratitude', 'wisdom'], daily: 1, sup: 'For the Chief Musician. A Psalm by David.',
     text: 'The heavens declare the glory of God. The expanse shows his handiwork.' },
   { id: 'PSA.19.14', ref: 'Psalm 19:14', themes: ['discipline', 'purpose'], daily: 1,
     text: 'Let the words of my mouth and the meditation of my heart be acceptable in your sight, Yahweh, my rock, and my redeemer.' },
   { id: 'PSA.20.7', ref: 'Psalm 20:7', themes: ['faith'], daily: 1,
     text: 'Some trust in chariots, and some in horses, but we trust in the name of Yahweh our God.' },
-  { id: 'PSA.23.1-3', ref: 'Psalm 23:1-3', themes: ['rest', 'peace'], daily: 1, sup: 1,
+  { id: 'PSA.23.1-3', ref: 'Psalm 23:1-3', themes: ['rest', 'peace'], daily: 1, sup: 'A Psalm by David.',
     text: 'Yahweh is my shepherd; I shall lack nothing. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul. He guides me in the paths of righteousness for his name’s sake.' },
   { id: 'PSA.23.4', ref: 'Psalm 23:4', themes: ['fear', 'grief'], daily: 1,
     text: 'Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me. Your rod and your staff, they comfort me.' },
   { id: 'PSA.25.4-5', ref: 'Psalm 25:4-5', themes: ['direction'], daily: 1,
     text: 'Show me your ways, Yahweh. Teach me your paths. Guide me in your truth, and teach me, for you are the God of my salvation. I wait for you all day long.' },
-  { id: 'PSA.27.1', ref: 'Psalm 27:1', themes: ['courage', 'fear'], daily: 1, sup: 1,
+  { id: 'PSA.27.1', ref: 'Psalm 27:1', themes: ['courage', 'fear'], daily: 1, sup: 'By David.',
     text: 'Yahweh is my light and my salvation. Whom shall I fear? Yahweh is the strength of my life. Of whom shall I be afraid?' },
   { id: 'PSA.27.11', ref: 'Psalm 27:11', themes: ['direction'], daily: 1,
     text: 'Teach me your way, Yahweh. Lead me in a straight path, because of my enemies.' },
@@ -2650,13 +2678,13 @@ const SCRIPTURE = [
     text: 'You have turned my mourning into dancing for me. You have removed my sackcloth, and clothed me with gladness, to the end that my heart may sing praise to you, and not be silent. Yahweh my God, I will give thanks to you forever!' },
   { id: 'PSA.31.24', ref: 'Psalm 31:24', themes: ['courage', 'hope'], daily: 1,
     text: 'Be strong, and let your heart take courage, all you who hope in Yahweh.' },
-  { id: 'PSA.32.1-2', ref: 'Psalm 32:1-2', themes: ['forgiveness'], daily: 1, sup: 1,
+  { id: 'PSA.32.1-2', ref: 'Psalm 32:1-2', themes: ['forgiveness'], daily: 1, sup: 'By David. A contemplative psalm.',
     text: 'Blessed is he whose disobedience is forgiven, whose sin is covered. Blessed is the man to whom Yahweh doesn’t impute iniquity, in whose spirit there is no deceit.' },
   { id: 'PSA.32.8', ref: 'Psalm 32:8', themes: ['direction'], daily: 1,
     text: 'I will instruct you and teach you in the way which you shall go. I will counsel you with my eye on you.' },
   { id: 'PSA.33.20-22', ref: 'Psalm 33:20-22', themes: ['hope', 'patience'], daily: 1,
     text: 'Our soul has waited for Yahweh. He is our help and our shield. For our heart rejoices in him, because we have trusted in his holy name. Let your loving kindness be on us, Yahweh, since we have hoped in you.' },
-  { id: 'PSA.34.1', ref: 'Psalm 34:1', themes: ['gratitude'], daily: 1, sup: 1,
+  { id: 'PSA.34.1', ref: 'Psalm 34:1', themes: ['gratitude'], daily: 1, sup: 'By David; when he pretended to be insane before Abimelech, who drove him away, and he departed.',
     text: 'I will bless Yahweh at all times. His praise will always be in my mouth.' },
   { id: 'PSA.34.4', ref: 'Psalm 34:4', themes: ['fear'], daily: 1,
     text: 'I sought Yahweh, and he answered me, and delivered me from all my fears.' },
@@ -2674,13 +2702,13 @@ const SCRIPTURE = [
     text: 'Rest in Yahweh, and wait patiently for him. Don’t fret because of him who prospers in his way, because of the man who makes wicked plots happen.' },
   { id: 'PSA.37.23-24', ref: 'Psalm 37:23-24', themes: ['direction', 'perseverance'], daily: 1,
     text: 'A man’s steps are established by Yahweh. He delights in his way. Though he stumble, he shall not fall, for Yahweh holds him up with his hand.' },
-  { id: 'PSA.40.1', ref: 'Psalm 40:1', themes: ['patience', 'grief'], daily: 1, sup: 1,
+  { id: 'PSA.40.1', ref: 'Psalm 40:1', themes: ['patience', 'grief'], daily: 1, sup: 'For the Chief Musician. A Psalm by David.',
     text: 'I waited patiently for Yahweh. He turned to me, and heard my cry.' },
   { id: 'PSA.42.3-5', ref: 'Psalm 42:3-5', themes: ['grief', 'hope'], daily: 1,
     text: 'My tears have been my food day and night, while they continually ask me, “Where is your God?” These things I remember, and pour out my soul within me, how I used to go with the crowd, and led them to God’s house, with the voice of joy and praise, a multitude keeping a holy day. Why are you in despair, my soul? Why are you disturbed within me? Hope in God! For I shall still praise him for the saving help of his presence.' },
   { id: 'PSA.42.11', ref: 'Psalm 42:11', themes: ['hope', 'grief'], daily: 1,
     text: 'Why are you in despair, my soul? Why are you disturbed within me? Hope in God! For I shall still praise him, the saving help of my countenance, and my God.' },
-  { id: 'PSA.46.1', ref: 'Psalm 46:1', themes: ['strength', 'fear'], daily: 1, sup: 1,
+  { id: 'PSA.46.1', ref: 'Psalm 46:1', themes: ['strength', 'fear'], daily: 1, sup: 'For the Chief Musician. By the sons of Korah. According to Alamoth.',
     text: 'God is our refuge and strength, a very present help in trouble.' },
   { id: 'PSA.46.10', ref: 'Psalm 46:10', themes: ['rest', 'peace'], daily: 1,
     text: '“Be still, and know that I am God. I will be exalted among the nations. I will be exalted on the earth.”' },
@@ -2696,13 +2724,13 @@ const SCRIPTURE = [
     text: 'You count my wanderings. You put my tears into your container. Aren’t they in your book?' },
   { id: 'PSA.57.2', ref: 'Psalm 57:2', themes: ['purpose', 'faith'], daily: 1,
     text: 'I cry out to God Most High, to God who accomplishes my requests for me.' },
-  { id: 'PSA.62.1-2', ref: 'Psalm 62:1-2', themes: ['rest', 'faith'], daily: 1, sup: 1,
+  { id: 'PSA.62.1-2', ref: 'Psalm 62:1-2', themes: ['rest', 'faith'], daily: 1, sup: 'For the Chief Musician. To Jeduthun. A Psalm by David.',
     text: 'My soul rests in God alone. My salvation is from him. He alone is my rock, my salvation, and my fortress. I will never be greatly shaken.' },
   { id: 'PSA.62.5-6', ref: 'Psalm 62:5-6', themes: ['hope', 'rest'], daily: 1,
     text: 'My soul, wait in silence for God alone, for my expectation is from him. He alone is my rock and my salvation, my fortress. I will not be shaken.' },
   { id: 'PSA.62.8', ref: 'Psalm 62:8', themes: ['faith', 'grief'], daily: 1,
     text: 'Trust in him at all times, you people. Pour out your heart before him. God is a refuge for us. Selah.' },
-  { id: 'PSA.63.1', ref: 'Psalm 63:1', themes: ['purpose', 'direction'], daily: 1, sup: 1,
+  { id: 'PSA.63.1', ref: 'Psalm 63:1', themes: ['purpose', 'direction'], daily: 1, sup: 'A Psalm by David, when he was in the desert of Judah.',
     text: 'God, you are my God. I will earnestly seek you. My soul thirsts for you. My flesh longs for you, in a dry and weary land, where there is no water.' },
   { id: 'PSA.68.19', ref: 'Psalm 68:19', themes: ['gratitude', 'strength'], daily: 1,
     text: 'Blessed be the Lord, who daily bears our burdens, even the God who is our salvation. Selah.' },
@@ -2728,7 +2756,7 @@ const SCRIPTURE = [
     text: 'Let’s come before his presence with thanksgiving. Let’s extol him with songs!' },
   { id: 'PSA.100.4', ref: 'Psalm 100:4', themes: ['gratitude'], daily: 1,
     text: 'Enter into his gates with thanksgiving, and into his courts with praise. Give thanks to him, and bless his name.' },
-  { id: 'PSA.103.1-2', ref: 'Psalm 103:1-2', themes: ['gratitude'], daily: 1, sup: 1,
+  { id: 'PSA.103.1-2', ref: 'Psalm 103:1-2', themes: ['gratitude'], daily: 1, sup: 'By David.',
     text: 'Praise Yahweh, my soul! All that is within me, praise his holy name! Praise Yahweh, my soul, and don’t forget all his benefits,' },
   { id: 'PSA.103.12', ref: 'Psalm 103:12', themes: ['forgiveness'], daily: 1,
     text: 'As far as the east is from the west, so far has he removed our transgressions from us.' },
@@ -2750,21 +2778,21 @@ const SCRIPTURE = [
     text: 'How can a young man keep his way pure? By living according to your word.' },
   { id: 'PSA.119.105', ref: 'Psalm 119:105', themes: ['direction', 'wisdom'], daily: 1,
     text: 'Your word is a lamp to my feet, and a light for my path.' },
-  { id: 'PSA.121.1-2', ref: 'Psalm 121:1-2', themes: ['strength', 'fear'], daily: 1, sup: 1,
+  { id: 'PSA.121.1-2', ref: 'Psalm 121:1-2', themes: ['strength', 'fear'], daily: 1, sup: 'A Song of Ascents.',
     text: 'I will lift up my eyes to the hills. Where does my help come from? My help comes from Yahweh, who made heaven and earth.' },
   { id: 'PSA.121.7-8', ref: 'Psalm 121:7-8', themes: ['fear', 'rest'], daily: 1,
     text: 'Yahweh will keep you from all evil. He will keep your soul. Yahweh will keep your going out and your coming in, from this time forward, and forever more.' },
   { id: 'PSA.126.5-6', ref: 'Psalm 126:5-6', themes: ['grief', 'perseverance'], daily: 1,
     text: 'Those who sow in tears will reap in joy. He who goes out weeping, carrying seed for sowing, will certainly come again with joy, carrying his sheaves.' },
-  { id: 'PSA.127.1', ref: 'Psalm 127:1', themes: ['purpose', 'wisdom'], daily: 1, sup: 1,
+  { id: 'PSA.127.1', ref: 'Psalm 127:1', themes: ['purpose', 'wisdom'], daily: 1, sup: 'A Song of Ascents. By Solomon.',
     text: 'Unless Yahweh builds the house, they who build it labor in vain. Unless Yahweh watches over the city, the watchman guards it in vain.' },
   { id: 'PSA.127.2', ref: 'Psalm 127:2', themes: ['rest'], daily: 1,
     text: 'It is vain for you to rise up early, to stay up late, eating the bread of toil, for he gives sleep to his loved ones.' },
   { id: 'PSA.130.5', ref: 'Psalm 130:5', themes: ['hope', 'patience'], daily: 1,
     text: 'I wait for Yahweh. My soul waits. I hope in his word.' },
-  { id: 'PSA.131.1-2', ref: 'Psalm 131:1-2', themes: ['peace', 'rest'], daily: 1, sup: 1,
+  { id: 'PSA.131.1-2', ref: 'Psalm 131:1-2', themes: ['peace', 'rest'], daily: 1, sup: 'A Song of Ascents. By David.',
     text: 'Yahweh, my heart isn’t arrogant, nor my eyes lofty; nor do I concern myself with great matters, or things too wonderful for me. Surely I have stilled and quieted my soul, like a weaned child with his mother, like a weaned child is my soul within me.' },
-  { id: 'PSA.133.1', ref: 'Psalm 133:1', themes: ['relationships'], daily: 1, sup: 1,
+  { id: 'PSA.133.1', ref: 'Psalm 133:1', themes: ['relationships'], daily: 1, sup: 'A Song of Ascents. By David.',
     text: 'See how good and how pleasant it is for brothers to live together in unity!' },
   { id: 'PSA.136.1', ref: 'Psalm 136:1', themes: ['gratitude'], daily: 1,
     text: 'Give thanks to Yahweh, for he is good, for his loving kindness endures forever.' },
@@ -2772,7 +2800,7 @@ const SCRIPTURE = [
     text: 'In the day that I called, you answered me. You encouraged me with strength in my soul.' },
   { id: 'PSA.138.8', ref: 'Psalm 138:8', themes: ['purpose', 'hope'], daily: 1,
     text: 'Yahweh will fulfill that which concerns me. Your loving kindness, Yahweh, endures forever. Don’t forsake the works of your own hands.' },
-  { id: 'PSA.139.1-3', ref: 'Psalm 139:1-3', themes: ['love', 'purpose'], daily: 1, sup: 1,
+  { id: 'PSA.139.1-3', ref: 'Psalm 139:1-3', themes: ['love', 'purpose'], daily: 1, sup: 'For the Chief Musician. A Psalm by David.',
     text: 'Yahweh, you have searched me, and you know me. You know my sitting down and my rising up. You perceive my thoughts from afar. You search out my path and my lying down, and are acquainted with all my ways.' },
   { id: 'PSA.139.9-10', ref: 'Psalm 139:9-10', themes: ['direction', 'fear'], daily: 1,
     text: 'If I take the wings of the dawn, and settle in the uttermost parts of the sea, even there your hand will lead me, and your right hand will hold me.' },
@@ -3348,7 +3376,7 @@ const SCRIPTURE = [
     text: '“When you pray, you shall not be as the hypocrites, for they love to stand and pray in the synagogues and in the corners of the streets, that they may be seen by men. Most certainly, I tell you, they have received their reward. But you, when you pray, enter into your inner room, and having shut your door, pray to your Father who is in secret; and your Father who sees in secret will reward you openly. In praying, don’t use vain repetitions as the Gentiles do; for they think that they will be heard for their much speaking. Therefore don’t be like them, for your Father knows what things you need before you ask him.' },
   { id: 'MAT.6.9-13', ref: 'Matthew 6:9-13', themes: [],
     text: 'Pray like this: “‘Our Father in heaven, may your name be kept holy. Let your Kingdom come. Let your will be done on earth as it is in heaven. Give us today our daily bread. Forgive us our debts, as we also forgive our debtors. Bring us not into temptation, but deliver us from the evil one. For yours is the Kingdom, the power, and the glory forever. Amen.’' },
-  { id: 'PSA.13.1-6', ref: 'Psalm 13:1-6', themes: [], sup: 1,
+  { id: 'PSA.13.1-6', ref: 'Psalm 13:1-6', themes: [], sup: 'For the Chief Musician. A Psalm by David.',
     text: 'How long, Yahweh? Will you forget me forever? How long will you hide your face from me? How long shall I take counsel in my soul, having sorrow in my heart every day? How long shall my enemy triumph over me? Behold, and answer me, Yahweh, my God. Give light to my eyes, lest I sleep in death; lest my enemy say, “I have prevailed against him;” lest my adversaries rejoice when I fall. But I trust in your loving kindness. My heart rejoices in your salvation. I will sing to Yahweh, because he has been good to me.' },
   { id: 'MRK.14.35-36', ref: 'Mark 14:35-36', themes: [],
     text: 'He went forward a little, and fell on the ground, and prayed that if it were possible, the hour might pass away from him. He said, “Abba, Father, all things are possible to you. Please remove this cup from me. However, not what I desire, but what you desire.”' },
@@ -3358,7 +3386,7 @@ const SCRIPTURE = [
     text: 'Every Scripture is God-breathed and profitable for teaching, for reproof, for correction, and for instruction in righteousness, that each person who belongs to God may be complete, thoroughly equipped for every good work.' },
   { id: '1PE.2.24', ref: '1 Peter 2:24', themes: [],
     text: 'He himself bore our sins in his body on the tree, that we, having died to sins, might live to righteousness. You were healed by his wounds.' },
-  { id: 'PSA.23.1-6', ref: 'Psalm 23:1-6', themes: [], sup: 1,
+  { id: 'PSA.23.1-6', ref: 'Psalm 23:1-6', themes: [], sup: 'A Psalm by David.',
     text: 'Yahweh is my shepherd; I shall lack nothing. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul. He guides me in the paths of righteousness for his name’s sake. Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me. Your rod and your staff, they comfort me. You prepare a table before me in the presence of my enemies. You anoint my head with oil. My cup runs over. Surely goodness and loving kindness shall follow me all the days of my life, and I will dwell in Yahweh’s house forever.' },
   { id: 'NEH.8.8', ref: 'Nehemiah 8:8', themes: [],
     text: 'They read in the book, in the law of God, distinctly; and they gave the sense, so that they understood the reading.' },
@@ -3394,8 +3422,8 @@ const STUDIES = [
       { id: 'ntb-3', title: 'Who Jesus is',
         passages: ['JHN.1.1-5', 'JHN.1.14'],
         basis: ['John 1:1-5', 'John 1:10-14', 'John 1:17-18', 'Genesis 1:1'],
-        understand: 'John opens his account of Jesus by echoing the first words of Genesis — "In the beginning". He is placing Jesus before the creation rather than inside it.\n\n"The Word" translates a Greek term his first readers would have met in discussions of the reason or order behind the world. John takes that familiar idea and does something unexpected with it: the Word is not a principle but someone — who was with God, who was God, and through whom everything was made.\n\nThen verse 14 makes the claim the rest of the book rests on: the one John has been describing did not remain outside the world he made, but took on a human life within it. John is not describing a teacher whose reputation grew after his death. He is claiming that God\'s own self-expression arrived in a body, and that people saw it.',
-        lookCloser: 'Why do you think John chose to open with Jesus as "the Word", rather than with his birth or his teaching?',
+        understand: 'John opens his account of Jesus by deliberately echoing the first line of Genesis. He is placing Jesus before the creation rather than inside it, and any reader who knew the Hebrew Scriptures would have heard it at once.\n\nHe then introduces Jesus with a title his first readers already used for the reason or order behind the world — the principle by which everything holds together. John takes that familiar idea and does something unexpected with it: this is not a principle but someone, who was with God, who was God, and through whom everything was made.\n\nThen verse 14 makes the claim the rest of the book rests on: the one John has been describing did not remain outside the world he made, but took on a human life within it. John is not describing a teacher whose reputation grew after his death. He is claiming that God’s own self-expression arrived in a body, and that people saw it.',
+        lookCloser: 'Why might John open with Jesus described as a title and an idea, rather than with his birth or his teaching?',
         reflect: 'Before today, who did you understand Jesus to be?' },
       { id: 'ntb-4', title: 'What the good news says',
         passages: ['1CO.15.3-5', 'EPH.2.8-9'],
@@ -3429,7 +3457,7 @@ const STUDIES = [
       { id: 'wij-3', title: 'The announcement he came making',
         passages: ['MRK.1.14-15', 'LUK.4.16-21'],
         basis: ['Mark 1:14-20', 'Luke 4:14-30', 'Isaiah 61:1-2'],
-        understand: 'Mark compresses Jesus’ message into one sentence, and what is missing from it matters. There is no instruction, no doctrine, no programme. There is news — that the waiting is over and God’s reign has arrived — and then an invitation to turn around and trust it.\n\nThe word kingdom misleads a modern reader, who hears a place. It is closer to a rule actively arriving: what things look like where God is genuinely in charge.\n\nLuke shows the same claim made in a specific room. Jesus reads aloud from Isaiah about someone anointed to bring good news to the poor and freedom to prisoners, hands the scroll back, sits down, and says it has happened today.\n\nRead Isaiah’s sentence to its end and it carries on into judgement. Jesus stops before that clause. What he announces first is release.',
+        understand: 'Mark compresses Jesus’ message into one sentence, and what is missing from it matters. There is no instruction, no doctrine, no programme. There is news — that the waiting is over and God’s reign has arrived — and then an invitation to turn around and trust it.\n\nWhat he announces is easy to mishear as a place. It is closer to a rule actively arriving — what things look like where God is genuinely in charge.\n\nLuke shows the same claim made in a specific room. Jesus reads aloud from Isaiah about someone anointed to bring good news to the poor and freedom to prisoners, hands the scroll back, sits down, and says it has happened today.\n\nRead Isaiah’s sentence to its end and it carries on into judgement. Jesus stops before that clause. What he announces first is release.',
         lookCloser: 'Make a list of what Jesus says he was sent to do. Who are the people named in it?',
         reflect: 'What changes if this is treated as news rather than as advice?' },
       { id: 'wij-4', title: 'Power that stops for one person',
@@ -3441,7 +3469,7 @@ const STUDIES = [
       { id: 'wij-5', title: 'Why he died',
         passages: ['MRK.10.42-45', 'ISA.53.5-6'],
         basis: ['Mark 10:32-45', 'Isaiah 53:1-12', 'Acts 8:32-35'],
-        understand: 'Jesus explains his own death before it happens, and he does it in the middle of an argument about rank. His followers want position. He tells them greatness runs the other way, then offers himself as the example — not a leader who serves, but one whose life is handed over for other people.\n\nThe word translated ransom carries the sense of a price paid to release someone. Christians have explained how that works in more than one way, and the New Testament uses several images for it. The claim in the passage is narrower and firmer: his death does something for others. It is not merely something done to him.\n\nIsaiah’s poem, far older, describes a figure who suffers in the place of others. The earliest Christians read it as a description of Jesus. In Acts, a man reading this poem asks whether the prophet means himself or someone else, and is told about Jesus.',
+        understand: 'Jesus explains his own death before it happens, and he does it in the middle of an argument about rank. His followers want position. He tells them greatness runs the other way, then offers himself as the example — not a leader who serves, but one whose life is handed over for other people.\n\nThe term he uses carries the sense of a price paid to release someone. Christians have explained how that works in more than one way, and the New Testament uses several images for it. The claim in the passage is narrower and firmer: his death does something for others. It is not merely something done to him.\n\nIsaiah’s poem, far older, describes a figure who suffers in the place of others. The earliest Christians read it as a description of Jesus. In Acts, a man reading this poem asks whether the prophet means himself or someone else, and is told about Jesus.',
         lookCloser: 'Isaiah’s lines move between “he” and “we”. Trace which words belong to which.',
         reflect: 'What difference does it make whether his death was a defeat or something he intended?' },
       { id: 'wij-6', title: 'The claim that he was raised',
@@ -3676,7 +3704,7 @@ const STUDIES = [
         basis: ['Mark 8:27-38'],
         understand: 'Literary context is simply what comes before and after in the same book, and it is often the fastest way to understand a hard saying.\n\nImmediately before this, Peter says out loud that Jesus is the Messiah — and Jesus responds by describing his own rejection and execution. Only then does he turn to the crowd and talk about taking up a cross.\n\nThat placement does real work. To people who had just heard him predict his own death, and who had seen crucifixions, the phrase was not a metaphor for inconvenience. It described a life no longer organised around self-protection.\n\nHistorical context adds the other half: knowing what a cross was to a first-century listener is not decoration, it is the difference between hearing the sentence and hearing something milder.',
         lookCloser: 'Read the verses just before this passage in your own Bible. What has just been said?',
-        checks: [{ id: 'sd-c3', prompt: 'This saying comes straight after Jesus predicts his own rejection and death. What does that placement most affect?', options: ['What "take up his cross" would have meant to the people listening', 'Which chapter number the passage is given', 'Nothing — a verse means the same wherever it sits'], answer: 0, explain: 'The surrounding paragraph is what makes the phrase concrete rather than figurative. Placement is not decoration; it is part of how the sentence was meant to be heard.', basis: ['Mark 8:27-38'] }, { id: 'sd-c4', prompt: 'What does "literary context" refer to?', options: ['What comes immediately before and after, in the same book', 'The century in which the book was written', 'The translation you happen to be reading'], answer: 0, explain: 'Literary context is the surrounding text. When the book was written is historical context, and both help — but they are different questions with different answers.' }],
+        checks: [{ id: 'sd-c3', prompt: 'This saying comes straight after Jesus predicts his own rejection and death. What does that placement most affect?', options: ['How the image of carrying a cross would have landed on the people listening', 'Which chapter number the passage is given', 'Nothing — a verse means the same wherever it sits'], answer: 0, explain: 'The surrounding paragraph is what makes the image concrete rather than figurative — these listeners had seen crucifixions. Placement is not decoration; it is part of how a saying was meant to be heard.', basis: ['Mark 8:27-38'] }, { id: 'sd-c4', prompt: 'What does "literary context" refer to?', options: ['What comes immediately before and after, in the same book', 'The century in which the book was written', 'The translation you happen to be reading'], answer: 0, explain: 'Literary context is the surrounding text. When the book was written is historical context, and both help — but they are different questions with different answers.' }],
         reflect: 'Has knowing what came before ever changed a passage for you?' },
       { id: 'sd-3', title: 'Spotting a quotation',
         passages: ['LUK.4.16-21'],
@@ -3749,7 +3777,7 @@ const REFLECTIONS = {
 
   /* ---- JOS ---- */
   'JOS.1.7':
-    'Courage is attached here to something quite specific — keeping to instructions already given, without veering. It is not a call to boldness in general. "To the right hand or to the left" makes the ask narrower, and in practice harder.',
+    'Courage is attached here to something quite specific — keeping to instructions already given, without veering. It is not a call to boldness in general. The verse names both directions one could stray in, which makes the ask narrower, and in practice harder.',
   'JOS.1.9':
     'The command arrives attached to a reason, and the reason offered is company rather than capability.',
   'JOS.24.15':
@@ -3761,7 +3789,7 @@ const REFLECTIONS = {
 
   /* ---- 1SA ---- */
   '1SA.12.24':
-    'The reason given for serving is not duty but memory: consider what great things he has done for you. Gratitude is placed upstream here, as the thing that makes the rest make sense.',
+    'The reason given for serving is not duty but memory. The verse points backwards, to things already done, and makes them the ground for what it asks. Gratitude is placed upstream here, as the thing that makes the rest make sense.',
   '1SA.16.7':
     'Said while Samuel is looking at the wrong brother, impressed by his height. The verse does not claim appearances mean nothing, only that they are not what is being weighed. It is a correction issued to someone actively getting it wrong.',
 
@@ -3775,7 +3803,7 @@ const REFLECTIONS = {
   '1CH.16.34':
     'Two reasons are given for thanks, and neither is a recent event: he is good, and his loving kindness lasts. That makes this a line available on a day when nothing in particular has happened.',
   '1CH.28.20':
-    'An old king handing an enormous project to his son. "Be strong and courageous, and do it" puts the courage and the work in one breath. What is offered is company for the duration — until the work is finished, not until it gets easier.',
+    'An old king handing an enormous project to his son. Courage and the work arrive in a single instruction rather than as two separate encouragements. What is offered is company for the duration — until the work is finished, not until it gets easier.',
 
   /* ---- 2CH ---- */
   '2CH.15.7':
@@ -3843,7 +3871,7 @@ const REFLECTIONS = {
   'PSA.27.11':
     'The reason given for wanting a straight path is other people watching — "because of my enemies". Direction is asked for here partly so that the way taken can survive scrutiny.',
   'PSA.27.13-14':
-    '"In the land of the living" insists on now rather than later. Then the psalm turns and tells itself to wait, twice over. Both halves are held at once: expecting good in this life, and being unable to say when.',
+    'The psalmist expects to see good here, among the living, rather than only afterwards. Then the psalm turns and tells itself to wait, twice over. Both halves are held at once: expecting good in this life, and being unable to say when.',
   'PSA.28.7':
     'Trust here comes before the help arrives, and the song comes after. Whichever part of that sequence today is, it is in the verse.',
   'PSA.29.11':
@@ -4091,7 +4119,7 @@ const REFLECTIONS = {
   'ECC.4.6':
     'A handful with quietness against two with striving. The book is generally sceptical about achievement, and here it puts a number on the trade rather than dismissing ambition outright.',
   'ECC.4.9-10':
-    'The argument is practical rather than sentimental — someone has to be there when you fall. "Woe to him who is alone" is stated plainly, without softening.',
+    'The argument is practical rather than sentimental — someone has to be there when you fall. The cost of being alone at that moment is stated plainly, without softening.',
   'ECC.7.8':
     'Endings are rated above beginnings, which runs against how most things are sold. Patience and pride are then contrasted, as though impatience were mostly a form of self-importance.',
   'ECC.7.12':
@@ -4241,7 +4269,7 @@ const REFLECTIONS = {
   'MAT.24.13':
     'Short and unadorned, at the end of a long passage about difficulty. Endurance is described as continuing rather than as achieving.',
   'MAT.28.20':
-    'The last sentence of the book, attached to an instruction rather than standing alone. "Always" is qualified by "to the end of the age" — a duration, not a mood.',
+    'The last sentence of the book, attached to an instruction rather than standing alone. The promise of company is given a stated end point, which makes it a duration rather than a mood.',
 
   /* ---- MRK ---- */
   'MRK.2.27':
@@ -4417,7 +4445,7 @@ const REFLECTIONS = {
   'PHP.1.6':
     'Beginning and completing are both attributed elsewhere. Whatever is unfinished in you today is described as still in progress, not abandoned.',
   'PHP.2.3-4':
-    'Rivalry and conceit are named as the actual obstacles rather than disagreement. "Also to the things of others" is careful: it adds their interests rather than deleting your own.',
+    'Rivalry and conceit are named as the actual obstacles rather than disagreement. The instruction about other people’s interests is carefully worded: it adds them to your own rather than deleting yours.',
   'PHP.3.13-14':
     'Paul explicitly denies having arrived, which is the setup for everything after it. "One thing I do" narrows a complicated life to a single motion, and forgetting what is behind is listed as work rather than as forgetfulness.',
   'PHP.4.4':
@@ -4435,7 +4463,7 @@ const REFLECTIONS = {
   'COL.3.12':
     '"Put on" is clothing language, which makes these deliberate rather than spontaneous. The list is prefaced by what the readers already are — chosen, holy, beloved — so the dressing follows from an identity rather than earning one.',
   'COL.3.13':
-    '"If any man has a complaint" assumes the grievance is real rather than imagined. The standard given at the end is not proportionality but a precedent already set.',
+    'The conditional here assumes the grievance is real rather than imagined — it does not ask anyone to pretend nothing happened. The standard given at the end is not proportionality but a precedent already set.',
   'COL.3.14':
     'Love is described as the tie holding the other virtues together rather than as one more item among them.',
   'COL.3.15':
@@ -4543,7 +4571,7 @@ const REFLECTIONS = {
   '1PE.5.6-7':
     'Humbling and casting worry are one movement in the sentence, not two instructions. The reason given at the end is care, which is a warmer argument than anxiety usually makes to itself.',
   '1PE.5.10':
-    '"After you have suffered a little while" is not skipped over, and the four verbs that follow are all restorative. The suffering is placed inside the sentence rather than denied by it.',
+    'The suffering is not skipped over; it is given its own clause before the promise, and the four verbs that follow are all restorative. It is placed inside the sentence rather than denied by it.',
 
   /* ---- 2PE ---- */
   '2PE.1.5-7':
@@ -5228,6 +5256,7 @@ function renderToday(){
           '<span class="verse-date">' + escapeHtml(longDate(key)) + '</span>' +
           '<span class="badge">' + escapeHtml((passage.themes || [])[0] || '') + '</span>' +
         '</div>' +
+        superscriptionHtml(passage) +
         '<blockquote class="verse-text">' + escapeHtml(passage.text) + '</blockquote>' +
         '<div class="verse-cite">' +
           '<cite class="verse-ref">' + escapeHtml(passage.ref) + '</cite>' +
@@ -5387,6 +5416,7 @@ function openNote(key){
     const reflection = reflectionFor(passage.id);
     head.innerHTML =
       '<article class="verse-card verse-card-compact">' +
+        superscriptionHtml(passage, true) +
         '<blockquote class="verse-text verse-text-compact">' + escapeHtml(passage.text) + '</blockquote>' +
         '<div class="verse-cite">' +
           '<cite class="verse-ref">' + escapeHtml(passage.ref) + '</cite>' +
@@ -5596,6 +5626,7 @@ function renderSaved(){
           escapeHtml(SCRIPTURE_SOURCE.abbr) + '</span></span>' +
         savedRemoveButton(passage.id) +
       '</div>' +
+      superscriptionHtml(passage, true) +
       '<blockquote class="verse-quote">' + escapeHtml(passage.text) + '</blockquote>' +
     '</div>';
   }).join('');
@@ -5800,7 +5831,7 @@ function renderSource(){
   host.innerHTML =
     '<p class="page-intro">Every verse here is quoted from one public-domain translation, ' +
       'taken directly from the publisher&rsquo;s own released text. Nothing is paraphrased, ' +
-      'and nothing was typed out by hand.</p>' +
+      'nothing was typed out by hand, and nothing is trimmed to read more neatly.</p>' +
 
     '<div class="section-label">Translation</div>' +
     '<div class="panel">' +
@@ -5817,19 +5848,23 @@ function renderSource(){
       '<p style="font-size:var(--fs-support);color:var(--text-dim);margin-bottom:var(--space-md)">' +
         'Verse text is set in a serif face, in quotation, and always carries its ' +
         'reference and the translation it came from.</p>' +
-      '<p style="font-size:var(--fs-support);color:var(--text-dim)">' +
+      '<p style="font-size:var(--fs-support);color:var(--text-dim);margin-bottom:var(--space-md)">' +
         'A <strong>Reflection</strong> is this app&rsquo;s own writing, not Scripture. ' +
         'It is labelled, set in the interface face, and can be switched off entirely in ' +
         'Settings if you would rather read the passage on its own.</p>' +
+      '<p style="font-size:var(--fs-support);color:var(--text-dim)">' +
+        'Some psalms open with a line naming an author or a tune. Those lines are part of ' +
+        'the text as the publisher released it, so they are kept and shown above the psalm ' +
+        'in smaller type &mdash; not hidden, and not treated as this app&rsquo;s words.</p>' +
     '</div>' +
 
-    '<div class="section-label">On the name of God</div>' +
+    '<div class="section-label">On names, and on wording</div>' +
     '<div class="field-hint" style="margin-bottom:var(--space-xl)">' +
-      'This edition prints the Hebrew divine name as &ldquo;' + escapeHtml(s.divineName) +
-      '&rdquo; in the Old Testament, where many English Bibles print &ldquo;the LORD&rdquo;. ' +
-      'That is this translation&rsquo;s own choice. Other editions of the same translation ' +
-      'now render it differently, and this app deliberately stays with the one its text ' +
-      'has always used rather than changing Scripture under you.</div>' +
+      'Translations differ in how they render names and titles. This one prints the Hebrew ' +
+      'divine name as &ldquo;' + escapeHtml(s.divineName) + '&rdquo; in the Old Testament, ' +
+      'where many English Bibles print &ldquo;the LORD&rdquo;. That is this ' +
+      'translation&rsquo;s choice, not ours. Daily Verse shows the wording a translation ' +
+      'published, and never swaps it for a more familiar form.</div>' +
 
     '<div class="section-label">For the record</div>' +
     '<div class="panel">' +
@@ -6460,8 +6495,30 @@ function figureHtml(fig){
   '</div>';
 }
 
+/* The publisher's own title line for a psalm — “For the Chief Musician. A
+   Psalm by David.” and the like.
+
+   It is Scripture apparatus, not this app's words, so it is set in the
+   SCRIPTURE face: nothing this app writes is ever in serif, which is what
+   stops this reading as a note we added. Smaller and quieter than the psalm
+   it introduces, because introducing it is all it does.
+
+   Deliberately NOT tied to the show-reflections preference. That setting
+   hides this app's own writing; a superscription is the publisher's text,
+   and text we have chosen to carry is not ours to hide.
+
+   These were deleted outright until v1.6.1, which made 19 shipped passages
+   something other than a faithful copy while still carrying the publisher's
+   name for the translation. */
+function superscriptionHtml(p, compact){
+  if(!p || !p.sup) return '';
+  return '<p class="verse-sup' + (compact ? ' verse-sup-compact' : '') + '">' +
+    escapeHtml(p.sup) + '</p>';
+}
+
 function passageCardHtml(p){
   return '<article class="verse-card lesson-passage">' +
+    superscriptionHtml(p) +
     '<blockquote class="verse-text">' + escapeHtml(p.text) + '</blockquote>' +
     '<div class="verse-cite">' +
       '<cite class="verse-ref">' + escapeHtml(p.ref) + '</cite>' +
