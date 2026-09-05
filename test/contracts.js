@@ -2606,12 +2606,12 @@ function testTodayUnharmed(){
   /* Daily is pinned and must never move. The study-only figure legitimately
      grows every time a lesson quotes a passage the rotation never carried;
      it is pinned too, so growth has to be a deliberate edit rather than a
-     side effect nobody noticed. 7 -> 31 -> 35 as Learn grew from one study
-     to five. Daily stayed exactly where it was, which is the point. */
+     side effect nobody noticed. 7 -> 37 as Learn grew from one study to
+     eight. Daily stayed exactly where it was, which is the point. */
   T('378 daily passages', daily.length === 378, String(daily.length));
-  T('35 study-only passages', c.SCRIPTURE.filter(p => !p.daily).length === 35,
+  T('37 study-only passages', c.SCRIPTURE.filter(p => !p.daily).length === 37,
     String(c.SCRIPTURE.filter(p => !p.daily).length));
-  T('413 in total', c.SCRIPTURE.length === 413, String(c.SCRIPTURE.length));
+  T('415 in total', c.SCRIPTURE.length === 415, String(c.SCRIPTURE.length));
   T('all 378 are still eligible', c.eligiblePassages().length === 378);
   /* Recomputed here rather than trusted from the shipped metadata. */
   T('the daily hash is unchanged by this phase',
@@ -2680,7 +2680,7 @@ function testStudyCatalogue(){
   const c = app.ctx;
 
   sub('four studies, twenty-three lessons');
-  T('there are five studies', c.STUDIES.length === 5, String(c.STUDIES.length));
+  T('there are eight studies', c.STUDIES.length === 8, String(c.STUDIES.length));
   const counts = {};
   c.STUDIES.forEach(s => { counts[s.id] = s.lessons.length; });
   T('New to the Bible has 5', counts['new-to-the-bible'] === 5, String(counts['new-to-the-bible']));
@@ -2688,8 +2688,11 @@ function testStudyCatalogue(){
   T('Understanding the Gospel has 6', counts['understanding-the-gospel'] === 6, String(counts['understanding-the-gospel']));
   T('Learning to Pray has 5', counts['learning-to-pray'] === 5, String(counts['learning-to-pray']));
   T('How to Use the Bible has 8', counts['how-to-use-the-bible'] === 8, String(counts['how-to-use-the-bible']));
+  T('Foundations has 4', counts['skills-foundations'] === 4, String(counts['skills-foundations']));
+  T('Practice has 4', counts['skills-practice'] === 4, String(counts['skills-practice']));
+  T('Deeper study has 4', counts['skills-deeper'] === 4, String(counts['skills-deeper']));
   const total = c.STUDIES.reduce((n, s) => n + s.lessons.length, 0);
-  T('31 lessons in total', total === 31, String(total));
+  T('43 lessons in total', total === 43, String(total));
 
   sub('the ids someone may already have progress against');
   /* A stored progress row names a study id and a list of lesson ids. Rename
@@ -2741,7 +2744,7 @@ function testStudyCatalogue(){
   c.renderLearn();
   const html = app.dom.document.getElementById('learnBody').innerHTML;
   const listed = c.STUDIES.filter(s => html.indexOf(s.title) !== -1);
-  T('all five studies appear on the Learn landing', listed.length === 5,
+  T('all eight studies appear on the Learn landing', listed.length === 8,
     c.STUDIES.filter(s => html.indexOf(s.title) === -1).map(s => s.id).join(', '));
 
   const brokeOpen = [];
@@ -3147,6 +3150,174 @@ function testSmallTextContrast(){
   });
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 35 — KNOWLEDGE CHECKS TEACH, AND DO NOT KEEP SCORE
+
+   Two ways a feature like this goes wrong. A question turns out to have more
+   than one defensible answer, and the reader learns the app is unreliable.
+   Or the scoring quietly grows — a total here, a streak there — until an app
+   for reading Scripture is ranking people. Both are asserted structurally.
+   --------------------------------------------------------- */
+function testKnowledgeChecks(){
+  section('CONTRACT 35 — knowledge checks');
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx;
+
+  const checks = [];
+  c.STUDIES.forEach(s => s.lessons.forEach(l =>
+    (l.checks || []).forEach(ch => checks.push({ s: s.id, l: l.id, c: ch }))));
+
+  sub('every question can be answered, and only one way');
+  T('there are checks to test', checks.length > 0, String(checks.length));
+  T('every check id is unique across the whole app',
+    new Set(checks.map(x => x.c.id)).size === checks.length,
+    String(checks.length - new Set(checks.map(x => x.c.id)).size) + ' duplicated');
+  T('every check id is a slug', checks.every(x => /^[a-z0-9][a-z0-9-]*$/.test(x.c.id)));
+  T('every check has a prompt', checks.every(x => typeof x.c.prompt === 'string' && x.c.prompt.trim()));
+  T('every check offers between 2 and 4 options',
+    checks.every(x => Array.isArray(x.c.options) && x.c.options.length >= 2 && x.c.options.length <= 4));
+  /* The ambiguity guard: two options that say the same thing mean two answers
+     are defensible, and the reader is right and the app is wrong. */
+  const dupOpts = checks.filter(x => {
+    const n = x.c.options.map(o => o.trim().toLowerCase());
+    return new Set(n).size !== n.length;
+  });
+  T('no check repeats an option', dupOpts.length === 0, dupOpts.map(x => x.c.id).join(', '));
+  const badAnswer = checks.filter(x => !Number.isInteger(x.c.answer) ||
+    x.c.answer < 0 || x.c.answer >= x.c.options.length);
+  T('every answer is exactly one option, and it exists',
+    badAnswer.length === 0, badAnswer.map(x => x.c.id).join(', '));
+
+  sub('being wrong is answered with a reason, not a verdict');
+  T('every check explains itself',
+    checks.every(x => typeof x.c.explain === 'string' && x.c.explain.trim().length > 40),
+    checks.filter(x => !x.c.explain || x.c.explain.trim().length <= 40).map(x => x.c.id).join(', '));
+  /* An explanation that only restates the answer teaches nothing. */
+  T('an explanation says more than the option it defends',
+    checks.every(x => x.c.explain.trim().length > x.c.options[x.c.answer].length),
+    checks.filter(x => x.c.explain.trim().length <= x.c.options[x.c.answer].length).map(x => x.c.id).join(', '));
+  T('checks that rest on Scripture cite it',
+    checks.filter(x => x.c.basis).every(x => Array.isArray(x.c.basis) && x.c.basis.length > 0));
+
+  sub('answering, and being allowed to try again');
+  const first = checks[0];
+  const wrong = first.c.answer === 0 ? 1 : 0;
+  c.answerCheck(first.s, first.c.id, wrong);
+  c.__flush();
+  let rec = c.checkAnswerFor(first.s, first.c.id);
+  T('a wrong answer is recorded as wrong', rec && rec.correct === 0, JSON.stringify(rec && rec.correct));
+  c.answerCheck(first.s, first.c.id, first.c.answer);
+  c.__flush();
+  rec = c.checkAnswerFor(first.s, first.c.id);
+  T('answering again replaces the row rather than adding one',
+    c.checkAnswers.filter(r => r.check === first.c.id).length === 1,
+    String(c.checkAnswers.filter(r => r.check === first.c.id).length));
+  T('and the right answer is recorded as right', rec && rec.correct === 1);
+  c.retryCheck(first.s, first.c.id);
+  c.__flush();
+  T('retrying clears the answer entirely, keeping no attempt history',
+    c.checkAnswerFor(first.s, first.c.id) === null);
+  T('an out-of-range choice is ignored rather than stored',
+    (function(){ c.answerCheck(first.s, first.c.id, 99); return c.checkAnswerFor(first.s, first.c.id) === null; })());
+
+  sub('the tally is counted, never stored');
+  const study = c.studyById('skills-foundations');
+  const own = c.allChecks(study);
+  own.forEach(ch => c.answerCheck(study.id, ch.id, ch.answer));
+  c.__flush();
+  let score = c.studyCheckScore(study);
+  T('all eight answered correctly reads as eight of eight',
+    score.correct === own.length && score.total === own.length,
+    score.correct + ' of ' + score.total);
+  c.answerCheck(study.id, own[0].id, own[0].answer === 0 ? 1 : 0);
+  c.__flush();
+  score = c.studyCheckScore(study);
+  T('getting one wrong reads as seven of eight',
+    score.correct === own.length - 1, score.correct + ' of ' + score.total);
+  /* Nothing anywhere in storage holds a total. If it did, it could disagree
+     with the rows it was summarising. */
+  const stored = JSON.stringify(app.storage.getItem('daily-verse.data.checkAnswers') || '');
+  T('the stored rows carry no score, only per-check results',
+    stored.indexOf('score') === -1 && stored.indexOf('total') === -1 && stored.indexOf('correctCount') === -1);
+  T('and no other key appears to hold one',
+    Object.keys(c.KEYS).every(k => !/score|streak|xp|points|rank|level$/i.test(c.KEYS[k])),
+    Object.keys(c.KEYS).filter(k => /score|streak|xp|points|rank/i.test(c.KEYS[k])).join(', '));
+
+  sub('answering a question is not progress through a lesson');
+  const b = H.loadApp({ sharedStorage: new Map() });
+  const bs = b.ctx.studyById('skills-foundations');
+  /* Answered from INSIDE an open lesson, which is how it actually happens.
+     Answering with no lesson open cannot catch this: a version that marked
+     the open lesson done passed that weaker test, because there was none. */
+  b.ctx.openLesson(bs.id, bs.lessons[0].id); b.ctx.__flush();
+  (bs.lessons[0].checks || []).forEach(ch => b.ctx.answerCheck(bs.id, ch.id, ch.answer));
+  b.ctx.__flush();
+  T('answering every check in an open lesson does not complete it',
+    b.ctx.isLessonDone(bs.id, bs.lessons[0].id) === false);
+  T('and no lesson is done', b.ctx.completedCount(bs) === 0, String(b.ctx.completedCount(bs)));
+  b.ctx.closeLesson(); b.ctx.__flush();
+  b.ctx.allChecks(bs).forEach(ch => b.ctx.answerCheck(bs.id, ch.id, ch.answer));
+  b.ctx.__flush();
+  T('every check answered still leaves no lesson done',
+    b.ctx.completedCount(bs) === 0, String(b.ctx.completedCount(bs)));
+  T('and the study is not complete', b.ctx.isStudyComplete(bs) === false);
+  T('finishing lessons is still what completes a study',
+    (function(){ const r = b.ctx.ensureStudyStarted(bs.id);
+      bs.lessons.forEach(l => { if(r.done.indexOf(l.id) === -1) r.done.push(l.id); });
+      b.ctx.persistStudyProgress(); return b.ctx.isStudyComplete(bs) === true; })());
+
+  sub('a level is suggested, never locked');
+  const fresh = H.loadApp({ sharedStorage: new Map() });
+  const levels = fresh.ctx.skillStudies();
+  T('the skills track has three levels in order',
+    levels.length === 3 && levels[0].level === 1 && levels[1].level === 2 && levels[2].level === 3,
+    levels.map(x => x.level).join(','));
+  T('foundations is suggested first', fresh.ctx.recommendedSkill() === 'skills-foundations',
+    String(fresh.ctx.recommendedSkill()));
+  /* Finish level one; the suggestion moves on. */
+  const rec1 = fresh.ctx.ensureStudyStarted('skills-foundations');
+  fresh.ctx.studyById('skills-foundations').lessons.forEach(l => rec1.done.push(l.id));
+  fresh.ctx.persistStudyProgress();
+  T('finishing it suggests the next level', fresh.ctx.recommendedSkill() === 'skills-practice',
+    String(fresh.ctx.recommendedSkill()));
+  /* And the deepest level opens straight away for someone who wants it. */
+  const jump = H.loadApp({ sharedStorage: new Map() });
+  jump.ctx.openLesson('skills-deeper', 'sd-1');
+  jump.ctx.__flush();
+  T('a reader can open the last level without touching the first',
+    jump.dom.document.getElementById('lessonOverlay').classList.contains('open'));
+  /* Asserted by behaviour rather than by keyword: an earlier version of this
+     matched _lockedScrollY, which is the overlay scroll lock and has nothing
+     to do with levels. Opening all three from a clean install is the claim. */
+  (function(){
+    const opened = [];
+    jump.ctx.skillStudies().forEach(function(lv){
+      const f = H.loadApp({ sharedStorage: new Map() });
+      f.ctx.openStudy(lv.id); f.ctx.__flush();
+      if(f.dom.document.getElementById('studyOverlay').classList.contains('open')) opened.push(lv.id);
+    });
+    T('every level opens from a clean install, in any order',
+      opened.length === 3, opened.join(', '));
+  })();
+
+  sub('none of the vocabulary of a game');
+  /* Bounded to the Learn and check code so an unrelated word elsewhere in a
+     300KB file cannot fail this for the wrong reason. */
+  const src = stripComments(js());
+  /* checkInnerHtml comes AFTER renderSaved in the file, so the bounds have to
+     be ordered or this silently scans everything and fails on words that live
+     somewhere else entirely. */
+  const from = src.indexOf('function checkInnerHtml');
+  const to = src.indexOf('function passageCardHtml');
+  T('the check code was located', from !== -1 && to > from, from + '..' + to);
+  const learn = src.slice(from, to);
+  ['streak', 'badge', 'trophy', 'leaderboard', 'coins', 'achievement', 'confetti']
+    .forEach(w => T('no ' + w, learn.toLowerCase().indexOf(w) === -1));
+  T('no XP', !/\bxp\b/i.test(learn));
+  T('no percentage is shown for a check score', !/checkScore[\s\S]{0,80}%/.test(learn));
+  T('no timer anywhere near a check', !/setTimeout[\s\S]{0,40}check/i.test(learn));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -3156,5 +3327,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks
 };

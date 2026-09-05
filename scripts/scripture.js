@@ -220,6 +220,9 @@ function buildStudies(doc, errors){
   const understandMax = max.understandMax || 900;
   const lookMax = max.lookCloserMax || 200;
   const reflectMax = max.reflectMax || 140;
+  const promptMax = max.checkPromptMax || 200;
+  const optionMax = max.checkOptionMax || 90;
+  const explainMax = max.checkExplainMax || 260;
   const figureHeadingMax = max.figureHeadingMax || 40;
   const figureRowsMax = max.figureRowsMax || 6;
   const figureLabelMax = max.figureLabelMax || 24;
@@ -232,6 +235,7 @@ function buildStudies(doc, errors){
     if(!Array.isArray(s.lessons) || !s.lessons.length){ errors.push('study ' + s.id + ' — no lessons'); return; }
 
     const lessonIds = new Set();
+    const checkIds = new Set();
     const lessons = [];
 
     s.lessons.forEach((l, i) => {
@@ -298,15 +302,76 @@ function buildStudies(doc, errors){
         }
       }
 
+      /* Knowledge checks. Validated hard, because a question with two
+         defensible answers teaches the reader that the app is unreliable,
+         which is worse than asking nothing. Options must be distinct, the
+         answer must be in range, and an explanation is required — the
+         explanation is the actual product here; the score is not. */
+      let checks = null;
+      if(l.checks){
+        if(!Array.isArray(l.checks) || !l.checks.length){
+          errors.push(where + ' — checks must be a non-empty array');
+        } else {
+          const out = [];
+          l.checks.forEach((c, ci) => {
+            const cw = where + ' check#' + (ci + 1);
+            if(!c.id || !/^[a-z0-9][a-z0-9-]*$/.test(c.id)){ errors.push(cw + ' — missing or non-slug id'); return; }
+            if(checkIds.has(c.id)){ errors.push(cw + ' — duplicate check id "' + c.id + '"'); return; }
+            checkIds.add(c.id);
+            if(!c.prompt || !c.prompt.trim()){ errors.push(cw + ' — no prompt'); return; }
+            if(c.prompt.length > promptMax){ errors.push(cw + ' — prompt is ' + c.prompt.length + ' chars, over ' + promptMax); return; }
+            if(!Array.isArray(c.options) || c.options.length < 2 || c.options.length > 4){
+              errors.push(cw + ' — needs between 2 and 4 options'); return;
+            }
+            if(c.options.some(o => typeof o !== 'string' || !o.trim() || o.length > optionMax)){
+              errors.push(cw + ' — every option must be text within ' + optionMax + ' chars'); return;
+            }
+            const norm = c.options.map(o => o.trim().toLowerCase());
+            if(new Set(norm).size !== norm.length){
+              errors.push(cw + ' — two options say the same thing, so more than one could be right'); return;
+            }
+            if(typeof c.answer !== 'number' || !Number.isInteger(c.answer) ||
+               c.answer < 0 || c.answer >= c.options.length){
+              errors.push(cw + ' — answer must be an index into options'); return;
+            }
+            if(!c.explain || !c.explain.trim()){
+              errors.push(cw + ' — no explanation. A check that cannot say why is a quiz, not teaching'); return;
+            }
+            if(c.explain.length > explainMax){ errors.push(cw + ' — explanation is ' + c.explain.length + ' chars, over ' + explainMax); return; }
+            const rec = { id: c.id, prompt: c.prompt, options: c.options.slice(),
+                          answer: c.answer, explain: c.explain };
+            if(c.basis){
+              if(!Array.isArray(c.basis) || !c.basis.length){ errors.push(cw + ' — basis must be a non-empty array'); return; }
+              c.basis.forEach(ref => { if(!parseRef(ref)) errors.push(cw + ' — basis "' + ref + '" does not resolve'); });
+              rec.basis = c.basis.slice();
+            }
+            out.push(rec);
+          });
+          if(out.length === l.checks.length) checks = out;
+        }
+      }
+
       const lesson = { id: l.id, title: l.title, passages: ids,
                        basis: l.basis.slice(), understand: l.understand, reflect: l.reflect };
       if(l.lookCloser) lesson.lookCloser = l.lookCloser;
       if(figure) lesson.figure = figure;
+      if(checks) lesson.checks = checks;
       lessons.push(lesson);
     });
 
-    studies.push({ id: s.id, title: s.title, summary: s.summary,
-                   audience: s.audience || '', lessons: lessons });
+    /* An optional track groups a study on the Learn landing. Nothing about
+       navigation changes — it is a heading, and a study without one simply
+       stays where studies have always been. */
+    const study = { id: s.id, title: s.title, summary: s.summary,
+                    audience: s.audience || '', lessons: lessons };
+    if(s.track){
+      if(!/^[a-z][a-z-]*$/.test(s.track)) errors.push('study ' + s.id + ' — track must be a slug');
+      else study.track = s.track;
+      if(typeof s.level !== 'number' || !Number.isInteger(s.level) || s.level < 1){
+        errors.push('study ' + s.id + ' — a study in a track needs an integer level');
+      } else study.level = s.level;
+    }
+    studies.push(study);
   });
 
   return { studies: studies, passageRefs: passageRefs };
@@ -354,8 +419,15 @@ function assertNoEmbeddedScripture(studies, byId, errors){
       const figureText = l.figure
         ? [l.figure.heading].concat(l.figure.rows.map(r => r.label + ' ' + r.value)).join(' ')
         : '';
+      /* Checks render text to a reader, so they are scanned like everything
+         else. An option or an explanation is exactly where a verse would
+         get retyped without anyone noticing. */
+      const checkText = Array.isArray(l.checks)
+        ? l.checks.map(c => [c.prompt, c.explain].concat(c.options || []).join(' ')).join(' ')
+        : '';
       const fields = { understand: l.understand, lookCloser: l.lookCloser,
-                       reflect: l.reflect, title: l.title, figure: figureText };
+                       reflect: l.reflect, title: l.title, figure: figureText,
+                       check: checkText };
       Object.keys(fields).forEach(field => {
         if(typeof fields[field] !== 'string') return;
         const w = norm(fields[field]).split(' ');
@@ -434,6 +506,13 @@ function region(built){
       "        basis: [" + l.basis.map(x => "'" + esc(x) + "'").join(', ') + "],\n" +
       "        understand: '" + esc(l.understand) + "',\n" +
       (l.lookCloser ? "        lookCloser: '" + esc(l.lookCloser) + "',\n" : "") +
+      (l.checks ? "        checks: [" + l.checks.map(function(c){
+        return "{ id: '" + esc(c.id) + "', prompt: '" + esc(c.prompt) + "', options: [" +
+          c.options.map(function(o){ return "'" + esc(o) + "'"; }).join(', ') +
+          "], answer: " + c.answer + ", explain: '" + esc(c.explain) + "'" +
+          (c.basis ? ", basis: [" + c.basis.map(function(b){ return "'" + esc(b) + "'"; }).join(', ') + "]" : "") +
+        " }";
+      }).join(', ') + "],\n" : "") +
       (l.figure ? "        figure: { heading: '" + esc(l.figure.heading) + "', rows: [" +
         l.figure.rows.map(function(r){
           return "{ label: '" + esc(r.label) + "', value: '" + esc(r.value) + "' }";
@@ -441,6 +520,7 @@ function region(built){
       "        reflect: '" + esc(l.reflect) + "' }"
     ).join(',\n');
     return "  { id: '" + esc(s.id) + "', title: '" + esc(s.title) + "',\n" +
+           (s.track ? "    track: '" + esc(s.track) + "', level: " + s.level + ",\n" : "") +
            "    summary: '" + esc(s.summary) + "',\n" +
            "    audience: '" + esc(s.audience) + "',\n" +
            "    lessons: [\n" + lessons + "\n    ] }";

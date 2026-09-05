@@ -14,7 +14,10 @@
     "figureHeadingMax": 40,
     "figureRowsMax": 6,
     "figureLabelMax": 24,
-    "figureValueMax": 90
+    "figureValueMax": 90,
+    "checkPromptMax": 200,
+    "checkOptionMax": 90,
+    "checkExplainMax": 260
   },
   "version": 1,
   "studies": [
@@ -602,6 +605,530 @@
           "understand": "Here is a method that works on any passage. It is not clever, and that is the point: most of the work is looking rather than deciding.\n\nTake the psalm above. Observe first — it sets two ways of living against each other, and the opening line moves: walking, then standing, then sitting. Something is settling.\n\nThen understand. This is poetry, and it is placed first in a collection of songs, which suggests it is an introduction to the whole book rather than a promise about outcomes.\n\nThen connect. The picture is a tree by water, bearing fruit in its season — not immediately, and not constantly.\n\nOnly then reflect, and only then apply. Notice how late those come. Most disappointment with Bible reading starts at the last step: deciding what a passage means for today before working out what it said to anyone.",
           "lookCloser": "Try only the first step on the passage above. Write down three things it says, without interpreting any of them.",
           "reflect": "Which of the five steps do you usually skip?"
+        }
+      ]
+    },
+    {
+      "id": "skills-foundations",
+      "title": "Foundations",
+      "track": "skills",
+      "level": 1,
+      "summary": "The parts of a Bible and how to find anything in it: testaments, references, and what is text rather than trimming.",
+      "audience": "Anyone who has never been shown how the book is put together.",
+      "lessons": [
+        {
+          "id": "sf-1",
+          "title": "Two testaments, one volume",
+          "passages": [
+            "Luke 24:27"
+          ],
+          "basis": [
+            "Luke 24:13-35"
+          ],
+          "understand": "A Bible is bound as one book and works as two collections.\n\nThe Old Testament came first and is far the longer of the two. It is the Scripture Jesus grew up with, read aloud, and argued from — which is what this verse is describing him doing.\n\nThe New Testament was written afterwards by people connected to him: accounts of his life, letters to young churches, and a closing vision.\n\nKnowing which half you are in tells you a great deal before you read a word. An Old Testament page is likely to be centuries before Jesus and addressed to Israel. A New Testament page is likely to be within a lifetime of him and addressed to scattered believers. Neither fact settles what a passage means, but both keep you from expecting the wrong thing.",
+          "lookCloser": "Open your Bible roughly in the middle. Which testament did you land in — and how did you tell?",
+          "reflect": "Which half of the Bible are you least familiar with?",
+          "checks": [
+            {
+              "id": "sf-c1",
+              "prompt": "What is the Old Testament, in relation to Jesus?",
+              "options": [
+                "The Scriptures Jesus himself read and quoted",
+                "The part written after Jesus by his followers",
+                "A summary of the New Testament for beginners"
+              ],
+              "answer": 0,
+              "explain": "The Old Testament was already ancient in Jesus’ lifetime — it is what he read in synagogue and argued from. The New Testament is the part written after him.",
+              "basis": [
+                "Luke 24:27"
+              ]
+            },
+            {
+              "id": "sf-c2",
+              "prompt": "Someone tells you to read Habakkuk and you have no idea where it is. What is the fastest first move?",
+              "options": [
+                "Look the name up in the contents page",
+                "Flip through the pages until the name appears",
+                "Start at Genesis and read forward until you reach it"
+              ],
+              "answer": 0,
+              "explain": "The contents page lists every book with its page number, in the order they appear. It answers this in seconds, and it is the page most people never think to use."
+            }
+          ]
+        },
+        {
+          "id": "sf-2",
+          "title": "The parts of a reference",
+          "passages": [
+            "John 3:16"
+          ],
+          "basis": [
+            "John 3:1-21"
+          ],
+          "figure": {
+            "heading": "John 3:16",
+            "rows": [
+              {
+                "label": "Book",
+                "value": "John"
+              },
+              {
+                "label": "Chapter",
+                "value": "3"
+              },
+              {
+                "label": "Verse",
+                "value": "16"
+              }
+            ]
+          },
+          "understand": "A reference is an address, and it is written the same way every time: book, then chapter, then verse.\n\nThe colon is the hinge. Everything to its left tells you which book and which chapter; everything to its right tells you which sentence. Once you can see that, an unfamiliar reference stops being a code.\n\nA few conventions are worth knowing straight away. A dash makes a range, so John 1:1-5 means five verses read together. A comma separates verses that are not adjacent. And a reference with no colon at all — Psalm 23 — means the whole chapter.\n\nOne more, because it catches everyone: a number in front of the name belongs to the title. 1 John is a different book from John, not its first chapter.",
+          "lookCloser": "Find John 3:16, then find 1 John 3:16. They are different books, and the second one is much nearer the end.",
+          "reflect": "Which part of a reference had you been unsure about?",
+          "checks": [
+            {
+              "id": "sf-c3",
+              "prompt": "In the reference John 3:16, which part identifies the chapter?",
+              "options": [
+                "John",
+                "3",
+                "16"
+              ],
+              "answer": 1,
+              "explain": "John names the book, 3 the chapter, and 16 the verse. The chapter is always the number between the book name and the colon."
+            },
+            {
+              "id": "sf-c4",
+              "prompt": "A reference is written simply as Psalm 23, with no colon and no second number. What does it point to?",
+              "options": [
+                "The whole of chapter 23",
+                "Verse 23 of the book of Psalms",
+                "The twenty-third book of the Bible"
+              ],
+              "answer": 0,
+              "explain": "No colon means no particular verse was singled out, so the reference is to the entire chapter — all six verses of Psalm 23."
+            }
+          ]
+        },
+        {
+          "id": "sf-3",
+          "title": "Text, and everything around it",
+          "passages": [
+            "Psalm 23:1-6"
+          ],
+          "basis": [
+            "Psalm 23:1-6"
+          ],
+          "understand": "A printed page carries more than the text. Some of what you see was added by the publisher to help you navigate, and telling the two apart is one of the most useful things a reader can learn.\n\nSection headings — the short bold lines that break a chapter into parts — are almost always editorial. They are helpful, and they can quietly steer how you read what follows. A different edition will word them differently or leave them out.\n\nChapter and verse numbers were also added, many centuries after the writings themselves, so that people could point at the same sentence.\n\nPsalms are the interesting exception. Many open with a line naming an author or a tune, and those lines are in the manuscripts — but editions disagree about whether to print them as a heading, number them as verse 1, or leave them out. So a heading is usually editorial, and occasionally it is not.",
+          "lookCloser": "Look at Psalm 23 in your own Bible. Is there a line naming David, and is it a heading, a numbered verse, or absent?",
+          "reflect": "Has a heading ever shaped what you expected a passage to say?",
+          "checks": [
+            {
+              "id": "sf-c5",
+              "prompt": "Which of these was most likely added by the publisher rather than written by the biblical author?",
+              "options": [
+                "A short bold line above the psalm summarising it",
+                "The sentence about a shepherd in the first verse",
+                "The name of the book at the top of the page"
+              ],
+              "answer": 0,
+              "explain": "Summarising headings are editorial navigation and vary between editions. Book names and the text itself do not. It is worth noticing which is which before letting a heading frame your reading."
+            },
+            {
+              "id": "sf-c6",
+              "prompt": "You see a small raised letter beside a word in a verse. What does it most likely point to?",
+              "options": [
+                "A footnote or a cross-reference elsewhere on the page",
+                "A printing error the publisher did not catch",
+                "The name of the translator of that verse"
+              ],
+              "answer": 0,
+              "explain": "Small letters, numbers and symbols are the pointers into a Bible’s notes. Which mark means what varies by edition, so the key at the front is worth finding once."
+            }
+          ]
+        },
+        {
+          "id": "sf-4",
+          "title": "What a cross-reference is for",
+          "passages": [
+            "1 Peter 2:24"
+          ],
+          "basis": [
+            "1 Peter 2:21-25",
+            "Isaiah 53:1-12"
+          ],
+          "understand": "Beside many verses you will find a marker leading to a short list of other references — in the margin, in a centre column, or at the foot of the page. Those are cross-references.\n\nThey are the publisher pointing out that this sentence is connected to those: the same idea, the same event, or in cases like this one, an older passage the writer was drawing on directly.\n\nThey are genuinely useful and they are not part of the text. Two editions will offer different lists, because deciding what counts as related is an editorial judgement.\n\nAnd they carry one risk. A cross-reference sends you to a single verse, not to the paragraph it lives in — so it is very easy to arrive somewhere, read one line, and draw a conclusion the surrounding text would not support.",
+          "lookCloser": "Find 1 Peter 2:24 in your Bible and look for a marker beside it. Where does your edition keep its references?",
+          "reflect": "What is the appeal, and the danger, of reading by jumping between linked verses?",
+          "checks": [
+            {
+              "id": "sf-c7",
+              "prompt": "You follow a cross-reference and arrive at a verse in another book. What is the best thing to do first?",
+              "options": [
+                "Read the paragraph around it before drawing any conclusion",
+                "Read just that verse and go back where you came from",
+                "Follow the next cross-reference from this new verse"
+              ],
+              "answer": 0,
+              "explain": "A cross-reference points at a sentence but does not bring its context along. Reading the paragraph is what stops a linked verse from meaning whatever it appears to mean on its own."
+            },
+            {
+              "id": "sf-c8",
+              "prompt": "Where do the cross-references in a Bible come from?",
+              "options": [
+                "Editors, who chose which passages to connect",
+                "The biblical authors, who wrote them into the text",
+                "A standard list that is identical in every Bible"
+              ],
+              "answer": 0,
+              "explain": "Cross-references are editorial. They are useful, they reflect real connections, and different editions offer different lists — which is worth remembering before treating one as decisive."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "skills-practice",
+      "title": "Practice",
+      "track": "skills",
+      "level": 2,
+      "summary": "Working with a passage: genre, the surrounding paragraph, comparing two texts, and what footnotes and search can and cannot do.",
+      "audience": "Anyone comfortable finding a verse who wants to read one better.",
+      "lessons": [
+        {
+          "id": "sp-1",
+          "title": "What kind of writing is this?",
+          "passages": [
+            "Psalm 1:1-3"
+          ],
+          "basis": [
+            "Psalm 1:1-6"
+          ],
+          "understand": "Before asking what a passage means, it is worth asking what sort of writing it is. The same sentence does different work in a law code, a letter and a poem.\n\nThis is poetry, and it works by picture. A person rooted in what God says is like a tree by water, bearing fruit in its season. That is an image of a settled and nourished life.\n\nRead as a poem, the closing line about prospering describes that flourishing. Read as if it were a contract, it becomes a guarantee that plans will succeed — which the rest of the Bible, including several other psalms, plainly does not support.\n\nNothing about the words changed. What changed was the kind of writing they were assumed to be. Genre is not a technicality; it is the difference between those two readings.",
+          "lookCloser": "Find the tree image in the passage above. What does it say about when fruit appears?",
+          "reflect": "Which kind of writing do you find hardest to read well?",
+          "checks": [
+            {
+              "id": "sp-c1",
+              "prompt": "Psalm 1 pictures a flourishing person as a tree by water. Read as poetry, what is that image doing?",
+              "options": [
+                "Describing a settled, nourished life",
+                "Guaranteeing that any plan will succeed",
+                "Giving advice about where to plant trees"
+              ],
+              "answer": 0,
+              "explain": "Poetry works by picture rather than by clause. The tree describes a kind of life; treating it as a contract turns a description into a promise the passage never makes.",
+              "basis": [
+                "Psalm 1:1-6"
+              ]
+            },
+            {
+              "id": "sp-c2",
+              "prompt": "Which question is actually asking about genre?",
+              "options": [
+                "Is this a poem, a letter, a law, or an account of events?",
+                "How long is this chapter?",
+                "Which translation am I reading?"
+              ],
+              "answer": 0,
+              "explain": "Genre is the kind of writing. Length and translation matter for other reasons, but only the first question changes how the sentences are meant to be taken."
+            }
+          ]
+        },
+        {
+          "id": "sp-2",
+          "title": "The paragraph is the unit",
+          "passages": [
+            "Philippians 4:11-13"
+          ],
+          "basis": [
+            "Philippians 4:10-20"
+          ],
+          "understand": "Verses are an addressing system, not a unit of thought. The unit of thought is the paragraph, and reading one verse without it is where most misreadings begin.\n\nThe last line here is quoted more than almost any other, usually alone. In front of it, Paul says what he has learned: contentment, in plenty and in hunger, with much and with nothing. He is writing from prison, thanking a church for a gift.\n\nSo the strength he describes is strength to be content in either condition. Read on its own, the same sentence sounds like an assurance that effort will succeed — a different claim, and not the one being made.\n\nThe habit is small and it costs nothing: read the paragraph before you decide what the verse is about.",
+          "lookCloser": "Read verses 11 and 12 without the last verse. What has Paul actually said he learned?",
+          "reflect": "What would change if you read a paragraph every time instead of a verse?",
+          "checks": [
+            {
+              "id": "sp-c3",
+              "prompt": "Read with the two verses in front of it, what is the last verse of this passage mainly about?",
+              "options": [
+                "Being content whether you have much or little",
+                "Succeeding at whatever you set out to do",
+                "Physical strength and endurance"
+              ],
+              "answer": 0,
+              "explain": "Paul names the subject himself in the two verses before: he has learned contentment in plenty and in want. The famous line is the conclusion of that thought, not a separate promise.",
+              "basis": [
+                "Philippians 4:10-20"
+              ]
+            },
+            {
+              "id": "sp-c4",
+              "prompt": "A verse on its own seems to promise something surprisingly large. What is the best next step?",
+              "options": [
+                "Read the paragraph it sits in",
+                "Take it as it stands, since it is in the Bible",
+                "Look for a translation that phrases it more strongly"
+              ],
+              "answer": 0,
+              "explain": "The paragraph is where the writer says what they are talking about. Shopping for a translation that agrees with a first impression is the opposite move — it protects the reading instead of testing it."
+            }
+          ]
+        },
+        {
+          "id": "sp-3",
+          "title": "Holding two passages together",
+          "passages": [
+            "1 Peter 2:24",
+            "Isaiah 53:5-6"
+          ],
+          "basis": [
+            "1 Peter 2:21-25",
+            "Isaiah 53:1-12"
+          ],
+          "understand": "Sometimes two passages are obviously related, and the useful skill is saying carefully how.\n\nPeter writes to Christians under pressure and describes Jesus in language that runs very close to a poem written centuries earlier. This is not coincidence: he is reaching back deliberately, applying older words to something he believes they anticipated.\n\nNotice what that does and does not license. It is fair to say Peter is drawing on Isaiah. It is not fair to flatten the two into one statement and read whatever Peter means back into every line of the older poem, which was written into its own situation and has its own argument.\n\nSo compare them side by side, and keep asking what each one is doing where it stands.",
+          "lookCloser": "Find the words the two passages share. Then find something present in one and absent from the other.",
+          "reflect": "What is gained by reading two related passages together rather than either alone?",
+          "checks": [
+            {
+              "id": "sp-c5",
+              "prompt": "Peter describes Jesus in wording very close to Isaiah 53. What is the most careful thing to say?",
+              "options": [
+                "Peter is deliberately drawing on Isaiah’s language",
+                "Isaiah was quoting Peter",
+                "The resemblance is coincidence and means nothing"
+              ],
+              "answer": 0,
+              "explain": "Isaiah was written centuries earlier, so the borrowing runs one way. Calling it deliberate is supported by how close the wording is; calling it coincidence ignores that.",
+              "basis": [
+                "1 Peter 2:21-25",
+                "Isaiah 53:1-12"
+              ]
+            },
+            {
+              "id": "sp-c6",
+              "prompt": "Two passages use similar words. Before concluding they mean the same thing, what should you check?",
+              "options": [
+                "What each passage is talking about in its own context",
+                "Which one is longer",
+                "Which one comes first in the contents page"
+              ],
+              "answer": 0,
+              "explain": "Shared vocabulary is a starting point, not a conclusion. The same word can do different work in two different arguments, and only the context of each shows which."
+            }
+          ]
+        },
+        {
+          "id": "sp-4",
+          "title": "Notes, and what search cannot do",
+          "passages": [
+            "Acts 17:11"
+          ],
+          "basis": [
+            "Acts 17:10-12"
+          ],
+          "understand": "Luke describes a group who heard a startling claim and went and checked it against Scripture themselves. He calls them noble for it. Checking is treated here as a credit, not as doubt.\n\nTwo ordinary tools make that easier. Footnotes usually do one of a few jobs: offering an alternative translation, noting that manuscripts differ, giving a more literal rendering, or converting a coin or a measure. A note reading \"Or:\" followed by another word is telling you the original could reasonably be rendered either way — not that something is wrong.\n\nSearch, in a printed concordance or an app, finds occurrences fast. What it cannot do is judge them. Forty hits for one word will include several senses, several genres and several arguments, and sorting those out is still reading.",
+          "lookCloser": "Find a footnote anywhere in your Bible. Which of those jobs is it doing?",
+          "reflect": "When you have checked something for yourself, what changed?",
+          "checks": [
+            {
+              "id": "sp-c7",
+              "prompt": "A footnote beside a word reads: \"Or: covenant\". What is it telling you?",
+              "options": [
+                "The original word could reasonably be translated either way",
+                "The translators made a mistake in the main text",
+                "That verse is missing from some Bibles"
+              ],
+              "answer": 0,
+              "explain": "An \"Or\" note offers a defensible alternative rendering. Notes about manuscripts differing are usually worded differently, and neither is an admission of error."
+            },
+            {
+              "id": "sp-c8",
+              "prompt": "You search a word and get forty results. What is the one thing the search has not done?",
+              "options": [
+                "Judged which results are relevant to your question",
+                "Found the places the word occurs",
+                "Shown you the references"
+              ],
+              "answer": 0,
+              "explain": "Search is very good at finding and very bad at weighing. The same word will appear across different genres and arguments, and deciding which occurrences bear on your question is the reading part."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "skills-deeper",
+      "title": "Deeper study",
+      "track": "skills",
+      "level": 3,
+      "summary": "Reading with more care: observation before interpretation, where a passage sits, spotting a quotation, and testing an application.",
+      "audience": "Anyone who wants to check their own reading rather than trust a first impression.",
+      "lessons": [
+        {
+          "id": "sd-1",
+          "title": "Observation before interpretation",
+          "passages": [
+            "Mark 4:38-41"
+          ],
+          "basis": [
+            "Mark 4:35-41"
+          ],
+          "understand": "There are three different activities that often get done at once, and separating them improves everything afterwards.\n\nObservation is what the text says. Here: the disciples wake him, they ask whether he cares that they are dying, he speaks to the wind, it stops, and afterwards they are more afraid than they were during the storm.\n\nInterpretation is what it means — that the fear at the end is a response to him rather than to the weather, for instance. That is a reading, and a defensible one, but it is a step beyond the sentences.\n\nApplication is what to do about it, and it is the step most often taken first.\n\nDoing them in order is not pedantry. Most confident misreadings are an interpretation that was never checked against an observation.",
+          "lookCloser": "List three things the passage states plainly, without explaining any of them.",
+          "reflect": "Which of the three do you tend to jump to first?",
+          "checks": [
+            {
+              "id": "sd-c1",
+              "prompt": "Which of these is an observation about this passage, rather than an interpretation of it?",
+              "options": [
+                "The disciples ask Jesus whether he cares that they are dying",
+                "The disciples had not yet understood who he was",
+                "This passage teaches us to stay calm in difficulty"
+              ],
+              "answer": 0,
+              "explain": "The first is on the page in so many words. The second is a reading of what their question implies, and the third is an application. Both may be reasonable; neither is observation.",
+              "basis": [
+                "Mark 4:35-41"
+              ]
+            },
+            {
+              "id": "sd-c2",
+              "prompt": "Why is it worth doing observation before interpretation?",
+              "options": [
+                "It settles what the text says before you decide what it means",
+                "It is faster than reading the passage closely",
+                "It removes the need to know the context"
+              ],
+              "answer": 0,
+              "explain": "Observation gives interpretation something to be accountable to. Skipping it is how a confident reading ends up resting on something the passage never actually said."
+            }
+          ]
+        },
+        {
+          "id": "sd-2",
+          "title": "Where a passage sits",
+          "passages": [
+            "Mark 8:34-35"
+          ],
+          "basis": [
+            "Mark 8:27-38"
+          ],
+          "understand": "Literary context is simply what comes before and after in the same book, and it is often the fastest way to understand a hard saying.\n\nImmediately before this, Peter says out loud that Jesus is the Messiah — and Jesus responds by describing his own rejection and execution. Only then does he turn to the crowd and talk about taking up a cross.\n\nThat placement does real work. To people who had just heard him predict his own death, and who had seen crucifixions, the phrase was not a metaphor for inconvenience. It described a life no longer organised around self-protection.\n\nHistorical context adds the other half: knowing what a cross was to a first-century listener is not decoration, it is the difference between hearing the sentence and hearing something milder.",
+          "lookCloser": "Read the verses just before this passage in your own Bible. What has just been said?",
+          "reflect": "Has knowing what came before ever changed a passage for you?",
+          "checks": [
+            {
+              "id": "sd-c3",
+              "prompt": "This saying comes straight after Jesus predicts his own rejection and death. What does that placement most affect?",
+              "options": [
+                "What \"take up his cross\" would have meant to the people listening",
+                "Which chapter number the passage is given",
+                "Nothing — a verse means the same wherever it sits"
+              ],
+              "answer": 0,
+              "explain": "The surrounding paragraph is what makes the phrase concrete rather than figurative. Placement is not decoration; it is part of how the sentence was meant to be heard.",
+              "basis": [
+                "Mark 8:27-38"
+              ]
+            },
+            {
+              "id": "sd-c4",
+              "prompt": "What does \"literary context\" refer to?",
+              "options": [
+                "What comes immediately before and after, in the same book",
+                "The century in which the book was written",
+                "The translation you happen to be reading"
+              ],
+              "answer": 0,
+              "explain": "Literary context is the surrounding text. When the book was written is historical context, and both help — but they are different questions with different answers."
+            }
+          ]
+        },
+        {
+          "id": "sd-3",
+          "title": "Spotting a quotation",
+          "passages": [
+            "Luke 4:16-21"
+          ],
+          "basis": [
+            "Luke 4:14-30",
+            "Isaiah 61:1-2"
+          ],
+          "understand": "Biblical writers quote each other constantly, and noticing it opens a passage up.\n\nHere Luke shows Jesus reading aloud from Isaiah, handing the scroll back, and saying the words have been fulfilled today. Recognising the quotation lets you go and read Isaiah for yourself and see what those lines originally announced.\n\nIt also lets you notice something sharper. Isaiah’s sentence continues past where the reading stops, into a clause about judgement. Luke’s citation ends before it.\n\nThat is an observation, not yet an interpretation — the text includes this much and not that much. What it means is a further question, and worth being careful about. But you cannot even ask it until you have noticed where the quotation ends.",
+          "lookCloser": "Look up Isaiah 61:1-2 in your own Bible and read one line further than Luke does.",
+          "reflect": "What does it change to know a writer is quoting rather than composing?",
+          "checks": [
+            {
+              "id": "sd-c5",
+              "prompt": "Recognising that a passage is quoting an older one mainly lets you do what?",
+              "options": [
+                "Go and read the older passage and see what it originally said",
+                "Skip the quoted section as already familiar",
+                "Treat the quoted words as more important than the rest"
+              ],
+              "answer": 0,
+              "explain": "A quotation is a doorway. The writer expected the older passage to be in the reader’s mind, so reading it is part of reading them.",
+              "basis": [
+                "Luke 4:14-30",
+                "Isaiah 61:1-2"
+              ]
+            },
+            {
+              "id": "sd-c6",
+              "prompt": "You notice that a New Testament citation stops one clause short of where the Old Testament sentence ends. Noticing that is:",
+              "options": [
+                "Observation — what is and is not on the page",
+                "Interpretation — deciding why the writer stopped there",
+                "Application — deciding what to do about it"
+              ],
+              "answer": 0,
+              "explain": "Seeing where a quotation ends is observation. Explaining why it ends there is interpretation, and it is a further step that should be taken carefully and separately."
+            }
+          ]
+        },
+        {
+          "id": "sd-4",
+          "title": "Testing an application",
+          "passages": [
+            "Jeremiah 29:10-11"
+          ],
+          "basis": [
+            "Jeremiah 29:1-14"
+          ],
+          "understand": "The last skill is the one that keeps the others honest: asking whether an application a passage is being used for is actually supported by it.\n\nThese words are addressed to people deported to Babylon, and the sentence immediately before names the timeframe — after seventy years. This is a promise to a nation about the end of an exile most of the original hearers would not live to see.\n\nNone of that makes it a smaller passage. It says something about how God treats a people he has not finished with, and Christians have long read it as revealing something about his character more widely.\n\nWhat it will not carry is the weight often put on it: a personal guarantee that a particular plan will work out soon. Testing an application is not scepticism. It is asking the passage what it is prepared to say, and then saying that.",
+          "lookCloser": "Read the verse before this promise. What timeframe does it name?",
+          "reflect": "What is the difference between reading a passage carefully and reading it coldly?",
+          "checks": [
+            {
+              "id": "sd-c7",
+              "prompt": "Who was this promise originally addressed to?",
+              "options": [
+                "People taken into exile in Babylon",
+                "Individual readers making personal plans",
+                "The disciples, shortly before the crucifixion"
+              ],
+              "answer": 0,
+              "explain": "The chapter opens by naming the audience: captives carried from Jerusalem to Babylon. The verse just before this one gives the timeframe — after seventy years.",
+              "basis": [
+                "Jeremiah 29:1-14"
+              ]
+            },
+            {
+              "id": "sd-c8",
+              "prompt": "Which application does this passage most clearly support?",
+              "options": [
+                "God keeps his intentions toward a people he has not abandoned",
+                "Any specific plan you are currently making will succeed",
+                "Difficult circumstances always end within a short time"
+              ],
+              "answer": 0,
+              "explain": "The passage speaks about God’s posture toward a people across a seventy-year exile. The other two read a national and long-range promise as a short-range personal one, which is more than it says.",
+              "basis": [
+                "Jeremiah 29:1-14"
+              ]
+            }
+          ]
         }
       ]
     }
