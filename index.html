@@ -1445,6 +1445,24 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v1-3-0',
+    version: '1.3.0',
+    title: 'Three more studies',
+    date: '2026-09-04',
+    summary: 'Learn grows from one study to four, covering who Jesus is, what ' +
+             'Christians mean by the gospel, and how to begin praying.',
+    newFeatures: [
+      'Who is Jesus? — seven lessons, from the promise before him to what following him costs',
+      'Understanding the Gospel — six lessons, from a good creation to a life remade',
+      'Learning to Pray — five lessons, including what to do when a prayer is not answered'
+    ],
+    improvements: [
+      'Every lesson passage still comes from the same verified World English Bible text',
+      'A clearer observation question in the second lesson of New to the Bible'
+    ],
+    fixes: []
+  },
+  {
     id: 'v1-2-0',
     version: '1.2.0',
     title: 'Learn',
@@ -2214,11 +2232,11 @@ const SCRIPTURE_SOURCE = {
   publisher: 'eBible.org',
   divineName: 'Yahweh',
   corpusSynced: '2026-09-04',
-  datasetHash: '5266b3b92fa24834aca9dba51426dee1f133f4c5a986f583c8811f0938f8ce98',
+  datasetHash: '7b1d547bc10c0d672f354bf925ee3d473a1fcf65e521ac58344debce6b83fcbd',
   dailyHash: 'c33b03e8e66e0aafb156767a65523548744e936a1f84540f515f528046449d3f',
   dailyCount: 378,
-  studyOnlyCount: 7,
-  built: '2026-09-04'
+  studyOnlyCount: 31,
+  built: '2026-09-05'
 };
 
 /* One catalogue. `daily: 1` marks the passages the Today rotation may
@@ -2994,7 +3012,55 @@ const SCRIPTURE = [
   { id: '1CO.15.3-5', ref: '1 Corinthians 15:3-5', themes: [],
     text: 'For I delivered to you first of all that which I also received: that Christ died for our sins according to the Scriptures, that he was buried, that he was raised on the third day according to the Scriptures, and that he appeared to Cephas, then to the twelve.' },
   { id: 'ACT.17.11', ref: 'Acts 17:11', themes: [],
-    text: 'Now these were more noble than those in Thessalonica, in that they received the word with all readiness of mind, examining the Scriptures daily to see whether these things were so.' }
+    text: 'Now these were more noble than those in Thessalonica, in that they received the word with all readiness of mind, examining the Scriptures daily to see whether these things were so.' },
+  { id: 'ISA.9.6-7', ref: 'Isaiah 9:6-7', themes: [],
+    text: 'For a child is born to us. A son is given to us; and the government will be on his shoulders. His name will be called Wonderful Counselor, Mighty God, Everlasting Father, Prince of Peace. Of the increase of his government and of peace there shall be no end, on David’s throne, and on his kingdom, to establish it, and to uphold it with justice and with righteousness from that time on, even forever. The zeal of Yahweh of Armies will perform this.' },
+  { id: 'LUK.1.30-33', ref: 'Luke 1:30-33', themes: [],
+    text: 'The angel said to her, “Don’t be afraid, Mary, for you have found favor with God. Behold, you will conceive in your womb and give birth to a son, and shall name him ‘Jesus.’ He will be great and will be called the Son of the Most High. The Lord God will give him the throne of his father David, and he will reign over the house of Jacob forever. There will be no end to his Kingdom.”' },
+  { id: 'HEB.1.1-3', ref: 'Hebrews 1:1-3', themes: [],
+    text: 'God, having in the past spoken to the fathers through the prophets at many times and in various ways, has at the end of these days spoken to us by his Son, whom he appointed heir of all things, through whom also he made the worlds. His Son is the radiance of his glory, the very image of his substance, and upholding all things by the word of his power, who, when he had by himself purified us of our sins, sat down on the right hand of the Majesty on high,' },
+  { id: 'MRK.1.14-15', ref: 'Mark 1:14-15', themes: [],
+    text: 'Now after John was taken into custody, Jesus came into Galilee, preaching the Good News of God’s Kingdom, and saying, “The time is fulfilled, and God’s Kingdom is at hand! Repent, and believe in the Good News.”' },
+  { id: 'LUK.4.16-21', ref: 'Luke 4:16-21', themes: [],
+    text: 'He came to Nazareth, where he had been brought up. He entered, as was his custom, into the synagogue on the Sabbath day, and stood up to read. The book of the prophet Isaiah was handed to him. He opened the book, and found the place where it was written, “The Spirit of the Lord is on me, because he has anointed me to preach good news to the poor. He has sent me to heal the broken hearted, to proclaim release to the captives, recovering of sight to the blind, to deliver those who are crushed, and to proclaim the acceptable year of the Lord.” He closed the book, gave it back to the attendant, and sat down. The eyes of all in the synagogue were fastened on him. He began to tell them, “Today, this Scripture has been fulfilled in your hearing.”' },
+  { id: 'MRK.1.40-42', ref: 'Mark 1:40-42', themes: [],
+    text: 'A leper came to him, begging him, kneeling down to him, and saying to him, “If you want to, you can make me clean.” Being moved with compassion, he stretched out his hand, and touched him, and said to him, “I want to. Be made clean.” When he had said this, immediately the leprosy departed from him and he was made clean.' },
+  { id: 'MRK.4.38-41', ref: 'Mark 4:38-41', themes: [],
+    text: 'He himself was in the stern, asleep on the cushion; and they woke him up and asked him, “Teacher, don’t you care that we are dying?” He awoke and rebuked the wind, and said to the sea, “Peace! Be still!” The wind ceased and there was a great calm. He said to them, “Why are you so afraid? How is it that you have no faith?” They were greatly afraid and said to one another, “Who then is this, that even the wind and the sea obey him?”' },
+  { id: 'MRK.10.42-45', ref: 'Mark 10:42-45', themes: [],
+    text: 'Jesus summoned them and said to them, “You know that they who are recognized as rulers over the nations lord it over them, and their great ones exercise authority over them. But it shall not be so among you, but whoever wants to become great among you shall be your servant. Whoever of you wants to become first among you shall be bondservant of all. For the Son of Man also came not to be served but to serve, and to give his life as a ransom for many.”' },
+  { id: 'ISA.53.5-6', ref: 'Isaiah 53:5-6', themes: [],
+    text: 'But he was pierced for our transgressions. He was crushed for our iniquities. The punishment that brought our peace was on him; and by his wounds we are healed. All we like sheep have gone astray. Everyone has turned to his own way; and Yahweh has laid on him the iniquity of us all.' },
+  { id: 'LUK.24.36-43', ref: 'Luke 24:36-43', themes: [],
+    text: 'As they said these things, Jesus himself stood among them, and said to them, “Peace be to you.” But they were terrified and filled with fear, and supposed that they had seen a spirit. He said to them, “Why are you troubled? Why do doubts arise in your hearts? See my hands and my feet, that it is truly me. Touch me and see, for a spirit doesn’t have flesh and bones, as you see that I have.” When he had said this, he showed them his hands and his feet. While they still didn’t believe for joy, and wondered, he said to them, “Do you have anything here to eat?” They gave him a piece of a broiled fish and some honeycomb. He took them, and ate in front of them.' },
+  { id: 'MRK.8.34-35', ref: 'Mark 8:34-35', themes: [],
+    text: 'He called the multitude to himself with his disciples and said to them, “Whoever wants to come after me, let him deny himself, and take up his cross, and follow me. For whoever wants to save his life will lose it; and whoever will lose his life for my sake and the sake of the Good News will save it.' },
+  { id: 'GEN.1.26-27', ref: 'Genesis 1:26-27', themes: [],
+    text: 'God said, “Let’s make man in our image, after our likeness. Let them have dominion over the fish of the sea, and over the birds of the sky, and over the livestock, and over all the earth, and over every creeping thing that creeps on the earth.” God created man in his own image. In God’s image he created him; male and female he created them.' },
+  { id: 'GEN.1.31', ref: 'Genesis 1:31', themes: [],
+    text: 'God saw everything that he had made, and, behold, it was very good. There was evening and there was morning, a sixth day.' },
+  { id: 'GEN.3.8-10', ref: 'Genesis 3:8-10', themes: [],
+    text: 'They heard Yahweh God’s voice walking in the garden in the cool of the day, and the man and his wife hid themselves from the presence of Yahweh God among the trees of the garden. Yahweh God called to the man, and said to him, “Where are you?” The man said, “I heard your voice in the garden, and I was afraid, because I was naked; so I hid myself.”' },
+  { id: 'ROM.3.22-24', ref: 'Romans 3:22-24', themes: [],
+    text: 'even the righteousness of God through faith in Jesus Christ to all and on all those who believe. For there is no distinction, for all have sinned, and fall short of the glory of God; being justified freely by his grace through the redemption that is in Christ Jesus,' },
+  { id: 'GEN.12.1-3', ref: 'Genesis 12:1-3', themes: [],
+    text: 'Now Yahweh said to Abram, “Leave your country, and your relatives, and your father’s house, and go to the land that I will show you. I will make of you a great nation. I will bless you and make your name great. You will be a blessing. I will bless those who bless you, and I will curse him who treats you with contempt. All the families of the earth will be blessed through you.”' },
+  { id: 'ROM.5.6-8', ref: 'Romans 5:6-8', themes: [],
+    text: 'For while we were yet weak, at the right time Christ died for the ungodly. For one will hardly die for a righteous man. Yet perhaps for a good person someone would even dare to die. But God commends his own love toward us, in that while we were yet sinners, Christ died for us.' },
+  { id: '1CO.15.17-20', ref: '1 Corinthians 15:17-20', themes: [],
+    text: 'If Christ has not been raised, your faith is vain; you are still in your sins. Then they also who are fallen asleep in Christ have perished. If we have only hoped in Christ in this life, we are of all men most pitiable. But now Christ has been raised from the dead. He became the first fruit of those who are asleep.' },
+  { id: 'EPH.2.4-10', ref: 'Ephesians 2:4-10', themes: [],
+    text: 'But God, being rich in mercy, for his great love with which he loved us, even when we were dead through our trespasses, made us alive together with Christ—by grace you have been saved— and raised us up with him, and made us to sit with him in the heavenly places in Christ Jesus, that in the ages to come he might show the exceeding riches of his grace in kindness toward us in Christ Jesus; for by grace you have been saved through faith, and that not of yourselves; it is the gift of God, not of works, that no one would boast. For we are his workmanship, created in Christ Jesus for good works, which God prepared before that we would walk in them.' },
+  { id: 'MAT.6.5-8', ref: 'Matthew 6:5-8', themes: [],
+    text: '“When you pray, you shall not be as the hypocrites, for they love to stand and pray in the synagogues and in the corners of the streets, that they may be seen by men. Most certainly, I tell you, they have received their reward. But you, when you pray, enter into your inner room, and having shut your door, pray to your Father who is in secret; and your Father who sees in secret will reward you openly. In praying, don’t use vain repetitions as the Gentiles do; for they think that they will be heard for their much speaking. Therefore don’t be like them, for your Father knows what things you need before you ask him.' },
+  { id: 'MAT.6.9-13', ref: 'Matthew 6:9-13', themes: [],
+    text: 'Pray like this: “‘Our Father in heaven, may your name be kept holy. Let your Kingdom come. Let your will be done on earth as it is in heaven. Give us today our daily bread. Forgive us our debts, as we also forgive our debtors. Bring us not into temptation, but deliver us from the evil one. For yours is the Kingdom, the power, and the glory forever. Amen.’' },
+  { id: 'PSA.13.1-6', ref: 'Psalm 13:1-6', themes: [], sup: 1,
+    text: 'How long, Yahweh? Will you forget me forever? How long will you hide your face from me? How long shall I take counsel in my soul, having sorrow in my heart every day? How long shall my enemy triumph over me? Behold, and answer me, Yahweh, my God. Give light to my eyes, lest I sleep in death; lest my enemy say, “I have prevailed against him;” lest my adversaries rejoice when I fall. But I trust in your loving kindness. My heart rejoices in your salvation. I will sing to Yahweh, because he has been good to me.' },
+  { id: 'MRK.14.35-36', ref: 'Mark 14:35-36', themes: [],
+    text: 'He went forward a little, and fell on the ground, and prayed that if it were possible, the hour might pass away from him. He said, “Abba, Father, all things are possible to you. Please remove this cup from me. However, not what I desire, but what you desire.”' },
+  { id: 'LUK.5.15-16', ref: 'Luke 5:15-16', themes: [],
+    text: 'But the report concerning him spread much more, and great multitudes came together to hear and to be healed by him of their infirmities. But he withdrew himself into the desert and prayed.' }
 ];
 
 /* Teaching content — this app's own words, never Scripture. Lessons carry
@@ -3018,7 +3084,7 @@ const STUDIES = [
         passages: ['GEN.1.1', 'REV.21.3-4'],
         basis: ['Genesis 1:1', 'Genesis 1:2-3', 'Revelation 21:1-5'],
         understand: 'These two passages are separated by the whole of the Bible — the first line of the first book, and a few paragraphs from the end of the last.\n\nRead together they show that the collection has a shape. It opens with God making a world. It closes with God living among people in a world made new, with grief and death gone. Everything in between sits somewhere on that line: what went wrong, what was promised, and what was done about it.\n\nThis matters for a beginner because the Bible is easy to read as disconnected fragments — a rule here, a story there, a verse on a card. The individual parts are far easier to place once you know the collection is going somewhere, and where.',
-        lookCloser: 'Revelation\'s picture is of God coming down to live with people, rather than of people going up somewhere else. Does that match what you expected the Bible to be aiming at?',
+        lookCloser: 'One passage describes a beginning and the other an ending. What is present in both?',
         reflect: 'Which end of that story is easier for you to believe today — the beginning, or the end?' },
       { id: 'ntb-3', title: 'Who Jesus is',
         passages: ['JHN.1.1-5', 'JHN.1.14'],
@@ -3038,6 +3104,129 @@ const STUDIES = [
         understand: 'Luke describes a group in Beroea who heard Paul preach and then went and checked. They are called more noble for it — not for agreeing quickly, but for receiving eagerly and examining daily to see whether it was so. Testing what you are told is treated here as a credit, not a failure of faith.\n\nThe psalm supplies the other half. A lamp at your feet lights the next step, not the whole road. That is a realistic picture of what reading Scripture usually feels like: enough to move by, rarely enough to see the entire route at once.\n\nSo begin somewhere concrete rather than at page one. A Gospel is the usual advice, and Luke — whose opening you read in the first lesson — is a reasonable place to start. Read a section rather than a single line.',
         lookCloser: 'The Beroeans examined daily rather than once. What would change if you treated reading as something returned to rather than finished?',
         reflect: 'What is one question you want to keep asking as you read?' }
+    ] },
+  { id: 'who-is-jesus', title: 'Who is Jesus?',
+    summary: 'Who the Gospels say Jesus is, from the promise that came before him to the call he makes on anyone who follows.',
+    audience: 'Anyone who wants to know what Christians actually claim about Jesus, whether or not they believe it.',
+    lessons: [
+      { id: 'wij-1', title: 'The one who was expected',
+        passages: ['ISA.9.6-7', 'LUK.1.30-33'],
+        basis: ['Isaiah 9:1-7', 'Luke 1:26-38', '2 Samuel 7:12-13'],
+        understand: 'Jesus does not arrive in the Gospels as a surprise. He arrives into a people who had been waiting a long time, and the shape of that waiting explains a great deal about what followed.\n\nIsaiah wrote to a nation living under threat, and the promise he gives them is oddly domestic. It is a child. But the titles pile up past anything a child could carry, and the throne named is David’s — the royal line God had promised would not run out.\n\nCenturies later, Luke describes an angel telling a young woman in an unremarkable town that her son will be given that same throne, and that his reign will have no end.\n\nWhatever else the Gospels are doing, they are placing Jesus inside a promise that was already old. The first Christians did not claim he had founded a new religion. They claimed he was what an old one had been waiting for.',
+        lookCloser: 'Both passages describe a reign that does not end. What else do the two have in common?',
+        reflect: 'Does it change anything to meet Jesus as the answer to a long wait rather than as a new idea?' },
+      { id: 'wij-2', title: 'God’s own likeness, in a human life',
+        passages: ['HEB.1.1-3'],
+        basis: ['Hebrews 1:1-4', 'Hebrews 10:11-12', 'John 1:1-18'],
+        understand: 'The letter to the Hebrews opens by comparing two kinds of speech. God had spoken before — through prophets, in pieces, across centuries. Then, the writer says, he spoke again, and this time the message was a person.\n\nThat is a larger claim than it sounds. A prophet carries words on God’s behalf. A son is not a delivery method; he carries the family likeness. Hebrews presses exactly there: to look at the Son is to see what God is like, not approximately but exactly.\n\nTwo details are easy to read past. The Son is described as holding creation together, so this is not a figure who enters the story late. And after dealing with sin, he sits down. Priests stood at their work, because the work was never finished. Sitting is the posture of someone whose task is complete.',
+        lookCloser: 'The passage lists several things the Son does. Which happen before a human life, and which after?',
+        reflect: 'If Jesus is meant to show what God is like, how does that compare with the picture you already carry?' },
+      { id: 'wij-3', title: 'The announcement he came making',
+        passages: ['MRK.1.14-15', 'LUK.4.16-21'],
+        basis: ['Mark 1:14-20', 'Luke 4:14-30', 'Isaiah 61:1-2'],
+        understand: 'Mark compresses Jesus’ message into one sentence, and what is missing from it matters. There is no instruction, no doctrine, no programme. There is news — that the waiting is over and God’s reign has arrived — and then an invitation to turn around and trust it.\n\nThe word kingdom misleads a modern reader, who hears a place. It is closer to a rule actively arriving: what things look like where God is genuinely in charge.\n\nLuke shows the same claim made in a specific room. Jesus reads aloud from Isaiah about someone anointed to bring good news to the poor and freedom to prisoners, hands the scroll back, sits down, and says it has happened today.\n\nRead Isaiah’s sentence to its end and it carries on into judgement. Jesus stops before that clause. What he announces first is release.',
+        lookCloser: 'Make a list of what Jesus says he was sent to do. Who are the people named in it?',
+        reflect: 'What changes if this is treated as news rather than as advice?' },
+      { id: 'wij-4', title: 'Power that stops for one person',
+        passages: ['MRK.1.40-42', 'MRK.4.38-41'],
+        basis: ['Mark 1:40-45', 'Mark 4:35-41', 'Leviticus 13:45-46'],
+        understand: 'Two kinds of power sit side by side here, and the pairing is the lesson.\n\nThe first scene is small. A man whose skin disease has cut him off from ordinary human contact does not ask whether Jesus is able to heal him. He asks whether Jesus is willing. Jesus answers first by touching him, which under the law of the time was the one thing nobody did, and then by saying that he is.\n\nThe second scene is enormous. A storm that frightens experienced fishermen stops because he tells it to. And the men who have just been rescued end up more afraid afterwards than they were during it.\n\nTheir question closes the scene, and it is the question this study is named for. Mark does not answer it. He lets the two scenes stand together: whatever this authority is, it is the kind that stops for one desperate man.',
+        lookCloser: 'The man asks about willingness rather than ability. How does the reply answer both?',
+        reflect: 'Which is harder to believe — that Jesus could help, or that he would want to?' },
+      { id: 'wij-5', title: 'Why he died',
+        passages: ['MRK.10.42-45', 'ISA.53.5-6'],
+        basis: ['Mark 10:32-45', 'Isaiah 53:1-12', 'Acts 8:32-35'],
+        understand: 'Jesus explains his own death before it happens, and he does it in the middle of an argument about rank. His followers want position. He tells them greatness runs the other way, then offers himself as the example — not a leader who serves, but one whose life is handed over for other people.\n\nThe word translated ransom carries the sense of a price paid to release someone. Christians have explained how that works in more than one way, and the New Testament uses several images for it. The claim in the passage is narrower and firmer: his death does something for others. It is not merely something done to him.\n\nIsaiah’s poem, far older, describes a figure who suffers in the place of others. The earliest Christians read it as a description of Jesus. In Acts, a man reading this poem asks whether the prophet means himself or someone else, and is told about Jesus.',
+        lookCloser: 'Isaiah’s lines move between “he” and “we”. Trace which words belong to which.',
+        reflect: 'What difference does it make whether his death was a defeat or something he intended?' },
+      { id: 'wij-6', title: 'The claim that he was raised',
+        passages: ['LUK.24.36-43'],
+        basis: ['Luke 24:1-49', '1 Corinthians 15:3-8'],
+        understand: 'Luke tells this scene like a man expecting to be doubted.\n\nThe disciples’ first thought is that they are seeing a ghost, and Luke says so plainly. He does not present them as people primed to believe. He presents them as frightened, unconvinced, and — in one memorable phrase — unable to accept the news because it is too good.\n\nThe evidence he then offers is stubbornly physical. Hands and feet. An invitation to touch. Bones, which a spirit does not have. Finally a piece of cooked fish, eaten in front of them.\n\nWhatever a reader concludes about it, it is worth being clear what is being claimed. Not that Jesus survived. Not that his memory endured, or that his friends went on feeling his presence. The claim is that an executed man was alive again, in a body, and hungry.',
+        lookCloser: 'Count the ways Luke shows this is a body rather than a vision.',
+        reflect: 'The first witnesses doubted. Does it help or hinder you that their doubt was written down?' },
+      { id: 'wij-7', title: 'What following him costs',
+        passages: ['MRK.8.34-35'],
+        basis: ['Mark 8:27-38', 'Luke 9:23-25'],
+        understand: 'The setting matters. Moments earlier Peter has said out loud that Jesus is the Messiah, and Jesus has answered by describing his own rejection and death. Only then does he turn to the crowd and say what following him will involve.\n\nCarrying a cross has softened into a phrase for putting up with hardship. It did not mean that. A cross was an execution, and the people listening had seen them used. He is describing a life no longer arranged around self-protection.\n\nThen he states the exchange, and it lands as an observation rather than a threat: gripping your life is precisely how you lose it. What he offers is not a better life in the ordinary sense. It is a different kind of one, and he says the price out loud before anyone agrees to it.\n\nThat refusal to undersell is itself part of the answer to who he is.',
+        lookCloser: 'The words life and save each appear more than once, and not always meaning the same thing. Which is which?',
+        reflect: 'What would it look like to arrange a life around something other than protecting it?' }
+    ] },
+  { id: 'understanding-the-gospel', title: 'Understanding the Gospel',
+    summary: 'What Christians mean by the word gospel, followed through Scripture from a good creation to a life remade.',
+    audience: 'Anyone who has heard the word for years without having it explained, or had it explained too fast.',
+    lessons: [
+      { id: 'gsp-1', title: 'A world made on purpose',
+        passages: ['GEN.1.26-27', 'GEN.1.31'],
+        basis: ['Genesis 1:1-31', 'Genesis 2:15'],
+        understand: 'Most short accounts of the Christian message open with what has gone wrong. Genesis opens earlier, and the order matters: before there is anything to rescue, there is something worth rescuing.\n\nTwo claims sit in these lines. The first is that people are made in God’s image. The text never explains what that likeness consists of, and Christians have discussed it for centuries — but it does something more immediate. It assigns a standing. Dignity here is not achieved and not handed out by merit. It is given, and given to everyone in view, without qualification.\n\nThe second is the verdict at the end of the day’s work. Not adequate. Not acceptable. Very good.\n\nHold both, because everything that follows depends on them. What comes next in this story is a tear in something that was good to start with, which is why it reads as loss rather than as the way things always were.',
+        lookCloser: 'Who is included in what is said about God’s image, and who is left out?',
+        reflect: 'If human dignity is given rather than earned, what would follow from taking that seriously?' },
+      { id: 'gsp-2', title: 'The hiding',
+        passages: ['GEN.3.8-10', 'ROM.3.22-24'],
+        basis: ['Genesis 3:1-13', 'Romans 3:9-26'],
+        understand: 'Notice what comes first. Not a thunderbolt. A couple hiding among the trees, and a God who comes looking and asks where they are.\n\nThat is this book’s picture of what has gone wrong, and it is more relational than legal. The damage surfaces as fear, concealment, and a new distance between people and the God who made them. Sin here is not primarily a list of infractions. It is a relationship broken from one side.\n\nPaul, writing far later, refuses to let anyone stand outside the problem. Everyone falls short. The aim is not to induce shame; it is to remove the ranking, because there is no group in the room that does not need help.\n\nAnd he does not stop at the diagnosis. The same sentence runs on into a gift. Christians often use the word justified for this — being put right with God freely, because of Christ, rather than because the account was eventually balanced.',
+        lookCloser: 'God asks a question. What does the man’s answer reveal about what has changed between them?',
+        reflect: 'What do people tend to do with the parts of themselves they would rather not have seen?' },
+      { id: 'gsp-3', title: 'God’s move toward us',
+        passages: ['GEN.12.1-3'],
+        basis: ['Genesis 12:1-9', 'Galatians 3:6-9', 'Genesis 3:15'],
+        understand: 'Between the hiding in Genesis and the arrival of Jesus lies most of the Bible, and it is tempting to read those centuries as a delay. They read better as the rescue already under way.\n\nGod’s answer to a broken world is neither to abandon it nor to repair it on the spot. He calls one man out of one country and makes him a short list of promises. Land. Descendants. A name.\n\nBut the promise does not stop with Abram, and the last line is the one to watch. The blessing is aimed outward, at every family on earth. Whatever else this nation’s story becomes, it begins with a stated intention to reach past itself.\n\nPaul later points at this exact sentence and calls it the good news announced ahead of time. On that reading, what happens in Jesus is not a change of plan. It is an old promise being kept.',
+        lookCloser: 'Count the promises made to Abram. Which of them rest on him, and which on God?',
+        reflect: 'What is the difference between a God who fixes the world instantly and one who works through a long history?' },
+      { id: 'gsp-4', title: 'The cross, and who it was for',
+        passages: ['ROM.5.6-8'],
+        basis: ['Romans 5:1-11', 'Romans 3:23-26'],
+        understand: 'Paul is arguing about timing, and the weight of it rests on a single word: while.\n\nHe sets the comparison up carefully. People do occasionally die for someone worth dying for; a genuinely good person might inspire it. That, he says, is roughly the outer limit of ordinary human love — and even there, the one being died for has to be worth it.\n\nThen he puts the cross outside that limit. Christ died for people who were not worth it and had not asked. Not once they improved. Not after they had made themselves presentable. While.\n\nHow the cross achieves what it achieves has been discussed for as long as there have been Christians, and the New Testament reaches for several images. Paul’s concern in these three verses is narrower. He is using the timing to show what kind of love this is: love that moves first, toward people who have given it no reason to.',
+        lookCloser: 'Paul describes the people Christ died for three times, using three different words. What are they?',
+        reflect: 'What changes if love arrived before there was anything in you to reward?' },
+      { id: 'gsp-5', title: 'Why the resurrection is not optional',
+        passages: ['1CO.15.17-20'],
+        basis: ['1 Corinthians 15:1-28'],
+        understand: 'It would be easy to treat the resurrection as a happy ending fastened onto the important part. Paul refuses that arrangement, and he does it by saying out loud what follows if it never happened.\n\nRead what he is prepared to concede. If Christ was not raised, faith is empty, forgiveness has not occurred, the Christian dead are simply dead, and believers are the most pitiable people alive. He reaches for no fallback — not that the teaching is still wise, not that the community is still worthwhile. He lets the whole thing stand or fall on an event.\n\nThen comes the turn, and one phrase carries it. First fruit is a harvest word. The first sheaf is not the point of a harvest; it is the evidence that the rest of the field is coming.\n\nSo the claim is not only that one man was raised. It is that his rising has opened something meant to include others.',
+        lookCloser: 'Paul lists what would be true if Christ were not raised. How many separate consequences does he name?',
+        reflect: 'Paul stakes everything on an event rather than on the value of the teaching. Why might that matter?' },
+      { id: 'gsp-6', title: 'Grace, and the life that follows',
+        passages: ['EPH.2.4-10'],
+        basis: ['Ephesians 2:1-10', 'Titus 3:4-7'],
+        understand: 'Two words hold this passage together, and their order is the entire point.\n\nThe first is gift. Paul’s language is pointedly financial in what it rules out: not wages, not achievement, nothing anyone could invoice for. He presses further than most summaries dare — the people being rescued are called dead, and death is not a condition that contributes to its own recovery.\n\nThe second is workmanship. Having ruled out earning, Paul does not conclude that behaviour has stopped mattering. He says the reverse. Good works are not the price of the rescue; they are what the rescued life is for, and he pictures them as already prepared, waiting to be walked into.\n\nThis is where the shortest summaries of the Christian message usually fail. What is described here is not an arrangement for securing a destination. It is a person made alive now, for a life with a shape to it.',
+        lookCloser: 'Find the two things Paul says this rescue does not come by, and the one thing he says it is for.',
+        reflect: 'If good works follow the gift rather than pay for it, what does that change about trying to live well?' }
+    ] },
+  { id: 'learning-to-pray', title: 'Learning to Pray',
+    summary: 'What prayer is in Scripture, how Jesus taught it, and how to begin — including what to do when nothing seems to come back.',
+    audience: 'Anyone who wants to pray and is unsure how to start, or who started once and stopped.',
+    lessons: [
+      { id: 'pry-1', title: 'What prayer actually is',
+        passages: ['PSA.62.8', 'MAT.6.5-8'],
+        basis: ['Psalm 62:1-12', 'Matthew 6:1-8', 'Romans 8:26'],
+        understand: 'Jesus starts by clearing away two mistakes, and both are still with us.\n\nThe first is prayer as performance. He describes people praying where they are certain to be seen, and observes — dryly — that they have already got what they came for. His remedy is almost comically plain: shut the door.\n\nThe second is prayer as word-count, as though God responded to volume the way a reluctant official responds to persistence. His reason for dismissing that is the surprising part: your Father already knows what you need.\n\nWhich could sound like an argument for not bothering. It is the opposite. If prayer is not how God gets informed, then it was never a transaction, and the anxiety about phrasing it correctly falls away. The psalm supplies the picture: pour it out. Not compose it. Not perform it. Pour.',
+        lookCloser: 'Jesus names two habits to avoid and gives a reason for each. What are the two reasons?',
+        reflect: 'Which of these two mistakes is closer to your own instinct about prayer?' },
+      { id: 'pry-2', title: 'The prayer he gave them',
+        passages: ['MAT.6.9-13'],
+        basis: ['Matthew 6:9-15', 'Luke 11:1-4'],
+        understand: 'Asked for a model, Jesus gives one short enough to memorise, and its shape teaches as much as its wording.\n\nLook at the order. Three lines about God come before anything about the person praying — his name, his reign, his will. Whatever else this is, it is not a form for submitting requests. It begins by getting the room the right way round.\n\nThen the asking, and it is modest. Bread for today, not security for the year. Forgiveness, with a clause attached that ought to slow anyone down, since it ties the receiving to the giving. Protection from testing and from evil.\n\nOne detail is easy to miss. Every request is plural. Our bread, our debts, deliver us. Even prayed alone in a shut room, this is not a private arrangement.',
+        lookCloser: 'Three requests concern God and three concern the people praying. Where exactly does it turn?',
+        reflect: 'The prayer puts God’s concerns before its own. What would it take to pray in that order?' },
+      { id: 'pry-3', title: 'Honest prayer',
+        passages: ['PSA.13.1-6'],
+        basis: ['Psalm 13:1-6', 'Psalm 88:1-2', 'Romans 8:26'],
+        understand: 'Four times in two verses, the same question: how long. The psalm accuses God of forgetting and of hiding his face. It is not polite, and nobody edited it out. It sits in the collection Israel actually used for worship.\n\nThat placement is worth pausing over. If this is in the prayer book, then complaint is not a failure of prayer. It is a form of prayer, and a permitted one. Whatever honesty before God costs, it does not cost admission.\n\nThen the psalm turns, and how it turns matters. The writer says he trusts, that his heart is glad, that he will sing. Read those closing lines again and notice what is absent. Nothing says the enemy left. Nothing reports that the situation resolved.\n\nThe turn is not relief arriving. It is a decision made while still waiting, which is a far more usable model than the alternative.',
+        lookCloser: 'The psalm changes direction near the end. What has changed by that point, and what has not?',
+        reflect: 'What would change if prayer had room for the kind of bluntness this psalm uses?' },
+      { id: 'pry-4', title: 'Asking, and the answer that was no',
+        passages: ['MRK.14.35-36', 'PHP.4.6-7'],
+        basis: ['Mark 14:32-42', 'Philippians 4:4-9'],
+        understand: 'This is the passage to keep when prayer appears not to work.\n\nIn the garden, Jesus asks to be spared what is coming. He does not phrase it cautiously; he says plainly that God is able to do it. And the answer is no.\n\nThat fact deserves its full weight. If prayer were a dependable mechanism for obtaining outcomes, this prayer would have worked. Whatever unanswered prayer means, it cannot mean the one praying lacked faith or asked badly.\n\nNotice the order, too. He asks for what he genuinely wants, fully, and only then yields. Surrender does not replace the request; it follows it. A prayer that starts out already resigned has skipped a step he did not skip.\n\nPaul writes about anxiety and prayer, and it repays reading precisely. What he promises is not the outcome requested. It is peace — described as something that guards a person, which is language for what holds when circumstances do not.',
+        lookCloser: 'Jesus states what God is able to do and what he himself wants. How does his last sentence hold both?',
+        reflect: 'How does it sit with you that Jesus asked for something and did not receive it?' },
+      { id: 'pry-5', title: 'Prayer in an ordinary week',
+        passages: ['LUK.5.15-16', '1TH.5.16-18'],
+        basis: ['Luke 5:12-16', '1 Thessalonians 5:12-22', 'Mark 1:35'],
+        understand: 'Luke gives one sentence to Jesus’ prayer habit, and its placement does the work. The crowds are growing. The demand is rising. That is the moment Luke chooses to mention he kept going off alone to pray.\n\nNot that he found time. That he withdrew — deliberately, and repeatedly. Prayer here is not what is left over at the end of a day; it is defended against the day.\n\nPaul’s instruction sounds impossible until you notice what it cannot mean. Nobody speaks continuously. What he describes is closer to a line kept open — a running relationship rather than a scheduled event, where thanks and requests surface as the hours go.\n\nTogether they suggest something practical. Set aside a time small enough that you will genuinely keep it, and let the rest of the day stay open. The aim was never eloquence. It was contact, sustained.',
+        lookCloser: 'Luke reports what the crowds were doing and what Jesus did. How are the two connected?',
+        reflect: 'What would a small, sustainable prayer habit look like in your actual week?' }
     ] }
 ];
 /* SCRIPTURE-END */
@@ -4367,13 +4556,28 @@ function studyNoteFor(studyId, lessonId){
 /* The study to offer as "continue" — the most recently touched one that is
    not finished. Derived rather than stored, so there is no second opinion
    about which study is active. */
+/* What Continue should point at.
+
+   Opening a LESSON starts its study, so sampling one creates a record with
+   nothing finished in it. Ranking purely by updatedAt let that sample win:
+   a reader four lessons into one study who opened the first page of another
+   to see what it was came back to a Continue card offering that sample
+   instead of their place. With one study it could not happen; with four it
+   is an ordinary afternoon. So a study with a finished lesson outranks one
+   with none, and updatedAt only breaks ties within each group.
+
+   Deliberately switching studies costs one lesson of staleness, which is
+   recoverable from the list two lines below. Losing your place is not. */
 function activeStudy(){
   let best = null;
   studyProgress.forEach(function(r){
     const s = studyById(r.id);
     if(!s) return;
     if(r.done.length >= s.lessons.length) return;      // finished
-    if(!best || String(r.updatedAt || '') > String(best.updatedAt || '')) best = r;
+    if(!best){ best = r; return; }
+    const started = r.done.length > 0, bestStarted = best.done.length > 0;
+    if(started !== bestStarted){ if(started) best = r; return; }
+    if(String(r.updatedAt || '') > String(best.updatedAt || '')) best = r;
   });
   return best;
 }

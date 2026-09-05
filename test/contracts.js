@@ -874,7 +874,18 @@ function testRelease(){
                              (u.fixes || []).length > 0));
 
   sub('the app ships its own history, not an inherited one');
-  T('a small number of entries', c.APP_UPDATES.length <= 3, String(c.APP_UPDATES.length));
+  /* The failure this prevents is an INHERITED history — the foundation's
+     release list shipping inside this product as though it were its own.
+     The bound was <= 3 because the app had made three releases; that made it
+     read as a cap on shipping, which is not what it is for. What actually
+     rules out an inherited list is the check below: every version here must
+     be one this app itself released. The count stays bounded only so that a
+     wholesale foreign list cannot arrive unnoticed. */
+  T('the history stays short enough to read', c.APP_UPDATES.length <= 8,
+    String(c.APP_UPDATES.length));
+  T('and every entry is a release this app actually made',
+    c.APP_UPDATES.every(u => /^1.[0-9]+.[0-9]+$/.test(u.version)),
+    c.APP_UPDATES.map(u => u.version).join(', '));
   T('the authoring rules travel with the data', /AUTHORING A NEW ENTRY/.test(js()));
 
   sub('unread state');
@@ -2557,9 +2568,15 @@ function testTodayUnharmed(){
 
   sub('the catalogue is where it was');
   const daily = c.SCRIPTURE.filter(p => p.daily);
+  /* Daily is pinned and must never move. The study-only figure legitimately
+     grows every time a lesson quotes a passage the rotation never carried;
+     it is pinned too, so growth has to be a deliberate edit rather than a
+     side effect nobody noticed. 7 -> 31 when Learn went from one study to
+     four. Daily stayed exactly where it was, which is the point. */
   T('378 daily passages', daily.length === 378, String(daily.length));
-  T('7 study-only passages', c.SCRIPTURE.filter(p => !p.daily).length === 7);
-  T('385 in total', c.SCRIPTURE.length === 385, String(c.SCRIPTURE.length));
+  T('31 study-only passages', c.SCRIPTURE.filter(p => !p.daily).length === 31,
+    String(c.SCRIPTURE.filter(p => !p.daily).length));
+  T('409 in total', c.SCRIPTURE.length === 409, String(c.SCRIPTURE.length));
   T('all 378 are still eligible', c.eligiblePassages().length === 378);
   /* Recomputed here rather than trusted from the shipped metadata. */
   T('the daily hash is unchanged by this phase',
@@ -2614,6 +2631,186 @@ function testTodayUnharmed(){
   T('the schema did not move', t.ctx.DATA_SCHEMA_VERSION === 2);
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 32 — FOUR STUDIES, AND THE FIRST ONE UNTOUCHED
+
+   Growing the catalogue is where a study library quietly goes wrong: an id
+   changes and somebody's progress detaches from the lesson it belonged to, a
+   lesson ships without teaching in it, or the writing drifts into the
+   spiritual-authority register this product does not use.
+   --------------------------------------------------------- */
+function testStudyCatalogue(){
+  section('CONTRACT 32 — the catalogue grew without disturbing what was there');
+  const app = H.loadApp();
+  const c = app.ctx;
+
+  sub('four studies, twenty-three lessons');
+  T('there are four studies', c.STUDIES.length === 4, String(c.STUDIES.length));
+  const counts = {};
+  c.STUDIES.forEach(s => { counts[s.id] = s.lessons.length; });
+  T('New to the Bible has 5', counts['new-to-the-bible'] === 5, String(counts['new-to-the-bible']));
+  T('Who is Jesus? has 7', counts['who-is-jesus'] === 7, String(counts['who-is-jesus']));
+  T('Understanding the Gospel has 6', counts['understanding-the-gospel'] === 6, String(counts['understanding-the-gospel']));
+  T('Learning to Pray has 5', counts['learning-to-pray'] === 5, String(counts['learning-to-pray']));
+  const total = c.STUDIES.reduce((n, s) => n + s.lessons.length, 0);
+  T('23 lessons in total', total === 23, String(total));
+
+  sub('the ids someone may already have progress against');
+  /* A stored progress row names a study id and a list of lesson ids. Rename
+     either and the row survives while the thing it referred to does not —
+     silent, and unfixable once it has shipped. These are pinned literally. */
+  const ntb = c.STUDIES.find(s => s.id === 'new-to-the-bible');
+  T('the first study kept its id', !!ntb);
+  T('and its lesson ids, in order',
+    ntb.lessons.map(l => l.id).join(',') === 'ntb-1,ntb-2,ntb-3,ntb-4,ntb-5',
+    ntb.lessons.map(l => l.id).join(','));
+  const ids = c.STUDIES.map(s => s.id);
+  T('every study id is unique', new Set(ids).size === ids.length);
+  T('every study id is a slug', ids.every(id => /^[a-z0-9][a-z0-9-]*$/.test(id)), ids.join(','));
+  const allLesson = [];
+  c.STUDIES.forEach(s => s.lessons.forEach(l => allLesson.push(s.id + '/' + l.id)));
+  T('no lesson id repeats inside its study', new Set(allLesson).size === allLesson.length);
+
+  sub('every lesson actually teaches');
+  const lessons = [];
+  c.STUDIES.forEach(s => s.lessons.forEach(l => lessons.push({ s: s.id, l: l })));
+  const thin = lessons.filter(x => !x.l.understand || x.l.understand.trim().length < 300);
+  T('no lesson ships with a thin explanation', thin.length === 0,
+    thin.map(x => x.s + '/' + x.l.id).join(', '));
+  T('every lesson has a reflect prompt',
+    lessons.every(x => typeof x.l.reflect === 'string' && x.l.reflect.trim().length > 20));
+  T('every lesson names at least one passage',
+    lessons.every(x => Array.isArray(x.l.passages) && x.l.passages.length > 0));
+  T('every lesson records a basis',
+    lessons.every(x => Array.isArray(x.l.basis) && x.l.basis.length > 0));
+
+  sub('the app does not speak for God');
+  /* The line this product will not cross: telling a reader what God is saying
+     to them personally. A lesson may explain a passage and may ask a question.
+     It may not deliver a private message. */
+  const FORBIDDEN = [
+    'god is telling you', 'god is saying to you', 'what is god telling you',
+    'god wants you to', 'god is calling you to', 'god has a plan for your',
+    'god chose this for you', 'god put this on your heart'
+  ];
+  const spoke = [];
+  lessons.forEach(x => {
+    const t = (x.l.understand + ' ' + (x.l.lookCloser || '') + ' ' + x.l.reflect + ' ' + x.l.title).toLowerCase();
+    FORBIDDEN.forEach(p => { if(t.indexOf(p) !== -1) spoke.push(x.s + '/' + x.l.id + ' <- "' + p + '"'); });
+  });
+  T('no lesson claims to relay a private message from God', spoke.length === 0, spoke.join(', '));
+
+  sub('the landing lists them all, and each one opens');
+  c.switchTab('learn');
+  c.renderLearn();
+  const html = app.dom.document.getElementById('learnBody').innerHTML;
+  const listed = c.STUDIES.filter(s => html.indexOf(s.title) !== -1);
+  T('all four studies appear on the Learn landing', listed.length === 4,
+    c.STUDIES.filter(s => html.indexOf(s.title) === -1).map(s => s.id).join(', '));
+
+  const brokeOpen = [];
+  const brokeLesson = [];
+  c.STUDIES.forEach(s => {
+    c.openStudy(s.id);
+    const body = app.dom.document.getElementById('studyBody').innerHTML;
+    if(body.indexOf(s.title) === -1) brokeOpen.push(s.id);
+    s.lessons.forEach(l => {
+      c.openLesson(s.id, l.id);
+      const lb = app.dom.document.getElementById('lessonBody').innerHTML;
+      /* The lesson must show its own title AND the text of every passage it
+         names — a lesson that renders its heading over an empty Read block
+         would look fine to a shape-only check. */
+      const texts = c.lessonPassages(l);
+      const ok = lb.indexOf(l.title) !== -1 &&
+        texts.length === l.passages.length &&
+        texts.every(p => p && p.text && lb.indexOf(p.text.slice(0, 30)) !== -1);
+      if(!ok) brokeLesson.push(s.id + '/' + l.id);
+      c.closeLesson();
+    });
+    c.closeStudy();
+  });
+  T('every study opens and shows its title', brokeOpen.length === 0, brokeOpen.join(', '));
+  T('every one of the 23 lessons renders its Scripture', brokeLesson.length === 0,
+    brokeLesson.slice(0, 5).join(', '));
+
+  sub('a glance at another study does not steal Continue');
+  /* Found by opening all four studies in a browser. Opening starts a study, so
+     a record exists the moment someone looks; ranking only by updatedAt let the
+     most recently GLANCED study win over the one being genuinely read. */
+  const g = H.loadApp({ sharedStorage: new Map() });
+  g.ctx.openLesson('who-is-jesus', 'wij-1'); g.ctx.__flush();
+  g.ctx.completeLesson(); g.ctx.__flush();
+  g.ctx.openLesson('who-is-jesus', 'wij-2'); g.ctx.__flush();
+  g.ctx.completeLesson(); g.ctx.__flush();
+  T('the study being read is what Continue offers',
+    g.ctx.activeStudy() && g.ctx.activeStudy().id === 'who-is-jesus',
+    String(g.ctx.activeStudy() && g.ctx.activeStudy().id));
+
+  /* Browsing a study list is free: opening the study itself starts nothing. */
+  g.ctx.openStudy('learning-to-pray'); g.ctx.closeStudy(); g.ctx.__flush();
+  T('opening a study alone records no progress',
+    !g.ctx.studyProgressFor('learning-to-pray'));
+
+  /* Sampling a LESSON does start it, and that is the case that used to steal
+     Continue away from the study actually being read. */
+  g.ctx.openLesson('learning-to-pray', 'pry-1'); g.ctx.__flush();
+  g.ctx.closeLesson(); g.ctx.__flush();
+  T('sampling a lesson records that its study was started',
+    !!g.ctx.studyProgressFor('learning-to-pray'));
+  T('with nothing finished in it', g.ctx.studyProgressFor('learning-to-pray').done.length === 0);
+  T('and Continue stays with the study that has finished lessons',
+    g.ctx.activeStudy() && g.ctx.activeStudy().id === 'who-is-jesus',
+    String(g.ctx.activeStudy() && g.ctx.activeStudy().id));
+
+  /* With nothing finished anywhere, the most recent sample is the best guess
+     available — absent progress there is nothing better to rank on. */
+  const n = H.loadApp({ sharedStorage: new Map() });
+  T('a reader who has opened nothing has nothing to continue', n.ctx.activeStudy() === null);
+  n.ctx.openLesson('new-to-the-bible', 'ntb-1'); n.ctx.closeLesson(); n.ctx.__flush();
+  n.ctx.openLesson('learning-to-pray', 'pry-1'); n.ctx.closeLesson(); n.ctx.__flush();
+  /* Both samples can land in the same millisecond, and equal timestamps tie.
+     Racing the clock made this contract flaky — it failed roughly half the
+     time. The rule being tested is the ordering, so state the order rather
+     than hoping the machine is slow enough to produce one. */
+  n.ctx.studyProgressFor('new-to-the-bible').updatedAt = '2026-01-01T00:00:00.000Z';
+  n.ctx.studyProgressFor('learning-to-pray').updatedAt = '2026-01-02T00:00:00.000Z';
+  T('with no progress at all it falls back to the most recent',
+    n.ctx.activeStudy() && n.ctx.activeStudy().id === 'learning-to-pray',
+    String(n.ctx.activeStudy() && n.ctx.activeStudy().id));
+  /* and the ordering genuinely comes from the timestamp, not from insertion */
+  n.ctx.studyProgressFor('new-to-the-bible').updatedAt = '2026-01-03T00:00:00.000Z';
+  T('reversing the timestamps reverses the answer',
+    n.ctx.activeStudy() && n.ctx.activeStudy().id === 'new-to-the-bible',
+    String(n.ctx.activeStudy() && n.ctx.activeStudy().id));
+
+  /* A finished study must never be offered as something to continue. */
+  const f = H.loadApp({ sharedStorage: new Map() });
+  const fr = f.ctx.ensureStudyStarted('learning-to-pray');
+  f.ctx.studyById('learning-to-pray').lessons.forEach(l => fr.done.push(l.id));
+  f.ctx.persistStudyProgress();
+  T('a completed study is not offered as Continue',
+    f.ctx.activeStudy() === null, String(f.ctx.activeStudy() && f.ctx.activeStudy().id));
+
+  sub('progress written against the first study still works');
+  /* The upgrade case: someone mid-way through New to the Bible when three more
+     studies arrive. Their row must keep meaning exactly what it meant. */
+  const shared = new Map();
+  const up = H.loadApp({ sharedStorage: shared });
+  up.ctx.openLesson('new-to-the-bible', 'ntb-1'); up.ctx.__flush();
+  up.ctx.completeLesson(); up.ctx.__flush();
+  up.ctx.openLesson('new-to-the-bible', 'ntb-2'); up.ctx.__flush();
+  up.ctx.completeLesson(); up.ctx.__flush();
+  const reloaded = H.loadApp({ sharedStorage: shared });
+  const study = reloaded.ctx.STUDIES.find(s => s.id === 'new-to-the-bible');
+  T('the two finished lessons are still finished',
+    reloaded.ctx.completedCount(study) === 2, String(reloaded.ctx.completedCount(study)));
+  T('and it resumes at the third', reloaded.ctx.resumeLessonId(study) === 'ntb-3',
+    String(reloaded.ctx.resumeLessonId(study)));
+  T('the new studies start untouched',
+    reloaded.ctx.STUDIES.filter(s => s.id !== 'new-to-the-bible')
+      .every(s => reloaded.ctx.completedCount(s) === 0));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -2622,5 +2819,6 @@ module.exports = {
   testAccessibility, testContamination, testSourcesOfTruth,
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
-  testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed
+  testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
+  testStudyCatalogue
 };
