@@ -337,6 +337,7 @@ const BRIDGE = [
   'openStudyId', 'openLessonId',
   'savedVerses', 'notes', 'assignments', 'selectedDay', 'savedView', 'editingNoteDate',
   'textSize', 'showReflections', 'focusThemes', 'focusStrength', 'onboarded',
+  'appearance', 'APPEARANCES', 'LIGHT_THEME_COLOR',
   'TEXT_SIZES', 'SAVED_VIEWS', 'FOCUS_STRENGTHS', 'RAIL_DAYS',
   'DOW', 'MONTHS', 'currentTab',
   'TOAST_MS', 'MAX_TOASTS', 'TOAST_VARIANTS',

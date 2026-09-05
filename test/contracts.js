@@ -2811,6 +2811,179 @@ function testStudyCatalogue(){
       .every(s => reloaded.ctx.completedCount(s) === 0));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 33 — APPEARANCE IS A TOKEN SWAP, NOT A SECOND DESIGN
+
+   Two ways a theme feature rots. It leaks into components, and then every
+   new surface has to remember to be themed. Or it leaks into data, and an
+   appearance preference starts being able to lose someone's reading.
+   Both are structural, so both are asserted structurally.
+   --------------------------------------------------------- */
+function testAppearance(){
+  section('CONTRACT 33 — light appearance');
+
+  sub('dark is what you get until you ask for something else');
+  const fresh = H.loadApp({ sharedStorage: new Map() });
+  T('the default appearance is dark', fresh.ctx.appearance === 'dark', fresh.ctx.appearance);
+  T('nothing is written to storage merely by starting',
+    fresh.storage.getItem('daily-verse.ui.appearance') === null);
+  T('and the root carries no theme attribute',
+    fresh.dom.document.documentElement.getAttribute('data-theme') === null);
+
+  sub('turning it on, and off again');
+  const a = H.loadApp({ sharedStorage: new Map() });
+  a.ctx.setAppearance('light');
+  T('the appearance is light', a.ctx.appearance === 'light');
+  T('the root says so', a.dom.document.documentElement.getAttribute('data-theme') === 'light');
+  T('and it is stored', a.storage.getItem('daily-verse.ui.appearance') === 'light');
+  a.ctx.setAppearance('dark');
+  T('going back removes the attribute rather than setting it to dark',
+    a.dom.document.documentElement.getAttribute('data-theme') === null,
+    String(a.dom.document.documentElement.getAttribute('data-theme')));
+  T('and dark is stored explicitly, so it reads as a choice',
+    a.storage.getItem('daily-verse.ui.appearance') === 'dark');
+
+  sub('the switch says what is actually true');
+  /* The stub carries only id/class/onclick/role from markup, and its
+     class-scoped selectors are not scoped — '.focus-strength button' matches
+     every button in the document, so whatever paintPrefControls writes to a
+     toggle's aria-checked is overwritten in the stub and not in a browser.
+     So the CONTROL is asserted from the shipped markup and the DERIVATION
+     from the code; the resulting attribute is verified in a real browser,
+     which is the only place it can be observed honestly. */
+  const t = () => a.dom.document.getElementById('appearanceToggle');
+  T('the control exists', !!t());
+  T('it is a switch', t().getAttribute('role') === 'switch');
+  const markup = H.readApp();
+  const tagM = markup.match(/<button[^>]*id="appearanceToggle"[\s\S]{0,220}?>/);
+  const tag = tagM ? tagM[0] : '';
+  T('the markup declares it a switch', /role="switch"/.test(tag));
+  T('with an accessible name', /aria-label="[^"]+"/.test(tag), tag.slice(0, 60));
+  T('and a starting checked state', /aria-checked="(true|false)"/.test(tag));
+  T('its checked state is derived from the applied appearance, not stored twice',
+    /aria-checked', String\(appearance === 'light'\)/.test(js()));
+  T('and tapping it toggles the appearance',
+    /onclick="toggleAppearance\(\)"/.test(tag));
+
+  sub('a value nobody wrote is not a broken reader');
+  const bad = new Map();
+  bad.set('daily-verse.ui.appearance', 'solarized');
+  const b = H.loadApp({ sharedStorage: bad });
+  T('an unrecognised stored appearance falls back to dark', b.ctx.appearance === 'dark', b.ctx.appearance);
+  T('and paints no attribute', b.dom.document.documentElement.getAttribute('data-theme') === null);
+
+  sub('it survives being closed');
+  const shared = new Map();
+  const one = H.loadApp({ sharedStorage: shared });
+  one.ctx.setAppearance('light');
+  const two = H.loadApp({ sharedStorage: shared });
+  T('a reader who chose light gets light back', two.ctx.appearance === 'light');
+  T('and the attribute is applied on the way in, not after boot',
+    two.dom.document.documentElement.getAttribute('data-theme') === 'light');
+  /* The point of the early block: it runs where storage is first readable,
+     not from boot(), because boot() is late enough to be seen. */
+  T('the appearance is resolved before boot runs',
+    js().indexOf('function resolveAppearanceEarly') !== -1 &&
+    js().indexOf('resolveAppearanceEarly') < js().indexOf('function boot()'));
+  /* Asserting the NAME is not enough: emptying the block left the name and
+     the position intact, and the stub cannot see a flash because boot()
+     applies the attribute anyway. What matters is that the early block
+     itself reads the stored value and paints the attribute. */
+  (function(){
+    const src = js();
+    const a = src.indexOf('function resolveAppearanceEarly');
+    const body = src.slice(a, src.indexOf('})();', a));
+    T('and that early block reads the stored preference itself',
+      body.indexOf('Store.get(KEYS.appearance)') !== -1);
+    T('and paints the attribute itself, before anything can be seen',
+      body.indexOf('setAttribute(') !== -1 && body.indexOf('data-theme') !== -1);
+    T('and cannot break boot if storage is denied', body.indexOf('catch') !== -1);
+  })();
+
+  sub('the browser chrome moves with the app');
+  /* The stub's selector engine answers false for anything containing '[',
+     so meta[name="theme-color"] cannot be queried here. The DERIVATION is
+     asserted from the code; the resulting tag content is checked in a real
+     browser, where it was observed moving between the two values. */
+  T('applying an appearance also moves the browser chrome',
+    js().indexOf('meta[name="theme-color"]') !== -1 &&
+    js().indexOf("appearance === 'light' ? LIGHT_THEME_COLOR : APP_CONFIG.themeColor") !== -1);
+  T('and the dark value is the configured one, not a second literal',
+    js().indexOf('APP_CONFIG.themeColor') !== -1 && two.ctx.APP_CONFIG.themeColor === '#0D0B09',
+    two.ctx.APP_CONFIG.themeColor);
+  /* The JS constant and the CSS token are two statements of one colour. */
+  const lightBlock = css().slice(css().indexOf(':root[data-theme="light"]'));
+  const ground = (lightBlock.match(/--brand-ground:\s*([^;]+);/) || [])[1];
+  T('LIGHT_THEME_COLOR equals the light ground it stands for',
+    String(ground).trim().toUpperCase() === String(two.ctx.LIGHT_THEME_COLOR).toUpperCase(),
+    String(ground).trim() + ' vs ' + two.ctx.LIGHT_THEME_COLOR);
+
+  sub('the theme is tokens only — no component is themed');
+  /* This is the stop condition made testable. If the light block ever needs a
+     component selector, the theme has stopped being a token swap and every
+     future surface has to remember to be themed. */
+  const block = lightBlock.slice(0, lightBlock.indexOf('\n}'));
+  /* Comments explain the colours and are full of prose containing colons.
+     Strip them before asking what the block actually declares. */
+  const declarations = stripComments(block).split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith(':root') && l.indexOf(':') !== -1);
+  const nonToken = declarations.filter(l => !/^--/.test(l));
+  T('the light block declares custom properties and nothing else',
+    nonToken.length === 0, nonToken.slice(0, 3).join(' | '));
+  T('and it is a single block, not a scattering of overrides',
+    (css().match(/\[data-theme="light"\]/g) || []).length === 1,
+    String((css().match(/\[data-theme="light"\]/g) || []).length));
+
+  sub('every role the dark theme names, the light theme answers');
+  /* A token declared for dark and forgotten for light is an unthemed surface
+     waiting to be found by a reader rather than by a test. Only the roles that
+     carry colour need answering — scale and motion are shared. */
+  const darkBlock = css().slice(css().indexOf(':root{'), css().indexOf('\n}', css().indexOf(':root{')));
+  const names = s => (s.match(/--[a-z0-9-]+(?=\s*:)/gi) || []);
+  const COLOUR = /(bg|surface|border|text|accent|success|warning|danger|shadow|scrim|glow|edge|gradient)/i;
+  const darkColour = names(darkBlock).filter(n => COLOUR.test(n));
+  const lightNames = names(block);
+  /* Roles the light theme inherits unchanged are fine; what must not happen is
+     a role whose dark value is unusable on paper going unanswered. */
+  const MUST = ['--brand-ground', '--brand-surface', '--brand-surface-raised', '--brand-surface-sunken',
+                '--brand-border', '--text', '--text-dim', '--text-faint', '--accent', '--accent-deep',
+                '--accent-soft', '--edge-hi', '--scrim', '--shadow-sm', '--shadow-md', '--shadow-lg',
+                '--shadow-tabbar', '--glow-verse', '--surface-scripture', '--success', '--warning', '--danger'];
+  const missing = MUST.filter(n => lightNames.indexOf(n) === -1);
+  T('the light theme answers every role that cannot survive inversion',
+    missing.length === 0, missing.join(', '));
+  T('there are dark colour roles to answer', darkColour.length > 20, String(darkColour.length));
+
+  sub('appearance is a preference, never a data change');
+  /* Switching a theme must not be able to touch a single thing the reader
+     wrote. Compared byte-for-byte across a switch and back. */
+  const d = H.loadApp({ sharedStorage: new Map() });
+  d.ctx.openLesson('who-is-jesus', 'wij-1'); d.ctx.__flush();
+  d.ctx.completeLesson(); d.ctx.__flush();
+  d.ctx.toggleSaved(d.ctx.passageForDay(d.ctx.todayKey()).id); d.ctx.__flush();
+  const dataKeys = ['data.saved', 'data.notes', 'data.assignments', 'data.studyProgress',
+                    'data.studyNotes', 'sys.schemaVersion'];
+  const snap = {};
+  dataKeys.forEach(k => { snap[k] = d.storage.getItem('daily-verse.' + k); });
+  d.ctx.setAppearance('light');
+  d.ctx.setAppearance('dark');
+  d.ctx.setAppearance('light');
+  const after = {};
+  dataKeys.forEach(k => { after[k] = d.storage.getItem('daily-verse.' + k); });
+  const touched = dataKeys.filter(k => snap[k] !== after[k]);
+  T('no record is altered by switching appearance', touched.length === 0, touched.join(', '));
+  T('the schema version is untouched', after['sys.schemaVersion'] === snap['sys.schemaVersion']);
+  T('the reader is still where they were',
+    d.ctx.completedCount(d.ctx.studyById('who-is-jesus')) === 1);
+
+  sub('the swap lands on one frame');
+  T('transitions are held still while the appearance changes',
+    /appearance-switching/.test(css()) && /transition: none !important/.test(css()));
+  T('and released again afterwards',
+    /classList\.remove\('appearance-switching'\)/.test(js()));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -2820,5 +2993,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue
+  testStudyCatalogue, testAppearance
 };

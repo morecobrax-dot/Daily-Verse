@@ -45,6 +45,7 @@ const SUITES = [
   C.testLearnNotes,
   C.testTodayUnharmed,
   C.testStudyCatalogue,
+  C.testAppearance,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,

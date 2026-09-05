@@ -95,6 +95,13 @@
 
   --gradient-accent: linear-gradient(135deg, var(--accent), var(--accent-deep));
 
+  /* Two values that used to be written into components. Both are lighting,
+     and lighting is exactly what changes between themes — a scrim tuned for
+     a black ground is a bruise over a white one. Dark values here are the
+     literals they replace, unchanged. */
+  --scrim: rgba(6,7,9,0.72);
+  --shadow-tabbar: 0 -4px 12px rgba(0,0,0,0.18);
+
   /* ---- 3 · SCALE ------------------------------------------------ */
   /* Type: one token per role, so two labels of the same kind cannot
      drift half a pixel apart. */
@@ -180,6 +187,91 @@
   /* Scripture sits on a surface a shade warmer than the app's own, so the
      quoted text reads as a page rather than as another card. */
   --surface-scripture: #1C1610;
+}
+
+
+/* Changing appearance is one event, so it should land as one event.
+   Without this the backgrounds (which never transitioned) snap while the
+   handful of properties that DO transition drift in behind them, and a
+   theme switch reads as a stutter rather than a change. Nothing new is
+   animated here — existing transitions are held still for a frame. */
+html.appearance-switching *,
+html.appearance-switching *::before,
+html.appearance-switching *::after{
+  transition: none !important;
+}
+
+/* =========================================================
+   LIGHT APPEARANCE
+
+   Not the dark theme with the values inverted. The dark ramp runs warm
+   because an amber accent over a cold ground reads as two palettes stacked;
+   the light ramp runs warm for the same reason, toward paper rather than
+   toward white. #FFFFFF is used for CARDS, not for the page, so a card is
+   separated from the ground by being lighter than it — the same relationship
+   the dark theme has, pointing the same way.
+
+   Only tokens are redeclared. Not one component rule is themed, which is
+   what keeps the two appearances the same product rather than two designs.
+   ========================================================= */
+:root[data-theme="light"]{
+  /* Ground and surfaces. Sunken is the only step darker than the page. */
+  --brand-ground: #F7F4EF;
+  --brand-surface: #FFFFFF;
+  --brand-surface-raised: #FFFFFF;
+  --brand-surface-sunken: #EFEAE3;
+  --brand-border: #E4DCD2;
+
+  --border-quiet: rgba(228,220,210,0.65);
+  /* The dark theme lifts a card's top edge with a white inner line. On white
+     there is nothing to lift, and a visible line would just be an artefact. */
+  --edge-hi: rgba(255,255,255,0);
+
+  /* Deep warm charcoal, not black: 15.7:1 on the page, which is well past
+     the requirement and still softer than #000 under a bright screen. */
+  --text: #1F1A15;
+  --text-dim: #5C5148;
+  --text-faint: #6F6459;
+
+  /* The accent has two jobs, and on a light ground they part company.
+     As TEXT and small marks it has to survive a contrast check, so it
+     deepens to 5.2:1 on the page. As a FILLED button it stays exactly the
+     brand orange it is in the dark theme — same gradient, same dark label,
+     8:1 — because the primary action is the one place both appearances
+     should look like the same object rather than a matched pair. */
+  --accent: #A84A15;
+  --accent-deep: #8A3A0E;
+  --accent-soft: rgba(168,74,21,0.10);
+  --gradient-accent: linear-gradient(135deg, var(--brand-accent), var(--brand-accent-deep));
+  --accent-contrast: #24120A;
+
+  --success: #2F7A54;
+  --success-soft: rgba(47,122,84,0.10);
+  --warning: #8A5E1F;
+  --warning-soft: rgba(138,94,31,0.10);
+  --danger: #B83529;
+  --danger-soft: rgba(184,53,41,0.10);
+
+  /* Shadow does the separating that borders do not. Warm-tinted rather than
+     neutral grey, and shallow — a card lying on paper, not floating above it. */
+  --shadow-sm: 0 1px 2px rgba(61,45,30,0.06);
+  --shadow-md: 0 2px 8px rgba(61,45,30,0.07);
+  --shadow-lg: 0 12px 32px rgba(61,45,30,0.14);
+  --shadow-accent: 0 2px 10px rgba(168,74,21,0.16);
+  --shadow-tabbar: 0 -1px 3px rgba(61,45,30,0.05);
+
+  /* A scrim over paper wants to stay warm and stay light. */
+  --scrim: rgba(41,32,24,0.38);
+
+  /* The glow survives as a suggestion. At dark-theme strength this is an
+     orange stain on white; at this strength it is warmth behind the verse,
+     which is all it was ever for. */
+  --glow-verse: radial-gradient(ellipse 50% 48% at 50% 50%,
+                  rgba(255,145,71,0.13) 0%,
+                  rgba(255,145,71,0.05) 46%,
+                  rgba(255,145,71,0) 100%);
+  /* Scripture keeps its own paper, a shade warmer than a plain card. */
+  --surface-scripture: #FFFCF7;
 }
 
 /* The reader's one type preference. It moves the two reading roles and
@@ -302,7 +394,7 @@ p{ margin: 0; }
   padding-left: var(--inset-left);
   padding-right: var(--inset-right);
   max-width: var(--layout-max); margin: 0 auto;
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.18);
+  box-shadow: var(--shadow-tabbar);
 }
 .tab-btn{
   flex: 1; background: none; border: none; cursor: pointer;
@@ -414,6 +506,16 @@ input.field-error, textarea.field-error{ border-color: var(--danger); box-shadow
   width: 48px; height: 28px; border-radius: var(--radius-pill);
   background: var(--surface-raised); border: 1px solid var(--border);
   cursor: pointer; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+/* The pill is 28px tall because that is what a switch should look like; the
+   TARGET has to be 44. Rule 10 allows exactly this split — the visible mark
+   may be smaller than the thing you can hit — so the hit area is grown with
+   a transparent pseudo-element rather than by inflating the control and
+   pushing the row apart. Nothing moves on screen. */
+.toggle::before{
+  content: ''; position: absolute; left: 0; right: 0; top: 50%;
+  transform: translateY(-50%);
+  height: var(--touch-min);
 }
 .toggle::after{
   content: ''; position: absolute; top: 3px; left: 3px;
@@ -938,7 +1040,7 @@ blockquote.verse-quote{
    ========================================================= */
 .overlay{
   position: fixed; inset: 0; z-index: 60;
-  background: rgba(6,7,9,0.72);
+  background: var(--scrim);
   -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
   display: none; align-items: flex-end;
   /* A flick that runs out of sheet must stop, not hand itself to the page
@@ -1129,6 +1231,17 @@ body.scroll-locked{
 
   <!-- SETTINGS — reading preferences, provenance, data ownership -->
   <main class="view" id="view-settings">
+    <div class="section-label">Appearance</div>
+    <div class="panel">
+      <div class="toggle-row">
+        <span class="list-row-main">
+          <span class="list-row-title">Light mode</span>
+          <span class="list-row-desc">Use a brighter theme for reading</span>
+        </span>
+        <button class="toggle" id="appearanceToggle" role="switch" aria-checked="false"
+                aria-label="Light mode" onclick="toggleAppearance()"></button>
+      </div>
+    </div>
     <div class="section-label">Reading</div>
     <div class="panel">
       <span class="form-label" id="textSizeLabel">Verse text size</span>
@@ -1445,6 +1558,23 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v1-4-0',
+    version: '1.4.0',
+    title: 'Light mode',
+    date: '2026-09-05',
+    summary: 'A brighter appearance for reading in daylight, off by default and ' +
+             'switched on whenever you want it.',
+    newFeatures: [
+      'Light mode — turn it on under Appearance in Settings',
+      'Your choice is remembered, and the app opens in it without flashing dark first'
+    ],
+    improvements: [
+      'Scripture keeps its own paper tone in both appearances, warmer than the page around it',
+      'Switch controls are easier to hit without looking any different'
+    ],
+    fixes: []
+  },
+  {
     id: 'v1-3-0',
     version: '1.3.0',
     title: 'Three more studies',
@@ -1534,6 +1664,7 @@ const KEYS = {
   backupPrefix:   'sys.backup.',
   lastSeenUpdate: 'ui.lastSeenUpdate',
   textSize:       'ui.textSize',
+  appearance:     'ui.appearance',
   showReflections:'ui.showReflections',
   onboarded:      'ui.onboarded',
   focusThemes:    'ui.focusThemes',
@@ -1644,6 +1775,22 @@ const Store = (function(){
       catch(e){ return false; }
     }
   };
+})();
+
+/* The appearance is read and applied HERE — at the first line in the file
+   where storage can be answered, thousands of lines before boot() and before
+   #app is revealed. The whole script is one blocking block, so nothing has
+   painted yet: a reader who chose light never watches the dark theme arrive
+   and then leave. It is deliberately not a function call into code defined
+   later, because that would run at boot instead, which is the flash.
+
+   Denied storage is not a reason to fail: the app keeps its default. */
+(function resolveAppearanceEarly(){
+  try{
+    if(Store.get(KEYS.appearance) === 'light'){
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }catch(e){ /* default appearance stands */ }
 })();
 
 /* =========================================================
@@ -4146,6 +4293,12 @@ let studyProgress = [];
 let studyNotes = [];
 let selectedDay = null;
 let savedView = 'verses';
+/* Mirrors --brand-ground in the light block. Declared here because the
+   browser chrome is set from JS and cannot read a CSS custom property
+   before it is needed; a contract asserts the two stay equal. */
+const LIGHT_THEME_COLOR = '#F7F4EF';
+const APPEARANCES = ['dark', 'light'];
+let appearance = 'dark';
 let textSize = 'standard';
 let showReflections = true;
 let focusThemes = [];
@@ -4601,6 +4754,10 @@ function loadVerseData(){
 }
 
 function loadPrefs(){
+  /* An unreadable or unrecognised value is not a broken reader — it is a
+     reader who has never chosen, and the product default answers for them. */
+  const ap = Store.get(KEYS.appearance);
+  appearance = APPEARANCES.indexOf(ap) === -1 ? 'dark' : ap;
   const ts = Store.get(KEYS.textSize);
   textSize = TEXT_SIZES.indexOf(ts) === -1 ? 'standard' : ts;
   const sr = Store.get(KEYS.showReflections);
@@ -5119,6 +5276,49 @@ function savedRemoveButton(id){
     'onclick="unsaveVerse(\'' + escapeAttr(id) + '\')">' + trashIcon(16) + '</button>';
 }
 
+/* ---------- appearance ---------- */
+function setAppearance(next){
+  if(APPEARANCES.indexOf(next) === -1) return;
+  appearance = next;
+  Store.set(KEYS.appearance, next);
+
+  /* Hold every transition still across the swap so the whole interface
+     changes on one frame, then release on the next. Reduce Motion needs no
+     special case here: this removes motion rather than adding it. */
+  const root = document.documentElement;
+  root.classList.add('appearance-switching');
+  applyAppearance();
+  paintPrefControls();
+  /* Forcing layout flushes the suppressed state before it is lifted; without
+     it the class can be added and removed inside a single style recalc and
+     suppress nothing at all. */
+  void root.offsetHeight;
+  requestAnimationFrame(function(){ root.classList.remove('appearance-switching'); });
+}
+
+function toggleAppearance(){
+  setAppearance(appearance === 'light' ? 'dark' : 'light');
+}
+
+/* One attribute on the root swaps the token layer. No component is themed,
+   so there is no surface that can be forgotten.
+
+   The browser chrome is moved with it. The meta tag is the only part of the
+   derived head block written at runtime, and it is written rather than
+   hand-edited so config:sync stays the single author of the static value. */
+function applyAppearance(){
+  const root = document.documentElement;
+  if(!root) return;
+  if(appearance === 'light') root.setAttribute('data-theme', 'light');
+  else root.removeAttribute('data-theme');
+
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta){
+    meta.setAttribute('content',
+      appearance === 'light' ? LIGHT_THEME_COLOR : APP_CONFIG.themeColor);
+  }
+}
+
 /* ---------- reading and focus preferences ---------- */
 function setTextSize(size){
   if(TEXT_SIZES.indexOf(size) === -1) return;
@@ -5166,6 +5366,8 @@ function paintPrefControls(){
     b.setAttribute('aria-checked', String(on));
     b.setAttribute('aria-selected', String(on));
   });
+  const a = document.getElementById('appearanceToggle');
+  if(a) a.setAttribute('aria-checked', String(appearance === 'light'));
   const t = document.getElementById('reflectToggle');
   if(t) t.setAttribute('aria-checked', String(showReflections));
   document.querySelectorAll('#savedFilter button').forEach(function(b){
@@ -5783,8 +5985,9 @@ Domain.hydrate = loadVerseData;
 /* applyTextSize() runs on every render rather than only when the control is
    touched, so the root attribute cannot end up disagreeing with the stored
    preference after a reset, an import, or a restored backup. */
-Domain.render  = function(){ applyTextSize(); renderToday(); renderLearn(); renderSaved(); paintPrefControls(); };
+Domain.render  = function(){ applyAppearance(); applyTextSize(); renderToday(); renderLearn(); renderSaved(); paintPrefControls(); };
 Domain.wire    = function(){
+  applyAppearance();
   applyTextSize();
   _paintedToday = todayKey();
   centreSelectedDay();
