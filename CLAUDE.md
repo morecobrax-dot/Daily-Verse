@@ -222,8 +222,9 @@ it. That is a different kind of risk and these rules exist because of it.
     passage ids; the words come from `SCRIPTURE` at render time. A verse typed
     into an explanation is a verse this app asserts on its own authority,
     outside the derived region and outside every check that defends it.
-    The build refuses any run of six shipped words in lesson prose, and a
-    contract checks the shipped bytes too. Naming a phrase is how teaching
+    The build refuses any run of six shipped words in lesson prose or in a
+    lesson figure, and a contract checks the shipped bytes too. Naming a phrase
+    is how teaching
     works and stays legal; six consecutive words is the verse. This is
     enforced because it happened — John 1:14 shipped inside an explanation.
 40. **Every explanation records its `basis`** — the passages actually read to

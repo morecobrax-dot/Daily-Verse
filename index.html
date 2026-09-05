@@ -972,6 +972,33 @@ blockquote.verse-text{
 }
 .lesson-prose p:last-child{ margin-bottom: 0; }
 
+/* A labelled figure. The only new surface this study needed: the reference
+   itself set in the mono face the app already uses for metadata, with its
+   parts named underneath. No border box — it sits on the page like the
+   teaching does, separated by space rather than by another card. */
+.lesson-figure{ margin: var(--space-lg) 0; }
+.figure-heading{
+  font-family: var(--font-mono); font-size: var(--fs-title); font-weight: 600;
+  letter-spacing: 0.04em; color: var(--text);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border);
+}
+.figure-rows{ margin: 0; }
+.figure-row{
+  display: flex; align-items: baseline; gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border-quiet);
+}
+.figure-row:last-child{ border-bottom: none; }
+.figure-row dt{
+  flex-shrink: 0; min-width: 6.5em;
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-faint);
+}
+.figure-row dd{
+  margin: 0; font-size: var(--fs-support); line-height: var(--lh-body); color: var(--text-dim);
+}
+
 /* The one inset on the page. A question to sit with, not a field to fill in. */
 .look-closer{
   padding: var(--space-md) var(--space-lg);
@@ -1561,6 +1588,22 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-5-0',
+    version: '1.5.0',
+    title: 'How to use a Bible',
+    date: '2026-09-05',
+    summary: 'A new study for anyone who owns a Bible and has never been shown ' +
+             'how to find their way around one.',
+    newFeatures: [
+      'How to Use the Bible — eight lessons on references, cross-references, footnotes and study tools',
+      'Each lesson ends with something to try in your own Bible, not just something to read'
+    ],
+    improvements: [
+      'Lessons can now show a small labelled figure, for the parts of a reference'
+    ],
+    fixes: []
+  },
   {
     id: 'v1-4-1',
     version: '1.4.1',
@@ -2396,10 +2439,10 @@ const SCRIPTURE_SOURCE = {
   publisher: 'eBible.org',
   divineName: 'Yahweh',
   corpusSynced: '2026-09-04',
-  datasetHash: '7b1d547bc10c0d672f354bf925ee3d473a1fcf65e521ac58344debce6b83fcbd',
+  datasetHash: 'eded1f6410fc4b5b3a66847c99618be6fb9a3468cec5f689a950f1ebd3d6c906',
   dailyHash: 'c33b03e8e66e0aafb156767a65523548744e936a1f84540f515f528046449d3f',
   dailyCount: 378,
-  studyOnlyCount: 31,
+  studyOnlyCount: 35,
   built: '2026-09-05'
 };
 
@@ -3224,7 +3267,15 @@ const SCRIPTURE = [
   { id: 'MRK.14.35-36', ref: 'Mark 14:35-36', themes: [],
     text: 'He went forward a little, and fell on the ground, and prayed that if it were possible, the hour might pass away from him. He said, “Abba, Father, all things are possible to you. Please remove this cup from me. However, not what I desire, but what you desire.”' },
   { id: 'LUK.5.15-16', ref: 'Luke 5:15-16', themes: [],
-    text: 'But the report concerning him spread much more, and great multitudes came together to hear and to be healed by him of their infirmities. But he withdrew himself into the desert and prayed.' }
+    text: 'But the report concerning him spread much more, and great multitudes came together to hear and to be healed by him of their infirmities. But he withdrew himself into the desert and prayed.' },
+  { id: '2TI.3.16-17', ref: '2 Timothy 3:16-17', themes: [],
+    text: 'Every Scripture is God-breathed and profitable for teaching, for reproof, for correction, and for instruction in righteousness, that each person who belongs to God may be complete, thoroughly equipped for every good work.' },
+  { id: '1PE.2.24', ref: '1 Peter 2:24', themes: [],
+    text: 'He himself bore our sins in his body on the tree, that we, having died to sins, might live to righteousness. You were healed by his wounds.' },
+  { id: 'PSA.23.1-6', ref: 'Psalm 23:1-6', themes: [], sup: 1,
+    text: 'Yahweh is my shepherd; I shall lack nothing. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul. He guides me in the paths of righteousness for his name’s sake. Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me. Your rod and your staff, they comfort me. You prepare a table before me in the presence of my enemies. You anoint my head with oil. My cup runs over. Surely goodness and loving kindness shall follow me all the days of my life, and I will dwell in Yahweh’s house forever.' },
+  { id: 'NEH.8.8', ref: 'Nehemiah 8:8', themes: [],
+    text: 'They read in the book, in the law of God, distinctly; and they gave the sense, so that they understood the reading.' }
 ];
 
 /* Teaching content — this app's own words, never Scripture. Lessons carry
@@ -3391,6 +3442,63 @@ const STUDIES = [
         understand: 'Luke gives one sentence to Jesus’ prayer habit, and its placement does the work. The crowds are growing. The demand is rising. That is the moment Luke chooses to mention he kept going off alone to pray.\n\nNot that he found time. That he withdrew — deliberately, and repeatedly. Prayer here is not what is left over at the end of a day; it is defended against the day.\n\nPaul’s instruction sounds impossible until you notice what it cannot mean. Nobody speaks continuously. What he describes is closer to a line kept open — a running relationship rather than a scheduled event, where thanks and requests surface as the hours go.\n\nTogether they suggest something practical. Set aside a time small enough that you will genuinely keep it, and let the rest of the day stay open. The aim was never eloquence. It was contact, sustained.',
         lookCloser: 'Luke reports what the crowds were doing and what Jesus did. How are the two connected?',
         reflect: 'What would a small, sustainable prayer habit look like in your actual week?' }
+    ] },
+  { id: 'how-to-use-the-bible', title: 'How to Use the Bible',
+    summary: 'How a Bible is arranged and how to find your way around one — references, cross-references, footnotes, and the tools in the back.',
+    audience: 'Anyone who owns a Bible and has never been shown how it actually works.',
+    lessons: [
+      { id: 'htu-1', title: 'A library, and how it is arranged',
+        passages: ['2TI.3.16-17'],
+        basis: ['2 Timothy 3:14-17', 'Luke 24:27'],
+        understand: 'Open the contents page before you open anything else. It is the most useful page in the book and the one almost everyone skips.\n\nA Bible is a collection rather than a single work — dozens of separate writings, made across centuries, bound into one volume. How many depends on the edition: Protestant Bibles carry sixty-six, while Catholic and Orthodox editions include several more.\n\nThey fall into two parts. The Old Testament is the Scripture Jesus himself read and quoted. The New Testament was written after him, by people connected to him.\n\nAnd they are not all the same kind of writing. Some are history, some poetry, some letters to particular churches, some visions. Reading a letter the way you would read a poem will mislead you, so it is worth knowing which one you are in — and the contents page, which groups them, is where that begins.',
+        lookCloser: 'Find the contents page in your own Bible. How many books are listed before the New Testament starts?',
+        reflect: 'Which kind of writing would you most like to understand better — a story, a letter, or a poem?' },
+      { id: 'htu-2', title: 'Finding a passage',
+        passages: ['JHN.3.16'],
+        basis: ['John 3:1-21'],
+        understand: 'Every reference is built the same way, and once you can see the pattern you can find anything.\n\nThe book comes first, then the chapter, then — after the colon — the verse. John 3:16 means the book of John, its third chapter, the sixteenth verse. Nothing else in the whole volume carries that address.\n\nOn the page the two numbers look different. Chapter numbers are large, usually set into the text or at the top of a column. Verse numbers are small and raised, sitting inside the paragraph where the sentence begins.\n\nSo finding a passage is mechanical. Look the book up in the contents, turn to the page, run down the large numbers to the chapter, then along the small ones to the verse.\n\nNeither the chapters nor the verses were in the original writings. Both were added many centuries later, purely so that people could point at the same sentence — which is all they are for.',
+        lookCloser: 'Find John 3:16 in your own Bible. Then find Matthew 5:3 without using the index, and notice how much quicker the second one is.',
+        figure: { heading: 'John 3:16', rows: [{ label: 'Book', value: 'John — find it in the contents page' }, { label: 'Chapter', value: '3 — the large numbers through the text' }, { label: 'Verse', value: '16 — the small raised numbers inside the paragraph' }] },
+        reflect: 'Is there a passage you have heard quoted for years and never actually looked up?' },
+      { id: 'htu-3', title: 'Reading a reference',
+        passages: ['JHN.1.1-5'],
+        basis: ['John 1:1-18'],
+        understand: 'References use a small set of marks, and each one means something exact.\n\nA colon divides the chapter from the verse. A dash makes a range, so John 1:1-5 is five verses meant to be read together — which is what the card above is showing you. A comma separates verses that are not next to each other, so Romans 8:1, 28 points at two places in one chapter. A reference with no colon at all means the whole chapter.\n\nOne thing catches nearly everyone. Some books have a number in front of the name: 1 John, 2 Timothy, 1 Kings. That number is part of the title, not a chapter. There are three separate letters called John, and 1 John 4:8 sits in the first of them — a different book entirely from the Gospel of John.\n\nWhen a reference will not come apart, read it left to right and stop at the colon. Everything before it names a place in the contents. Everything after it is a line on the page.',
+        lookCloser: 'Look up 1 John 4:8, then John 4:8. Confirm for yourself that they are two different books in two different places.',
+        figure: { heading: 'What the marks mean', rows: [{ label: 'John 3:16', value: 'One verse. Chapter 3, verse 16.' }, { label: 'John 1:1-5', value: 'A range. Verses 1 through 5 — what this lesson is showing.' }, { label: 'Romans 8:1, 28', value: 'Two separate verses in the same chapter.' }, { label: 'Psalm 23', value: 'A whole chapter. No verse given.' }, { label: '1 John 4:8', value: 'The 1 belongs to the book name. Not a chapter.' }] },
+        reflect: 'Which of these marks had you been quietly guessing at until now?' },
+      { id: 'htu-4', title: 'Following a cross-reference',
+        passages: ['1PE.2.24', 'ISA.53.5-6'],
+        basis: ['1 Peter 2:21-25', 'Isaiah 53:1-12', 'Luke 24:27'],
+        understand: 'Most Bibles carry a quiet apparatus of connections. A small letter, number or symbol beside a word points to a list of other references — in the margin, in a narrow column down the centre of the page, or at the foot. These are cross-references, and they are the publisher saying: this sentence is related to those.\n\nThe two passages here are a real example. Peter, writing to scattered and pressured Christians, describes Jesus in language taken almost directly from a poem written centuries before him. Read them together and you can watch him reaching back on purpose.\n\nFollowing one is also the quickest way to get out of your depth, so one habit protects you: when you arrive, read the paragraph, not only the verse you were sent to. A cross-reference points at a sentence without bringing its context along, and a line lifted out of a poem is not the poem.',
+        lookCloser: 'Find 1 Peter 2:24 in your Bible and look for a marker beside it. Where does your edition keep its references — the margin, a centre column, or the foot of the page?',
+        reflect: 'What might you miss by reading a linked verse without the paragraph it belongs to?' },
+      { id: 'htu-5', title: 'Headings, footnotes and marks',
+        passages: ['PSA.23.1-6'],
+        basis: ['Psalm 23:1-6', 'Psalm 3:1-2'],
+        understand: 'The most useful distinction in the book: some of what is printed is the text, and some was added to help you find your way.\n\nSection headings — the short bold lines breaking a chapter into parts — are almost always the publisher’s. They are navigation, and another edition will word them differently or drop them. Useful, not Scripture, and quietly able to steer how you read what follows.\n\nPsalms complicate that instructively. Many open with a line naming an author or a tune. Those lines are in the manuscripts, but editions disagree about how to show them: some as a heading, some numbered as verse 1, some not at all. One text, three layouts.\n\nFootnotes usually do one of a few jobs: an alternative translation, a note that manuscripts differ, a more literal rendering, or a modern equivalent for a coin. The marks pointing to them vary between editions, so find your Bible’s key once.',
+        lookCloser: 'Look at the very start of Psalm 23 in your Bible. Is there a line naming David — and is it a heading, numbered as verse 1, or missing?',
+        reflect: 'Does knowing which words are the publisher’s change how much weight you give a heading?' },
+      { id: 'htu-6', title: 'The tools in the back',
+        passages: ['NEH.8.8'],
+        basis: ['Nehemiah 8:1-8', 'Acts 17:11'],
+        understand: 'Nehemiah describes a public reading where the text was read aloud and then explained, so that people understood it. That has been the pattern ever since: the words, and then help with the words.\n\nA good deal of that help may already be in your hands. Many Bibles carry a concordance — an alphabetical index of words showing where each appears. If you half-remember a phrase, that is how you find it. Some include maps, which turn a list of strange place names into distances you can actually picture. Many put a short introduction before each book.\n\nNot every edition has all of these, and a slim one may have none. It is worth five minutes finding out what yours contains.\n\nA search box does the concordance’s job faster, and it is genuinely useful. What it cannot do is tell you which of forty results is the one that matters. That part is still reading.',
+        lookCloser: 'Turn to the back of your Bible and list what you find. If there is a concordance, look up one word you are curious about.',
+        figure: { heading: 'What may be in your edition', rows: [{ label: 'Concordance', value: 'An index of words, showing where each one appears.' }, { label: 'Maps', value: 'Turns unfamiliar place names into distances you can see.' }, { label: 'Introductions', value: 'A page before each book: who wrote it, to whom, and why.' }, { label: 'Glossary', value: 'Short explanations of unfamiliar terms.' }] },
+        reflect: 'Which of these would help most with the way you actually read?' },
+      { id: 'htu-7', title: 'Reading in context',
+        passages: ['PHP.4.11-13'],
+        basis: ['Philippians 4:10-20'],
+        understand: 'The last verse here is quoted more than almost any other, and nearly always on its own. Read the two sentences in front of it and it says something more specific — and more useful.\n\nPaul is writing from prison, thanking a church for a gift they sent him. What he says he has learned is contentment: in plenty and in hunger, with much and with nothing. The famous line is the conclusion of that thought. The strength being described is strength to be content in either condition, not a general assurance that effort will succeed.\n\nNothing in the verse changes. What changes is what it is about.\n\nSo the habit worth building is small. Before deciding what a verse means, read the paragraph it lives in. Then ask who was writing, to whom, and what they were dealing with — which is exactly what a book introduction will tell you in a page.',
+        lookCloser: 'Read verses 11 and 12 on their own, then read verse 13 on its own. What does each version seem to be promising?',
+        reflect: 'Is there a verse you have seen quoted alone that you would now like to look up properly?' },
+      { id: 'htu-8', title: 'A way to study a passage',
+        passages: ['PSA.1.1-3'],
+        basis: ['Psalm 1:1-6', 'Nehemiah 8:8'],
+        understand: 'Here is a method that works on any passage. It is not clever, and that is the point: most of the work is looking rather than deciding.\n\nTake the psalm above. Observe first — it sets two ways of living against each other, and the opening line moves: walking, then standing, then sitting. Something is settling.\n\nThen understand. This is poetry, and it is placed first in a collection of songs, which suggests it is an introduction to the whole book rather than a promise about outcomes.\n\nThen connect. The picture is a tree by water, bearing fruit in its season — not immediately, and not constantly.\n\nOnly then reflect, and only then apply. Notice how late those come. Most disappointment with Bible reading starts at the last step: deciding what a passage means for today before working out what it said to anyone.',
+        lookCloser: 'Try only the first step on the passage above. Write down three things it says, without interpreting any of them.',
+        figure: { heading: 'Five steps, in order', rows: [{ label: 'Observe', value: 'What does it actually say? Read it twice before deciding anything.' }, { label: 'Understand', value: 'Who wrote it, to whom, and what kind of writing is this?' }, { label: 'Connect', value: 'What do the surrounding verses, or a cross-reference, add?' }, { label: 'Reflect', value: 'What would this ask of someone who took it seriously?' }, { label: 'Apply', value: 'One specific thing, held loosely — not a resolution.' }] },
+        reflect: 'Which of the five steps do you usually skip?' }
     ] }
 ];
 /* SCRIPTURE-END */
@@ -5912,6 +6020,8 @@ function renderLesson(){
     '<div class="section-label">Understand</div>' +
     '<div class="lesson-prose">' + paragraphsHtml(lesson.understand) + '</div>' +
 
+    (lesson.figure ? figureHtml(lesson.figure) : '') +
+
     (lesson.lookCloser
       ? '<div class="section-label">Look closer</div>' +
         '<p class="look-closer">' + escapeHtml(lesson.lookCloser) + '</p>'
@@ -5936,6 +6046,23 @@ function renderLesson(){
      parsed as markup. */
   const field = document.getElementById('lessonNote');
   if(field) field.value = note ? note.text : '';
+}
+
+/* A labelled figure: a heading and a few label/value rows. Presentational
+   only — nothing here is interactive, and it reads as a small table to a
+   screen reader because that is what it is. */
+function figureHtml(fig){
+  return '<div class="lesson-figure">' +
+    '<div class="figure-heading">' + escapeHtml(fig.heading) + '</div>' +
+    '<dl class="figure-rows">' +
+      fig.rows.map(function(r){
+        return '<div class="figure-row">' +
+          '<dt>' + escapeHtml(r.label) + '</dt>' +
+          '<dd>' + escapeHtml(r.value) + '</dd>' +
+        '</div>';
+      }).join('') +
+    '</dl>' +
+  '</div>';
 }
 
 function passageCardHtml(p){

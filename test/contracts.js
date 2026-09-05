@@ -1819,6 +1819,41 @@ function testStudies(){
   T('no lesson field reproduces a run of Scripture', inlined.length === 0, inlined.slice(0, 5).join(', '));
   T('and the build refuses one before it can ship',
     /reproduces Scripture/.test(require('fs').readFileSync('scripts/scripture.js', 'utf8')));
+
+  sub('the labelled figure is content like any other');
+  /* A new field that renders text to a reader is a new place Scripture could
+     be typed. It is covered by the same six-word guard as the prose, in the
+     build and here, because a field exempt from that check is the hole the
+     check exists to close. */
+  const figured = lessons.filter(x => x.l.figure);
+  T('some lessons carry a figure', figured.length > 0, String(figured.length));
+  T('a figure has a heading and rows',
+    figured.every(x => typeof x.l.figure.heading === 'string' && x.l.figure.heading.trim() &&
+      Array.isArray(x.l.figure.rows) && x.l.figure.rows.length > 0));
+  T('every row is a label and a value',
+    figured.every(x => x.l.figure.rows.every(r =>
+      typeof r.label === 'string' && r.label.trim() &&
+      typeof r.value === 'string' && r.value.trim())));
+  T('a figure carries nothing beyond a heading and rows',
+    figured.every(x => Object.keys(x.l.figure).sort().join(',') === 'heading,rows'),
+    figured.map(x => Object.keys(x.l.figure).join(',')).join(' | '));
+  T('and it is optional — most lessons have none',
+    lessons.length - figured.length > 0, String(lessons.length - figured.length));
+
+  const figureRuns = [];
+  figured.forEach(x => {
+    const text = [x.l.figure.heading]
+      .concat(x.l.figure.rows.map(r => r.label + ' ' + r.value)).join(' ');
+    const w = normRun(text).split(' ');
+    for(let i = 0; i + RUN <= w.length; i++){
+      const k = w.slice(i, i + RUN).join(' ');
+      if(scriptureRuns.has(k)){ figureRuns.push(x.s + '/' + x.l.id + ' <- ' + scriptureRuns.get(k)); return; }
+    }
+  });
+  T('no figure reproduces a run of Scripture', figureRuns.length === 0, figureRuns.join(', '));
+  T('and the build scans figures too, not only prose',
+    require('fs').readFileSync('scripts/scripture.js', 'utf8').indexOf('figure: figureText') !== -1);
+
   T('a lesson record carries ids, never a text field',
     lessons.every(x => x.l.text === undefined && x.l.scripture === undefined));
 
@@ -2571,12 +2606,12 @@ function testTodayUnharmed(){
   /* Daily is pinned and must never move. The study-only figure legitimately
      grows every time a lesson quotes a passage the rotation never carried;
      it is pinned too, so growth has to be a deliberate edit rather than a
-     side effect nobody noticed. 7 -> 31 when Learn went from one study to
-     four. Daily stayed exactly where it was, which is the point. */
+     side effect nobody noticed. 7 -> 31 -> 35 as Learn grew from one study
+     to five. Daily stayed exactly where it was, which is the point. */
   T('378 daily passages', daily.length === 378, String(daily.length));
-  T('31 study-only passages', c.SCRIPTURE.filter(p => !p.daily).length === 31,
+  T('35 study-only passages', c.SCRIPTURE.filter(p => !p.daily).length === 35,
     String(c.SCRIPTURE.filter(p => !p.daily).length));
-  T('409 in total', c.SCRIPTURE.length === 409, String(c.SCRIPTURE.length));
+  T('413 in total', c.SCRIPTURE.length === 413, String(c.SCRIPTURE.length));
   T('all 378 are still eligible', c.eligiblePassages().length === 378);
   /* Recomputed here rather than trusted from the shipped metadata. */
   T('the daily hash is unchanged by this phase',
@@ -2645,15 +2680,16 @@ function testStudyCatalogue(){
   const c = app.ctx;
 
   sub('four studies, twenty-three lessons');
-  T('there are four studies', c.STUDIES.length === 4, String(c.STUDIES.length));
+  T('there are five studies', c.STUDIES.length === 5, String(c.STUDIES.length));
   const counts = {};
   c.STUDIES.forEach(s => { counts[s.id] = s.lessons.length; });
   T('New to the Bible has 5', counts['new-to-the-bible'] === 5, String(counts['new-to-the-bible']));
   T('Who is Jesus? has 7', counts['who-is-jesus'] === 7, String(counts['who-is-jesus']));
   T('Understanding the Gospel has 6', counts['understanding-the-gospel'] === 6, String(counts['understanding-the-gospel']));
   T('Learning to Pray has 5', counts['learning-to-pray'] === 5, String(counts['learning-to-pray']));
+  T('How to Use the Bible has 8', counts['how-to-use-the-bible'] === 8, String(counts['how-to-use-the-bible']));
   const total = c.STUDIES.reduce((n, s) => n + s.lessons.length, 0);
-  T('23 lessons in total', total === 23, String(total));
+  T('31 lessons in total', total === 31, String(total));
 
   sub('the ids someone may already have progress against');
   /* A stored progress row names a study id and a list of lesson ids. Rename
@@ -2705,7 +2741,7 @@ function testStudyCatalogue(){
   c.renderLearn();
   const html = app.dom.document.getElementById('learnBody').innerHTML;
   const listed = c.STUDIES.filter(s => html.indexOf(s.title) !== -1);
-  T('all four studies appear on the Learn landing', listed.length === 4,
+  T('all five studies appear on the Learn landing', listed.length === 5,
     c.STUDIES.filter(s => html.indexOf(s.title) === -1).map(s => s.id).join(', '));
 
   const brokeOpen = [];

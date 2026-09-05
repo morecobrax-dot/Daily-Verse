@@ -220,6 +220,10 @@ function buildStudies(doc, errors){
   const understandMax = max.understandMax || 900;
   const lookMax = max.lookCloserMax || 200;
   const reflectMax = max.reflectMax || 140;
+  const figureHeadingMax = max.figureHeadingMax || 40;
+  const figureRowsMax = max.figureRowsMax || 6;
+  const figureLabelMax = max.figureLabelMax || 24;
+  const figureValueMax = max.figureValueMax || 90;
 
   (doc.studies || []).forEach(s => {
     if(!s.id || !s.title || !s.summary){ errors.push('study ' + (s.id || '?') + ' — missing id, title or summary'); return; }
@@ -267,9 +271,37 @@ function buildStudies(doc, errors){
         errors.push(where + ' — reflect is ' + l.reflect.length + ' chars, over the ' + reflectMax + ' limit');
       }
 
+      /* An optional labelled figure. It exists because some of what a
+         beginner needs is mechanical — which part of John 3:16 is the
+         chapter — and a labelled layout teaches that faster than a
+         sentence about it. Deliberately not free-form: a heading and a
+         short list of label/value pairs, so it cannot grow into a place
+         where arbitrary content (or Scripture) gets typed. */
+      let figure = null;
+      if(l.figure){
+        const f = l.figure;
+        if(!f.heading || !Array.isArray(f.rows) || !f.rows.length){
+          errors.push(where + ' — figure needs a heading and at least one row');
+        } else if(f.rows.length > figureRowsMax){
+          errors.push(where + ' — figure has ' + f.rows.length + ' rows, over the ' + figureRowsMax + ' limit');
+        } else if(f.heading.length > figureHeadingMax){
+          errors.push(where + ' — figure heading is ' + f.heading.length + ' chars, over the ' + figureHeadingMax + ' limit');
+        } else {
+          const badRow = f.rows.filter(r => !r || !r.label || !r.value ||
+            String(r.label).length > figureLabelMax || String(r.value).length > figureValueMax);
+          if(badRow.length){
+            errors.push(where + ' — figure row must be a label and a value within ' +
+              figureLabelMax + '/' + figureValueMax + ' chars');
+          } else {
+            figure = { heading: f.heading, rows: f.rows.map(r => ({ label: r.label, value: r.value })) };
+          }
+        }
+      }
+
       const lesson = { id: l.id, title: l.title, passages: ids,
                        basis: l.basis.slice(), understand: l.understand, reflect: l.reflect };
       if(l.lookCloser) lesson.lookCloser = l.lookCloser;
+      if(figure) lesson.figure = figure;
       lessons.push(lesson);
     });
 
@@ -316,9 +348,17 @@ function assertNoEmbeddedScripture(studies, byId, errors){
 
   studies.forEach(s => {
     s.lessons.forEach(l => {
-      ['understand', 'lookCloser', 'reflect', 'title'].forEach(field => {
-        if(typeof l[field] !== 'string') return;
-        const w = norm(l[field]).split(' ');
+      /* The figure is scanned too. A field that renders text to a reader and
+         is exempt from the Scripture check is exactly the hole this guard
+         exists to close. */
+      const figureText = l.figure
+        ? [l.figure.heading].concat(l.figure.rows.map(r => r.label + ' ' + r.value)).join(' ')
+        : '';
+      const fields = { understand: l.understand, lookCloser: l.lookCloser,
+                       reflect: l.reflect, title: l.title, figure: figureText };
+      Object.keys(fields).forEach(field => {
+        if(typeof fields[field] !== 'string') return;
+        const w = norm(fields[field]).split(' ');
         const seen = new Set();
         for(let i = 0; i + RUN <= w.length; i++){
           const k = w.slice(i, i + RUN).join(' ');
@@ -394,6 +434,10 @@ function region(built){
       "        basis: [" + l.basis.map(x => "'" + esc(x) + "'").join(', ') + "],\n" +
       "        understand: '" + esc(l.understand) + "',\n" +
       (l.lookCloser ? "        lookCloser: '" + esc(l.lookCloser) + "',\n" : "") +
+      (l.figure ? "        figure: { heading: '" + esc(l.figure.heading) + "', rows: [" +
+        l.figure.rows.map(function(r){
+          return "{ label: '" + esc(r.label) + "', value: '" + esc(r.value) + "' }";
+        }).join(', ') + "] },\n" : "") +
       "        reflect: '" + esc(l.reflect) + "' }"
     ).join(',\n');
     return "  { id: '" + esc(s.id) + "', title: '" + esc(s.title) + "',\n" +
