@@ -76,9 +76,13 @@
 
   --text: #F4EEE7;
   --text-dim: #B6A899;
-  /* Measured at ~4.5:1 on --surface. Recessive to --text-dim, still
-     comfortably readable at micro sizes. */
-  --text-faint: #8A7C6E;
+  /* Measured against the LIGHTEST surface it can land on, not the commonest.
+     The previous value was tuned on --surface (4.57) and quietly failed on
+     --surface-scripture (4.43), which is where the verse card puts the date
+     and the translation — the two smallest labels on the screen the app
+     exists for. Now 4.87 there, 5.02 on --surface, 5.30 on --bg.
+     Still clearly recessive to --text-dim, which sits above 7 everywhere. */
+  --text-faint: #918375;
 
   --accent: var(--brand-accent);
   --accent-deep: var(--brand-accent-deep);
@@ -1557,6 +1561,19 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-4-1',
+    version: '1.4.1',
+    title: 'Easier to read',
+    date: '2026-09-05',
+    summary: 'The small labels on a verse — the date and the translation — are ' +
+             'a little clearer against the card behind them.',
+    newFeatures: [],
+    improvements: [
+      'The date and translation on a verse are easier to read in the dark theme'
+    ],
+    fixes: []
+  },
   {
     id: 'v1-4-0',
     version: '1.4.0',

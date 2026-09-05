@@ -2984,6 +2984,133 @@ function testAppearance(){
     /classList\.remove\('appearance-switching'\)/.test(js()));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 34 — SMALL TEXT STAYS READABLE IN BOTH APPEARANCES
+
+   The two labels this exists for shipped failing. --text-faint was tuned
+   against --surface, the commonest surface, and the verse card paints
+   --surface-scripture, which is lighter — so the date and the translation
+   sat at 4.43 on the one screen the app exists for, and nothing noticed.
+
+   So this does not assert that a token exists, or that it equals a colour
+   somebody typed here too. It reads the shipped values and computes the
+   ratio, which is the only form of this check that can fail for the right
+   reason when a palette is next adjusted.
+   --------------------------------------------------------- */
+function testSmallTextContrast(){
+  section('CONTRACT 34 — muted text clears its background in both appearances');
+  const sheet = css();
+
+  /* ---- read the two palettes out of the shipped stylesheet ---- */
+  function tokensIn(startSel){
+    const i = sheet.indexOf(startSel);
+    if(i === -1) return null;
+    const block = sheet.slice(i, sheet.indexOf('\n}', i));
+    const out = {};
+    /* Hex values AND the var() indirection the semantic layer is built on:
+       --bg is var(--brand-ground), so reading only hex would silently skip
+       every surface a component actually names. */
+    block.replace(/(--[a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{6}|var\(--[a-z0-9-]+\))\s*;/g,
+      (m, k, v) => { out[k] = v; return m; });
+    return out;
+  }
+  /* Follow var() to the value it stands for, the way the cascade does. */
+  function resolve(pal){
+    const out = {};
+    Object.keys(pal).forEach(function(k){
+      let v = pal[k], hops = 0;
+      while(/^var\(/.test(v) && hops++ < 5){
+        const ref = v.slice(4, -1);
+        if(!pal[ref]){ v = null; break; }
+        v = pal[ref];
+      }
+      if(v && /^#[0-9a-fA-F]{6}$/.test(v)) out[k] = v;
+    });
+    return out;
+  }
+  const dark = tokensIn(':root{');
+  const lightOverrides = tokensIn(':root[data-theme="light"]');
+  T('the dark palette was read from the stylesheet', dark && Object.keys(dark).length > 10,
+    String(dark && Object.keys(dark).length));
+  T('the light palette was read from the stylesheet', lightOverrides && Object.keys(lightOverrides).length > 10,
+    String(lightOverrides && Object.keys(lightOverrides).length));
+  /* Light inherits everything it does not restate, exactly as the cascade does. */
+  const light = resolve(Object.assign({}, dark, lightOverrides));
+  const darkPal = resolve(dark);
+
+  /* ---- contrast, by the WCAG definition ---- */
+  function lum(hex){
+    const h = hex.replace('#', '');
+    const ch = [0, 2, 4].map(i => {
+      let c = parseInt(h.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  }
+  function ratio(a, b){
+    const x = lum(a), y = lum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+  /* Sanity: a check that cannot detect black on white cannot detect anything. */
+  T('the ratio maths is right', Math.round(ratio('#000000', '#FFFFFF')) === 21,
+    ratio('#000000', '#FFFFFF').toFixed(2));
+
+  /* ---- the two labels that shipped failing ---- */
+  /* Read the surface from the rule rather than restating it, so moving the
+     verse card onto a different surface re-runs this check honestly. */
+  const cardBg = (sheet.match(/\.verse-card\{[\s\S]*?background:\s*var\((--[a-z-]+)\)/) || [])[1];
+  T('the verse card names the surface it paints', !!cardBg, String(cardBg));
+  const labelToken = (sheet.match(/\.verse-date\{[\s\S]*?color:\s*var\((--[a-z-]+)\)/) || [])[1];
+  T('the date label names the colour role it uses', !!labelToken, String(labelToken));
+  T('and the translation label uses the same role',
+    (sheet.match(/\.verse-translation\{[\s\S]*?color:\s*var\((--[a-z-]+)\)/) || [])[1] === labelToken);
+
+  [['dark', darkPal], ['light', light]].forEach(function(pair){
+    const name = pair[0], pal = pair[1];
+    const fg = pal[labelToken], bg = pal[cardBg];
+    const cr = ratio(fg, bg);
+    T('.verse-date clears 4.5:1 in ' + name, cr >= 4.5,
+      cr.toFixed(2) + '  ' + fg + ' on ' + bg);
+    T('.verse-translation clears 4.5:1 in ' + name, cr >= 4.5, cr.toFixed(2));
+    /* The brief asked for headroom, not a value sitting on the line. */
+    T('with margin rather than exactly on the threshold in ' + name, cr >= 4.7, cr.toFixed(2));
+  });
+
+  /* ---- and every other muted role, on every surface it can land on ---- */
+  /* --surface-raised carries a border and the switch knob rather than text, so
+     it is checked at the 3:1 the spec asks of a non-text component. */
+  const TEXT_SURFACES = ['--bg', '--surface', '--surface-scripture'];
+  const TEXT_ROLES = ['--text', '--text-dim', '--text-faint', '--accent'];
+  [['dark', darkPal], ['light', light]].forEach(function(pair){
+    const name = pair[0], pal = pair[1];
+    const bad = [];
+    TEXT_ROLES.forEach(function(role){
+      TEXT_SURFACES.forEach(function(surf){
+        if(!pal[role] || !pal[surf]) return;
+        const cr = ratio(pal[role], pal[surf]);
+        if(cr < 4.5) bad.push(role + ' on ' + surf + ' = ' + cr.toFixed(2));
+      });
+    });
+    T('every text role clears 4.5:1 on every text surface in ' + name,
+      bad.length === 0, bad.join(' | '));
+  });
+
+  sub('and it is still a hierarchy, not three shades of the same thing');
+  /* Raising the faint role fixes contrast; raising it too far deletes the
+     distinction it exists to make. Each step must stay visibly separated. */
+  [['dark', darkPal], ['light', light]].forEach(function(pair){
+    const name = pair[0], pal = pair[1];
+    const l = { text: lum(pal['--text']), dim: lum(pal['--text-dim']), faint: lum(pal['--text-faint']) };
+    const ordered = name === 'dark'
+      ? (l.text > l.dim && l.dim > l.faint)      // lighter is louder on a dark ground
+      : (l.text < l.dim && l.dim < l.faint);     // darker is louder on a light one
+    T('the three text roles stay in order in ' + name, ordered,
+      JSON.stringify({ text: l.text.toFixed(3), dim: l.dim.toFixed(3), faint: l.faint.toFixed(3) }));
+    const gap = Math.abs(ratio(pal['--text-dim'], pal['--surface']) - ratio(pal['--text-faint'], pal['--surface']));
+    T('faint is still meaningfully quieter than dim in ' + name, gap >= 1.5, gap.toFixed(2));
+  });
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -2993,5 +3120,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance
+  testStudyCatalogue, testAppearance, testSmallTextContrast
 };
