@@ -1,26 +1,86 @@
 {
-  "edition": {
-    "id": "eng-web",
-    "title": "World English Bible Classic",
-    "abbr": "WEB",
-    "language": "English (United States)",
-    "license": "Public Domain",
-    "publisher": "eBible.org",
-    "divineName": "Yahweh"
-  },
-  "archives": {
-    "vpl": {
-      "url": "https://ebible.org/Scriptures/eng-web_vpl.zip",
-      "bytes": 5343520,
-      "sha256": "2dee3ce71cd1e459bbad81c0195f0121690f5364c4b391c64282018106d60f53",
-      "entries": 5
+  "editions": {
+    "eng-web": {
+      "id": "eng-web",
+      "language": "English",
+      "lang": "en",
+      "title": "World English Bible Classic",
+      "abbr": "WEB",
+      "scope": "Bible with Deuterocanon",
+      "languageName": "English",
+      "iso": "eng",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain The World English Bible is in the Public Domain. You may copy it freely. \"World English Bible\" is a trademark that may only be used to refer to faithful copies of the text of the World English Bible as distributed from https://eBible.org. This public domain Bible translation is brought to you courtesy of eBible.org. If you would like to make a donation to help keep free Bible access like this going, please visit https://eBible.org/give.php .",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/eng-web_vpl.zip",
+          "bytes": 5343520,
+          "sha256": "2dee3ce71cd1e459bbad81c0195f0121690f5364c4b391c64282018106d60f53",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/eng-web_usfx.zip",
+          "bytes": 3298550,
+          "sha256": "d1de86950c40da97ccf10f17809a0b8ed99e3062617b739e21ee6d9b4aa8d2cd",
+          "entries": 8
+        }
+      }
     },
-    "usfx": {
-      "url": "https://ebible.org/Scriptures/eng-web_usfx.zip",
-      "bytes": 3298550,
-      "sha256": "d1de86950c40da97ccf10f17809a0b8ed99e3062617b739e21ee6d9b4aa8d2cd",
-      "entries": 8
+    "spaRV1909": {
+      "id": "spaRV1909",
+      "language": "Español",
+      "lang": "es",
+      "title": "Reina Valera 1909",
+      "abbr": "RV1909",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "Spanish",
+      "iso": "spa",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain Dominio Público",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/spaRV1909_vpl.zip",
+          "bytes": 4401437,
+          "sha256": "e5c553f8044e676375e5f13719493f7f47c54b5f145cc33cb65f12eb6f4dc8e5",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/spaRV1909_usfx.zip",
+          "bytes": 2439352,
+          "sha256": "2ca64656e7c06773480049201816b408ef3d937bd372db28ab7b05b543da66ac",
+          "entries": 8
+        }
+      }
+    },
+    "fraLSG": {
+      "id": "fraLSG",
+      "language": "Français",
+      "lang": "fr",
+      "title": "French Louis Segond 1910 Bible",
+      "abbr": "F10",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "French",
+      "iso": "fra",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain Cette Bible est dans le domaine public. Il n'est pas protégé par copyright. This Bible is in the Public Domain. It is not copyrighted.",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/fraLSG_vpl.zip",
+          "bytes": 4591510,
+          "sha256": "a78fef5c2264b277f993b17a1560904c29cc830047a02027667306c874f8f8c5",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/fraLSG_usfx.zip",
+          "bytes": 3464854,
+          "sha256": "ae52c29fe5779125888a787d399cadb24e227ee2d35d2c81f5274422ce216f0d",
+          "entries": 8
+        }
+      }
     }
   },
-  "syncedAt": "2026-09-04"
+  "syncedAt": "2026-09-05"
 }

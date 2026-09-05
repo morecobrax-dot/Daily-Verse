@@ -164,8 +164,8 @@ function derivePassage(ref, verses, supers, errors){
 function build(){
   const cur = readCuration();
   const studyDoc = readStudies();
-  const verses = corpus.verses();
-  const supers = corpus.superscriptions();
+  const verses = corpus.verses(corpus.DEFAULT_EDITION);
+  const supers = corpus.superscriptions(corpus.DEFAULT_EDITION);
   const lock = corpus.readLock();
   if(!lock) throw new Error('no data/corpus.lock.json — run `npm run corpus:sync` first');
 
@@ -217,8 +217,47 @@ function build(){
     e.detail = errors;
     throw e;
   }
-  return { passages: daily.concat(study), daily: daily, study: study,
+  const canonical = daily.concat(study);
+  return { passages: canonical, daily: daily, study: study,
+           translations: buildTranslations(canonical, lock),
            studies: built.studies, studyDoc: studyDoc, lock: lock, curation: cur };
+}
+
+/* Every other shipped edition, over the SAME canonical locations.
+
+   The canonical set is fixed by the curation and the studies and is derived
+   against the default edition. Another edition supplies text for those
+   locations and nothing else: it cannot add a passage, remove one, or change
+   what a day is assigned. A translation is a rendering of the canon this app
+   already had, never a second canon.
+
+   A reference that does not resolve in an edition is a build failure. It is
+   the point at which a versification difference would otherwise become a
+   silently wrong verse, so it stops the build instead. */
+function buildTranslations(canonical, lock){
+  const out = {};
+  corpus.shippedEditions().forEach(id => {
+    if(id === corpus.DEFAULT_EDITION) return;
+    const verses = corpus.verses(id);
+    const supers = corpus.superscriptions(id);
+    const errors = [];
+    const passages = canonical.map(p => {
+      const rec = derivePassage(p.ref, verses, supers, errors);
+      if(!rec) return null;
+      if(rec.id !== p.id){
+        errors.push(p.ref + ' — resolved to ' + rec.id + ' in ' + id + ', not ' + p.id);
+        return null;
+      }
+      return rec;
+    });
+    if(errors.length){
+      const e = new Error(id + ': ' + errors.length + ' passage(s) failed to derive');
+      e.detail = errors;
+      throw e;
+    }
+    out[id] = { id: id, passages: passages };
+  });
+  return out;
 }
 
 /* Validate the teaching content and resolve its references to canonical ids.
@@ -514,7 +553,7 @@ function region(built){
      answering the one question that matters after such a change: did the
      daily readings move? This one answers it. */
   const dailyHash = datasetHash(built.daily);
-  const ed = built.lock.edition;
+  const ed = built.lock.editions[corpus.DEFAULT_EDITION];
 
   const rows = built.passages.map(passageRow).join(',\n');
 
@@ -543,6 +582,48 @@ function region(built){
            "    summary: '" + esc(s.summary) + "',\n" +
            "    audience: '" + esc(s.audience) + "',\n" +
            "    lessons: [\n" + lessons + "\n    ] }";
+  }).join(',\n');
+
+  /* Every shipped edition, including the default, described from its own
+     archive metadata. Text for the default lives inline in SCRIPTURE; the
+     others carry theirs here, keyed by the same canonical id. */
+  /* Only the books the canonical set actually uses — 54 of 66, and no reason
+     to ship names for books nothing points at. */
+  const usedBooks = [...new Set(built.passages.map(p => p.id.split('.')[0]))].sort();
+  const editionRows = corpus.shippedEditions().map(id => {
+    const e = built.lock.editions[id];
+    const conf = corpus.EDITIONS[id];
+    const t = built.translations[id];
+    const own = t ? t.passages : built.passages;
+    const dailyIds = new Set(built.daily.map(p => p.id));
+    return '  ' + JSON.stringify(id) + ': {' +
+      " id: '" + esc(id) + "'," +
+      " title: '" + esc(e.title) + "'," +
+      " abbr: '" + esc(e.abbr) + "'," +
+      " language: '" + esc(conf.language) + "'," +
+      " lang: '" + esc(conf.lang) + "'," +
+      " iso: '" + esc(e.iso) + "'," +
+      " direction: '" + esc(e.direction) + "'," +
+      " publisher: 'eBible.org'," +
+      "\n    copyright: '" + esc(e.copyright) + "'," +
+      "\n    books: { " + usedBooks.map(code => {
+        const names = corpus.bookNames(id);
+        return names[code] ? "'" + code + "': '" + esc(names[code]) + "'" : null;
+      }).filter(Boolean).join(', ') + " }," +
+      "\n    datasetHash: '" + datasetHash(own) + "'," +
+      " dailyHash: '" + datasetHash(own.filter(p => dailyIds.has(p.id))) + "'," +
+      " isDefault: " + (id === corpus.DEFAULT_EDITION ? 'true' : 'false') +
+    ' }';
+  }).join(',\n');
+
+  /* Only the non-default editions carry text here — the default's is already
+     in SCRIPTURE, and duplicating it would be 64KB of the same bytes twice
+     and a second place for them to disagree. */
+  const textRows = Object.keys(built.translations).map(id => {
+    const rows = built.translations[id].passages.map(p =>
+      "  '" + esc(p.id) + "': { text: '" + esc(p.text) + "'" +
+      (p.sup ? ", sup: '" + esc(p.sup) + "'" : '') + ' }').join(',\n');
+    return '  ' + JSON.stringify(id) + ': {\n' + rows.split('\n').map(r => '  ' + r).join('\n') + '\n  }';
   }).join(',\n');
 
   return [
@@ -580,7 +661,20 @@ function region(built){
     '',
     'const STUDIES = [',
     studyRows,
-    '];'
+    '];',
+    '',
+    '/* The editions this app ships. A canonical id names a LOCATION; an',
+    '   edition supplies the words for it. User records — saved verses, the',
+    '   day ledger, a lesson\u2019s passage list — only ever hold the id, so',
+    '   changing edition changes the words on screen and nothing else. */',
+    'const TRANSLATIONS = {',
+    editionRows,
+    '};',
+    '',
+    '/* Text for every edition other than the default, by canonical id. */',
+    'const TRANSLATION_TEXT = {',
+    textRows,
+    '};'
   ].join('\n');
 }
 
@@ -603,7 +697,21 @@ function writeRegion(text){
 function shipped(){
   const H = require('../test/harness.js');
   const ctx = H.loadApp().ctx;
-  return { passages: ctx.SCRIPTURE || [], source: ctx.SCRIPTURE_SOURCE || {}, reflections: ctx.REFLECTIONS || {} };
+  return { passages: ctx.SCRIPTURE || [], source: ctx.SCRIPTURE_SOURCE || {},
+           reflections: ctx.REFLECTIONS || {}, translations: ctx.TRANSLATIONS || {},
+           translationText: ctx.TRANSLATION_TEXT || {} };
+}
+
+/* The shipped text of each non-default edition, back in canonical order so
+   it can be hashed the same way the build hashed it. */
+function shippedTranslations(){
+  const sh = shipped();
+  const out = {};
+  Object.keys(sh.translationText || {}).forEach(id => {
+    const byId = sh.translationText[id];
+    out[id] = sh.passages.map(p => Object.assign({ id: p.id }, byId[p.id]));
+  });
+  return out;
 }
 
 /* ---------------------------------------------------------
@@ -613,7 +721,8 @@ function run(mode){
   if(mode === 'build'){
     const built = build();
     writeRegion(region(built));
-    console.log('scripture:build  ' + built.lock.edition.title + ' (' + built.lock.edition.id + ')');
+    const defEd = built.lock.editions[corpus.DEFAULT_EDITION];
+    console.log('scripture:build  ' + defEd.title + ' (' + defEd.id + ')');
     console.log('  daily        : ' + built.daily.length + ' passages (Today rotation)');
     console.log('  study-only   : ' + built.study.length + ' passages (quoted by lessons)');
     console.log('  total        : ' + built.passages.length);
@@ -623,6 +732,18 @@ function run(mode){
       Number(built.studyDoc.version || 1));
     console.log('  dataset hash : ' + datasetHash(built.passages));
     console.log('  daily hash   : ' + datasetHash(built.daily));
+    Object.keys(built.translations).forEach(id => {
+      const t = built.translations[id];
+      const ed = built.lock.editions[id];
+      const dailyIds = new Set(built.daily.map(p => p.id));
+      console.log('  + ' + id + ' : ' + t.passages.length + ' passages, ' +
+        t.passages.filter(p => p.sup).length + ' superscription(s), hash ' +
+        datasetHash(t.passages).slice(0, 16) + '…  [' + ed.title + ']');
+      void dailyIds;
+    });
+    Object.keys(corpus.EDITIONS).filter(id => corpus.EDITIONS[id].held).forEach(id => {
+      console.log('  ! ' + id + ' : HELD — ' + corpus.EDITIONS[id].held);
+    });
     return 0;
   }
 
@@ -643,6 +764,19 @@ function run(mode){
       console.error('  DAILY DRIFT — the Today rotation is not what the curation produces.');
     }
     if(wantHash === haveHash){
+      /* A green default edition says nothing about the others, so each one
+         is re-derived and compared on its own. */
+      const shippedT = shippedTranslations();
+      let bad = 0;
+      Object.keys(built.translations).forEach(id => {
+        const want = datasetHash(built.translations[id].passages);
+        const got = shippedT[id] ? datasetHash(shippedT[id]) : null;
+        console.log('  ' + id.padEnd(11) + (got === want
+          ? 'ok — ' + built.translations[id].passages.length + ' passages match the published edition'
+          : 'FAILED — shipped ' + String(got).slice(0, 16) + '… vs published ' + want.slice(0, 16) + '…'));
+        if(got !== want) bad++;
+      });
+      if(bad) { console.error('  FAILED — a translation does not match its corpus.'); return 1; }
       console.log('  ok — every shipped character matches the published edition');
       return 0;
     }

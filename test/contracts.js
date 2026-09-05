@@ -1261,12 +1261,18 @@ function testScripture(){
 
   sub('the corpus this was built from is pinned and checkable');
   const lock = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'corpus.lock.json'), 'utf8'));
-  T('a lock file records the edition', !!(lock.edition && lock.edition.id));
-  T('the shipped data names the same edition', c.SCRIPTURE_SOURCE.edition === lock.edition.id,
-    c.SCRIPTURE_SOURCE.edition + ' vs ' + lock.edition.id);
-  T('every source archive is pinned by digest',
-    Object.keys(lock.archives || {}).length > 0 &&
-    Object.keys(lock.archives).every(k => /^[0-9a-f]{64}$/.test(lock.archives[k].sha256)));
+  /* The lock became a map when a second edition arrived. Each edition it
+     names must pin every archive it was built from. */
+  const lockEds = lock.editions || {};
+  T('a lock file records at least one edition', Object.keys(lockEds).length > 0);
+  T('the shipped data names an edition the lock knows',
+    !!lockEds[c.SCRIPTURE_SOURCE.edition],
+    c.SCRIPTURE_SOURCE.edition + ' vs [' + Object.keys(lockEds).join(', ') + ']');
+  T('every source archive of every edition is pinned by digest',
+    Object.keys(lockEds).every(id =>
+      Object.keys(lockEds[id].archives || {}).length > 0 &&
+      Object.keys(lockEds[id].archives).every(k => /^[0-9a-f]{64}$/.test(lockEds[id].archives[k].sha256))),
+    Object.keys(lockEds).join(', '));
   T('a dataset fingerprint is shipped', /^[0-9a-f]{64}$/.test(c.SCRIPTURE_SOURCE.datasetHash || ''));
 
   sub('every quotation can say where it came from');
@@ -1277,12 +1283,18 @@ function testScripture(){
   T('a publisher is recorded', !!s.publisher);
   T('and the divine-name rendering is stated rather than left to be discovered',
     !!s.divineName);
+  /* The one-word 'Licence' row became the publisher's actual statement,
+     quoted per translation. Stronger, so the check follows it. */
   T('the reader can reach all of that without leaving the app',
-    /function renderSource\(/.test(src) && /detailRow\('Licence'/.test(src));
+    /function renderSource\(/.test(src) && /source-licence/.test(src) &&
+    /t\.copyright/.test(src));
   T('the fingerprint is shown too, so the claim is checkable in the product',
     /datasetHash/.test(src) && /fingerprint/.test(src));
+  /* The label now names the edition being SHOWN rather than the one the app
+     was built from, because those became different things. Still beside the
+     verse, which is the part that matters. */
   T('the translation is painted beside the verse, not hidden in a settings page',
-    /verse-translation[\s\S]{0,200}SCRIPTURE_SOURCE\.abbr/.test(src));
+    /verse-translation[\s\S]{0,200}translationAbbr\(/.test(src));
 
   sub('Scripture and this app\'s own words are separate objects');
   T('reflections are a structure of their own', typeof c.REFLECTIONS === 'object');
@@ -2332,7 +2344,7 @@ function testLessonRendering(){
   });
   T('the translation identity is shown', html.indexOf(c.SCRIPTURE_SOURCE.abbr) !== -1);
   T('Scripture is rendered through the verse primitive',
-    /<blockquote class="verse-text">/.test(html));
+    /<blockquote class="verse-text"/.test(html));
   /* The renderer must reach the catalogue, not read a string off the lesson. */
   T('the renderer resolves passages through lessonPassages()',
     /const passages = lessonPassages\(lesson\);/.test(src));
@@ -3461,6 +3473,202 @@ function testFaithfulCopy(){
     echo.length === 0, echo.slice(0, 5).join(', '));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 37 — MORE THAN ONE EDITION, ONE CANON
+
+   A canonical id names a LOCATION. An edition supplies the words. Everything
+   here defends that line, because the ways it breaks are quiet: a saved verse
+   that stops resolving, a day that rerolls when the language changes, a
+   Spanish verse labelled WEB, a lesson that teaches an English word beside
+   text that no longer contains it.
+   --------------------------------------------------------- */
+function testTranslations(){
+  section('CONTRACT 37 — multiple translations, one canon');
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx;
+  const S = require('../scripts/scripture.js');
+  const lock = JSON.parse(require('fs').readFileSync('data/corpus.lock.json', 'utf8'));
+
+  sub('every shipped edition is described by its publisher, not by us');
+  const ids = Object.keys(c.TRANSLATIONS);
+  T('more than one edition ships', ids.length >= 2, ids.join(', '));
+  T('the default is the World English Bible', c.DEFAULT_TRANSLATION === 'eng-web');
+  ids.forEach(id => {
+    const t = c.TRANSLATIONS[id];
+    T(id + ' names itself', !!(t.title && t.abbr && t.language && t.lang));
+    T(id + ' carries its publisher licence statement',
+      typeof t.copyright === 'string' && /public domain/i.test(t.copyright),
+      String(t.copyright).slice(0, 48));
+    T(id + ' is pinned in the lock', !!(lock.editions[id] && lock.editions[id].archives));
+    T(id + ' pins every archive by digest',
+      Object.keys(lock.editions[id].archives).every(k => /^[0-9a-f]{64}$/.test(lock.editions[id].archives[k].sha256)));
+    T(id + ' declares a language code for screen readers', /^[a-z]{2}$/.test(t.lang), t.lang);
+  });
+
+  sub('the English baseline did not move');
+  /* The whole refactor is worthless if it cost the edition people already read. */
+  T('415 canonical passages', c.SCRIPTURE.length === 415, String(c.SCRIPTURE.length));
+  T('378 of them daily', c.SCRIPTURE.filter(p => p.daily).length === 378);
+  T('the WEB dataset hash is exactly what it was',
+    S.datasetHash(c.SCRIPTURE) === 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916',
+    S.datasetHash(c.SCRIPTURE));
+  T('the WEB daily hash is exactly what it was',
+    S.datasetHash(c.SCRIPTURE.filter(p => p.daily)) === '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41',
+    S.datasetHash(c.SCRIPTURE.filter(p => p.daily)));
+  T('and its 19 superscriptions are still there',
+    c.SCRIPTURE.filter(p => p.sup).length === 19, String(c.SCRIPTURE.filter(p => p.sup).length));
+
+  sub('one canon, several sets of words');
+  const other = ids.filter(id => id !== c.DEFAULT_TRANSLATION);
+  other.forEach(id => {
+    const text = c.TRANSLATION_TEXT[id] || {};
+    const keys = Object.keys(text);
+    T(id + ' covers every canonical passage', keys.length === c.SCRIPTURE.length,
+      keys.length + ' of ' + c.SCRIPTURE.length);
+    T(id + ' introduces no id of its own',
+      keys.every(k => !!c.passageById(k)),
+      keys.filter(k => !c.passageById(k)).slice(0, 3).join(', '));
+    T(id + ' has text for every one', keys.every(k => text[k].text && text[k].text.length > 8));
+    /* Different words is the point; the SAME words would mean it never loaded. */
+    const differs = c.SCRIPTURE.filter(p => text[p.id] && text[p.id].text !== p.text).length;
+    T(id + ' actually differs from the default', differs > c.SCRIPTURE.length * 0.9,
+      differs + ' of ' + c.SCRIPTURE.length);
+  });
+  T('no id anywhere is namespaced by translation',
+    c.SCRIPTURE.every(p => !/^(spa|fra|eng)[.-]/.test(p.id)),
+    c.SCRIPTURE.filter(p => /^(spa|fra|eng)[.-]/.test(p.id)).slice(0,3).map(p=>p.id).join(', '));
+
+  sub('choosing an edition changes words, and only words');
+  const p = c.passageById('PSA.20.7');
+  const en = c.inTranslation(p);
+  T('the default renders English', /chariots/.test(en.text), en.text.slice(0, 40));
+  T('and keeps the canonical reference', en.ref === 'Psalm 20:7', en.ref);
+  c.setTranslation('spaRV1909');
+  const es = c.inTranslation(p);
+  T('the same id renders Spanish', es.text !== en.text && /carros/.test(es.text), es.text.slice(0, 40));
+  T('the id is unchanged', es.id === p.id);
+  T('the reference is the publisher’s own book name', es.ref === 'Salmos 20:7', es.ref);
+  T('the label names the edition being read', c.translationAbbr(es) === 'RV1909', c.translationAbbr(es));
+  T('and the text declares its language', c.translationLang(es) === 'es');
+  T('themes and eligibility travel with the location, not the words',
+    JSON.stringify(es.themes) === JSON.stringify(p.themes) && es.daily === p.daily);
+  c.setTranslation('eng-web');
+
+  sub('the day is assigned to a passage, not to a language');
+  const day = H.loadApp({ sharedStorage: new Map() });
+  const before = day.ctx.passageForDay(day.ctx.todayKey()).id;
+  const week = [];
+  for(let i = 0; i < 14; i++){
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    week.push(day.ctx.passageForDay(key).id);
+  }
+  day.ctx.setTranslation('spaRV1909');
+  T('today is the same passage in Spanish', day.ctx.passageForDay(day.ctx.todayKey()).id === before);
+  const weekAfter = [];
+  for(let i = 0; i < 14; i++){
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    weekAfter.push(day.ctx.passageForDay(key).id);
+  }
+  T('and so is every day behind it', week.join() === weekAfter.join());
+
+  sub('switching edition writes nothing a reader owns');
+  const d = H.loadApp({ sharedStorage: new Map() });
+  d.ctx.toggleSaved('PSA.20.7');
+  d.ctx.openLesson('who-is-jesus', 'wij-1'); d.ctx.__flush();
+  d.ctx.completeLesson(); d.ctx.__flush();
+  const KEYS = ['data.saved','data.notes','data.assignments','data.studyProgress','data.studyNotes','data.checkAnswers','sys.schemaVersion'];
+  const snap = {}; KEYS.forEach(k => snap[k] = d.storage.getItem('daily-verse.' + k));
+  d.ctx.setTranslation('spaRV1909');
+  d.ctx.setTranslation('eng-web');
+  d.ctx.setTranslation('spaRV1909');
+  const touched = KEYS.filter(k => d.storage.getItem('daily-verse.' + k) !== snap[k]);
+  T('no record changes when the edition changes', touched.length === 0, touched.join(', '));
+  T('a saved verse still resolves', !!d.ctx.passageById('PSA.20.7'));
+  T('and renders in the newly chosen edition',
+    /carros/.test(d.ctx.inTranslation(d.ctx.passageById('PSA.20.7')).text));
+
+  sub('the preference behaves like every other preference');
+  const fresh = H.loadApp({ sharedStorage: new Map() });
+  T('a new reader gets the default', fresh.ctx.translation === 'eng-web');
+  T('and nothing is written until they choose',
+    fresh.storage.getItem('daily-verse.ui.translation') === null);
+  const shared = new Map();
+  const one = H.loadApp({ sharedStorage: shared });
+  one.ctx.setTranslation('spaRV1909');
+  const two = H.loadApp({ sharedStorage: shared });
+  T('a chosen edition survives being closed', two.ctx.translation === 'spaRV1909');
+  const junk = new Map(); junk.set('daily-verse.ui.translation', 'notAnEdition');
+  T('an edition this build does not ship falls back to the default',
+    H.loadApp({ sharedStorage: junk }).ctx.translation === 'eng-web');
+  /* The language is a property of the edition, never a second stored value
+     that could disagree with it. */
+  T('no separate language preference exists',
+    Object.keys(c.KEYS).every(k => !/bibleLanguage|scriptureLang/i.test(c.KEYS[k])));
+
+  sub('a share says which edition it quoted');
+  const sh = H.loadApp({ sharedStorage: new Map() });
+  const shEn = sh.ctx.shareText(sh.ctx.inTranslation(sh.ctx.passageById('PSA.20.7')));
+  T('English share carries the English label', /WEB/.test(shEn) && /chariots/.test(shEn));
+  sh.ctx.setTranslation('spaRV1909');
+  const shEs = sh.ctx.shareText(sh.ctx.inTranslation(sh.ctx.passageById('PSA.20.7')));
+  T('Spanish share carries the Spanish label', /RV1909/.test(shEs) && /carros/.test(shEs), shEs.slice(0, 60));
+  T('and never mixes the two', !/WEB/.test(shEs));
+
+  sub('every lesson survives a change of edition');
+  /* The audit that made the previous phase necessary, run for real against
+     text the teaching was not written beside. */
+  ids.forEach(id => {
+    const L = H.loadApp({ sharedStorage: new Map() });
+    L.ctx.setTranslation(id);
+    const broken = [];
+    L.ctx.STUDIES.forEach(st => st.lessons.forEach(l => {
+      const ps = L.ctx.lessonPassages(l);
+      if(ps.length !== l.passages.length) broken.push(st.id + '/' + l.id + ' count');
+      ps.forEach((q, i) => {
+        if(!q || !q.text || q.text.length < 8) broken.push(st.id + '/' + l.id + ' empty');
+        if(q && q.id !== l.passages[i]) broken.push(st.id + '/' + l.id + ' id drift');
+      });
+    }));
+    T('all 43 lessons resolve their Scripture in ' + id, broken.length === 0, broken.slice(0, 4).join(', '));
+  });
+
+  sub('and every knowledge check stays answerable');
+  /* A question whose right answer quoted one edition's wording would become
+     unanswerable here. None may. */
+  const checks = [];
+  c.STUDIES.forEach(st => st.lessons.forEach(l => (l.checks || []).forEach(ch => checks.push(ch))));
+  T('there are checks to protect', checks.length > 0, String(checks.length));
+  const quoting = [];
+  ids.forEach(id => {
+    const text = id === c.DEFAULT_TRANSLATION
+      ? c.SCRIPTURE.map(p => p.text).join(' ')
+      : Object.keys(c.TRANSLATION_TEXT[id]).map(k => c.TRANSLATION_TEXT[id][k].text).join(' ');
+    const norm = t => t.toLowerCase().replace(/[^a-zÀ-ſ ]+/g, ' ').replace(/\s+/g, ' ');
+    const hay = norm(text);
+    checks.forEach(ch => ch.options.forEach(o => {
+      const w = norm(o).split(' ').filter(Boolean);
+      for(let i = 0; i + 5 <= w.length; i++){
+        if(hay.indexOf(w.slice(i, i + 5).join(' ')) !== -1){ quoting.push(id + '/' + ch.id); return; }
+      }
+    }));
+  });
+  T('no answer option reproduces a run of any shipped edition',
+    quoting.length === 0, [...new Set(quoting)].slice(0, 4).join(', '));
+
+  sub('the edition that could not be trusted was not shipped');
+  const corpus = require('../scripts/corpus.js');
+  const held = Object.keys(corpus.EDITIONS).filter(id => corpus.EDITIONS[id].held);
+  T('a held edition is recorded with its reason', held.length > 0 &&
+    held.every(id => typeof corpus.EDITIONS[id].held === 'string' && corpus.EDITIONS[id].held.length > 20),
+    held.join(', '));
+  T('and is not shipped to anyone', held.every(id => !c.TRANSLATIONS[id]));
+  T('shippedEditions() and TRANSLATIONS agree',
+    corpus.shippedEditions().sort().join() === ids.slice().sort().join(),
+    corpus.shippedEditions().join() + ' vs ' + ids.join());
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -3470,5 +3678,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations
 };

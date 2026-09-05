@@ -333,6 +333,7 @@ const BRIDGE = [
   'STORAGE_NAMESPACE', 'CACHE_NAMESPACE', 'KEYS',
   'Store', 'DATA_SCHEMA_VERSION', 'MIGRATIONS', 'migrationWarning', 'Domain',
   'SCRIPTURE', 'SCRIPTURE_SOURCE', 'REFLECTIONS', 'THEMES', 'FOCUS_CHOICES',
+  'TRANSLATIONS', 'TRANSLATION_TEXT', 'translation', 'DEFAULT_TRANSLATION',
   'STUDIES', 'STUDIES_VERSION', 'studyProgress', 'studyNotes', 'checkAnswers',
   'openStudyId', 'openLessonId',
   'savedVerses', 'notes', 'assignments', 'selectedDay', 'savedView', 'editingNoteDate',

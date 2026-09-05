@@ -1043,6 +1043,19 @@ blockquote.verse-text{
   font-size: var(--fs-support); line-height: var(--lh-body); color: var(--text-dim);
   margin: calc(var(--space-xs) * -1) 0 var(--space-md);
 }
+/* A chosen row in a picker. The word carries the state; the tick and the
+   accent only reinforce it. */
+/* The publisher's own licence wording, quoted rather than summarised. */
+.source-licence{
+  margin-top: var(--space-md); padding-top: var(--space-md);
+  border-top: 1px solid var(--border-quiet);
+  font-size: var(--fs-meta); line-height: var(--lh-body); color: var(--text-faint);
+}
+.picked{
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--space-xs);
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent);
+}
 .study-score{
   margin-top: var(--space-sm);
   font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
@@ -1339,6 +1352,26 @@ body.scroll-locked{
 
   <!-- SETTINGS — reading preferences, provenance, data ownership -->
   <main class="view" id="view-settings">
+    <div class="section-label">Scripture</div>
+    <div class="list">
+      <button class="list-row" onclick="openBibleLanguage()">
+        <span class="list-row-main">
+          <span class="list-row-title">Bible language</span>
+          <span class="list-row-desc" id="bibleLanguageValue"></span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+      <button class="list-row" onclick="openTranslationPicker()">
+        <span class="list-row-main">
+          <span class="list-row-title">Translation</span>
+          <span class="list-row-desc" id="translationValue"></span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+    <p class="field-hint" style="margin:var(--space-sm) 0 var(--space-lg)">
+      Scripture can be read in any of these. Reflections and Learn are written in English.</p>
+
     <div class="section-label">Appearance</div>
     <div class="panel">
       <div class="toggle-row">
@@ -1503,6 +1536,28 @@ body.scroll-locked{
 </div>
 
 <!-- SCRIPTURE & SOURCES — a Bible app has to be able to answer "says who?" -->
+<div class="overlay overlay-page" id="bibleLanguageOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeBibleLanguage()" aria-label="Back"></button>
+      <div class="page-topbar-title">Bible language</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="bibleLanguageBody"></div>
+  </div>
+</div>
+
+<div class="overlay overlay-page" id="translationOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeTranslationPicker()" aria-label="Back"></button>
+      <div class="page-topbar-title">Translation</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="translationBody"></div>
+  </div>
+</div>
+
 <div class="overlay overlay-page" id="sourceOverlay">
   <div class="sheet">
     <div class="page-topbar">
@@ -1665,6 +1720,24 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-7-0',
+    version: '1.7.0',
+    title: 'Scripture in Spanish',
+    date: '2026-09-05',
+    summary: 'Read the same daily passage in Spanish, in the Reina Valera 1909. ' +
+             'The app itself stays in English.',
+    newFeatures: [
+      'Choose your Bible language under Scripture in Settings',
+      'Reina Valera 1909 — public domain, shown exactly as its publisher released it',
+      'References use the translation’s own book names, so Psalm 20:7 reads Salmos 20:7'
+    ],
+    improvements: [
+      'Your day, your saved verses and your notes are unchanged by switching — only the words change',
+      'Scripture & sources now lists every translation and what each publisher permits'
+    ],
+    fixes: []
+  },
   {
     id: 'v1-6-1',
     version: '1.6.1',
@@ -1835,6 +1908,9 @@ const KEYS = {
   lastSeenUpdate: 'ui.lastSeenUpdate',
   textSize:       'ui.textSize',
   appearance:     'ui.appearance',
+  /* Which edition of Scripture to show. The LANGUAGE is not stored: it is a
+     property of the edition, and storing both invites them to disagree. */
+  translation:    'ui.translation',
   showReflections:'ui.showReflections',
   onboarded:      'ui.onboarded',
   focusThemes:    'ui.focusThemes',
@@ -1959,6 +2035,15 @@ const Store = (function(){
    later, because that would run at boot instead, which is the flash.
 
    Denied storage is not a reason to fail: the app keeps its default. */
+/* Read before anything renders, for the same reason appearance is: a reader
+   who chose Spanish should not watch the English arrive first. */
+(function resolveTranslationEarly(){
+  try{
+    const stored = Store.get(KEYS.translation);
+    if(stored && stored !== 'eng-web') window.__earlyTranslation = stored;
+  }catch(e){ /* the default edition stands */ }
+})();
+
 (function resolveAppearanceEarly(){
   try{
     if(Store.get(KEYS.appearance) === 'light'){
@@ -2548,11 +2633,11 @@ const SCRIPTURE_SOURCE = {
   edition: 'eng-web',
   title: 'World English Bible Classic',
   abbr: 'WEB',
-  language: 'English (United States)',
-  license: 'Public Domain',
-  publisher: 'eBible.org',
-  divineName: 'Yahweh',
-  corpusSynced: '2026-09-04',
+  language: 'English',
+  license: 'undefined',
+  publisher: 'undefined',
+  divineName: 'undefined',
+  corpusSynced: '2026-09-05',
   datasetHash: 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916',
   dailyHash: '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41',
   dailyCount: 378,
@@ -3722,6 +3807,442 @@ const STUDIES = [
         reflect: 'What is the difference between reading a passage carefully and reading it coldly?' }
     ] }
 ];
+
+/* The editions this app ships. A canonical id names a LOCATION; an
+   edition supplies the words for it. User records — saved verses, the
+   day ledger, a lesson’s passage list — only ever hold the id, so
+   changing edition changes the words on screen and nothing else. */
+const TRANSLATIONS = {
+  "eng-web": { id: 'eng-web', title: 'World English Bible Classic', abbr: 'WEB', language: 'English', lang: 'en', iso: 'eng', direction: 'LTR', publisher: 'eBible.org',
+    copyright: 'Public Domain The World English Bible is in the Public Domain. You may copy it freely. "World English Bible" is a trademark that may only be used to refer to faithful copies of the text of the World English Bible as distributed from https://eBible.org. This public domain Bible translation is brought to you courtesy of eBible.org. If you would like to make a donation to help keep free Bible access like this going, please visit https://eBible.org/give.php .',
+    books: { '1CH': '1 Chronicles', '1CO': '1 Corinthians', '1JN': '1 John', '1PE': '1 Peter', '1SA': '1 Samuel', '1TH': '1 Thessalonians', '1TI': '1 Timothy', '2CH': '2 Chronicles', '2CO': '2 Corinthians', '2PE': '2 Peter', '2SA': '2 Samuel', '2TH': '2 Thessalonians', '2TI': '2 Timothy', '3JN': '3 John', 'ACT': 'Acts', 'COL': 'Colossians', 'DAN': 'Daniel', 'DEU': 'Deuteronomy', 'ECC': 'Ecclesiastes', 'EPH': 'Ephesians', 'EST': 'Esther', 'EXO': 'Exodus', 'EZK': 'Ezekiel', 'GAL': 'Galatians', 'GEN': 'Genesis', 'HAB': 'Habakkuk', 'HEB': 'Hebrews', 'ISA': 'Isaiah', 'JAS': 'James', 'JER': 'Jeremiah', 'JHN': 'John', 'JOB': 'Job', 'JOL': 'Joel', 'JOS': 'Joshua', 'LAM': 'Lamentations', 'LEV': 'Leviticus', 'LUK': 'Luke', 'MAL': 'Malachi', 'MAT': 'Matthew', 'MIC': 'Micah', 'MRK': 'Mark', 'NAM': 'Nahum', 'NEH': 'Nehemiah', 'NUM': 'Numbers', 'PHP': 'Philippians', 'PRO': 'Proverbs', 'PSA': 'Psalms', 'REV': 'Revelation', 'ROM': 'Romans', 'RUT': 'Ruth', 'SNG': 'Song of Solomon', 'TIT': 'Titus', 'ZEC': 'Zechariah', 'ZEP': 'Zephaniah' },
+    datasetHash: 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916', dailyHash: '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41', isDefault: true },
+  "spaRV1909": { id: 'spaRV1909', title: 'Reina Valera 1909', abbr: 'RV1909', language: 'Español', lang: 'es', iso: 'spa', direction: 'LTR', publisher: 'eBible.org',
+    copyright: 'Public Domain Dominio Público',
+    books: { '1CH': '1 Crónicas', '1CO': '1 Corintios', '1JN': '1 Juan', '1PE': '1 Pedro', '1SA': '1 Samuel', '1TH': '1 Tesalonicenses', '1TI': '1 Timoteo', '2CH': '2 Crónicas', '2CO': '2 Corintios', '2PE': '2 Pedro', '2SA': '2 Samuel', '2TH': '2 Tesalonicenses', '2TI': '2 Timoteo', '3JN': '3 Juan', 'ACT': 'Hechos', 'COL': 'Colosenses', 'DAN': 'Daniel', 'DEU': 'Deuteronomio', 'ECC': 'Eclesiastés', 'EPH': 'Efesios', 'EST': 'Ester', 'EXO': 'Éxodo', 'EZK': 'Ezequiel', 'GAL': 'Gálatas', 'GEN': 'Génesis', 'HAB': 'Habacuc', 'HEB': 'Hebreos', 'ISA': 'Isaías', 'JAS': 'Santiago', 'JER': 'Jeremías', 'JHN': 'Juan', 'JOB': 'Job', 'JOL': 'Joel', 'JOS': 'Josué', 'LAM': 'Lamentaciones', 'LEV': 'Levítico', 'LUK': 'San Lucas', 'MAL': 'Malaquías', 'MAT': 'San Mateo', 'MIC': 'Miqueas', 'MRK': 'Marcos', 'NAM': 'Nahum', 'NEH': 'Nehemías', 'NUM': 'Números', 'PHP': 'Filipenses', 'PRO': 'Proverbios', 'PSA': 'Salmos', 'REV': 'Apocalipsis', 'ROM': 'Romanos', 'RUT': 'Rut', 'SNG': 'Cantar de los Cantares', 'TIT': 'Tito', 'ZEC': 'Zacarías', 'ZEP': 'Sofonías' },
+    datasetHash: 'effd30e42821bcb19cad18a652ae93b05ce280e06683a9fc5068335c40c15237', dailyHash: 'f8dcf92c1becb1ea08b8aca3c5e93a0ef928a5fc11c06ffb9ce7235064dbc5a2', isDefault: false }
+};
+
+/* Text for every edition other than the default, by canonical id. */
+const TRANSLATION_TEXT = {
+  "spaRV1909": {
+    'GEN.2.2-3': { text: 'Y acabó Dios en el día séptimo su obra que hizo, y reposó el día séptimo de toda su obra que había hecho. Y bendijo Dios al día séptimo, y santificólo, porque en él reposó de toda su obra que había Dios criado y hecho.' },
+    'GEN.28.15': { text: 'Y he aquí, yo soy contigo, y te guardaré por donde quiera que fueres, y te volveré á esta tierra; porque no te dejaré hasta tanto que haya hecho lo que te he dicho.' },
+    'GEN.50.20': { text: 'Vosotros pensasteis mal sobre mí, mas Dios lo encaminó á bien, para hacer lo que vemos hoy, para mantener en vida á mucho pueblo.' },
+    'EXO.14.14': { text: 'Jehová peleará por vosotros, y vosotros estaréis quedos.' },
+    'EXO.15.2': { text: 'Jehová es mi fortaleza, y mi canción, y hame sido por salud: éste es mi Dios, y á éste engrandeceré; Dios de mi padre, y á éste ensalzaré.' },
+    'EXO.20.8-10': { text: 'Acordarte has del día del reposo, para santificarlo: Seis días trabajarás, y harás toda tu obra; Mas el séptimo día será reposo para Jehová tu Dios: no hagas en él obra alguna, tú, ni tu hijo, ni tu hija, ni tu siervo, ni tu criada ni tu bestia, ni tu extranjero que está dentro de tus puertas:' },
+    'EXO.33.14': { text: 'Y él dijo: Mi rostro irá contigo, y te haré descansar.' },
+    'LEV.19.18': { text: 'No te vengarás, ni guardarás rencor á los hijos de tu pueblo: mas amarás á tu prójimo como á ti mismo: Yo Jehová.' },
+    'NUM.6.24-26': { text: 'Jehová te bendiga, y te guarde: Haga resplandecer Jehová su rostro sobre ti, y haya de ti misericordia: Jehová alce á ti su rostro, y ponga en ti paz.' },
+    'DEU.6.5-7': { text: 'Y amarás á Jehová tu Dios de todo tu corazón, y de toda tu alma, y con todo tu poder. Y estas palabras que yo te mando hoy, estarán sobre tu corazón: Y las repetirás á tus hijos, y hablarás de ellas estando en tu casa, y andando por el camino, y al acostarte, y cuando te levantes:' },
+    'DEU.8.2': { text: 'Y acordarte has de todo el camino por donde te ha traído Jehová tu Dios estos cuarenta años en el desierto, para afligirte, por probarte, para saber lo que estaba en tu corazón, si habías de guardar ó no sus mandamientos.' },
+    'DEU.31.6': { text: 'Esforzaos y cobrad ánimo; no temáis, ni tengáis miedo de ellos: que Jehová tu Dios es el que va contigo: no te dejará ni te desamparará.' },
+    'DEU.31.8': { text: 'Y Jehová es el que va delante de ti; él será contigo, no te dejará, ni te desamparará; no temas, ni te intimides.' },
+    'JOS.1.7': { text: 'Solamente te esfuerces, y seas muy valiente, para cuidar de hacer conforme á toda la ley que mi siervo Moisés te mandó: no te apartes de ella ni á diestra ni á siniestra, para que seas prosperado en todas las cosas que emprendieres.' },
+    'JOS.1.9': { text: 'Mira que te mando que te esfuerces y seas valiente: no temas ni desmayes, porque Jehová tu Dios será contigo en donde quiera que fueres.' },
+    'JOS.24.15': { text: 'Y si mal os parece servir á Jehová, escogeos hoy á quién sirváis; si á los dioses á quienes sirvieron vuestros padres, cuando estuvieron de esotra parte del río, ó á los dioses de los Amorrheos en cuya tierra habitáis: que yo y mi casa serviremos á Jehová.' },
+    'RUT.1.16': { text: 'Y Ruth respondió: No me ruegues que te deje, y me aparte de ti: porque donde quiera que tú fueres, iré yo; y donde quiera que vivieres, viviré. Tu pueblo será mi pueblo, y tu Dios mi Dios.' },
+    '1SA.12.24': { text: 'Solamente temed á Jehová, y servidle de verdad con todo vuestro corazón, porque considerad cuán grandes cosas ha hecho con vosotros.' },
+    '1SA.16.7': { text: 'Y Jehová respondió á Samuel: No mires á su parecer, ni á lo grande de su estatura, porque yo lo desecho; porque Jehová mira no lo que el hombre mira; pues que el hombre mira lo que está delante de sus ojos, mas Jehová mira el corazón.' },
+    '2SA.22.31': { text: 'Dios, perfecto su camino: la palabra de Jehová purificada, escudo es de todos los que en él esperan.' },
+    '1CH.16.11': { text: 'Buscad á Jehová y su fortaleza; buscad su rostro continuamente.' },
+    '1CH.16.34': { text: 'Celebrad á Jehová, porque es bueno; porque su misericordia es eterna.' },
+    '1CH.28.20': { text: 'Dijo más David á Salomón su hijo: Anímate y esfuérzate, y ponlo por obra; no temas, ni desmayes, porque el Dios Jehová, mi Dios, será contigo: él no te dejará, ni te desamparará, hasta que acabes toda la obra para el servicio de la casa de Jehová.' },
+    '2CH.15.7': { text: 'Esforzaos empero vosotros, y no desfallezcan vuestras manos; que salario hay para vuestra obra.' },
+    '2CH.20.15': { text: 'Y dijo: Oid, Judá todo, y vosotros moradores de Jerusalem, y tú, rey Josaphat. Jehová os dice así: No temáis ni os amedrentéis delante de esta tan grande multitud; porque no es vuestra la guerra, sino de Dios.' },
+    'NEH.8.10': { text: 'Díjoles luego: Id, comed grosuras, y bebed vino dulce, y enviad porciones á los que no tienen prevenido; porque día santo es á nuestro Señor: y no os entristezcáis, porque el gozo de Jehová es vuestra fortaleza.' },
+    'NEH.9.17': { text: 'Y no quisieron oir, ni se acordaron de tus maravillas que habías hecho con ellos; antes endurecieron su cerviz, y en su rebelión pensaron poner caudillo para volverse á su servidumbre. Tú empero, eres Dios de perdones, clemente y piadoso, tardo para la ira, y de mucha misericordia, que no los dejaste.' },
+    'EST.4.14': { text: 'Porque si absolutamente callares en este tiempo, respiro y libertación tendrán los Judíos de otra parte; mas tú y la casa de tu padre pereceréis. ¿Y quién sabe si para esta hora te han hecho llegar al reino?' },
+    'JOB.1.21': { text: 'Y dijo: Desnudo salí del vientre de mi madre, y desnudo tornaré allá. Jehová dió, y Jehová quitó: sea el nombre de Jehová bendito.' },
+    'JOB.19.25': { text: 'Yo sé que mi Redentor vive, y al fin se levantará sobre el polvo:' },
+    'JOB.28.28': { text: 'Y dijo al hombre: He aquí que el temor del Señor es la sabiduría, y el apartarse del mal la inteligencia.' },
+    'JOB.42.2': { text: 'Yo conozco que todo lo puedes, y que no hay pensamiento que se esconda de ti.' },
+    'PSA.1.1-3': { text: 'BIENAVENTURADO el varón que no anduvo en consejo de malos, ni estuvo en camino de pecadores, ni en silla de escarnecedores se ha sentado; Antes en la ley de Jehová está su delicia, y en su ley medita de día y de noche. Y será como el árbol plantado junto á arroyos de aguas, que da su fruto en su tiempo, y su hoja no cae; y todo lo que hace, prosperará.' },
+    'PSA.3.5': { text: 'Yo me acosté, y dormí, y desperté; porque Jehová me sostuvo.' },
+    'PSA.3.6': { text: 'No temeré de diez millares de pueblos, que pusieren cerco contra mí.' },
+    'PSA.4.8': { text: 'En paz me acostaré, y asimismo dormiré; porque solo tú, Jehová, me harás estar confiado.' },
+    'PSA.5.3': { text: 'Oh Jehová, de mañana oirás mi voz; de mañana me presentaré á ti, y esperaré.' },
+    'PSA.9.1': { text: 'Al Músico principal: sobre Muth-labben: Salmo de David. TE alabaré, oh Jehová, con todo mi corazón; contaré todas tus maravillas.' },
+    'PSA.9.9-10': { text: 'Y será Jehová refugio al pobre, refugio para el tiempo de angustia. Y en ti confiarán los que conocen tu nombre; por cuanto tú, oh Jehová, no desamparaste á los que te buscaron.' },
+    'PSA.16.7-8': { text: 'Bendeciré á Jehová que me aconseja: aun en las noches me enseñan mis riñones. A Jehová he puesto siempre delante de mí: porque está á mi diestra no seré conmovido.' },
+    'PSA.16.11': { text: 'Me mostrarás la senda de la vida: hartura de alegrías hay con tu rostro; deleites en tu diestra para siempre.' },
+    'PSA.18.1-2': { text: 'Al Músico principal: Salmo de David, siervo de Jehová, el cual profirió á Jehová las palabras de este cántico el día que le libró Jehová de mano de todos sus enemigos, y de mano de Saúl. Entonces dijo: AMARTE he, oh Jehová, fortaleza mía. Jehová, roca mía y castillo mío, y mi libertador; Dios mío, fuerte mío, en él confiaré; escudo mío, y el cuerno de mi salud, mi refugio.' },
+    'PSA.18.28': { text: 'Tú pues alumbrarás mi lámpara: Jehová mi Dios alumbrará mis tinieblas.' },
+    'PSA.19.1': { text: 'Al Músico principal: Salmo de David. LOS cielos cuentan la gloria de Dios, y la expansión denuncia la obra de sus manos.' },
+    'PSA.19.14': { text: 'Sean gratos los dichos de mi boca y la meditación de mi corazón delante de ti, oh Jehová, roca mía, y redentor mío.' },
+    'PSA.20.7': { text: 'Estos confían en carros, y aquéllos en caballos: mas nosotros del nombre de Jehová nuestro Dios tendremos memoria.' },
+    'PSA.23.1-3': { text: 'Salmo de David. JEHOVÁ es mi pastor; nada me faltará. En lugares de delicados pastos me hará yacer: junto á aguas de reposo me pastoreará. Confortará mi alma; guiaráme por sendas de justicia por amor de su nombre.' },
+    'PSA.23.4': { text: 'Aunque ande en valle de sombra de muerte, no temeré mal alguno; porque tú estarás conmigo: tu vara y tu cayado me infundirán aliento.' },
+    'PSA.25.4-5': { text: 'Muéstrame, oh Jehová, tus caminos; enséñame tus sendas. Encamíname en tu verdad, y enséñame; porque tú eres el Dios de mi salud: en ti he esperado todo el día.' },
+    'PSA.27.1': { text: 'Salmo de David. JEHOVÁ es mi luz y mi salvación: ¿de quién temeré? Jehová es la fortaleza de mi vida: ¿de quién he de atemorizarme?' },
+    'PSA.27.11': { text: 'Enséñame, oh Jehová, tu camino, y guíame por senda de rectitud, á causa de mis enemigos.' },
+    'PSA.27.13-14': { text: 'Hubiera yo desmayado, si no creyese que tengo de ver la bondad de Jehová en la tierra de los vivientes. Aguarda á Jehová; esfuérzate, y aliéntese tu corazón: sí, espera á Jehová.' },
+    'PSA.28.7': { text: 'Jehová es mi fortaleza y mi escudo: en él esperó mi corazón, y fuí ayudado; por lo que se gozó mi corazón, y con mi canción le alabaré.' },
+    'PSA.29.11': { text: 'Jehová dará fortaleza á su pueblo: Jehová bendecirá á su pueblo en paz.' },
+    'PSA.30.5': { text: 'Porque un momento será su furor; mas en su voluntad está la vida: por la tarde durará el lloro, y á la mañana vendrá la alegría.' },
+    'PSA.30.11-12': { text: 'Has tornado mi endecha en baile; desataste mi saco, y ceñísteme de alegría. Por tanto á ti cantaré, gloria mía, y no estaré callado. Jehová Dios mío, te alabaré para siempre.' },
+    'PSA.31.24': { text: 'Esforzaos todos vosotros los que esperáis en Jehová, y tome vuestro corazón aliento.' },
+    'PSA.32.1-2': { text: 'Salmo de David: Masquil. BIENAVENTURADO aquel cuyas iniquidades son perdonadas, y borrados sus pecados. Bienaventurado el hombre á quien no imputa Jehová la iniquidad, y en cuyo espíritu no hay superchería.' },
+    'PSA.32.8': { text: 'Te haré entender, y te enseñaré el camino en que debes andar: sobre ti fijaré mis ojos.' },
+    'PSA.33.20-22': { text: 'Nuestra alma esperó á Jehová; nuestra ayuda y nuestro escudo es él. Por tanto en él se alegrará nuestro corazón, porque en su santo nombre hemos confiado. Sea tu misericordia, oh Jehová, sobre nosotros, como esperamos en ti.' },
+    'PSA.34.1': { text: 'Salmo de David, cuando mudó su semblante delante de Abimelech, y él lo echó, y fuése. BENDECIRÉ á Jehová en todo tiempo; su alabanza será siempre en mi boca.' },
+    'PSA.34.4': { text: 'Busqué á Jehová, y él me oyó, y libróme de todos mis temores.' },
+    'PSA.34.8': { text: 'Gustad, y ved que es bueno Jehová: dichoso el hombre que confiará en él.' },
+    'PSA.34.18': { text: 'Cercano está Jehová á los quebrantados de corazón; y salvará á los contritos de espíritu.' },
+    'PSA.36.7': { text: '¡Cuán ilustre, oh Dios, es tu misericordia! Por eso los hijos de los hombres se amparan bajo la sombra de tus alas.' },
+    'PSA.37.4': { text: 'Pon asimismo tu delicia en Jehová, y él te dará las peticiones de tu corazón.' },
+    'PSA.37.5-6': { text: 'Encomienda á Jehová tu camino, y espera en él; y él hará. Y exhibirá tu justicia como la luz, y tus derechos como el medio día.' },
+    'PSA.37.7': { text: 'Calla á Jehová, y espera en él: no te alteres con motivo del que prospera en su camino, por el hombre que hace maldades.' },
+    'PSA.37.23-24': { text: 'Por Jehová son ordenados los pasos del hombre, y aprueba su camino. Cuando cayere, no quedará postrado; porque Jehová sostiene su mano.' },
+    'PSA.40.1': { text: 'Al Músico principal: Salmo de David. RESIGNADAMENTE esperé á Jehová, é inclinóse á mí, y oyó mi clamor.' },
+    'PSA.42.3-5': { text: 'Fueron mis lágrimas mi pan de día y de noche, mientras me dicen todos los días: ¿Dónde está tu Dios? Acordaréme de estas cosas, y derramaré sobre mí mi alma: cuando pasaré en el número, iré con ellos hasta la casa de Dios, con voz de alegría y de alabanza, haciendo fiesta la multitud. ¿Por qué te abates, oh alma mía, y te conturbas en mí? Espera á Dios; porque aun le tengo de alabar por las saludes de su presencia.' },
+    'PSA.42.11': { text: '¿Por qué te abates, oh alma mía, y por qué te conturbas en mí? Espera á Dios; porque aun le tengo de alabar; es él salvamento delante de mí, y el Dios mío.' },
+    'PSA.46.1': { text: 'Al Músico principal: de los hijos de Coré: Salmo sobre Alamoth. DIOS es nuestro amparo y fortaleza, nuestro pronto auxilio en las tribulaciones.' },
+    'PSA.46.10': { text: 'Estad quietos, y conoced que yo soy Dios: ensalzado he de ser entre las gentes, ensalzado seré en la tierra.' },
+    'PSA.48.14': { text: 'Porque este Dios es Dios nuestro eternalmente y para siempre: él nos capitaneará hasta la muerte.' },
+    'PSA.51.10': { text: 'Crea en mí, oh Dios, un corazón limpio; y renueva un espíritu recto dentro de mí.' },
+    'PSA.55.22': { text: 'Echa sobre Jehová tu carga, y él te sustentará; no dejará para siempre caído al justo.' },
+    'PSA.56.3-4': { text: 'En el día que temo, yo en ti confío. En Dios alabaré su palabra: en Dios he confiado, no temeré lo que la carne me hiciere.' },
+    'PSA.56.8': { text: 'Mis huídas has tú contado: pon mis lágrimas en tu redoma: ¿no están ellas en tu libro?' },
+    'PSA.57.2': { text: 'Clamaré al Dios Altísimo, al Dios que me favorece.' },
+    'PSA.62.1-2': { text: 'Al Músico principal: á Jeduthún: Salmo de David. EN Dios solamente está acallada mi alma: de él viene mi salud. El solamente es mi fuerte, y mi salud; es mi refugio, no resbalaré mucho.' },
+    'PSA.62.5-6': { text: 'Alma mía, en Dios solamente reposa; porque de él es mi esperanza. El solamente es mi fuerte y mí salud: es mi refugio, no resbalaré.' },
+    'PSA.62.8': { text: 'Esperad en él en todo tiempo, oh pueblos; derramad delante de él vuestro corazón: Dios es nuestro amparo. (Selah.)' },
+    'PSA.63.1': { text: 'Salmo de David, estando en el desierto de Judá. DIOS, Dios mío eres tú: levantaréme á ti de mañana: mi alma tiene sed de ti, mi carne te desea, en tierra de sequedad y transida sin aguas;' },
+    'PSA.68.19': { text: 'Bendito el Señor; cada día nos colma de beneficios el Dios de nuestra salud. (Selah.)' },
+    'PSA.71.14': { text: 'Mas yo siempre esperaré, y añadiré sobre toda tu alabanza.' },
+    'PSA.73.26': { text: 'Mi carne y mi corazón desfallecen: mas la roca de mi corazón y mi porción es Dios para siempre.' },
+    'PSA.84.5': { text: 'Bienaventurado el hombre que tiene su fortaleza en ti; en cuyo corazón están tus caminos.' },
+    'PSA.84.11': { text: 'Porque sol y escudo es Jehová Dios: gracia y gloria dará Jehová: no quitará el bien á los que en integridad andan.' },
+    'PSA.86.5': { text: 'Porque tú, Señor, eres bueno y perdonador, y grande en misericordia para con todos los que te invocan.' },
+    'PSA.90.12': { text: 'Enséñanos de tal modo á contar nuestros días, que traigamos al corazón sabiduría.' },
+    'PSA.91.1-2': { text: 'EL que habita al abrigo del Altísimo, morará bajo la sombra del Omnipotente. Diré yo á Jehová: Esperanza mía, y castillo mío; mi Dios, en él confiaré.' },
+    'PSA.91.4': { text: 'Con sus plumas te cubrirá, y debajo de sus alas estarás seguro: escudo y adarga es su verdad.' },
+    'PSA.94.19': { text: 'En la multitud de mis pensamientos dentro de mí, tus consolaciones alegraban mi alma.' },
+    'PSA.95.2': { text: 'Lleguemos ante su acatamiento con alabanza; aclamémosle con cánticos.' },
+    'PSA.100.4': { text: 'Entrad por sus puertas con reconocimiento, por sus atrios con alabanza: alabadle, bendecid su nombre.' },
+    'PSA.103.1-2': { text: 'Salmo de David. BENDICE, alma mía, á Jehová; y bendigan todas mis entrañas su santo nombre. Bendice, alma mía á Jehová, y no olvides ninguno de sus beneficios.' },
+    'PSA.103.12': { text: 'Cuanto está lejos el oriente del occidente, hizo alejar de nosotros nuestras rebeliones.' },
+    'PSA.105.4': { text: 'Buscad á Jehová, y su fortaleza: buscad siempre su rostro.' },
+    'PSA.107.1': { text: 'ALABAD á Jehová, porque es bueno; porque para siempre es su misericordia.' },
+    'PSA.111.10': { text: 'El principio de la sabiduría es el temor de Jehová: buen entendimiento tienen cuantos ponen aquéllos por obra: su loor permanece para siempre.' },
+    'PSA.112.7': { text: 'De mala fama no tendrá temor: su corazón está apercibido, confiado en Jehová.' },
+    'PSA.116.7': { text: 'Vuelve, oh alma mía, á tu reposo; porque Jehová te ha hecho bien.' },
+    'PSA.118.6': { text: 'Jehová está por mí: no temeré lo que me pueda hacer el hombre.' },
+    'PSA.118.24': { text: 'Este es el día que hizo Jehová: nos gozaremos y alegraremos en él.' },
+    'PSA.119.9': { text: 'BETH ¿Con qué limpiará el joven su camino? Con guardar tu palabra.' },
+    'PSA.119.105': { text: 'NUN. Lámpara es á mis pies tu palabra, y lumbrera á mi camino.' },
+    'PSA.121.1-2': { text: 'Cántico gradual. ALZARÉ mis ojos á los montes, de donde vendrá mi socorro. Mi socorro viene de Jehová, que hizo los cielos y la tierra.' },
+    'PSA.121.7-8': { text: 'Jehová te guardará de todo mal: él guardará tu alma. Jehová guardará tu salida y tu entrada, desde ahora y para siempre.' },
+    'PSA.126.5-6': { text: 'Los que sembraron con lágrimas, con regocijo segarán. Irá andando y llorando el que lleva la preciosa simiente; mas volverá á venir con regocijo, trayendo sus gavillas.' },
+    'PSA.127.1': { text: 'Cántico gradual: para Salomón. SI Jehová no edificare la casa, en vano trabajan los que la edifican: si Jehová no guardare la ciudad, en vano vela la guarda.' },
+    'PSA.127.2': { text: 'Por demás os es el madrugar á levantaros, el veniros tarde á reposar, el comer pan de dolores: pues que á su amado dará Dios el sueño.' },
+    'PSA.130.5': { text: 'Esperé yo á Jehová, esperó mi alma; en su palabra he esperado.' },
+    'PSA.131.1-2': { text: 'Cántico gradual: de David. JEHOVÁ, no se ha envanecido mi corazón, ni mis ojos se enaltecieron; ni anduve en grandezas, ni en cosas para mí demasiado sublimes. En verdad que me he comportado y he acallado mi alma, como un niño destetado de su madre: como un niño destetado está mi alma.' },
+    'PSA.133.1': { text: 'Cántico gradual: de David. ¡MIRAD cuán bueno y cuán delicioso es habitar los hermanos igualmente en uno!' },
+    'PSA.136.1': { text: 'ALABAD á Jehová, porque es bueno; porque para siempre es su misericordia.' },
+    'PSA.138.3': { text: 'En el día que clamé, me respondiste; esforzásteme con fortaleza en mi alma.' },
+    'PSA.138.8': { text: 'Jehová cumplirá por mí: tu misericordia, oh Jehová, es para siempre; no dejarás la obra de tus manos.' },
+    'PSA.139.1-3': { text: 'Al Músico principal: Salmo de David. OH Jehová, tú me has examinado y conocido. Tú has conocido mi sentarme y mi levantarme, has entendido desde lejos mis pensamientos. Mi senda y mi acostarme has rodeado, y estás impuesto en todos mis caminos.' },
+    'PSA.139.9-10': { text: 'Si tomare las alas del alba, y habitare en el extremo de la mar, Aun allí me guiará tu mano, y me asirá tu diestra.' },
+    'PSA.139.13-14': { text: 'Porque tú poseiste mis riñones; cubrísteme en el vientre de mi madre. Te alabaré; porque formidables, maravillosas son tus obras: estoy maravillado, y mi alma lo conoce mucho.' },
+    'PSA.139.23-24': { text: 'Examíname, oh Dios, y conoce mi corazón: pruébame y reconoce mis pensamientos: Y ve si hay en mí camino de perversidad, y guíame en el camino eterno.' },
+    'PSA.143.8': { text: 'Hazme oir por la mañana tu misericordia, porque en ti he confiado: hazme saber el camino por donde ande, porque á ti he alzado mi alma.' },
+    'PSA.145.8': { text: 'Clemente y misericordioso es Jehová, lento para la ira, y grande en misericordia.' },
+    'PSA.145.18': { text: 'Cercano está Jehová á todos los que le invocan, á todos los que le invocan de veras.' },
+    'PSA.146.5': { text: 'Bienaventurado aquel en cuya ayuda es el Dios de Jacob, cuya esperanza es en Jehová su Dios:' },
+    'PSA.147.3': { text: 'El sana á los quebrantados de corazón, y liga sus heridas.' },
+    'PRO.2.6': { text: 'Porque Jehová da la sabiduría, y de su boca viene el conocimiento y la inteligencia.' },
+    'PRO.3.3-4': { text: 'Misericordia y verdad no te desamparen; átalas á tu cuello, escríbelas en la tabla de tu corazón: Y hallarás gracia y buena opinión en los ojos de Dios y de los hombres.' },
+    'PRO.3.5-6': { text: 'Fíate de Jehová de todo tu corazón, y no estribes en tu prudencia. Reconócelo en todos tus caminos, y él enderezará tus veredas.' },
+    'PRO.3.24-26': { text: 'Cuando te acostares, no tendrás temor; antes te acostarás, y tu sueño será suave. No tendrás temor de pavor repentino, ni de la ruina de los impíos cuando viniere: Porque Jehová será tu confianza, y él preservará tu pie de ser preso.' },
+    'PRO.4.7': { text: 'Sabiduría ante todo: adquiere sabiduría: y ante toda tu posesión adquiere inteligencia.' },
+    'PRO.4.23': { text: 'Sobre toda cosa guardada guarda tu corazón; porque de él mana la vida.' },
+    'PRO.4.25-27': { text: 'Tus ojos miren lo recto, y tus párpados en derechura delante de ti. Examina la senda de tus pies, y todos tus caminos sean ordenados. No te apartes á diestra, ni á siniestra: aparta tu pie del mal.' },
+    'PRO.9.10': { text: 'El temor de Jehová es el principio de la sabiduría; y la ciencia de los santos es inteligencia.' },
+    'PRO.10.12': { text: 'El odio despierta rencillas: mas la caridad cubrirá todas las faltas.' },
+    'PRO.11.2': { text: 'Cuando viene la soberbia, viene también la deshonra: mas con los humildes es la sabiduría.' },
+    'PRO.11.14': { text: 'Cuando faltaren las industrias, caerá el pueblo: mas en la multitud de consejeros hay salud.' },
+    'PRO.11.25': { text: 'El alma liberal será engordada: y el que saciare, él también será saciado.' },
+    'PRO.12.1': { text: 'EL que ama la corrección ama la sabiduría: mas el que aborrece la reprensión, es ignorante.' },
+    'PRO.12.18': { text: 'Hay quienes hablan como dando estocadas de espada: mas la lengua de los sabios es medicina.' },
+    'PRO.13.4': { text: 'Desea, y nada alcanza el alma del perezoso: mas el alma de los diligentes será engordada.' },
+    'PRO.13.20': { text: 'El que anda con los sabios, sabio será; mas el que se allega á los necios, será quebrantado.' },
+    'PRO.14.29': { text: 'El que tarde se aira, es grande de entendimiento: mas el corto de espíritu engrandece el desatino.' },
+    'PRO.15.1': { text: 'LA blanda respuesta quita la ira: mas la palabra áspera hace subir el furor.' },
+    'PRO.15.22': { text: 'Los pensamientos son frustrados donde no hay consejo; mas en la multitud de consejeros se afirman.' },
+    'PRO.16.3': { text: 'Encomienda á Jehová tus obras, y tus pensamientos serán afirmados.' },
+    'PRO.16.9': { text: 'El corazón del hombre piensa su camino: mas Jehová endereza sus pasos.' },
+    'PRO.16.24': { text: 'Panal de miel son los dichos suaves: suavidad al alma y medicina á los huesos.' },
+    'PRO.16.32': { text: 'Mejor es el que tarde se aira que el fuerte; y el que se enseñorea de su espíritu, que el que toma una ciudad.' },
+    'PRO.17.17': { text: 'En todo tiempo ama el amigo; y el hermano para la angustia es nacido.' },
+    'PRO.17.22': { text: 'El corazón alegre produce buena disposición: mas el espíritu triste seca los huesos.' },
+    'PRO.18.10': { text: 'Torre fuerte es el nombre de Jehová: á él correrá el justo, y será levantado.' },
+    'PRO.18.13': { text: 'El que responde palabra antes de oir, le es fatuidad y oprobio.' },
+    'PRO.18.24': { text: 'El hombre que tiene amigos, ha de mostrarse amigo: y amigo hay más conjunto que el hermano.' },
+    'PRO.19.11': { text: 'La cordura del hombre detiene su furor; y su honra es disimular la ofensa.' },
+    'PRO.19.20': { text: 'Escucha el consejo, y recibe la corrección, para que seas sabio en tu vejez.' },
+    'PRO.19.21': { text: 'Muchos pensamientos hay en el corazón del hombre; mas el consejo de Jehová permanecerá.' },
+    'PRO.20.24': { text: 'De Jehová son los pasos del hombre: ¿cómo pues entenderá el hombre su camino?' },
+    'PRO.21.5': { text: 'Los pensamientos del solícito ciertamente van á abundancia; mas todo presuroso, indefectiblemente á pobreza.' },
+    'PRO.22.24-25': { text: 'No te entrometas con el iracundo, ni te acompañes con el hombre de enojos; Porque no aprendas sus maneras, y tomes lazo para tu alma.' },
+    'PRO.23.18': { text: 'Porque ciertamente hay fin, y tu esperanza no será cortada.' },
+    'PRO.24.16': { text: 'Porque siete veces cae el justo, y se torna á levantar; mas los impíos caerán en el mal.' },
+    'PRO.25.15': { text: 'Con larga paciencia se aplaca el príncipe; y la lengua blanda quebranta los huesos.' },
+    'PRO.25.28': { text: 'Como ciudad derribada y sin muro, es el hombre cuyo espíritu no tiene rienda.' },
+    'PRO.27.6': { text: 'Fieles son las heridas del que ama; pero importunos los besos del que aborrece.' },
+    'PRO.27.17': { text: 'Hierro con hierro se aguza; y el hombre aguza el rostro de su amigo.' },
+    'PRO.28.1': { text: 'HUYE el impío sin que nadie lo persiga: mas el justo está confiado como un leoncillo.' },
+    'PRO.28.13': { text: 'El que encubre sus pecados, no prosperará: mas el que los confiesa y se aparta, alcanzará misericordia.' },
+    'ECC.3.1': { text: 'PARA todas las cosas hay sazón, y todo lo que se quiere debajo del cielo, tiene su tiempo:' },
+    'ECC.3.4': { text: 'Tiempo de llorar, y tiempo de reir; tiempo de endechar, y tiempo de bailar;' },
+    'ECC.3.12': { text: 'Yo he conocido que no hay mejor para ellos, que alegrarse, y hacer bien en su vida:' },
+    'ECC.4.6': { text: 'Mas vale el un puño lleno con descanso, que ambos puños llenos con trabajo y aflicción de espíritu.' },
+    'ECC.4.9-10': { text: 'Mejores son dos que uno; porque tienen mejor paga de su trabajo. Porque si cayeren, el uno levantará á su compañero: mas ¡ay del solo! que cuando cayere, no habrá segundo que lo levante.' },
+    'ECC.7.8': { text: 'Mejor es el fin del negocio que su principio: mejor es el sufrido de espíritu que el altivo de espíritu.' },
+    'ECC.7.12': { text: 'Porque escudo es la ciencia, y escudo es el dinero: mas la sabiduría excede en que da vida á sus poseedores.' },
+    'SNG.8.7': { text: 'Las muchas aguas no podrán apagar el amor, ni lo ahogarán los ríos. Si diese el hombre toda la hacienda de su casa por este amor, de cierto lo menospreciaran.' },
+    'ISA.1.18': { text: 'Venid luego, dirá Jehová, y estemos á cuenta: si vuestros pecados fueren como la grana, como la nieve serán emblanquecidos: si fueren rojos como el carmesí, vendrán á ser como blanca lana.' },
+    'ISA.6.8': { text: 'Después oí la voz del Señor, que decía: ¿A quién enviaré, y quién nos irá? Entonces respondí yo: Heme aquí, envíame á mí.' },
+    'ISA.12.2': { text: 'He aquí Dios es salud mía; aseguraréme, y no temeré; porque mi fortaleza y mi canción es JAH Jehová, el cual ha sido salud para mí.' },
+    'ISA.26.3': { text: 'Tú le guardarás en completa paz, cuyo pensamiento en ti persevera; porque en ti se ha confiado.' },
+    'ISA.26.4': { text: 'Confiad en Jehová perpetuamente: porque en el Señor Jehová está la fortaleza de los siglos.' },
+    'ISA.30.15': { text: 'Porque así dijo el Señor Jehová, el Santo de Israel: En descanso y en reposo seréis salvos; en quietud y en confianza será vuestra fortaleza. Y no quisisteis,' },
+    'ISA.30.21': { text: 'Entonces tus oídos oirán á tus espaldas palabra que diga: Este es el camino, andad por él; y no echéis á la mano derecha, ni tampoco torzáis á la mano izquierda.' },
+    'ISA.32.17': { text: 'Y el efecto de la justicia será paz; y la labor de justicia, reposo y seguridad para siempre.' },
+    'ISA.35.4': { text: 'Decid á los de corazón apocado: Confortaos, no temáis: he aquí que vuestro Dios viene con venganza, con pago; el mismo Dios vendrá, y os salvará.' },
+    'ISA.40.8': { text: 'Sécase la hierba, cáese la flor: mas la palabra del Dios nuestro permanece para siempre.' },
+    'ISA.40.11': { text: 'Como pastor apacentará su rebaño; en su brazo cogerá los corderos, y en su seno los llevará; pastoreará suavemente las paridas.' },
+    'ISA.40.29': { text: 'El da esfuerzo al cansado, y multiplica las fuerzas al que no tiene ningunas.' },
+    'ISA.40.31': { text: 'Mas los que esperan á Jehová tendrán nuevas fuerzas; levantarán las alas como águilas; correrán, y no se cansarán; caminarán, y no se fatigarán.' },
+    'ISA.41.10': { text: 'No temas, que yo soy contigo; no desmayes, que yo soy tu Dios que te esfuerzo: siempre te ayudaré, siempre te sustentaré con la diestra de mi justicia.' },
+    'ISA.41.13': { text: 'Porque yo Jehová soy tu Dios, que te ase de tu mano derecha, y te dice: No temas, yo te ayudé.' },
+    'ISA.42.16': { text: 'Y guiaré los ciegos por camino que no sabían, haréles pisar por las sendas que no habían conocido; delante de ellos tornaré las tinieblas en luz, y los rodeos en llanura. Estas cosas les haré, y no los desampararé.' },
+    'ISA.43.1': { text: 'Y AHORA, así dice Jehová Criador tuyo, oh Jacob, y Formador tuyo, oh Israel: No temas, porque yo te redimí; te puse nombre, mío eres tú.' },
+    'ISA.43.2': { text: 'Cuando pasares por las aguas, yo seré contigo; y por los ríos, no te anegarán. Cuando pasares por el fuego, no te quemarás, ni la llama arderá en ti.' },
+    'ISA.43.19': { text: 'He aquí que yo hago cosa nueva: presto saldrá á luz: ¿no la sabréis? Otra vez pondré camino en el desierto, y ríos en la soledad.' },
+    'ISA.53.3-4': { text: 'Despreciado y desechado entre los hombres, varón de dolores, experimentado en quebranto: y como que escondimos de él el rostro, fué menospreciado, y no lo estimamos. Ciertamente llevó él nuestras enfermedades, y sufrió nuestros dolores; y nosotros le tuvimos por azotado, por herido de Dios y abatido.' },
+    'ISA.55.8-9': { text: 'Porque mis pensamientos no son vuestros pensamientos, ni vuestros caminos mis caminos, dijo Jehová. Como son más altos los cielos que la tierra, así son mis caminos más altos que vuestros caminos, y mis pensamientos más que vuestros pensamientos.' },
+    'ISA.58.11': { text: 'Y Jehová te pastoreará siempre, y en las sequías hartará tu alma, y engordará tus huesos; y serás como huerta de riego, y como manadero de aguas, cuyas aguas nunca faltan.' },
+    'ISA.61.1-3': { text: 'EL espíritu del Señor Jehová es sobre mí, porque me ungió Jehová; hame enviado á predicar buenas nuevas á los abatidos, á vendar á los quebrantados de corazón, á publicar libertad á los cautivos, y á los presos abertura de la cárcel; A promulgar año de la buena voluntad de Jehová, y día de venganza del Dios nuestro; á consolar á todos los enlutados; A ordenar á Sión á los enlutados, para darles gloria en lugar de ceniza, óleo de gozo en lugar del luto, manto de alegría en lugar del espíritu angustiado; y serán llamados árboles de justicia, plantío de Jehová, para gloria suya.' },
+    'JER.1.5': { text: 'Antes que te formase en el vientre te conocí, y antes que salieses de la matriz te santifiqué, te dí por profeta á las gentes.' },
+    'JER.6.16': { text: 'Así dijo Jehová: Paraos en los caminos, y mirad, y preguntad por las sendas antiguas, cuál sea el buen camino, y andad por él, y hallaréis descanso para vuestra alma. Mas dijeron: No andaremos.' },
+    'JER.17.7-8': { text: 'Bendito el varón que se fía en Jehová, y cuya confianza es Jehová. Porque él será como el árbol plantado junto á las aguas, que junto á la corriente echará sus raices, y no verá cuando viniere el calor, sino que su hoja estará verde; y en el año de sequía no se fatigará, ni dejará de hacer fruto.' },
+    'JER.29.11': { text: 'Porque yo sé los pensamientos que tengo acerca de vosotros, dice Jehová, pensamientos de paz, y no de mal, para daros el fin que esperáis.' },
+    'JER.31.34': { text: 'Y no enseñará más ninguno á su prójimo, ni ninguno á su hermano, diciendo: Conoce á Jehová: porque todos me conocerán, desde el más pequeño de ellos hasta el más grande, dice Jehová: porque perdonaré la maldad de ellos, y no me acordaré más de su pecado.' },
+    'LAM.3.22-23': { text: 'Es por la misericordia de Jehová que no somos consumidos, porque nunca decayeron sus misericordias. Nuevas son cada mañana; grande es tu fidelidad.' },
+    'LAM.3.25-26': { text: 'Bueno es Jehová á los que en él esperan, al alma que le buscare. Bueno es esperar callando en la salud de Jehová.' },
+    'LAM.3.31-33': { text: 'Porque el Señor no desechará para siempre: Antes si afligiere, también se compadecerá según la multitud de sus misericordias. Porque no aflige ni congoja de su corazón á los hijos de los hombres.' },
+    'EZK.36.26': { text: 'Y os daré corazón nuevo, y pondré espíritu nuevo dentro de vosotros; y quitaré de vuestra carne el corazón de piedra, y os daré corazón de carne.' },
+    'DAN.3.17-18': { text: 'He aquí nuestro Dios á quien honramos, puede librarnos del horno de fuego ardiendo; y de tu mano, oh rey, nos librará. Y si no, sepas, oh rey, que tu dios no adoraremos, ni tampoco honraremos la estatua que has levantado.' },
+    'JOL.2.25': { text: 'Y os restituiré los años que comió la oruga, la langosta, el pulgón, y el revoltón; mi grande ejército que envié contra vosotros.' },
+    'MIC.6.8': { text: 'Oh hombre, él te ha declarado qué sea lo bueno, y qué pida de ti Jehová: solamente hacer juicio, y amar misericordia, y humillarte para andar con tu Dios.' },
+    'MIC.7.7': { text: 'Yo empero á Jehová esperaré, esperaré al Dios de mi salud: el Dios mío me oirá.' },
+    'MIC.7.18': { text: '¿Qué Dios como tú, que perdonas la maldad, y olvidas el pecado del resto de su heredad? No retuvo para siempre su enojo, porque es amador de misericordia.' },
+    'NAM.1.7': { text: 'Bueno es Jehová para fortaleza en el día de la angustia; y conoce á los que en él confían.' },
+    'HAB.2.4': { text: 'He aquí se enorgullece aquel cuya alma no es derecha en él: mas el justo en su fe vivirá.' },
+    'ZEP.3.17': { text: 'Jehová en medio de ti, poderoso, él salvará; gozaráse sobre ti con alegría, callará de amor, se regocijará sobre ti con cantar.' },
+    'ZEC.4.6': { text: 'Entonces respondió y hablóme, diciendo: Esta es palabra de Jehová á Zorobabel, en que se dice: No con ejército, ni con fuerza, sino con mi espíritu, ha dicho Jehová de los ejércitos.' },
+    'MAL.3.6': { text: 'Porque yo Jehová, no me mudo; y así vosotros, hijos de Jacob, no habéis sido consumidos.' },
+    'MAT.5.4': { text: 'Bienaventurados los que lloran: porque ellos recibirán consolación.' },
+    'MAT.5.9': { text: 'Bienaventurados los pacificadores: porque ellos serán llamados hijos de Dios.' },
+    'MAT.5.16': { text: 'Así alumbre vuestra luz delante de los hombres, para que vean vuestras obras buenas, y glorifiquen á vuestro Padre que está en los cielos.' },
+    'MAT.6.14-15': { text: 'Porque si perdonareis á los hombres sus ofensas, os perdonará también á vosotros vuestro Padre celestial. Mas si no perdonareis á los hombres sus ofensas, tampoco vuestro Padre os perdonará vuestras ofensas.' },
+    'MAT.6.26': { text: 'Mirad las aves del cielo, que no siembran, ni siegan, ni allegan en alfolíes; y vuestro Padre celestial las alimenta. ¿No sois vosotros mucho mejores que ellas?' },
+    'MAT.6.33': { text: 'Mas buscad primeramente el reino de Dios y su justicia, y todas estas cosas os serán añadidas.' },
+    'MAT.6.34': { text: 'Así que, no os congojéis por el día de mañana; que el día de mañana traerá su fatiga: basta al día su afán.' },
+    'MAT.7.7-8': { text: 'Pedid, y se os dará; buscad, y hallaréis; llamad, y se os abrirá. Porque cualquiera que pide, recibe; y el que busca, halla; y al que llama, se abrirá.' },
+    'MAT.7.12': { text: 'Así que, todas las cosas que quisierais que los hombres hiciesen con vosotros, así también haced vosotros con ellos; porque esta es la ley y los profetas.' },
+    'MAT.7.24-25': { text: 'Cualquiera, pues, que me oye estas palabras, y las hace, le compararé á un hombre prudente, que edificó su casa sobre la peña; Y descendió lluvia, y vinieron ríos, y soplaron vientos, y combatieron aquella casa; y no cayó: porque estaba fundada sobre la peña.' },
+    'MAT.11.28-30': { text: 'Venid á mí todos los que estáis trabajados y cargados, que yo os haré descansar. Llevad mi yugo sobre vosotros, y aprended de mí, que soy manso y humilde de corazón; y hallaréis descanso para vuestras almas. Porque mi yugo es fácil, y ligera mi carga.' },
+    'MAT.17.20': { text: 'Y Jesús les dijo: Por vuestra incredulidad; porque de cierto os digo, que si tuviereis fe como un grano de mostaza, diréis á este monte: Pásate de aquí allá: y se pasará: y nada os será imposible.' },
+    'MAT.18.21-22': { text: 'Entonces Pedro, llegándose á él, dijo: Señor, ¿cuántas veces perdonaré á mi hermano que pecare contra mí? ¿hasta siete? Jesús le dice: No te digo hasta siete, mas aun hasta setenta veces siete.' },
+    'MAT.22.37-39': { text: 'Y Jesús le dijo: Amarás al Señor tu Dios de todo tu corazón, y de toda tu alma, y de toda tu mente. Este es el primero y el grande mandamiento. Y el segundo es semejante á éste: Amarás á tu prójimo como á ti mismo.' },
+    'MAT.24.13': { text: 'Mas el que perseverare hasta el fin, éste será salvo.' },
+    'MAT.28.20': { text: 'Enseñándoles que guarden todas las cosas que os he mandado: y he aquí, yo estoy con vosotros todos los días, hasta el fin del mundo. Amén.' },
+    'MRK.2.27': { text: 'También les dijo: El sábado por causa del hombre es hecho; no el hombre por causa del sábado.' },
+    'MRK.4.39': { text: 'Y levantándose, increpó al viento, y dijo á la mar: Calla, enmudece. Y cesó el viento, y fué hecha grande bonanza.' },
+    'MRK.6.31': { text: 'Y él les dijo: Venid vosotros aparte al lugar desierto, y reposad un poco. Porque eran muchos los que iban y venían, que ni aun tenían lugar de comer.' },
+    'MRK.9.24': { text: 'Y luego el padre del muchacho dijo clamando: Creo, ayuda mi incredulidad.' },
+    'MRK.10.27': { text: 'Entonces Jesús mirándolos, dice: Para los hombres es imposible; mas para Dios, no; porque todas las cosas son posibles para Dios.' },
+    'MRK.11.24': { text: 'Por tanto, os digo que todo lo que orando pidiereis, creed que lo recibiréis, y os vendrá.' },
+    'MRK.12.31': { text: 'Y el segundo es semejante á él: Amarás á tu prójimo como á ti mismo. No hay otro mandamiento mayor que éstos.' },
+    'LUK.6.37': { text: 'No juzguéis, y no seréis juzgados: no condenéis, y no seréis condenados: perdonad, y seréis perdonados.' },
+    'LUK.6.38': { text: 'Dad, y se os dará; medida buena, apretada, remecida, y rebosando darán en vuestro seno: porque con la misma medida que midiereis, os será vuelto á medir.' },
+    'LUK.9.23': { text: 'Y decía á todos: Si alguno quiere venir en pos de mí, niéguese á sí mismo, y tome su cruz cada día, y sígame.' },
+    'LUK.10.41-42': { text: 'Pero respondiendo Jesús, le dijo: Marta, Marta, cuidadosa estás, y con las muchas cosas estás turbada: Empero una cosa es necesaria; y María escogió la buena parte, la cual no le será quitada.' },
+    'LUK.12.22-26': { text: 'Y dijo á sus discípulos: Por tanto os digo: No estéis afanosos de vuestra vida, qué comeréis; ni del cuerpo, qué vestiréis. La vida más es que la comida, y el cuerpo que el vestido. Considerad los cuervos, que ni siembran, ni siegan; que ni tienen cillero, ni alfolí; y Dios los alimenta. ¿Cuánto de más estima sois vosotros que las aves? ¿Y quién de vosotros podrá con afán añadir á su estatura un codo? Pues si no podéis aun lo que es menos, ¿para qué estaréis afanosos de lo demás?' },
+    'LUK.18.1': { text: 'Y PROPÚSOLES también una parábola sobre que es necesario orar siempre, y no desmayar,' },
+    'JHN.3.16': { text: 'Porque de tal manera amó Dios al mundo, que ha dado á su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.' },
+    'JHN.8.12': { text: 'Y hablóles Jesús otra vez, diciendo: Yo soy la luz del mundo: el que me sigue, no andará en tinieblas, mas tendrá la lumbre de la vida.' },
+    'JHN.13.34': { text: 'Un mandamiento nuevo os doy: Que os améis unos á otros: como os he amado, que también os améis los unos á los otros.' },
+    'JHN.14.1': { text: 'NO se turbe vuestro corazón: creéis en Dios, creed también en mí.' },
+    'JHN.14.27': { text: 'La paz os dejo, mi paz os doy: no como el mundo la da, yo os la doy. No se turbe vuestro corazón, ni tenga miedo.' },
+    'JHN.15.12': { text: 'Este es mi mandamiento: Que os améis los unos á los otros, como yo os he amado.' },
+    'JHN.15.16': { text: 'No me elegisteis vosotros á mí, mas yo os elegí á vosotros; y os he puesto para que vayáis y llevéis fruto, y vuestro fruto permanezca: para que todo lo que pidiereis del Padre en mi nombre, él os lo dé.' },
+    'JHN.16.13': { text: 'Pero cuando viniere aquel Espíritu de verdad, él os guiará á toda verdad; porque no hablará de sí mismo, sino que hablará todo lo que oyere, y os hará saber las cosas que han de venir.' },
+    'JHN.16.33': { text: 'Estas cosas os he hablado, para que en mí tengáis paz. En el mundo tendréis aflicción: mas confiad, yo he vencido al mundo.' },
+    'ACT.3.19': { text: 'Así que, arrepentíos y convertíos, para que sean borrados vuestros pecados; pues que vendrán los tiempos del refrigerio de la presencia del Señor,' },
+    'ACT.4.31': { text: 'Y como hubieron orado, el lugar en que estaban congregados tembló; y todos fueron llenos del Espíritu Santo, y hablaron la palabra de Dios con confianza.' },
+    'ACT.20.24': { text: 'Mas de ninguna cosa hago caso, ni estimo mi vida preciosa para mí mismo; solamente que acabe mi carrera con gozo, y el ministerio que recibí del Señor Jesús, para dar testimonio del evangelio de la gracia de Dios.' },
+    'ACT.20.35': { text: 'En todo os he enseñado que, trabajando así, es necesario sobrellevar á los enfermos, y tener presente las palabras del Señor Jesús, el cual dijo: Más bienaventurada cosa es dar que recibir.' },
+    'ROM.3.23-24': { text: 'Por cuanto todos pecaron, y están destituídos de la gloria de Dios; Siendo justificados gratuitamente por su gracia, por la redención que es en Cristo Jesús;' },
+    'ROM.5.1': { text: 'JUSTIFICADOS pues por la fe, tenemos paz para con Dios por medio de nuestro Señor Jesucristo:' },
+    'ROM.5.3-5': { text: 'Y no sólo esto, mas aun nos gloriamos en las tribulaciones, sabiendo que la tribulación produce paciencia; Y la paciencia, prueba; y la prueba, esperanza; Y la esperanza no avergüenza; porque el amor de Dios está derramado en nuestros corazones por el Espíritu Santo que nos es dado.' },
+    'ROM.8.1': { text: 'AHORA pues, ninguna condenación hay para los que están en Cristo Jesús, los que no andan conforme á la carne, mas conforme al espíritu.' },
+    'ROM.8.6': { text: 'Porque la intención de la carne es muerte; mas la intención del espíritu, vida y paz:' },
+    'ROM.8.24-25': { text: 'Porque en esperanza somos salvos; mas la esperanza que se ve, no es esperanza; porque lo que alguno ve, ¿á qué esperarlo? Empero si lo que no vemos esperamos, por paciencia esperamos.' },
+    'ROM.8.28': { text: 'Y sabemos que á los que á Dios aman, todas las cosas les ayudan á bien, es á saber, á los que conforme al propósito son llamados.' },
+    'ROM.8.38-39': { text: 'Por lo cual estoy cierto que ni la muerte, ni la vida, ni ángeles, ni principados, ni potestades, ni lo presente, ni lo por venir, Ni lo alto, ni lo bajo, ni ninguna criatura nos podrá apartar del amor de Dios, que es en Cristo Jesús Señor nuestro.' },
+    'ROM.10.17': { text: 'Luego la fe es por el oir; y el oir por la palabra de Dios.' },
+    'ROM.12.2': { text: 'Y no os conforméis á este siglo; mas reformaos por la renovación de vuestro entendimiento, para que experimentéis cuál sea la buena voluntad de Dios, agradable y perfecta.' },
+    'ROM.12.10': { text: 'Amándoos los unos á los otros con caridad fraternal; previniéndoos con honra los unos á los otros;' },
+    'ROM.12.12': { text: 'Gozosos en la esperanza; sufridos en la tribulación; constantes en la oración;' },
+    'ROM.12.15': { text: 'Gozaos con los que se gozan: llorad con los que lloran.' },
+    'ROM.12.18': { text: 'Si se puede hacer, cuanto está en vosotros, tened paz con todos los hombres.' },
+    'ROM.13.10': { text: 'La caridad no hace mal al prójimo: así que, el cumplimento de la ley es la caridad.' },
+    'ROM.15.5': { text: 'Mas el Dios de la paciencia y de la consolación os dé que entre vosotros seáis unánimes según Cristo Jesús;' },
+    'ROM.15.13': { text: 'Y el Dios de esperanza os llene de todo gozo y paz creyendo, para que abundéis en esperanza por la virtud del Espíritu Santo.' },
+    '1CO.1.25': { text: 'Porque lo loco de Dios es más sabio que los hombres; y lo flaco de Dios es más fuerte que los hombres.' },
+    '1CO.6.19-20': { text: '¿O ignoráis que vuestro cuerpo es templo del Espíritu Santo, el cual está en vosotros, el cual tenéis de Dios, y que no sois vuestros? Porque comprados sois por precio: glorificad pues á Dios en vuestro cuerpo y en vuestro espíritu, los cuales son de Dios.' },
+    '1CO.9.24': { text: '¿No sabéis que los que corren en el estadio, todos á la verdad corren, mas uno lleva el premio? Corred de tal manera que lo obtengáis.' },
+    '1CO.10.13': { text: 'No os ha tomado tentación, sino humana: mas fiel es Dios, que no os dejará ser tentados más de lo que podéis llevar; antes dará también juntamente con la tentación la salida, para que podáis aguantar.' },
+    '1CO.10.31': { text: 'Si pues coméis, ó bebéis, ó hacéis otra cosa, hacedlo todo á gloria de Dios.' },
+    '1CO.12.4-6': { text: 'Empero hay repartimiento de dones; mas el mismo Espíritu es. Y hay repartimiento de ministerios; mas el mismo Señor es. Y hay repartimiento de operaciones; mas el mismo Dios es el que obra todas las cosas en todos.' },
+    '1CO.13.4-7': { text: 'La caridad es sufrida, es benigna; la caridad no tiene envidia, la caridad no hace sinrazón, no se ensancha; No es injuriosa, no busca lo suyo, no se irrita, no piensa el mal; No se huelga de la injusticia, mas se huelga de la verdad; Todo lo sufre, todo lo cree, todo lo espera, todo lo soporta.' },
+    '1CO.15.58': { text: 'Así que, hermanos míos amados, estad firmes y constantes, creciendo en la obra del Señor siempre, sabiendo que vuestro trabajo en el Señor no es vano.' },
+    '1CO.16.13': { text: 'Velad, estad firmes en la fe; portaos varonilmente, y esforzaos.' },
+    '1CO.16.14': { text: 'Todas vuestras cosas sean hechas con caridad.' },
+    '2CO.1.3-4': { text: 'Bendito sea el Dios y Padre del Señor Jesucristo, el Padre de misericordias, y el Dios de toda consolación, El cual nos consuela en todas nuestras tribulaciones, para que podamos también nosotros consolar á los que están en cualquiera angustia, con la consolación con que nosotros somos consolados de Dios.' },
+    '2CO.4.8-9': { text: 'Estando atribulados en todo, mas no angustiados; en apuros, mas no desesperamos; Perseguidos, mas no desamparados; abatidos, mas no perecemos;' },
+    '2CO.4.16-17': { text: 'Por tanto, no desmayamos: antes aunque este nuestro hombre exterior se va desgastando, el interior empero se renueva de día en día. Porque lo que al presente es momentáneo y leve de nuestra tribulación, nos obra un sobremanera alto y eterno peso de gloria;' },
+    '2CO.4.18': { text: 'No mirando nosotros á las cosas que se ven, sino á las que no se ven: porque las cosas que se ven son temporales, mas las que no se ven son eternas.' },
+    '2CO.5.7': { text: '(Porque por fe andamos, no por vista;)' },
+    '2CO.5.17': { text: 'De modo que si alguno está en Cristo, nueva criatura es: las cosas viejas pasaron; he aquí todas son hechas nuevas.' },
+    '2CO.9.15': { text: 'Gracias á Dios por su don inefable.' },
+    '2CO.12.9': { text: 'Y me ha dicho: Bástate mi gracia; porque mi potencia en la flaqueza se perfecciona. Por tanto, de buena gana me gloriaré más bien en mis flaquezas, porque habite en mí la potencia de Cristo.' },
+    'GAL.5.13': { text: 'Porque vosotros, hermanos, á libertad habéis sido llamados; solamente que no uséis la libertad como ocasión á la carne, sino servíos por amor los unos á los otros.' },
+    'GAL.5.22-23': { text: 'Mas el fruto del Espíritu es: caridad, gozo, paz, tolerancia, benignidad, bondad, fe, Mansedumbre, templanza: contra tales cosas no hay ley.' },
+    'GAL.6.2': { text: 'Sobrellevad los unos las cargas de los otros; y cumplid así la ley de Cristo.' },
+    'GAL.6.7-8': { text: 'No os engañéis: Dios no puede ser burlado: que todo lo que el hombre sembrare, eso también segará. Porque el que siembra para su carne, de la carne segará corrupción; mas el que siembra para el Espíritu, del Espíritu segará vida eterna.' },
+    'GAL.6.9': { text: 'No nos cansemos, pues, de hacer bien; que á su tiempo segaremos, si no hubiéremos desmayado.' },
+    'EPH.1.7': { text: 'En el cual tenemos redención por su sangre, la remisión de pecados por las riquezas de su gracia,' },
+    'EPH.2.8-9': { text: 'Porque por gracia sois salvos por la fe; y esto no de vosotros, pues es don de Dios: No por obras, para que nadie se gloríe.' },
+    'EPH.2.10': { text: 'Porque somos hechura suya, criados en Cristo Jesús para buenas obras, las cuales Dios preparó para que anduviésemos en ellas.' },
+    'EPH.3.16': { text: 'Que os dé, conforme á las riquezas de su gloria, el ser corroborados con potencia en el hombre interior por su Espíritu.' },
+    'EPH.4.2-3': { text: 'Con toda humildad y mansedumbre, con paciencia soportando los unos á los otros en amor; Solícitos á guardar la unidad del Espíritu en el vínculo de la paz.' },
+    'EPH.4.29': { text: 'Ninguna palabra torpe salga de vuestra boca, sino la que sea buena para edificación, para que dé gracia á los oyentes.' },
+    'EPH.4.32': { text: 'Antes sed los unos con los otros benignos, misericordiosos, perdonándoos los unos á los otros, como también Dios os perdonó en Cristo.' },
+    'EPH.5.15-16': { text: 'Mirad, pues, cómo andéis avisadamente; no como necios, mas como sabios; Redimiendo el tiempo, porque los días son malos.' },
+    'EPH.5.20': { text: 'Dando gracias siempre de todo al Dios y Padre en el nombre de nuestro Señor Jesucristo:' },
+    'EPH.6.10-11': { text: 'Por lo demás, hermanos míos, confortaos en el Señor, y en la potencia de su fortaleza. Vestíos de toda la armadura de Dios, para que podáis estar firmes contra las asechanzas del diablo.' },
+    'PHP.1.6': { text: 'Estando confiado de esto, que el que comenzó en vosotros la buena obra, la perfeccionará hasta el día de Jesucristo;' },
+    'PHP.2.3-4': { text: 'Nada hagáis por contienda ó por vanagloria; antes bien en humildad, estimándoos inferiores los unos á los otros: No mirando cada uno á lo suyo propio, sino cada cual también á lo de los otros.' },
+    'PHP.3.13-14': { text: 'Hermanos, yo mismo no hago cuenta de haberlo ya alcanzado; pero una cosa hago: olvidando ciertamente lo que queda atrás, y extendiéndome á lo que está delante, Prosigo al blanco, al premio de la soberana vocación de Dios en Cristo Jesús.' },
+    'PHP.4.4': { text: 'Gozaos en el Señor siempre: otra vez digo: Que os gocéis.' },
+    'PHP.4.6-7': { text: 'Por nada estéis afanosos; sino sean notorias vuestras peticiones delante de Dios en toda oración y ruego, con hacimiento de gracias. Y la paz de Dios, que sobrepuja todo entendimiento, guardará vuestros corazones y vuestros entendimientos en Cristo Jesús.' },
+    'PHP.4.8': { text: 'Por lo demás, hermanos, todo lo que es verdadero, todo lo honesto, todo lo justo, todo lo puro, todo lo amable, todo lo que es de buen nombre; si hay virtud alguna, si alguna alabanza, en esto pensad.' },
+    'PHP.4.11-13': { text: 'No lo digo en razón de indigencia, pues he aprendido á contentarme con lo que tengo. Sé estar humillado, y sé tener abundancia: en todo y por todo estoy enseñado, así para hartura como para hambre, así para tener abundancia como para padecer necesidad. Todo lo puedo en Cristo que me fortalece.' },
+    'COL.2.6-7': { text: 'Por tanto, de la manera que habéis recibido al Señor Jesucristo, andad en él: Arraigados y sobreedificados en él, y confirmados en la fe, así como habéis aprendido, creciendo en ella con hacimiento de gracias.' },
+    'COL.3.12': { text: 'Vestíos pues, como escogidos de Dios, santos y amados, de entrañas de misericordia, de benignidad, de humildad, de mansedumbre, de tolerancia;' },
+    'COL.3.13': { text: 'Sufriéndoos los unos á los otros, y perdonándoos los unos á los otros si alguno tuviere queja del otro: de la manera que Cristo os perdonó, así también hacedlo vosotros.' },
+    'COL.3.14': { text: 'Y sobre todas estas cosas vestíos de caridad, la cual es el vínculo de la perfección.' },
+    'COL.3.15': { text: 'Y la paz de Dios gobierne en vuestros corazones, á la cual asimismo sois llamados en un cuerpo; y sed agradecidos.' },
+    'COL.3.17': { text: 'Y todo lo que hacéis, sea de palabra, ó de hecho, hacedlo todo en el nombre del Señor Jesús, dando gracias á Dios Padre por él.' },
+    'COL.3.23-24': { text: 'Y todo lo que hagáis, hacedlo de ánimo, como al Señor, y no á los hombres; Sabiendo que del Señor recibiréis la compensación de la herencia: porque al Señor Cristo servís.' },
+    'COL.4.5-6': { text: 'Andad en sabiduría para con los extraños, redimiendo el tiempo. Sea vuestra palabra siempre con gracia, sazonada con sal; para que sepáis cómo os conviene responder á cada uno.' },
+    '1TH.5.11': { text: 'Por lo cual, consolaos los unos á los otros, y edificaos los unos á los otros, así como lo hacéis.' },
+    '1TH.5.14': { text: 'También os rogamos, hermanos, que amonestéis á los que andan desordenadamente, que consoléis á los de poco ánimo, que soportéis á los flacos, que seáis sufridos para con todos.' },
+    '1TH.5.16-18': { text: 'Estad siempre gozosos. Orad sin cesar. Dad gracias en todo; porque esta es la voluntad de Dios para con vosotros en Cristo Jesús.' },
+    '2TH.3.13': { text: 'Y vosotros, hermanos, no os canséis de hacer bien.' },
+    '2TH.3.16': { text: 'Y el mismo Señor de paz os dé siempre paz en toda manera. El Señor sea con todos vosotros.' },
+    '1TI.4.7-8': { text: 'Mas las fábulas profanas y de viejas desecha, y ejercítate para la piedad. Porque el ejercicio corporal para poco es provechoso; mas la piedad para todo aprovecha, pues tiene promesa de esta vida presente, y de la venidera.' },
+    '1TI.6.6-7': { text: 'Empero grande granjería es la piedad con contentamiento. Porque nada hemos traído á este mundo, y sin duda nada podremos sacar.' },
+    '2TI.1.7': { text: 'Porque no nos ha dado Dios el espíritu de temor, sino el de fortaleza, y de amor, y de templanza.' },
+    '2TI.1.9': { text: 'Que nos salvó y llamó con vocación santa, no conforme á nuestras obras, mas según el intento suyo y gracia, la cual nos es dada en Cristo Jesús antes de los tiempos de los siglos,' },
+    '2TI.4.7': { text: 'He peleado la buena batalla, he acabado la carrera, he guardado la fe.' },
+    'TIT.2.11-12': { text: 'Porque la gracia de Dios que trae salvación á todos los hombres, se manifestó, Enseñándonos que, renunciando á la impiedad y á los deseos mundanos, vivamos en este siglo templada, y justa, y píamente,' },
+    'TIT.3.5': { text: 'No por obras de justicia que nosotros habíamos hecho, mas por su misericordia nos salvó, por el lavacro de la regeneración, y de la renovación del Espíritu Santo;' },
+    'HEB.4.9-10': { text: 'Por tanto, queda un reposo para el pueblo de Dios. Porque el que ha entrado en su reposo, también él ha reposado de sus obras, como Dios de las suyas.' },
+    'HEB.4.16': { text: 'Lleguémonos pues confiadamente al trono de la gracia, para alcanzar misericordia, y hallar gracia para el oportuno socorro.' },
+    'HEB.6.19': { text: 'La cual tenemos como segura y firme ancla del alma, y que entra hasta dentro del velo;' },
+    'HEB.10.24-25': { text: 'Y considerémonos los unos á los otros para provocarnos al amor y á las buenas obras; No dejando nuestra congregación, como algunos tienen por costumbre, mas exhortándonos; y tanto más, cuanto veis que aquel día se acerca.' },
+    'HEB.10.36': { text: 'Porque la paciencia os es necesaria; para que, habiendo hecho la voluntad de Dios, obtengáis la promesa.' },
+    'HEB.11.1': { text: 'ES pues la fe la sustancia de las cosas que se esperan, la demostración de las cosas que no se ven.' },
+    'HEB.11.6': { text: 'Empero sin fe es imposible agradar á Dios; porque es menester que el que á Dios se allega, crea que le hay, y que es galardonador de los que le buscan.' },
+    'HEB.12.1': { text: 'POR tanto nosotros también, teniendo en derredor nuestro una tan grande nube de testigos, dejando todo el peso del pecado que nos rodea, corramos con paciencia la carrera que nos es propuesta,' },
+    'HEB.12.2-3': { text: 'Puestos los ojos en al autor y consumador de la fe, en Jesús; el cual, habiéndole sido propuesto gozo, sufrió la cruz, menospreciando la vergüenza, y sentóse á la diestra del trono de Dios. Reducid pues á vuestro pensamiento á aquel que sufrió tal contradicción de pecadores contra sí mismo, porque no os fatiguéis en vuestros ánimos desmayando.' },
+    'HEB.12.11': { text: 'Es verdad que ningún castigo al presente parece ser causa de gozo, sino de tristeza; mas después da fruto apacible de justicia á los que en él son ejercitados.' },
+    'HEB.13.5': { text: 'Sean las costumbres vuestras sin avaricia; contentos de lo presente; porque él dijo: No te desampararé, ni te dejaré.' },
+    'HEB.13.6': { text: 'De tal manera que digamos confiadamente: El Señor es mi ayudador; no temeré lo que me hará el hombre.' },
+    'JAS.1.2-4': { text: 'Hermanos míos, tened por sumo gozo cuando cayereis en diversas tentaciones; Sabiendo que la prueba de vuestra fe obra paciencia. Mas tenga la paciencia perfecta su obra, para que seáis perfectos y cabales, sin faltar en alguna cosa.' },
+    'JAS.1.5': { text: 'Y si alguno de vosotros tiene falta de sabiduría, demándela á Dios, el cual da á todos abundantemente, y no zahiere; y le será dada.' },
+    'JAS.1.12': { text: 'Bienaventurado el varón que sufre la tentación; porque cuando fuere probado, recibirá la corona de vida, que Dios ha prometido á los que le aman.' },
+    'JAS.1.17': { text: 'Toda buena dádiva y todo don perfecto es de lo alto, que desciende del Padre de las luces, en el cual no hay mudanza, ni sombra de variación.' },
+    'JAS.1.19-20': { text: 'Por esto, mis amados hermanos, todo hombre sea pronto para oir, tardío para hablar, tardío para airarse: Porque la ira del hombre no obra la justicia de Dios.' },
+    'JAS.2.17': { text: 'Así también la fe, si no tuviere obras, es muerta en sí misma.' },
+    'JAS.3.17': { text: 'Mas la sabiduría que es de lo alto, primeramente es pura, después pacífica, modesta, benigna, llena de misericordia y de buenos frutos, no juzgadora, no fingida.' },
+    'JAS.4.7-8': { text: 'Someteos pues á Dios; resistid al diablo, y de vosotros huirá. Allegaos á Dios, y él se allegará á vosotros. Pecadores, limpiad las manos; y vosotros de doblado ánimo, purificad los corazones.' },
+    'JAS.4.13-15': { text: 'Ea ahora, los que decís: Hoy y mañana iremos á tal ciudad, y estaremos allá un año, y compraremos mercadería, y ganaremos: Y no sabéis lo que será mañana. Porque ¿qué es vuestra vida? Ciertamente es un vapor que se aparece por un poco de tiempo, y luego se desvanece. En lugar de lo cual deberíais decir: Si el Señor quisiere, y si viviéremos, haremos esto ó aquello.' },
+    'JAS.5.7-8': { text: 'Pues, hermanos, tened paciencia hasta la venida del Señor. Mirad cómo el labrador espera el precioso fruto de la tierra, aguardando con paciencia, hasta que reciba la lluvia temprana y tardía. Tened también vosotros paciencia; confirmad vuestros corazones: porque la venida del Señor se acerca.' },
+    'JAS.5.16': { text: 'Confesaos vuestras faltas unos á otros, y rogad los unos por los otros, para que seáis sanos; la oración del justo, obrando eficazmente, puede mucho.' },
+    '1PE.1.3': { text: 'Bendito el Dios y Padre de nuestro Señor Jesucristo, que según su grande misericordia nos ha regenerado en esperanza viva, por la resurrección de Jesucristo de los muertos,' },
+    '1PE.3.8': { text: 'Y finalmente, sed todos de un mismo corazón, compasivos, amándoos fraternalmente, misericordiosos, amigables;' },
+    '1PE.4.8': { text: 'Y sobre todo, tened entre vosotros ferviente caridad; porque la caridad cubrirá multitud de pecados.' },
+    '1PE.4.10': { text: 'Cada uno según el don que ha recibido, adminístrelo á los otros, como buenos dispensadores de las diferentes gracias de Dios.' },
+    '1PE.5.6-7': { text: 'Humillaos pues bajo la poderosa mano de Dios, para que él os ensalce cuando fuere tiempo; Echando toda vuestra solicitud en él, porque él tiene cuidado de vosotros.' },
+    '1PE.5.10': { text: 'Mas el Dios de toda gracia, que nos ha llamado á su gloria eterna por Jesucristo, después que hubiereis un poco de tiempo padecido, él mismo os perfeccione, confirme, corrobore y establezca.' },
+    '2PE.1.5-7': { text: 'Vosotros también, poniendo toda diligencia por esto mismo, mostrad en vuestra fe virtud, y en la virtud ciencia; Y en la ciencia templanza, y en la templanza paciencia, y en la paciencia temor de Dios; Y en el temor de Dios, amor fraternal, y en el amor fraternal caridad.' },
+    '2PE.3.9': { text: 'El Señor no tarda su promesa, como algunos la tienen por tardanza; sino que es paciente para con nosotros, no queriendo que ninguno perezca, sino que todos procedan al arrepentimiento.' },
+    '1JN.1.9': { text: 'Si confesamos nuestros pecados, él es fiel y justo para que nos perdone nuestros pecados, y nos limpie de toda maldad.' },
+    '1JN.3.18': { text: 'Hijitos míos, no amemos de palabra ni de lengua, sino de obra y en verdad.' },
+    '1JN.4.7': { text: 'Carísimos, amémonos unos á otros; porque el amor es de Dios. Cualquiera que ama, es nacido de Dios, y conoce á Dios.' },
+    '1JN.4.11': { text: 'Amados, si Dios así nos ha amado, debemos también nosotros amarnos unos á otros.' },
+    '1JN.4.18': { text: 'En amor no hay temor; mas el perfecto amor echa fuera el temor: porque el temor tiene pena. De donde el que teme, no está perfecto en el amor.' },
+    '1JN.4.19': { text: 'Nosotros le amamos á él, porque él nos amó primero.' },
+    '1JN.5.4': { text: 'Porque todo aquello que es nacido de Dios vence al mundo: y esta es la victoria que vence al mundo, nuestra fe.' },
+    '3JN.1.4': { text: 'No tengo yo mayor gozo que éste, el oir que mis hijos andan en la verdad.' },
+    'REV.21.4': { text: 'Y limpiará Dios toda lágrima de los ojos de ellos; y la muerte no será más; y no habrá más llanto, ni clamor, ni dolor: porque las primeras cosas son pasadas.' },
+    'LUK.1.1-4': { text: 'HABIENDO muchos tentado á poner en orden la historia de las cosas que entre nosotros han sido ciertísimas, Como nos lo enseñaron los que desde el principio lo vieron por sus ojos, y fueron ministros de la palabra; Me ha parecido también á mí, después de haber entendido todas las cosas desde el principio con diligencia, escribírtelas por orden, oh muy buen Teófilo, Para que conozcas la verdad de las cosas en las cuales has sido enseñado.' },
+    'GEN.1.1': { text: 'EN el principio crió Dios los cielos y la tierra.' },
+    'REV.21.3-4': { text: 'Y oí una gran voz del cielo que decía: He aquí el tabernáculo de Dios con los hombres, y morará con ellos; y ellos serán su pueblo, y el mismo Dios será su Dios con ellos. Y limpiará Dios toda lágrima de los ojos de ellos; y la muerte no será más; y no habrá más llanto, ni clamor, ni dolor: porque las primeras cosas son pasadas.' },
+    'JHN.1.1-5': { text: 'EN el principio era el Verbo, y el Verbo era con Dios, y el Verbo era Dios. Este era en el principio con Dios. Todas las cosas por él fueron hechas; y sin él nada de lo que es hecho, fué hecho. En él estaba la vida, y la vida era la luz de los hombres. Y la luz en las tinieblas resplandece; mas las tinieblas no la comprendieron.' },
+    'JHN.1.14': { text: 'Y aquel Verbo fué hecho carne, y habitó entre nosotros (y vimos su gloria, gloria como del unigénito del Padre), lleno de gracia y de verdad.' },
+    '1CO.15.3-5': { text: 'Porque primeramente os he enseñado lo que asimismo recibí: Que Cristo fué muerto por nuestros pecados, conforme á las Escrituras; Y que fué sepultado, y que resucitó al tercer día, conforme á las Escrituras; Y que apareció á Cefas, y después á los doce.' },
+    'ACT.17.11': { text: 'Y fueron éstos más nobles que los que estaban en Tesalónica, pues recibieron la palabra con toda solicitud, escudriñando cada día las Escrituras, si estas cosas eran así.' },
+    'ISA.9.6-7': { text: 'Porque un niño nos es nacido, hijo nos es dado; y el principado sobre su hombro: y llamaráse su nombre Admirable, Consejero, Dios fuerte, Padre eterno, Príncipe de paz. Lo dilatado de su imperio y la paz no tendrán término, sobre el trono de David, y sobre su reino, disponiéndolo y confirmándolo en juicio y en justicia desde ahora para siempre. El celo de Jehová de los ejércitos hará esto.' },
+    'LUK.1.30-33': { text: 'Entonces el ángel le dijo: María, no temas, porque has hallado gracia cerca de Dios. Y he aquí, concebirás en tu seno, y parirás un hijo, y llamarás su nombre JESUS. Este será grande, y será llamado Hijo del Altísimo: y le dará el Señor Dios el trono de David su padre: Y reinará en la casa de Jacob por siempre; y de su reino no habrá fin.' },
+    'HEB.1.1-3': { text: 'DIOS, habiendo hablado muchas veces y en muchas maneras en otro tiempo á los padres por los profetas, En estos postreros días nos ha hablado por el Hijo, al cual constituyó heredero de todo, por el cual asimismo hizo el universo: El cual siendo el resplandor de su gloria, y la misma imagen de su sustancia, y sustentando todas las cosas con la palabra de su potencia, habiendo hecho la purgación de nuestros pecados por sí mismo, se sentó á la diestra de la Majestad en las alturas,' },
+    'MRK.1.14-15': { text: 'Mas después que Juan fué encarcelado, Jesús vino á Galilea predicando el evangelio del reino de Dios, Y diciendo: El tiempo es cumplido, y el reino de Dios está cerca: arrepentíos, y creed al evangelio.' },
+    'LUK.4.16-21': { text: 'Y vino á Nazaret, donde había sido criado; y entró, conforme á su costumbre, el día del sábado en la sinagoga, y se levantó á leer. Y fuéle dado el libro del profeta Isaías; y como abrió el libro, halló el lugar donde estaba escrito: El Espíritu del Señor es sobre mí, por cuanto me ha ungido para dar buenas nuevas á los pobres: me ha enviado para sanar á los quebrantados de corazón; para pregonar á los cautivos libertad, y á los ciegos vista; para poner en libertad á los quebrantados: Para predicar el año agradable del Señor. Y rollando el libro, lo dió al ministro, y sentóse: y los ojos de todos en la sinagoga estaban fijos en él. Y comenzó á decirles: Hoy se ha cumplido esta Escritura en vuestros oídos.' },
+    'MRK.1.40-42': { text: 'Y un leproso vino á él, rogándole; é hincada la rodilla, le dice: Si quieres, puedes limpiarme. Y Jesús, teniendo misericordia de él, extendió su mano, y le tocó, y le dice: Quiero, sé limpio. Y así que hubo él hablado, la lepra se fué luego de aquél, y fué limpio.' },
+    'MRK.4.38-41': { text: 'Y él estaba en la popa, durmiendo sobre un cabezal, y le despertaron, y le dicen: ¿Maestro, no tienes cuidado que perecemos? Y levantándose, increpó al viento, y dijo á la mar: Calla, enmudece. Y cesó el viento, y fué hecha grande bonanza. Y á ellos dijo: ¿Por qué estáis así amedrentados? ¿Cómo no tenéis fe? Y temieron con gran temor, y decían el uno al otro. ¿Quién es éste, que aun el viento y la mar le obedecen?' },
+    'MRK.10.42-45': { text: 'Mas Jesús, llamándolos, les dice: Sabéis que los que se ven ser príncipes entre las gentes, se enseñorean de ellas, y los que entre ellas son grandes, tienen sobre ellas potestad. Mas no será así entre vosotros: antes cualquiera que quisiere hacerse grande entre vosotros, será vuestro servidor; Y cualquiera de vosotros que quisiere hacerse el primero, será siervo de todos. Porque el Hijo del hombre tampoco vino para ser servido, mas para servir, y dar su vida en rescate por muchos.' },
+    'ISA.53.5-6': { text: 'Mas él herido fué por nuestras rebeliones, molido por nuestros pecados: el castigo de nuestra paz sobre él; y por su llaga fuimos nosotros curados. Todos nosotros nos descarriamos como ovejas, cada cual se apartó por su camino: mas Jehová cargó en él el pecado de todos nosotros.' },
+    'LUK.24.36-43': { text: 'Y entre tanto que ellos hablaban estas cosas, él se puso en medio de ellos, y les dijo: Paz á vosotros. Entonces ellos espantados y asombrados, pensaban que veían espíritu. Mas él les dice: ¿Por qué estáis turbados, y suben pensamientos á vuestros corazones? Mirad mis manos y mis pies, que yo mismo soy: palpad, y ved; que el espíritu ni tiene carne ni huesos, como veis que yo tengo. Y en diciendo esto, les mostró las manos y los pies. Y no creyéndolo aún ellos de gozo, y maravillados, díjoles: ¿Tenéis aquí algo de comer? Entonces ellos le presentaron parte de un pez asado, y un panal de miel. Y él tomó, y comió delante de ellos.' },
+    'MRK.8.34-35': { text: 'Y llamando á la gente con sus discípulos, les dijo: Cualquiera que quisiere venir en pos de mí, niéguese á sí mismo, y tome su cruz, y sígame. Porque el que quisiere salvar su vida, la perderá; y el que perdiere su vida por causa de mí y del evangelio, la salvará.' },
+    'GEN.1.26-27': { text: 'Y dijo Dios: Hagamos al hombre á nuestra imagen, conforme á nuestra semejanza; y señoree en los peces de la mar, y en las aves de los cielos, y en las bestias, y en toda la tierra, y en todo animal que anda arrastrando sobre la tierra. Y crió Dios al hombre á su imagen, á imagen de Dios lo crió; varón y hembra los crió.' },
+    'GEN.1.31': { text: 'Y vió Dios todo lo que había hecho, y he aquí que era bueno en gran manera. Y fué la tarde y la mañana el día sexto.' },
+    'GEN.3.8-10': { text: 'Y oyeron la voz de Jehová Dios que se paseaba en el huerto al aire del día: y escondióse el hombre y su mujer de la presencia de Jehová Dios entre los árboles del huerto. Y llamó Jehová Dios al hombre, y le dijo: ¿Dónde estás tú? Y él respondió: Oí tu voz en el huerto, y tuve miedo, porque estaba desnudo; y escondíme.' },
+    'ROM.3.22-24': { text: 'La justicia de Dios por la fe de Jesucristo, para todos los que creen en él; porque no hay diferencia; Por cuanto todos pecaron, y están destituídos de la gloria de Dios; Siendo justificados gratuitamente por su gracia, por la redención que es en Cristo Jesús;' },
+    'GEN.12.1-3': { text: 'EMPERO Jehová había dicho á Abram: Vete de tu tierra y de tu parentela, y de la casa de tu padre, á la tierra que te mostraré; Y haré de ti una nación grande, y bendecirte he, y engrandeceré tu nombre, y serás bendición: Y bendeciré á los que te bendijeren, y á los que te maldijeren maldeciré: y serán benditas en ti todas las familias de la tierra.' },
+    'ROM.5.6-8': { text: 'Porque Cristo, cuando aun éramos flacos, á su tiempo murió por los impíos. Ciertamente apenas muere alguno por un justo: con todo podrá ser que alguno osara morir por el bueno. Mas Dios encarece su caridad para con nosotros, porque siendo aún pecadores, Cristo murió por nosotros.' },
+    '1CO.15.17-20': { text: 'Y si Cristo no resucitó, vuestra fe es vana; aun estáis en vuestros pecados. Entonces también los que durmieron en Cristo son perdidos. Si en esta vida solamente esperamos en Cristo, los más miserables somos de todos los hombres. Mas ahora Cristo ha resucitado de los muertos; primicias de los que durmieron es hecho.' },
+    'EPH.2.4-10': { text: 'Empero Dios, que es rico en misericordia, por su mucho amor con que nos amó, Aun estando nosotros muertos en pecados, nos dió vida juntamente con Cristo; por gracia sois salvos; Y juntamente nos resucitó, y asimismo nos hizo sentar en los cielos con Cristo Jesús, Para mostrar en los siglos venideros las abundantes riquezas de su gracia en su bondad para con nosotros en Cristo Jesús. Porque por gracia sois salvos por la fe; y esto no de vosotros, pues es don de Dios: No por obras, para que nadie se gloríe. Porque somos hechura suya, criados en Cristo Jesús para buenas obras, las cuales Dios preparó para que anduviésemos en ellas.' },
+    'MAT.6.5-8': { text: 'Y cuando oras, no seas como los hipócritas; porque ellos aman el orar en las sinagogas, y en los cantones de las calles en pie, para ser vistos de los hombres: de cierto os digo, que ya tienen su pago. Mas tú, cuando oras, éntrate en tu cámara, y cerrada tu puerta, ora á tu Padre que está en secreto; y tu Padre que ve en secreto, te recompensará en público. Y orando, no seáis prolijos, como los Gentiles; que piensan que por su parlería serán oídos. No os hagáis, pues, semejantes á ellos; porque vuestro Padre sabe de qué cosas tenéis necesidad, antes que vosotros le pidáis.' },
+    'MAT.6.9-13': { text: 'Vosotros pues, oraréis así: Padre nuestro que estás en los cielos, santificado sea tu nombre. Venga tu reino. Sea hecha tu voluntad, como en el cielo, así también en la tierra. Danos hoy nuestro pan cotidiano. Y perdónanos nuestras deudas, como también nosotros perdonamos á nuestros deudores. Y no nos metas en tentación, mas líbranos del mal: porque tuyo es el reino, y el poder, y la gloria, por todos los siglos. Amén.' },
+    'PSA.13.1-6': { text: 'Al Músico principal: Salmo de David. ¿HASTA cuándo, Jehová? ¿me olvidarás para siempre? ¿hasta cuándo esconderás tu rostro de mí? ¿Hasta cuándo pondré consejos en mi alma, con ansiedad en mi corazón cada día? ¿Hasta cuándo será enaltecido mi enemigo sobre mí? Mira, óyeme, Jehová Dios mío: alumbra mis ojos, porque no duerma en muerte; Porque no diga mi enemigo, Vencílo: mis enemigos se alegrarán, si yo resbalare. Mas yo en tu misericordia he confiado: alegraráse mi corazón en tu salud. Cantaré á Jehová, porque me ha hecho bien.' },
+    'MRK.14.35-36': { text: 'Y yéndose un poco adelante, se postró en tierra, y oró que si fuese posible, pasase de él aquella hora. Y decía: Abba, Padre, todas las cosas son á ti posibles; traspasa de mí este vaso; empero no lo que yo quiero, sino lo que tú.' },
+    'LUK.5.15-16': { text: 'Empero tanto más se extendía su fama: y se juntaban muchas gentes á oir y ser sanadas de sus enfermedades. Mas él se apartaba á los desiertos, y oraba.' },
+    '2TI.3.16-17': { text: 'Toda Escritura es inspirada divinamente y útil para enseñar, para redargüir, para corregir, para instituir en justicia, Para que el hombre de Dios sea perfecto, enteramente instruído para toda buena obra.' },
+    '1PE.2.24': { text: 'El cual mismo llevó nuestros pecados en su cuerpo sobre el madero, para que nosotros siendo muertos á los pecados, vivamos á la justicia: por la herida del cual habéis sido sanados.' },
+    'PSA.23.1-6': { text: 'Salmo de David. JEHOVÁ es mi pastor; nada me faltará. En lugares de delicados pastos me hará yacer: junto á aguas de reposo me pastoreará. Confortará mi alma; guiaráme por sendas de justicia por amor de su nombre. Aunque ande en valle de sombra de muerte, no temeré mal alguno; porque tú estarás conmigo: tu vara y tu cayado me infundirán aliento. Aderezarás mesa delante de mí, en presencia de mis angustiadores: ungiste mi cabeza con aceite: mi copa está rebosando. Ciertamente el bien y la misericordia me seguirán todos los días de mi vida: y en la casa de Jehová moraré por largos días.' },
+    'NEH.8.8': { text: 'Y leían en el libro de la ley de Dios claramente, y ponían el sentido, de modo que entendiesen la lectura.' },
+    'LUK.24.27': { text: 'Y comenzando desde Moisés, y de todos los profetas, declarábales en todas las Escrituras lo que de él decían.' },
+    'JER.29.10-11': { text: 'Porque así dijo Jehová: Cuando en Babilonia se cumplieren los setenta años, yo os visitaré, y despertaré sobre vosotros mi buena palabra, para tornaros á este lugar. Porque yo sé los pensamientos que tengo acerca de vosotros, dice Jehová, pensamientos de paz, y no de mal, para daros el fin que esperáis.' }
+  }
+};
 /* SCRIPTURE-END */
 
 /* =========================================================
@@ -4644,6 +5165,8 @@ let savedView = 'verses';
    browser chrome is set from JS and cannot read a CSS custom property
    before it is needed; a contract asserts the two stay equal. */
 const LIGHT_THEME_COLOR = '#F7F4EF';
+const DEFAULT_TRANSLATION = 'eng-web';
+let translation = DEFAULT_TRANSLATION;
 const APPEARANCES = ['dark', 'light'];
 let appearance = 'dark';
 let textSize = 'standard';
@@ -5045,7 +5568,7 @@ function lessonPassages(lesson){
   const out = [];
   lesson.passages.forEach(function(id){
     const p = passageById(id);
-    if(p) out.push(p);
+    if(p) out.push(inTranslation(p));
   });
   return out;
 }
@@ -5114,6 +5637,10 @@ function loadVerseData(){
 function loadPrefs(){
   /* An unreadable or unrecognised value is not a broken reader — it is a
      reader who has never chosen, and the product default answers for them. */
+  /* An edition this build does not ship — an old preference, a hand-edited
+     value — is not a broken reader. They get the default. */
+  const tr = Store.get(KEYS.translation);
+  translation = (tr && TRANSLATIONS[tr]) ? tr : DEFAULT_TRANSLATION;
   const ap = Store.get(KEYS.appearance);
   appearance = APPEARANCES.indexOf(ap) === -1 ? 'dark' : ap;
   const ts = Store.get(KEYS.textSize);
@@ -5224,7 +5751,7 @@ function renderToday(){
   if(!host) return;
 
   const key = isDayKey(selectedDay) ? selectedDay : todayKey();
-  const passage = passageForDay(key);
+  const passage = inTranslation(passageForDay(key));
 
   /* No eligible catalogue means no verse, and the honest thing is to say so.
      A Bible app that improvises when its text is missing is the exact
@@ -5257,10 +5784,10 @@ function renderToday(){
           '<span class="badge">' + escapeHtml((passage.themes || [])[0] || '') + '</span>' +
         '</div>' +
         superscriptionHtml(passage) +
-        '<blockquote class="verse-text">' + escapeHtml(passage.text) + '</blockquote>' +
+        '<blockquote class="verse-text" lang="' + escapeAttr(translationLang(passage)) + '">' + escapeHtml(passage.text) + '</blockquote>' +
         '<div class="verse-cite">' +
           '<cite class="verse-ref">' + escapeHtml(passage.ref) + '</cite>' +
-          '<span class="verse-translation">' + escapeHtml(SCRIPTURE_SOURCE.abbr) + '</span>' +
+          '<span class="verse-translation">' + escapeHtml(translationAbbr(passage)) + '</span>' +
         '</div>' +
       '</article>' +
     '</section>' +
@@ -5342,7 +5869,7 @@ function renderDayRail(){
 
 /* ---------- saving a passage ---------- */
 function toggleSaved(id){
-  const passage = passageById(id);
+  const passage = inTranslation(passageById(id));
   /* Validate before mutating: an id the catalogue does not carry must not
      become a saved record pointing at nothing. */
   if(!passage) return;
@@ -5371,11 +5898,11 @@ function unsaveVerse(id){
    pasted into a message without them is exactly the unsourced Scripture
    this app is built to avoid producing. */
 function shareText(passage){
-  return '“' + passage.text + '”\n— ' + passage.ref + ' (' + SCRIPTURE_SOURCE.abbr + ')';
+  return '“' + passage.text + '”\n— ' + passage.ref + ' (' + translationAbbr(passage) + ')';
 }
 
 function sharePassage(id){
-  const passage = passageById(id);
+  const passage = inTranslation(passageById(id));
   if(!passage) return;
   const payload = shareText(passage);
 
@@ -5398,7 +5925,7 @@ function sharePassage(id){
 /* ---------- reflections ---------- */
 function openNote(key){
   if(!isDayKey(key) || key > todayKey()) return;
-  const passage = passageForDay(key);
+  const passage = inTranslation(passageForDay(key));
   if(!passage) return;
 
   editingNoteDate = key;
@@ -5417,10 +5944,10 @@ function openNote(key){
     head.innerHTML =
       '<article class="verse-card verse-card-compact">' +
         superscriptionHtml(passage, true) +
-        '<blockquote class="verse-text verse-text-compact">' + escapeHtml(passage.text) + '</blockquote>' +
+        '<blockquote class="verse-text verse-text-compact" lang="' + escapeAttr(translationLang(passage)) + '">' + escapeHtml(passage.text) + '</blockquote>' +
         '<div class="verse-cite">' +
           '<cite class="verse-ref">' + escapeHtml(passage.ref) + '</cite>' +
-          '<span class="verse-translation">' + escapeHtml(SCRIPTURE_SOURCE.abbr) + '</span>' +
+          '<span class="verse-translation">' + escapeHtml(translationAbbr(passage)) + '</span>' +
         '</div>' +
       '</article>' +
       /* The reader's choice to read Scripture on its own is a choice about
@@ -5489,7 +6016,7 @@ function saveNote(){
     return;
   }
 
-  const passage = passageForDay(key);
+  const passage = inTranslation(passageForDay(key));
   if(!passage) return;
 
   const now = new Date().toISOString();
@@ -5581,7 +6108,7 @@ function renderSaved(){
       return;
     }
     host.innerHTML = list.map(function(n){
-      const passage = peekPassageForDay(n.date);
+      const passage = inTranslation(peekPassageForDay(n.date));
       return '<button class="verse-row" onclick="openNote(\'' + escapeAttr(n.date) + '\')">' +
         '<span class="verse-row-ref">' +
           '<span>' + escapeHtml(passage ? passage.ref : (n.ref || 'A reading')) + '</span>' +
@@ -5608,7 +6135,7 @@ function renderSaved(){
   }
 
   host.innerHTML = list.map(function(s){
-    const passage = s.passage ? passageById(s.passage) : passageByRef(s.ref);
+    const passage = inTranslation(s.passage ? passageById(s.passage) : passageByRef(s.ref));
     /* A saved reference this build no longer carries is reported as exactly
        that. Substituting a different passage under the same heading would be
        the app quietly rewriting someone's history. */
@@ -5623,11 +6150,11 @@ function renderSaved(){
     return '<div class="panel" style="margin-bottom:var(--space-sm)">' +
       '<div class="verse-row-ref">' +
         '<span>' + escapeHtml(passage.ref) + ' <span class="verse-translation">' +
-          escapeHtml(SCRIPTURE_SOURCE.abbr) + '</span></span>' +
+          escapeHtml(translationAbbr(passage)) + '</span></span>' +
         savedRemoveButton(passage.id) +
       '</div>' +
       superscriptionHtml(passage, true) +
-      '<blockquote class="verse-quote">' + escapeHtml(passage.text) + '</blockquote>' +
+      '<blockquote class="verse-quote" lang="' + escapeAttr(translationLang(passage)) + '">' + escapeHtml(passage.text) + '</blockquote>' +
     '</div>';
   }).join('');
 }
@@ -5635,6 +6162,76 @@ function renderSaved(){
 function savedRemoveButton(id){
   return '<button class="icon-btn" aria-label="Remove this verse from saved" ' +
     'onclick="unsaveVerse(\'' + escapeAttr(id) + '\')">' + trashIcon(16) + '</button>';
+}
+
+/* ---------- Scripture edition ----------
+
+   A canonical id names a LOCATION. An edition supplies the words. Nothing a
+   reader owns — a saved verse, the day ledger, a lesson's passage list —
+   holds anything but the id, so changing edition changes the words on
+   screen and touches no record. */
+function activeTranslation(){
+  return TRANSLATIONS[translation] || TRANSLATIONS[DEFAULT_TRANSLATION];
+}
+
+/* Editions grouped by language. Two editions of one language will land under
+   one heading without this needing to change. */
+function translationsByLanguage(){
+  const out = [];
+  Object.keys(TRANSLATIONS).forEach(function(id){
+    const t = TRANSLATIONS[id];
+    let group = null;
+    for(let i = 0; i < out.length; i++){ if(out[i].lang === t.lang) group = out[i]; }
+    if(!group){ group = { lang: t.lang, language: t.language, editions: [] }; out.push(group); }
+    group.editions.push(t);
+  });
+  return out;
+}
+
+/* The reference as the selected edition would print it. The default keeps
+   the canonical wording exactly — its own metadata says “Psalms” where the
+   catalogue has always said “Psalm”, and a translation feature has no
+   business renaming English references. */
+function displayRef(p){
+  if(!p) return '';
+  if(translation === DEFAULT_TRANSLATION) return p.ref;
+  const t = activeTranslation();
+  const m = String(p.id).match(/^([A-Z0-9]+)\.(\d+)\.(\d+)(?:-(\d+))?$/);
+  if(!m || !t.books || !t.books[m[1]]) return p.ref;
+  return t.books[m[1]] + ' ' + m[2] + ':' + m[3] + (m[4] ? '-' + m[4] : '');
+}
+
+/* A passage as the selected edition renders it: same id, same themes, same
+   eligibility, different words. Returns a record shaped exactly like a
+   SCRIPTURE row so every screen can keep rendering what it already did. */
+function inTranslation(p){
+  if(!p) return p;
+  if(translation === DEFAULT_TRANSLATION) return p;
+  const text = (TRANSLATION_TEXT[translation] || {})[p.id];
+  /* The build refuses to ship an edition missing a canonical passage, so
+     this is a safety net rather than an expected path. Falling back to the
+     default edition's words means the label must fall back with them. */
+  if(!text) return Object.assign({}, p, { _fallback: true });
+  return { id: p.id, ref: displayRef(p), themes: p.themes, daily: p.daily,
+           text: text.text, sup: text.sup };
+}
+
+/* What to print beside a verse, and what language to declare it in. */
+function translationAbbr(p){
+  if(p && p._fallback) return TRANSLATIONS[DEFAULT_TRANSLATION].abbr;
+  return activeTranslation().abbr;
+}
+function translationLang(p){
+  if(p && p._fallback) return TRANSLATIONS[DEFAULT_TRANSLATION].lang;
+  return activeTranslation().lang;
+}
+
+function setTranslation(id){
+  if(!TRANSLATIONS[id]) return;
+  translation = id;
+  Store.set(KEYS.translation, id);
+  renderAll();
+  paintPrefControls();
 }
 
 /* ---------- appearance ---------- */
@@ -5727,6 +6324,10 @@ function paintPrefControls(){
     b.setAttribute('aria-checked', String(on));
     b.setAttribute('aria-selected', String(on));
   });
+  const bl = document.getElementById('bibleLanguageValue');
+  if(bl) bl.textContent = activeTranslation().language;
+  const tv = document.getElementById('translationValue');
+  if(tv) tv.textContent = activeTranslation().title;
   const a = document.getElementById('appearanceToggle');
   if(a) a.setAttribute('aria-checked', String(appearance === 'light'));
   const t = document.getElementById('reflectToggle');
@@ -5815,6 +6416,82 @@ function closeFocusSettings(){
    leaving the app. That is the whole reason this page exists. The detail is
    layered: the plain answer first, the machine-checkable evidence last, so
    the page is readable by someone who only wanted to know the translation. */
+/* Language first, then edition within it. They are separate pages because
+   they are separate questions: a second English translation would appear
+   under English without this needing to change. */
+function openBibleLanguage(){ renderBibleLanguage(); pushOverlayHistory(); openOverlay('bibleLanguageOverlay'); }
+function closeBibleLanguage(){ closeOverlay('bibleLanguageOverlay'); releaseOverlayHistory(); }
+function openTranslationPicker(){ renderTranslationPicker(); pushOverlayHistory(); openOverlay('translationOverlay'); }
+function closeTranslationPicker(){ closeOverlay('translationOverlay'); releaseOverlayHistory(); }
+
+/* A chosen row is marked with a word and a tick, never with colour alone. */
+function pickerRow(opts){
+  return '<button class="list-row" role="radio" aria-checked="' + (opts.on ? 'true' : 'false') + '"' +
+    ' onclick="' + opts.onclick + '">' +
+    '<span class="list-row-main">' +
+      '<span class="list-row-title"' + (opts.lang ? ' lang="' + escapeAttr(opts.lang) + '"' : '') + '>' +
+        escapeHtml(opts.title) + '</span>' +
+      (opts.desc ? '<span class="list-row-desc">' + escapeHtml(opts.desc) + '</span>' : '') +
+    '</span>' +
+    (opts.on ? '<span class="picked">' + checkIcon(15) + 'Selected</span>' : '') +
+  '</button>';
+}
+
+function renderBibleLanguage(){
+  const host = document.getElementById('bibleLanguageBody');
+  if(!host) return;
+  const groups = translationsByLanguage();
+  host.innerHTML =
+    '<p class="page-intro">The language Scripture is shown in. The rest of the app stays in English.</p>' +
+    '<div class="list" role="radiogroup" aria-label="Bible language">' +
+      groups.map(function(g){
+        return pickerRow({
+          title: g.language, lang: g.lang,
+          desc: g.editions.map(function(t){ return t.title; }).join(', '),
+          on: g.lang === activeTranslation().lang,
+          onclick: 'chooseLanguage(\'' + escapeAttr(g.lang) + '\')'
+        });
+      }).join('') +
+    '</div>';
+}
+
+/* Choosing a language selects its edition. With one edition per language
+   that is the whole interaction; with two it becomes the first of two. */
+function chooseLanguage(lang){
+  const g = translationsByLanguage().filter(function(x){ return x.lang === lang; })[0];
+  if(!g || !g.editions.length) return;
+  const already = g.editions.filter(function(t){ return t.id === translation; })[0];
+  setTranslation(already ? already.id : g.editions[0].id);
+  renderBibleLanguage();
+  closeBibleLanguage();
+}
+
+function renderTranslationPicker(){
+  const host = document.getElementById('translationBody');
+  if(!host) return;
+  const groups = translationsByLanguage();
+  host.innerHTML =
+    '<p class="page-intro">Every edition here is public domain and shown exactly as its publisher released it.</p>' +
+    groups.map(function(g){
+      return '<div class="section-label" lang="' + escapeAttr(g.lang) + '">' + escapeHtml(g.language) + '</div>' +
+        '<div class="list" role="radiogroup" aria-label="' + escapeAttr(g.language) + ' translations">' +
+          g.editions.map(function(t){
+            return pickerRow({
+              title: t.title, desc: 'Shown as ' + t.abbr,
+              on: t.id === translation,
+              onclick: 'chooseTranslation(\'' + escapeAttr(t.id) + '\')'
+            });
+          }).join('') +
+        '</div>';
+    }).join('');
+}
+
+function chooseTranslation(id){
+  setTranslation(id);
+  renderTranslationPicker();
+  closeTranslationPicker();
+}
+
 function openSource(){
   renderSource();
   pushOverlayHistory();
@@ -5833,15 +6510,27 @@ function renderSource(){
       'taken directly from the publisher&rsquo;s own released text. Nothing is paraphrased, ' +
       'nothing was typed out by hand, and nothing is trimmed to read more neatly.</p>' +
 
-    '<div class="section-label">Translation</div>' +
-    '<div class="panel">' +
-      detailRow('Translation', s.title) +
-      detailRow('Shown as', s.abbr) +
-      detailRow('Language', s.language) +
-      detailRow('Licence', s.license) +
-      detailRow('Published by', s.publisher) +
-      detailRow('Readings', String(eligible)) +
-    '</div>' +
+    '<div class="section-label">Translations</div>' +
+    Object.keys(TRANSLATIONS).map(function(id){
+      const t = TRANSLATIONS[id];
+      return '<div class="panel" style="margin-bottom:var(--space-sm)">' +
+        detailRow('Translation', t.title) +
+        detailRow('Language', t.language) +
+        detailRow('Shown as', t.abbr) +
+        detailRow('Published by', t.publisher) +
+        (id === translation ? detailRow('Currently reading', 'Yes') : '') +
+        '<p class="source-licence">' + escapeHtml(t.copyright) + '</p>' +
+      '</div>';
+    }).join('') +
+    '<p class="field-hint" style="margin-bottom:var(--space-lg)">' +
+      escapeHtml(String(eligible)) + ' daily readings, the same passages in every ' +
+      'translation. Choose which you read in Settings.</p>' +
+
+    '<div class="section-label">The language of the app</div>' +
+    '<div class="field-hint" style="margin-bottom:var(--space-xl)">' +
+      'Scripture can be read in any of the translations above. Everything this app ' +
+      'writes itself &mdash; the daily reflections, the guided studies and the ' +
+      'questions in them &mdash; is written in English, and is not translated.</div>' +
 
     '<div class="section-label">What is Scripture here, and what is not</div>' +
     '<div class="panel">' +
@@ -5860,11 +6549,12 @@ function renderSource(){
 
     '<div class="section-label">On names, and on wording</div>' +
     '<div class="field-hint" style="margin-bottom:var(--space-xl)">' +
-      'Translations differ in how they render names and titles. This one prints the Hebrew ' +
-      'divine name as &ldquo;' + escapeHtml(s.divineName) + '&rdquo; in the Old Testament, ' +
-      'where many English Bibles print &ldquo;the LORD&rdquo;. That is this ' +
-      'translation&rsquo;s choice, not ours. Daily Verse shows the wording a translation ' +
-      'published, and never swaps it for a more familiar form.</div>' +
+      'Translations differ, and not only in language. The same verse can name God ' +
+      'differently &mdash; this English edition prints &ldquo;' + escapeHtml(s.divineName) +
+      '&rdquo; where many print &ldquo;the LORD&rdquo;, and the Spanish prints ' +
+      '&ldquo;Jehov&aacute;&rdquo;. Wording, punctuation and even verse numbering can vary. ' +
+      'None of that is corrected here: Daily Verse shows each translation exactly as its ' +
+      'publisher released it, and never swaps a rendering for a more familiar one.</div>' +
 
     '<div class="section-label">For the record</div>' +
     '<div class="panel">' +
@@ -6519,10 +7209,10 @@ function superscriptionHtml(p, compact){
 function passageCardHtml(p){
   return '<article class="verse-card lesson-passage">' +
     superscriptionHtml(p) +
-    '<blockquote class="verse-text">' + escapeHtml(p.text) + '</blockquote>' +
+    '<blockquote class="verse-text" lang="' + escapeAttr(translationLang(p)) + '">' + escapeHtml(p.text) + '</blockquote>' +
     '<div class="verse-cite">' +
       '<cite class="verse-ref">' + escapeHtml(p.ref) + '</cite>' +
-      '<span class="verse-translation">' + escapeHtml(SCRIPTURE_SOURCE.abbr) + '</span>' +
+      '<span class="verse-translation">' + escapeHtml(translationAbbr(p)) + '</span>' +
     '</div>' +
   '</article>';
 }

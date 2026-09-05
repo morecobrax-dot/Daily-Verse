@@ -235,6 +235,25 @@ before calling a release done.
     wrong the moment a second is offered. Teach the concept; let the
     verse card supply the words. Contract 36 enforces this.
 
+50. **A canonical id names a location, never a rendering.** `PSA.20.7` is
+    where a passage lives; an edition supplies its words. Never namespace an
+    id by translation, never store text in a user record, and never let a
+    preference change which passage a day was assigned. Changing edition
+    changes the words on screen and nothing else.
+51. **Audit versification before adding an edition, and believe the audit.**
+    Resolving is not aligning. Louis Segond 1910 numbers a psalm's title as
+    verse 1, so `PSA.20.7` resolves there to the wrong sentence — and
+    `ISA.9.6` to the wrong sentence in the other direction. 45 of 415 shipped
+    passages sat in a chapter whose verse count differed, and only some were
+    actually wrong, so no offset rule could be derived. It was held rather
+    than shipped. An edition whose numbering cannot be reconciled from the
+    pinned archives does not ship; matching by meaning is inventing a mapping.
+52. **Rights are read, not typed.** Title, abbreviation, language, and the
+    publisher's licence statement come out of each archive's own metadata and
+    are pinned in `data/corpus.lock.json` beside the SHA-256 of the files they
+    came from. A licence string written by hand in source is a claim; one read
+    from the publisher and hashed is evidence.
+
 ## Guided study (Learn)
 
 The first content in this app that *interprets* Scripture rather than quoting

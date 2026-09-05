@@ -49,6 +49,7 @@ const SUITES = [
   C.testSmallTextContrast,
   C.testKnowledgeChecks,
   C.testFaithfulCopy,
+  C.testTranslations,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,
