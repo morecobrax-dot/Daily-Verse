@@ -4266,11 +4266,246 @@ function testPrimaryNavigation(){
     /readInContextHtml\(passage\.id\)/.test(src) &&
     /function openPassageInBible\(/.test(src));
   T('Saved still resolves Bible locations', /savedLocationText\(loc\)/.test(src));
+  /* The one-verse action sheet became the verse dock in 1.10.0: the same
+     job, done inside the reader instead of over it. Every other reader
+     surface is unchanged. */
   T('the reader pages are untouched',
-    ['bibleReaderOverlay', 'bibleChaptersOverlay', 'bibleJumpOverlay', 'bibleActionOverlay']
+    ['bibleReaderOverlay', 'bibleChaptersOverlay', 'bibleJumpOverlay']
       .every(id => src.indexOf('id="' + id + '"') !== -1));
+  T('and acting on a verse happens in the reader, not over it',
+    src.indexOf('id="verseDock"') !== -1 &&
+    src.indexOf('id="bibleActionOverlay"') === -1);
   T('and storage grew by nothing at all',
     c.DATA_SCHEMA_VERSION === 2 && Object.keys(c.KEYS).indexOf('bibleTab') === -1);
+}
+
+/* ---------------------------------------------------------
+   CONTRACT 40 — A READER THAT STAYS PAINTED, AND MARKS THAT STAY PUT
+
+   The first half of this exists because of a photograph. On a physical
+   iPhone, scrolling 1 Samuel 2 left the topbar painted, half the screen
+   blank, and Scripture resuming far below. The cause was not in the reader's
+   own code: the sheet carried `animation-fill-mode: both`, so a 200ms
+   entrance left a transform applied for the whole session, and a 7700px
+   scroller sat inside that permanently composited element, inside a fixed
+   ancestor that a backdrop-filter had composited again. iOS dropped tiles.
+
+   Every assertion below about transforms and blur is guarding that
+   photograph. The rest guards the marks a reader leaves.
+   --------------------------------------------------------- */
+function testReaderQuality(){
+  section('CONTRACT 40 — a reader that stays painted');
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx;
+  const src = H.readApp();
+  const style = css();
+
+  sub('the steady reading state is boring to the compositor');
+  /* backwards fill applies the FROM frame before the animation starts and
+     nothing after it ends. `both` also applies the TO frame for ever, which
+     is how a 200ms entrance became a permanent transform. */
+  T('no overlay animation persists its final frame',
+    style.indexOf('animation: page-in var(--dur) var(--ease) backwards;') !== -1 &&
+    style.indexOf('animation: sheet-in var(--dur) var(--ease) backwards;') !== -1);
+  /* Toasts keep both-fill deliberately: a toast has to stay put after it
+     arrives, and nothing scrolls inside one. The rule is about the
+     surfaces that WRAP a chapter. */
+  T('and no sheet or page animation uses both-fill any more', (() => {
+    const i = style.indexOf('.sheet{');
+    const j = style.indexOf('.page-topbar{');
+    return style.slice(i, j).indexOf('var(--ease) both;') === -1;
+  })());
+  /* A full-screen page has nothing visible behind it, so blurring the
+     backdrop buys nothing and costs a composited layer around the reader. */
+  T('a full-screen page does not blur a backdrop nobody can see',
+    style.indexOf('.overlay:not(.overlay-page){') !== -1);
+  T('the shared overlay base carries no blur of its own', (() => {
+    const i = style.indexOf('.overlay{');
+    const block = style.slice(i, style.indexOf('}', i));
+    return block.indexOf('backdrop-filter') === -1;
+  })());
+  /* Obsolete since iOS 13, and what it used to do was promote the scroller
+     to its own layer - the thing this whole contract is removing. */
+  T('the chapter scroller asks for no legacy momentum layer', (() => {
+    const i = style.indexOf('.sheet-scroll{');
+    return style.slice(i, style.indexOf('}', i)).indexOf('-webkit-overflow-scrolling') === -1;
+  })());
+  T('nothing in the reader asks to be composited by hand',
+    !/will-change/.test(style) && !/translateZ|translate3d/.test(style));
+
+  sub('one scroll container, and the chapter lives inside it');
+  T('the chapter is painted into the scrolling element itself',
+    /<div class="sheet-scroll" id="bibleReaderBody">/.test(src));
+  T('the dock is a sibling in the same column, not a floating bar', (() => {
+    const i = style.indexOf('.verse-dock{');
+    const block = style.slice(i, style.indexOf('}', i));
+    return block.indexOf('position: fixed') === -1 && block.indexOf('transform') === -1;
+  })());
+
+  sub('a tap is a state somebody chose, not a browser default');
+  T('the browser tap highlight is replaced, not left to itself',
+    /\.bible-v\{[^}]*-webkit-tap-highlight-color: transparent/.test(style));
+  T('and there is a deliberate pressed state in its place',
+    style.indexOf('.bible-v:active .bible-vt{') !== -1);
+  T('a tap cannot start a text selection by accident',
+    /\.bible-vt\{[^}]*user-select: none/.test(style));
+  T('chosen and kept do not look the same', (() => {
+    const sel = style.indexOf('.bible-v.is-sel .bible-vt{');
+    const kept = style.indexOf('.bible-v[data-hl] .bible-vt{');
+    return sel !== -1 && kept !== -1 &&
+      style.slice(sel, style.indexOf('}', sel)).indexOf('text-decoration') !== -1;
+  })());
+
+  sub('a highlight belongs to a place, never to a translation');
+  const H1 = H.loadApp({ sharedStorage: new Map() });
+  T('nothing is stored before anything is highlighted',
+    H1.storage.getItem('daily-verse.data.bibleHighlights') === null);
+  H1.ctx.setHighlight('JHN.3.16', 'amber');
+  const rec = JSON.parse(H1.storage.getItem('daily-verse.data.bibleHighlights'))[0];
+  T('its id IS the canonical verse', rec.id === 'JHN.3.16');
+  T('its colour is a stable name, not a colour value',
+    rec.color === 'amber' && H1.ctx.HIGHLIGHT_COLORS.indexOf(rec.color) !== -1);
+  T('no Scripture text is stored in the record',
+    Object.keys(rec).sort().join() === 'color,createdAt,id,updatedAt',
+    Object.keys(rec).join());
+  H1.ctx.setHighlight('JHN.3.16', 'blue');
+  T('recolouring changes the record rather than adding one',
+    JSON.parse(H1.storage.getItem('daily-verse.data.bibleHighlights')).length === 1 &&
+    H1.ctx.highlightColorFor('JHN.3.16') === 'blue');
+  H1.ctx.setHighlight('JHN.3.16', null);
+  T('removing leaves nothing behind',
+    JSON.parse(H1.storage.getItem('daily-verse.data.bibleHighlights')).length === 0);
+  T('a colour this build does not ship is refused', (() => {
+    H1.ctx.setHighlight('JHN.3.16', 'chartreuse');
+    return H1.ctx.highlightColorFor('JHN.3.16') === null;
+  })());
+  T('and so is something that is not a verse', (() => {
+    H1.ctx.setHighlight('not-a-place', 'amber');
+    return JSON.parse(H1.storage.getItem('daily-verse.data.bibleHighlights')).length === 0;
+  })());
+
+  sub('changing edition changes the words and nothing a reader marked');
+  const sw = H.loadApp({ sharedStorage: new Map() });
+  sw.ctx.setHighlight('JHN.3.16', 'rose');
+  sw.ctx.markChapterRead('JHN', 3, false);
+  const before = sw.storage.getItem('daily-verse.data.bibleHighlights') +
+                 '|' + sw.storage.getItem('daily-verse.data.bibleRead');
+  ['spaRV1909', 'engbsb', 'eng-web'].forEach(id => sw.ctx.setTranslation(id));
+  const after = sw.storage.getItem('daily-verse.data.bibleHighlights') +
+                '|' + sw.storage.getItem('daily-verse.data.bibleRead');
+  T('three changes of edition alter neither collection', before === after);
+  T('the highlight still resolves at the same address',
+    sw.ctx.highlightColorFor('JHN.3.16') === 'rose');
+  T('and the chapter is still read', sw.ctx.isChapterRead('JHN', 3));
+  /* An edition with no verse at that address simply does not draw it.
+     Nothing is remapped to a neighbouring verse. */
+  T('a highlight is drawn from the record, not from the text',
+    /highlightColorFor\(vid\)/.test(src) && /data-hl="' \+ hl \+ '"/.test(src));
+
+  sub('a highlight is announced, not merely coloured');
+  T('the verse carries its state as text a screen reader can read',
+    /verse-state sr-only/.test(src) && /highlighted ' \+ HIGHLIGHT_NAMES\[hl\]/.test(src));
+  T('the chosen swatch is marked with a tick as well as a border',
+    /aria-pressed="' \+ \(uniform === c \? 'true' : 'false'\) \+ '"/.test(src) &&
+    style.indexOf('.hl-swatch[aria-pressed="true"] .glyph{ display: flex;') !== -1);
+  T('and the verse is still not announced as a button',
+    !/class="bible-v[^"]*"[^>]*role="button"/.test(src));
+
+  sub('opening a chapter is not reading it');
+  const R = H.loadApp({ sharedStorage: new Map() });
+  R.ctx.beginReadSession('JHN', 3, 1);
+  R.ctx.bibleBookCode = 'JHN'; R.ctx.bibleChapter = 3;
+  R.ctx.maybeMarkRead();
+  T('reaching the end immediately does not count', !R.ctx.isChapterRead('JHN', 3));
+  /* The failure this prevents: a link that drops somebody on the last verse
+     marking the whole chapter behind them. */
+  R.ctx.beginReadSession('JHN', 3, 36);
+  R.ctx.bibleReadSession.openedAt = Date.now() - 60000;
+  R.ctx.maybeMarkRead();
+  T('and arriving at the last verse from a link never counts',
+    !R.ctx.isChapterRead('JHN', 3), 'entry ' + R.ctx.bibleReadSession.entry);
+  R.ctx.beginReadSession('JHN', 3, 1);
+  R.ctx.bibleReadSession.openedAt = Date.now() - 60000;
+  R.ctx.maybeMarkRead();
+  T('starting at the beginning and reaching the end does',
+    R.ctx.isChapterRead('JHN', 3));
+  const readRec = JSON.parse(R.storage.getItem('daily-verse.data.bibleRead'))[0];
+  T('the record is a chapter and a time, and nothing else',
+    readRec.id === 'JHN.3' && Object.keys(readRec).sort().join() === 'id,readAt,updatedAt',
+    Object.keys(readRec).join());
+  T('it does not record which edition was on screen',
+    JSON.stringify(readRec).indexOf('eng-web') === -1);
+
+  sub('and a reader can always say so themselves');
+  R.ctx.markChapterUnread('JHN', 3);
+  T('unread removes it', !R.ctx.isChapterRead('JHN', 3));
+  T('and the session cannot immediately re-mark it',
+    R.ctx.bibleReadSession.blocked === true);
+  R.ctx.toggleChapterRead('JHN', 4);
+  T('a manual mark works with no session at all', R.ctx.isChapterRead('JHN', 4));
+  R.ctx.toggleChapterRead('JHN', 4);
+  T('and toggles back off', !R.ctx.isChapterRead('JHN', 4));
+  T('the toast that announces it offers the way back',
+    /toast\('Chapter marked as read', 'success', \{/.test(src) &&
+    /label: 'Undo'/.test(src));
+  T('the chapter grid shows what is behind you, with a tick not just a tone',
+    /data-read="1"/.test(src) && /read-tick/.test(src) &&
+    /', read' : ''/.test(src));
+
+  sub('nothing is written while a finger is moving');
+  /* The failure this prevents: a scroll handler persisting progress, which
+     on a 7700px chapter is a write per frame. */
+  const bare = stripComments(js());
+  T('the end-of-chapter check reads geometry and writes nothing',
+    /scroller\.scrollTop \+ scroller\.clientHeight >= scroller\.scrollHeight/.test(bare));
+  T('it is one passive listener for the whole chapter, not one per verse',
+    /addEventListener\('scroll', fn, \{ passive: true \}\)/.test(bare) &&
+    (bare.match(/addEventListener\('scroll'/g) || []).length <= 2);
+  T('and a highlight repaints only the verses, never the chapter',
+    /function paintVerseStates\(\)/.test(bare) &&
+    /el\.setAttribute\('data-hl', color\)/.test(bare) &&
+    !/function applyHighlight\([\s\S]{0,220}renderBibleReader\(\)/.test(bare));
+
+  sub('the sheet that had no gutter has one');
+  /* Photographed on a phone: the title sat flush against the screen edge
+     because this sheet put content straight into .sheet, which carries no
+     padding. Every other sheet wraps content in .sheet-scroll. */
+  T('go to passage wraps its content the way every other sheet does',
+    src.slice(src.indexOf('id="bibleJumpOverlay"'), src.indexOf('id="bibleJumpOverlay"') + 700).indexOf('<div class="sheet-scroll">') !== -1);
+  T('no shipping bottom sheet puts content bare inside .sheet', (() => {
+    const ids = ['bibleJumpOverlay', 'confirmOverlay', 'onboardOverlay'];
+    return ids.every(id => {
+      const i = src.indexOf('id="' + id + '"');
+      return src.slice(i, i + 600).indexOf('sheet-scroll') !== -1;
+    });
+  })());
+
+  sub('the reader is still the only thing that changed');
+  const S = require('../scripts/scripture.js');
+  T('415 curated passages, unmoved', c.SCRIPTURE.length === 415);
+  T('the WEB dataset hash is what it has always been',
+    S.datasetHash(c.SCRIPTURE) === 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916');
+  T('the schema did not move for either new collection',
+    c.DATA_SCHEMA_VERSION === 2);
+  T('and both are arrays of id-bearing records, so backup already carries them',
+    /bibleHighlights:'data\.bibleHighlights'/.test(src) &&
+    /bibleRead:      'data\.bibleRead'/.test(src));
+  {
+    /* Prove it rather than assert the shape: run a real backup round trip. */
+    const b = H.loadApp({ sharedStorage: new Map() });
+    b.ctx.setHighlight('PSA.23.1', 'green');
+    b.ctx.markChapterRead('PSA', 23, false);
+    const payload = {
+      'data.bibleHighlights': b.storage.getItem('daily-verse.data.bibleHighlights'),
+      'data.bibleRead': b.storage.getItem('daily-verse.data.bibleRead')
+    };
+    const fresh = H.loadApp({ sharedStorage: new Map() });
+    const res = fresh.ctx.mergeBackup(payload);
+    fresh.ctx.loadVerseData();
+    T('a backup carries highlights and read state into a new install',
+      res.collections === 2 && fresh.ctx.highlightColorFor('PSA.23.1') === 'green' &&
+      fresh.ctx.isChapterRead('PSA', 23), JSON.stringify(res));
+  }
 }
 
 module.exports = {
@@ -4282,5 +4517,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality
 };

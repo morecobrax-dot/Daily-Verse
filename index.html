@@ -87,6 +87,20 @@
   --accent: var(--brand-accent);
   --accent-deep: var(--brand-accent-deep);
   --accent-soft: rgba(255,145,71,0.12);
+  /* Highlighter washes. Referenced by stable NAME everywhere - a record
+     stores "amber", never a colour - so the palette can be retuned
+     without touching a single thing a reader kept. */
+  --hl-amber:  rgba(255,183,77,0.22);
+  --hl-green:  rgba(129,199,132,0.20);
+  --hl-blue:   rgba(100,181,246,0.20);
+  --hl-rose:   rgba(240,132,150,0.20);
+  --hl-violet: rgba(179,157,219,0.22);
+  /* The pen, as opposed to the mark it leaves. */
+  --hl-amber-dot:  #F5B942;
+  --hl-green-dot:  #6FBF73;
+  --hl-blue-dot:   #5AA9E6;
+  --hl-rose-dot:   #E8788C;
+  --hl-violet-dot: #A78BDB;
   /* Text drawn ON a filled accent surface. */
   --accent-contrast: #24120A;
 
@@ -246,6 +260,13 @@ html.appearance-switching *::after{
   --accent: #A84A15;
   --accent-deep: #8A3A0E;
   --accent-soft: rgba(168,74,21,0.10);
+  /* Warmer and a little stronger on a light ground, where a thin wash
+     disappears rather than marks. */
+  --hl-amber:  rgba(255,196,84,0.55);
+  --hl-green:  rgba(150,214,154,0.50);
+  --hl-blue:   rgba(133,197,250,0.50);
+  --hl-rose:   rgba(248,166,180,0.50);
+  --hl-violet: rgba(196,178,232,0.55);
   --gradient-accent: linear-gradient(135deg, var(--brand-accent), var(--brand-accent-deep));
   --accent-contrast: #24120A;
 
@@ -440,6 +461,18 @@ p{ margin: 0; }
 }
 .btn-secondary:hover{ border-color: var(--accent); color: var(--accent); }
 .btn-secondary:active{ transform: scale(0.98); }
+
+/* A third weight below secondary: a real control, but one that yields to
+   everything around it. It was being used in markup with no rule behind
+   it, so it rendered as a browser-default button. */
+.btn-quiet{
+  min-height: var(--touch-min); padding: 0 var(--space-md);
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-ui); font-size: var(--fs-support); font-weight: 600;
+  color: var(--text-dim); border-radius: var(--radius-md);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-quiet:hover{ color: var(--accent); }
 .btn-danger{ color: var(--danger); }
 .btn-danger:hover{ border-color: var(--danger); color: var(--danger); }
 
@@ -856,6 +889,29 @@ blockquote.verse-text{
 }
 .bible-edition:hover{ color: var(--accent); }
 
+/* The two utilities under Continue reading. Side by side and quiet: they
+   are things you occasionally need, not things you came here for. They
+   used to be two more full-width cards, which made the top of the Bible
+   read as three equally important decisions. */
+.bible-utils{ display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg); }
+.bible-util{
+  flex: 1; min-height: var(--touch-min);
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  padding: var(--space-sm) var(--space-md);
+  background: none; border: 1px solid var(--border-quiet);
+  border-radius: var(--radius-md); cursor: pointer; text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.bible-util:hover{ border-color: var(--accent); }
+.bible-util-label{
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
+}
+.bible-util-value{
+  font-family: var(--font-ui); font-size: var(--fs-support); font-weight: 600;
+  color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
 /* Books. One column, full-width rows: a 66-cell grid of abbreviations is
    unreadable one-handed and unusable for "San Mateo". */
 .book-list{ display: flex; flex-direction: column; margin-bottom: var(--space-lg); }
@@ -975,6 +1031,118 @@ blockquote.verse-text{
   color: var(--text-dim); cursor: pointer;
 }
 .read-context:hover{ color: var(--accent); }
+
+/* ---- reading a verse, and marking one ---------------------------------
+   ONE interaction language, declared here rather than left to the browser.
+   Every state a verse can be in is a state somebody chose:
+
+     (default)        text
+     :active          being pressed right now
+     .is-sel          chosen, waiting for an action
+     [data-hl]        highlighted, and kept
+     .bible-v-focus   arrived at from a link, and transient
+
+   The browser's own tap highlight is switched off because it was painting a
+   ragged grey block across a multi-line span - the "weird highlight glitch"
+   this replaces. It is REPLACED, not merely removed: :active below is the
+   deliberate version of the same feedback. */
+.bible-v{
+  -webkit-tap-highlight-color: transparent;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+.bible-v:active .bible-vt{ background: var(--surface-raised); }
+/* A verse is a reading surface first. Dragging across one used to start a
+   native selection with handles and a callout; the words are still
+   selectable deliberately via long-press on the text itself, but a tap
+   cannot start one by accident. */
+.bible-vt{ -webkit-user-select: none; user-select: none; }
+
+/* Chosen, but nothing applied yet. Deliberately NOT a colour fill: it must
+   not be mistakable for a highlight the reader has actually kept. */
+.bible-v.is-sel .bible-vt{
+  background: var(--surface-raised);
+  text-decoration: underline dotted var(--accent);
+  text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+
+/* Kept. A reading annotation, not a block of paint: the tint sits behind the
+   words, the serif and the line-height are untouched, and the verse number
+   stays legible on top of it. */
+/* A highlight shown outside the reader - in Saved - keeps its colour so
+   the two places agree about what was marked. */
+blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
+.bible-v[data-hl] .bible-vt{
+  background: var(--hl-bg);
+  box-shadow: 0 0 0 2px var(--hl-bg);
+}
+/* The colour a name resolves to, wherever the name is used - the reader,
+   Saved, and any future surface - so one mapping keeps them all in step. */
+[data-hl="amber"]  { --hl-bg: var(--hl-amber); }
+[data-hl="green"]  { --hl-bg: var(--hl-green); }
+[data-hl="blue"]   { --hl-bg: var(--hl-blue); }
+[data-hl="rose"]   { --hl-bg: var(--hl-rose); }
+[data-hl="violet"] { --hl-bg: var(--hl-violet); }
+/* Chosen wins over kept, so the reader can see what they are about to change. */
+.bible-v.is-sel[data-hl] .bible-vt{
+  background: var(--surface-raised); box-shadow: none;
+  text-decoration: underline dotted var(--accent);
+  text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+
+/* The dock. It is part of the sheet's own column, not a floating bar: no
+   fixed positioning, no transform, nothing for the compositor to hold. It
+   exists only while a verse is chosen. */
+.verse-dock{
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: var(--space-md) var(--space-lg) calc(var(--space-md) + var(--inset-bottom));
+}
+.verse-dock-head{
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-sm); margin-bottom: var(--space-sm);
+}
+.verse-dock-ref{
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
+}
+.verse-dock-colors{ display: flex; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.hl-swatch{
+  flex: 1; min-height: var(--touch-min);
+  border-radius: var(--radius-md); cursor: pointer;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.hl-swatch[data-color="amber"]  { background: var(--hl-amber-dot); }
+.hl-swatch[data-color="green"]  { background: var(--hl-green-dot); }
+.hl-swatch[data-color="blue"]   { background: var(--hl-blue-dot); }
+.hl-swatch[data-color="rose"]   { background: var(--hl-rose-dot); }
+.hl-swatch[data-color="violet"] { background: var(--hl-violet-dot); }
+/* The chosen colour is marked with a tick, never with colour alone. */
+.hl-swatch[aria-pressed="true"]{ border-color: var(--accent); color: var(--text); }
+.hl-swatch .glyph{ display: none; }
+.hl-swatch[aria-pressed="true"] .glyph{ display: flex; color: #1A1208; }
+.verse-dock-actions{ display: flex; gap: var(--space-sm); }
+.verse-dock-actions > *{ flex: 1; }
+
+/* Read state, in the chapter grid. A tick, not a colour. */
+.chapter-cell{ position: relative; }
+.chapter-cell[data-read="1"]{ color: var(--text-dim); border-color: var(--border-quiet); }
+.chapter-cell .read-tick{
+  position: absolute; top: 3px; right: 4px; display: flex; color: var(--accent);
+}
+.chapter-read-note{
+  margin-top: var(--space-md); font-size: var(--fs-meta); color: var(--text-faint);
+}
+
+/* The end of a chapter: where "read" is decided, and where it can be undone. */
+.chapter-end{
+  display: flex; align-items: center; justify-content: center;
+  margin-top: var(--space-xl);
+}
+.chapter-end .btn-quiet{ min-height: var(--touch-min); }
 
 /* ---- Learn ------------------------------------------------------
    The rule this section is built on: Scripture keeps the strongest
@@ -1300,11 +1468,17 @@ blockquote.verse-quote{
 .overlay{
   position: fixed; inset: 0; z-index: 60;
   background: var(--scrim);
-  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
   display: none; align-items: flex-end;
   /* A flick that runs out of sheet must stop, not hand itself to the page
      underneath — that is what makes two screens feel simultaneously alive. */
   overscroll-behavior: contain;
+}
+/* A bottom sheet leaves the screen behind it visible, so blurring that
+   screen is the whole point of the scrim. A PAGE covers everything, so
+   the same blur samples a surface nobody can see - and costs a
+   full-screen composited layer wrapped around the reader to do it. */
+.overlay:not(.overlay-page){
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
 }
 .overlay.open{ display: flex; }
 
@@ -1317,7 +1491,7 @@ blockquote.verse-quote{
   border-top: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
   max-width: var(--layout-max); margin: 0 auto;
-  animation: sheet-in var(--dur) var(--ease) both;
+  animation: sheet-in var(--dur) var(--ease) backwards;
 }
 @keyframes sheet-in{
   from{ transform: translateY(16px); opacity: 0.6; }
@@ -1328,7 +1502,7 @@ blockquote.verse-quote{
 .overlay-page{ align-items: stretch; }
 .overlay-page .sheet{
   height: 100%; max-height: none; border-radius: 0; border-top: none;
-  animation: page-in var(--dur) var(--ease) both;
+  animation: page-in var(--dur) var(--ease) backwards;
 }
 @keyframes page-in{
   from{ transform: translateX(14px); opacity: 0; }
@@ -1361,7 +1535,6 @@ blockquote.verse-quote{
 .sheet-scroll{
   overflow-y: auto; flex: 1; min-height: 0;
   padding: var(--space-xl) var(--space-lg) var(--space-lg);
-  -webkit-overflow-scrolling: touch;
   /* Every scrolling surface inside an overlay keeps its scroll to itself. */
   overscroll-behavior: contain;
 }
@@ -1404,6 +1577,13 @@ body.scroll-locked{
   padding: 0 var(--space-lg);
   display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
   pointer-events: none;
+}
+/* The undo. It has to be reachable with a thumb before the toast goes. */
+.toast-action{
+  flex-shrink: 0; min-height: var(--touch-min); padding: 0 var(--space-sm);
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-ui); font-size: var(--fs-support); font-weight: 700;
+  color: var(--accent); -webkit-tap-highlight-color: transparent;
 }
 .toast{
   width: 100%; max-width: 420px;
@@ -1492,6 +1672,7 @@ body.scroll-locked{
     <div class="segmented" role="tablist" aria-label="What to show" id="savedFilter">
       <button role="tab" aria-selected="true" data-saved="verses" onclick="setSavedView('verses')">Verses</button>
       <button role="tab" aria-selected="false" data-saved="notes" onclick="setSavedView('notes')">Reflections</button>
+      <button role="tab" aria-selected="false" data-saved="highlights" onclick="setSavedView('highlights')">Highlights</button>
     </div>
     <div id="savedList"></div>
   </main>
@@ -1724,35 +1905,30 @@ body.scroll-locked{
               aria-label="Change translation"><span id="bibleReaderAbbr"></span></button>
     </div>
     <div class="sheet-scroll" id="bibleReaderBody"></div>
+    <!-- Appears only while a verse is chosen. Part of the sheet's flex
+         column, so it pushes the text up rather than floating over it. -->
+    <div class="verse-dock" id="verseDock" hidden></div>
   </div>
 </div>
 
 <div class="overlay" id="bibleJumpOverlay">
   <div class="sheet">
-    <h2>Go to passage</h2>
-    <p class="sheet-sub">A book and a chapter, and a verse if you want one.</p>
-    <label class="form-label" for="bibleJumpInput">Reference</label>
-    <input class="field" id="bibleJumpInput" type="text" inputmode="text"
-           autocomplete="off" autocapitalize="words" spellcheck="false"
-           placeholder="John 3:16" onkeydown="if(event.key==='Enter'){event.preventDefault();submitBibleJump();}">
-    <div class="field-hint" id="bibleJumpError" role="alert"></div>
+    <!-- .sheet carries no padding of its own: the gutter belongs to
+         .sheet-scroll, the way every other sheet here does it. Without it
+         this title sat flush against the edge of the phone. -->
+    <div class="sheet-scroll">
+      <h2>Go to passage</h2>
+      <p class="sheet-sub">A book and a chapter, and a verse if you want one.</p>
+      <label class="form-label" for="bibleJumpInput">Reference</label>
+      <input class="field" id="bibleJumpInput" type="text" inputmode="text"
+             autocomplete="off" autocapitalize="words" spellcheck="false"
+             placeholder="John 3:16" onkeydown="if(event.key==='Enter'){event.preventDefault();submitBibleJump();}">
+      <div class="field-hint" id="bibleJumpError" role="alert"></div>
+    </div>
     <div class="sheet-actions">
       <button class="btn-secondary" onclick="closeBibleJump()">Cancel</button>
       <button class="btn-primary" onclick="submitBibleJump()">Go</button>
     </div>
-  </div>
-</div>
-
-<div class="overlay" id="bibleActionOverlay">
-  <div class="sheet">
-    <h2 id="bibleActionRef"></h2>
-    <blockquote class="verse-quote" id="bibleActionQuote"></blockquote>
-    <div class="sheet-actions">
-      <button class="btn-secondary" id="bibleActionSave" aria-pressed="false" onclick="bibleActionSave()">Save</button>
-      <button class="btn-secondary" onclick="bibleActionCopy()">Copy</button>
-      <button class="btn-primary" onclick="bibleActionShare()">Share</button>
-    </div>
-    <button class="btn-quiet" onclick="closeBibleVerseActions()">Close</button>
   </div>
 </div>
 
@@ -1919,6 +2095,32 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-10-0',
+    version: '1.10.0',
+    title: 'Marks in the margin',
+    date: '2026-09-06',
+    summary: 'Highlight verses in five colours, see which chapters you have read, ' +
+             'and read long chapters without the text vanishing.',
+    newFeatures: [
+      'Tap a verse to choose it, then highlight it in amber, green, blue, rose or violet',
+      'Tap more verses to choose several, and colour them together',
+      'Highlights belong to the verse, not the translation &mdash; they stay put when you switch between WEB, RV1909 and BSB',
+      'Saved has a Highlights tab, and a highlight can be removed from either place',
+      'Chapters you read through are marked, and the chapter grid shows which ones',
+      'Mark as read, or unread, yourself at the end of any chapter'
+    ],
+    improvements: [
+      'The Bible home leads with Continue reading; translation and Go to passage are quiet controls beneath it',
+      'Save, Copy and Share now work on a whole selection rather than one verse at a time'
+    ],
+    fixes: [
+      'Scripture no longer disappears while scrolling a long chapter. A 200ms entrance animation was leaving a transform applied for the whole session, which kept the reader inside a composited layer that iOS could drop',
+      'Tapping a verse no longer flashes a grey block or leaves text selected',
+      'Go to passage had no left margin at all; its title sat against the edge of the screen',
+      'Opening a chapter now starts at the top of it'
+    ]
+  },
   {
     id: 'v1-9-0',
     version: '1.9.0',
@@ -2193,6 +2395,14 @@ const KEYS = {
      no text, no timestamp, no count of days read. Additive, so nothing
      already stored has to change shape for it to exist. */
   bibleLast:      'ui.bibleLast',
+  /* Notes about a LOCATION, not about words: a highlight's id is the
+     canonical verse and a read record's id is the canonical chapter, so
+     both survive a change of edition without storing any of its text.
+     Additive arrays of id-bearing records, which is the shape mergeBackup
+     and exportData already understand - so backup came for free and
+     schema 2 did not have to move. */
+  bibleHighlights:'data.bibleHighlights',
+  bibleRead:      'data.bibleRead',
   saved:          'data.saved',
   notes:          'data.notes',
   /* Which passage each day held. One record per day actually shown, and the
@@ -2670,7 +2880,10 @@ const TOAST_MS = 3200;
 const MAX_TOASTS = 3;
 const TOAST_VARIANTS = ['neutral', 'success', 'warning', 'error'];
 
-function toast(message, variant){
+/* `action` is optional: { label, onAction }. One undo, on the toast that
+   announced the thing being undone, so the way back is where the news
+   arrived rather than somewhere the reader has to go looking. */
+function toast(message, variant, action){
   const host = document.getElementById('toastHost');
   if(!host) return null;
   const kind = TOAST_VARIANTS.indexOf(variant) === -1 ? 'neutral' : variant;
@@ -2680,7 +2893,11 @@ function toast(message, variant){
   const el = document.createElement('div');
   el.className = 'toast toast-' + kind;
   el.innerHTML = '<span class="toast-mark" aria-hidden="true">' + toastMark(kind) + '</span>' +
-                 '<span class="toast-text">' + escapeHtml(message) + '</span>';
+                 '<span class="toast-text">' + escapeHtml(message) + '</span>' +
+                 (action && action.label
+                   ? '<button class="toast-action" onclick="' + escapeAttr(action.onAction) + '">' +
+                       escapeHtml(action.label) + '</button>'
+                   : '');
   host.appendChild(el);
 
   const reduced = prefersReducedMotion();
@@ -5847,7 +6064,7 @@ const FOCUS_CHOICES = ['peace','courage','hope','wisdom','faith','love',
 
 const FOCUS_STRENGTHS = ['variety', 'focused'];
 const TEXT_SIZES = ['standard', 'large'];
-const SAVED_VIEWS = ['verses', 'notes'];
+const SAVED_VIEWS = ['verses', 'notes', 'highlights'];
 /* Four weeks back. Far enough to find the day you meant, short enough that
    the rail stays a rail rather than becoming a calendar nobody scrolls. */
 const RAIL_DAYS = 28;
@@ -6328,6 +6545,10 @@ function loadVerseData(){
   studyNotes = Array.isArray(sn) ? sn.filter(isStudyNoteRecord) : [];
   const ca = Store.getJSON(KEYS.checkAnswers, []);
   checkAnswers = Array.isArray(ca) ? ca.filter(isCheckAnswerRecord) : [];
+  const hl = Store.getJSON(KEYS.bibleHighlights, []);
+  bibleHighlights = Array.isArray(hl) ? hl.filter(isHighlightRecord) : [];
+  const rd = Store.getJSON(KEYS.bibleRead, []);
+  bibleRead = Array.isArray(rd) ? rd.filter(isReadRecord) : [];
   loadPrefs();
   /* Absent is a new reader, not a broken one: the app opens on today. */
   if(!isDayKey(selectedDay)) selectedDay = todayKey();
@@ -6815,6 +7036,50 @@ function renderSaved(){
   const host = document.getElementById('savedList');
   if(!host) return;
 
+  if(savedView === 'highlights'){
+    /* Newest first, and grouped by nothing: a flat list of places, each one
+       resolved in whatever edition is on screen now. */
+    const hl = bibleHighlights.slice().sort(function(a, b){
+      return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+    });
+    if(!hl.length){
+      host.innerHTML = emptyStateHtml({
+        mark: bookIcon(28),
+        title: 'No highlights yet',
+        body: 'Tap a verse while reading and choose a colour. Highlights belong to ' +
+              'the verse, so they stay put when you change translation.',
+        action: 'Open the Bible', onAction: "goToTab('bible')"
+      });
+      return;
+    }
+    /* One fetch, once, then a repaint. Guarded so a failure cannot loop. */
+    if(!cachedBibleIndex(translation) && !renderSaved._askedIndex){
+      renderSaved._askedIndex = true;
+      loadBibleIndex(translation).then(renderSaved).catch(function(){});
+    }
+    host.innerHTML = hl.map(function(h){
+      const m = String(h.id).match(/^([A-Z0-9]{3})[.]([0-9]+)[.]([0-9]+)$/);
+      if(!m) return '';
+      const words = savedLocationText(h.id);
+      const ref = bibleBookName(translation, m[1]) + ' ' + m[2] + ':' + m[3];
+      return '<div class="panel" style="margin-bottom:var(--space-sm)">' +
+        '<div class="verse-row-ref"><span>' + escapeHtml(ref) +
+          ' <span class="verse-translation">' + escapeHtml(activeTranslation().abbr) + '</span>' +
+          '<span class="sr-only"> highlighted ' + escapeHtml(HIGHLIGHT_NAMES[h.color]) + '</span></span>' +
+          '<button class="icon-btn" aria-label="Remove this highlight" ' +
+            'onclick="removeHighlightAt(&#39;' + escapeAttr(h.id) + '&#39;)">' + trashIcon(16) + '</button>' +
+        '</div>' +
+        (words
+          ? '<blockquote class="verse-quote" data-hl="' + escapeAttr(h.color) + '" lang="' +
+              escapeAttr(activeTranslation().lang) + '">' + escapeHtml(words) + '</blockquote>'
+          : '<div class="field-hint">Open it in the Bible to read this verse in ' +
+              escapeHtml(activeTranslation().title) + '.</div>') +
+        readInContextHtml(h.id) +
+      '</div>';
+    }).join('');
+    return;
+  }
+
   if(savedView === 'notes'){
     const list = notes.slice().sort(function(a, b){ return b.date.localeCompare(a.date); });
     if(!list.length){
@@ -6899,6 +7164,14 @@ function readInContextHtml(id){
   if(!m) return '';
   return '<button class="read-context" onclick="openPassageInBible(&quot;' +
     escapeAttr(id) + '&quot;)">' + bookIcon(14) + 'Read in context</button>';
+}
+
+/* Removing from the list is the same operation the dock performs, so there
+   is one function that removes a highlight and one that stores it. */
+function removeHighlightAt(id){
+  setHighlight(id, null);
+  renderAll();
+  paintVerseStates();
 }
 
 function savedRemoveButton(id){
@@ -8239,6 +8512,10 @@ function closeBibleReader(){ closeOverlay('bibleReaderOverlay'); releaseOverlayH
    reader out, in whatever edition is currently selected. */
 function openBibleAt(code, chapter, from, to){
   bibleLoadFailed = false;
+  bibleSelection = [];
+  /* Where the reader ENTERED matters: arriving at the last verse from a
+     link must never count as having read the chapter. */
+  beginReadSession(code, chapter || 1, (typeof from === 'number' && from > 0) ? from : 1);
   bibleBookCode = code;
   bibleChapter = chapter || 1;
   bibleFocus = (typeof from === 'number' && from > 0) ? { from: from, to: to || from } : null;
@@ -8252,7 +8529,13 @@ function openBibleAt(code, chapter, from, to){
         rememberBibleLast(code, bibleChapter);
       });
     })
-    .then(renderBibleReader)
+    .then(function(){
+      renderBibleReader();
+      /* Opening a chapter starts at its beginning. A verse focus does its
+         own scrolling afterwards, so it is not overridden here. */
+      const sc = document.getElementById('bibleReaderBody');
+      if(sc && !bibleFocus) sc.scrollTop = 0;
+    })
     .catch(function(){ bibleLoadFailed = true; renderBibleReader(); });
 }
 
@@ -8285,6 +8568,8 @@ function bibleStepTo(dir){
   bibleBookCode = to.c;
   bibleChapter = to.ch;
   bibleFocus = null;
+  bibleSelection = [];
+  beginReadSession(to.c, to.ch, 1);
   bibleLoadFailed = false;
   renderBibleReader();
   loadBibleBook(translation, to.c).then(function(){
@@ -8325,21 +8610,16 @@ function renderBibleHome(){
   }
 
   html +=
-    '<div class="list">' +
-    '<button class="list-row" onclick="openTranslationPicker()">' +
-      '<span class="list-row-main">' +
-        '<span class="list-row-title">Bible translation</span>' +
-        '<span class="list-row-desc">' + escapeHtml(activeTranslation().title) + '</span>' +
-      '</span>' +
-      '<span class="list-row-arrow" aria-hidden="true"></span>' +
-    '</button>' +
-    '<button class="list-row" onclick="openBibleJump()">' +
-      '<span class="list-row-main">' +
-        '<span class="list-row-title">Go to passage</span>' +
-        '<span class="list-row-desc">A reference such as John 3:16</span>' +
-      '</span>' +
-      '<span class="list-row-arrow" aria-hidden="true"></span>' +
-    '</button>' +
+    '<div class="bible-utils">' +
+      '<button class="bible-util" onclick="openTranslationPicker()" ' +
+        'aria-label="Bible translation, ' + escapeAttr(activeTranslation().title) + '">' +
+        '<span class="bible-util-label">Translation</span>' +
+        '<span class="bible-util-value">' + escapeHtml(activeTranslation().abbr) + '</span>' +
+      '</button>' +
+      '<button class="bible-util" onclick="openBibleJump()">' +
+        '<span class="bible-util-label">Find</span>' +
+        '<span class="bible-util-value">Go to passage</span>' +
+      '</button>' +
     '</div>';
 
   if(!groups.length){
@@ -8372,9 +8652,15 @@ function renderBibleChapters(){
   if(!meta){ host.innerHTML = '<div class="field-hint">Loading…</div>'; return; }
   let html = '<div class="chapter-grid" role="list">';
   for(let n = 1; n <= meta.ch; n++){
-    html += '<button class="chapter-cell" role="listitem" ' +
-      'aria-label="Chapter ' + n + '" ' +
-      'onclick="goToBibleChapter(\'' + escapeAttr(bibleBookCode) + '\', ' + n + ')">' + n + '</button>';
+    const wasRead = isChapterRead(bibleBookCode, n);
+    /* A tick as well as the muting, so a chapter already behind you is never
+       signalled by colour alone. */
+    html += '<button class="chapter-cell" role="listitem"' +
+      (wasRead ? ' data-read="1"' : '') +
+      ' aria-label="Chapter ' + n + (wasRead ? ', read' : '') + '" ' +
+      'onclick="goToBibleChapter(&#39;' + escapeAttr(bibleBookCode) + '&#39;, ' + n + ')">' + n +
+      (wasRead ? '<span class="read-tick" aria-hidden="true">' + checkIcon(11) + '</span>' : '') +
+      '</button>';
   }
   host.innerHTML = html + '</div>';
 }
@@ -8449,24 +8735,42 @@ function renderBibleReader(){
         '<span class="bible-empty-note">not in this edition</span> </span>';
       return;
     }
-    /* Tappable, but not announced as a control. A role and a label on every
-       verse would put "button" between the reader and every sentence of
-       Scripture; the number is already hidden for the same reason. */
-    html += '<span class="bible-v' + (focused ? ' bible-v-focus' : '') + '" id="bv' + n + '"' +
-      ' tabindex="0" onclick="openBibleVerseActions(' + n + ')"' +
-      ' onkeydown="if(event.key===&quot;Enter&quot;){event.preventDefault();openBibleVerseActions(' + n + ');}">' +
+    /* Focusable and operable, but carrying no role and no aria-label: a
+       label would REPLACE the verse for a screen reader reading the chapter,
+       and a role would put "button" between the reader and every sentence of
+       Scripture. State is announced as text instead, by .verse-state below,
+       so a highlight is never signalled by colour alone. */
+    const vid = verseLocId(bibleBookCode, bibleChapter, n);
+    const hl = highlightColorFor(vid);
+    html += '<span class="bible-v' + (focused ? ' bible-v-focus' : '') +
+      (verseSelected(n) ? ' is-sel' : '') + '" id="bv' + n + '" data-v="' + n + '"' +
+      (hl ? ' data-hl="' + hl + '"' : '') +
+      ' tabindex="0" onclick="toggleVerseSelection(' + n + ')"' +
+      ' onkeydown="if(event.key===&quot;Enter&quot;){event.preventDefault();toggleVerseSelection(' + n + ');}">' +
       '<span class="bible-num" aria-hidden="true">' + n + '</span>' +
-      '<span class="bible-vt">' + escapeHtml(text) + '</span> </span>';
+      '<span class="bible-vt">' + escapeHtml(text) + '</span>' +
+      '<span class="verse-state sr-only">' + (hl ? ' (highlighted ' + HIGHLIGHT_NAMES[hl] + ')' : '') + '</span>' +
+      ' </span>';
   });
   html += '</div>';
 
   html +=
+    '<div class="chapter-end" id="chapterEnd">' +
+      '<button class="btn-quiet" onclick="toggleChapterRead(&#39;' + escapeAttr(bibleBookCode) +
+        '&#39;, ' + bibleChapter + ')">' +
+        (isChapterRead(bibleBookCode, bibleChapter) ? checkIcon(15) + ' Read' : 'Mark as read') +
+      '</button>' +
+    '</div>' +
     '<div class="bible-nav">' +
       bibleNavButton(-1, 'Previous') +
       bibleNavButton(1, 'Next') +
     '</div>';
 
   host.innerHTML = html;
+  /* The chapter is on screen now, so watch for its end and repaint the dock
+     for whatever is still selected. */
+  watchChapterEnd();
+  renderVerseDock();
   if(bibleFocus){
     const el = document.getElementById('bv' + bibleFocus.from);
     if(el && typeof el.scrollIntoView === 'function'){
@@ -8501,6 +8805,327 @@ function retryBibleBook(){
   loadBibleBook(translation, bibleBookCode)
     .then(function(){ renderBibleReader(); rememberBibleLast(bibleBookCode, bibleChapter); })
     .catch(function(){ bibleLoadFailed = true; renderBibleReader(); });
+}
+
+/* =========================================================
+   HIGHLIGHTS, AND CHAPTERS ALREADY READ
+
+   Both are notes about a LOCATION, never about words. A highlight record is
+   `{ id: 'JHN.3.16', color, ... }` and a read record is `{ id: 'JHN.3', ... }`
+   - the id IS the canonical address, the same way a daily reflection's id is
+   its date. That is what makes them survive a change of edition: nothing in
+   either record knows which translation was on screen when it was made.
+
+   Where an edition simply has no verse at an address, the highlight is not
+   drawn and nothing is remapped. An absence is an absence.
+
+   Both are plain arrays of id-bearing records, so mergeBackup() already
+   knows how to merge them and exportData() already knows how to carry them.
+   Neither needed a schema change: absent reads as empty, which is exactly
+   what a reader who has highlighted nothing looks like.
+   ========================================================= */
+
+/* Stable ids, never colours. The palette is free to change; what a reader
+   kept is not. */
+const HIGHLIGHT_COLORS = ['amber', 'green', 'blue', 'rose', 'violet'];
+const HIGHLIGHT_NAMES = { amber: 'Amber', green: 'Green', blue: 'Blue',
+                          rose: 'Rose', violet: 'Violet' };
+
+let bibleHighlights = [];
+let bibleRead = [];
+/* Which verses are chosen right now. In memory only: a selection is a
+   gesture in progress, not something to persist. */
+let bibleSelection = [];
+
+const VERSE_ID = /^[A-Z0-9]{3}\.\d+\.\d+$/;
+const CHAPTER_ID = /^[A-Z0-9]{3}\.\d+$/;
+
+function isHighlightRecord(r){
+  return isRecord(r) && VERSE_ID.test(r.id) && HIGHLIGHT_COLORS.indexOf(r.color) !== -1;
+}
+function isReadRecord(r){ return isRecord(r) && CHAPTER_ID.test(r.id); }
+
+function persistHighlights(){
+  const ok = Store.setJSON(KEYS.bibleHighlights, bibleHighlights);
+  if(!ok) toast('Could not save — this browser is not storing data.', 'error');
+  return ok;
+}
+function persistRead(){ return Store.setJSON(KEYS.bibleRead, bibleRead); }
+
+function verseLocId(code, chapter, verse){ return code + '.' + chapter + '.' + verse; }
+function chapterLocId(code, chapter){ return code + '.' + chapter; }
+
+function highlightFor(id){
+  for(let i = 0; i < bibleHighlights.length; i++){
+    if(bibleHighlights[i].id === id) return bibleHighlights[i];
+  }
+  return null;
+}
+function highlightColorFor(id){
+  const h = highlightFor(id);
+  return h ? h.color : null;
+}
+
+function setHighlight(id, color){
+  if(!VERSE_ID.test(id)) return;
+  const now = new Date().toISOString();
+  if(color === null){
+    bibleHighlights = bibleHighlights.filter(function(h){ return h.id !== id; });
+  } else {
+    if(HIGHLIGHT_COLORS.indexOf(color) === -1) return;
+    const existing = highlightFor(id);
+    if(existing){ existing.color = color; existing.updatedAt = now; }
+    else bibleHighlights.push({ id: id, color: color, createdAt: now, updatedAt: now });
+  }
+  persistHighlights();
+}
+
+function isChapterRead(code, chapter){ return !!readRecordFor(chapterLocId(code, chapter)); }
+function readRecordFor(id){
+  for(let i = 0; i < bibleRead.length; i++) if(bibleRead[i].id === id) return bibleRead[i];
+  return null;
+}
+function markChapterRead(code, chapter, announce){
+  const id = chapterLocId(code, chapter);
+  if(readRecordFor(id)) return false;
+  const now = new Date().toISOString();
+  bibleRead.push({ id: id, readAt: now, updatedAt: now });
+  persistRead();
+  if(announce){
+    toast('Chapter marked as read', 'success', {
+      label: 'Undo',
+      onAction: 'markChapterUnread(\'' + escapeAttr(code) + '\', ' + chapter + ')'
+    });
+  }
+  renderBibleReader();
+  return true;
+}
+function markChapterUnread(code, chapter){
+  const id = chapterLocId(code, chapter);
+  bibleRead = bibleRead.filter(function(r){ return r.id !== id; });
+  persistRead();
+  /* Undoing is also a decision: the chapter must not immediately re-mark
+     itself from the same session that just marked it. */
+  bibleReadSession.blocked = true;
+  renderBibleReader();
+  renderBibleChapters();
+}
+function toggleChapterRead(code, chapter){
+  if(isChapterRead(code, chapter)) markChapterUnread(code, chapter);
+  else { markChapterRead(code, chapter, false); renderBibleChapters(); }
+}
+
+/* ---------- deciding that a chapter was read ----------
+   Opening is not reading, and neither is landing on the last verse from a
+   link. A chapter counts as read when somebody started near its beginning,
+   stayed a moment, and reached the end of it. Nothing about this is written
+   to storage until that is true: session progress lives here, in memory. */
+const READ_MIN_DWELL_MS = 2500;
+const READ_ENTRY_MAX_VERSE = 3;
+let bibleReadSession = { code: null, chapter: null, entry: 1, openedAt: 0, blocked: false };
+let bibleDwellTimer = null;
+let bibleScrollWatch = null;
+
+/* Reaching the end of the chapter is a question about two numbers on the
+   scroller, so it is asked directly rather than through an observer. One
+   passive listener for the whole chapter - not one per verse - and it
+   reads geometry only: nothing is written to storage by scrolling. The
+   write happens at most once per chapter, inside maybeMarkRead, which
+   guards itself. */
+const READ_END_SLACK_PX = 24;
+
+function watchChapterEnd(){
+  const scroller = document.getElementById('bibleReaderBody');
+  if(!scroller) return;
+  if(bibleScrollWatch && bibleScrollWatch.el === scroller) return;   // already watching
+  if(bibleScrollWatch){
+    try{ bibleScrollWatch.el.removeEventListener('scroll', bibleScrollWatch.fn); }catch(e){}
+  }
+  const fn = function(){
+    if(scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - READ_END_SLACK_PX){
+      maybeMarkRead();
+    }
+  };
+  scroller.addEventListener('scroll', fn, { passive: true });
+  bibleScrollWatch = { el: scroller, fn: fn };
+  /* A chapter shorter than the screen has no end to scroll to: it is all
+     already in front of the reader, so the dwell alone decides. */
+  if(scroller.scrollHeight <= scroller.clientHeight + READ_END_SLACK_PX) maybeMarkRead();
+}
+
+function beginReadSession(code, chapter, entryVerse){
+  if(bibleDwellTimer){ clearTimeout(bibleDwellTimer); bibleDwellTimer = null; }
+  bibleReadSession = {
+    code: code, chapter: chapter,
+    entry: entryVerse || 1,
+    openedAt: Date.now(),
+    blocked: false
+  };
+}
+
+
+function maybeMarkRead(){
+  const s = bibleReadSession;
+  if(s.blocked) return;
+  if(s.code !== bibleBookCode || s.chapter !== bibleChapter) return;
+  /* Arrived at the end of the chapter because a link put you there. */
+  if(s.entry > READ_ENTRY_MAX_VERSE) return;
+  /* Opened and bounced. The end has been seen, so finish waiting rather
+     than discarding it - the reader may simply be sitting still. */
+  const waited = Date.now() - s.openedAt;
+  if(waited < READ_MIN_DWELL_MS){
+    if(bibleDwellTimer) clearTimeout(bibleDwellTimer);
+    bibleDwellTimer = setTimeout(maybeMarkRead, READ_MIN_DWELL_MS - waited + 50);
+    return;
+  }
+  if(isChapterRead(s.code, s.chapter)) return;
+  s.blocked = true;
+  markChapterRead(s.code, s.chapter, true);
+}
+
+/* ---------- choosing verses ----------
+   Tapping toggles one verse in or out of the selection. There is no drag, no
+   range gesture and no long-press: on a surface people are scrolling through,
+   every one of those competes with the scroll. Several verses can be chosen,
+   and one colour applies to all of them at once. */
+function verseSelected(n){ return bibleSelection.indexOf(n) !== -1; }
+
+function toggleVerseSelection(n){
+  /* A deep link's highlight is a hint about where you arrived. The moment
+     somebody touches the chapter it has done its job. */
+  bibleFocus = null;
+  const i = bibleSelection.indexOf(n);
+  if(i === -1) bibleSelection.push(n); else bibleSelection.splice(i, 1);
+  bibleSelection.sort(function(a, b){ return a - b; });
+  paintVerseStates();
+  renderVerseDock();
+}
+function clearVerseSelection(){
+  bibleSelection = [];
+  paintVerseStates();
+  renderVerseDock();
+}
+
+function selectedVerseIds(){
+  return bibleSelection.map(function(n){ return verseLocId(bibleBookCode, bibleChapter, n); });
+}
+
+function applyHighlight(color){
+  const ids = selectedVerseIds();
+  if(!ids.length) return;
+  ids.forEach(function(id){ setHighlight(id, color); });
+  paintVerseStates();
+  renderVerseDock();
+}
+function removeHighlight(){ applyHighlight(null); }
+
+/* ---------- painting a state change ----------
+   Class and attribute changes on the verses that changed. The chapter's DOM
+   is NOT rebuilt: rebuilding it for a highlight would throw away scroll
+   anchoring mid-read, which is the last thing this reader needs. */
+function paintVerseStates(){
+  const host = document.getElementById('bibleReaderBody');
+  if(!host) return;
+  const nodes = host.querySelectorAll('.bible-v');
+  for(let i = 0; i < nodes.length; i++){
+    const el = nodes[i];
+    const n = Number(el.getAttribute('data-v'));
+    if(!n) continue;
+    const color = highlightColorFor(verseLocId(bibleBookCode, bibleChapter, n));
+    if(color) el.setAttribute('data-hl', color); else el.removeAttribute('data-hl');
+    el.classList.toggle('is-sel', verseSelected(n));
+    const state = el.querySelector('.verse-state');
+    if(state) state.textContent = color ? ' (highlighted ' + HIGHLIGHT_NAMES[color] + ')' : '';
+  }
+}
+
+function renderVerseDock(){
+  const host = document.getElementById('verseDock');
+  if(!host) return;
+  if(!bibleSelection.length){ host.innerHTML = ''; host.hidden = true; return; }
+  host.hidden = false;
+
+  const ids = selectedVerseIds();
+  const colors = ids.map(highlightColorFor);
+  const uniform = colors.every(function(c){ return c === colors[0]; }) ? colors[0] : null;
+  const anyHighlighted = colors.some(Boolean);
+  const label = bibleSelection.length === 1
+    ? bibleRefLabel(translation, bibleBookCode, bibleChapter) + ':' + bibleSelection[0]
+    : bibleSelection.length + ' verses selected';
+
+  host.innerHTML =
+    '<div class="verse-dock-head">' +
+      '<span class="verse-dock-ref">' + escapeHtml(label) + '</span>' +
+      '<button class="btn-quiet" onclick="clearVerseSelection()">Done</button>' +
+    '</div>' +
+    '<div class="verse-dock-colors" role="group" aria-label="Highlight colour">' +
+      HIGHLIGHT_COLORS.map(function(c){
+        return '<button class="hl-swatch" data-color="' + c + '" ' +
+          'aria-pressed="' + (uniform === c ? 'true' : 'false') + '" ' +
+          'aria-label="' + escapeAttr(HIGHLIGHT_NAMES[c]) + '" ' +
+          'onclick="applyHighlight(&quot;' + c + '&quot;)">' +
+          '<span class="glyph" aria-hidden="true">' + checkIcon(15) + '</span>' +
+        '</button>';
+      }).join('') +
+    '</div>' +
+    '<div class="verse-dock-actions">' +
+      (anyHighlighted
+        ? '<button class="btn-secondary" onclick="removeHighlight()">Remove</button>'
+        : '') +
+      '<button class="btn-secondary" onclick="saveSelectedVerses()">Save</button>' +
+      '<button class="btn-secondary" onclick="copySelectedVerses()">Copy</button>' +
+      '<button class="btn-secondary" onclick="shareSelectedVerses()">Share</button>' +
+    '</div>';
+}
+
+/* Save and share operate on the same selection, so there is one place a
+   verse is chosen and one place actions are offered - not a dock for
+   colours and a separate sheet for everything else. */
+function selectedVerseText(){
+  const book = cachedBibleBook(translation, bibleBookCode);
+  if(!book) return null;
+  const ch = book.ch[bibleChapter - 1];
+  if(!ch) return null;
+  const parts = bibleSelection.map(function(n){ return ch[n - 1]; }).filter(Boolean);
+  return parts.length ? collapseSpace(parts.join(' ')) : null;
+}
+function collapseSpace(s){ return String(s).replace(/\s+/g, ' ').trim(); }
+
+function selectedRefLabel(){
+  if(!bibleSelection.length) return '';
+  const base = bibleBookName(translation, bibleBookCode) + ' ' + bibleChapter + ':';
+  if(bibleSelection.length === 1) return base + bibleSelection[0];
+  const first = bibleSelection[0], last = bibleSelection[bibleSelection.length - 1];
+  /* A gap in the chosen verses is stated, never smoothed into a range that
+     claims words nobody selected. */
+  const contiguous = bibleSelection.every(function(n, i){ return n === first + i; });
+  return contiguous ? base + first + '-' + last : base + bibleSelection.join(',');
+}
+
+function saveSelectedVerses(){
+  const ids = selectedVerseIds();
+  if(!ids.length) return;
+  ids.forEach(function(id, i){
+    const n = bibleSelection[i];
+    if(!isSaved(id)) toggleSavedLocation(id, bibleSavedRef(bibleBookCode, bibleChapter, n));
+  });
+  clearVerseSelection();
+}
+
+function copySelectedVerses(){
+  const text = selectedVerseText();
+  if(!text) return;
+  const payload = bibleShareText({ text: text, ref: selectedRefLabel() });
+  clearVerseSelection();
+  copyText(payload);
+}
+
+function shareSelectedVerses(){
+  const text = selectedVerseText();
+  if(!text) return;
+  const payload = bibleShareText({ text: text, ref: selectedRefLabel() });
+  clearVerseSelection();
+  shareOrCopy(payload);
 }
 
 /* ---------- settings ----------
@@ -8613,61 +9238,14 @@ function savedLocationText(id){
    Save and Share, and nothing else. Highlight colours, tags, folders and
    per-verse journals are all things a reading app grows when nobody stops
    it, and each one makes the next verse harder to simply read. */
-let bibleActionVerse = null;
-
-function openBibleVerseActions(verse){
-  const code = bibleBookCode, ch = bibleChapter;
-  const book = cachedBibleBook(translation, code);
-  if(!book) return;
-  const text = book.ch[ch - 1] && book.ch[ch - 1][verse - 1];
-  if(!text) return;
-  bibleActionVerse = { code: code, ch: ch, v: verse, text: text };
-  const title = document.getElementById('bibleActionRef');
-  if(title) title.textContent = bibleSavedRef(code, ch, verse) + ' · ' + activeTranslation().abbr;
-  const quote = document.getElementById('bibleActionQuote');
-  if(quote){
-    quote.textContent = text;
-    quote.setAttribute('lang', activeTranslation().lang);
-  }
-  const saveBtn = document.getElementById('bibleActionSave');
-  if(saveBtn){
-    const id = bibleVerseId(code, ch, verse);
-    saveBtn.setAttribute('aria-pressed', isSaved(id) ? 'true' : 'false');
-    saveBtn.textContent = isSaved(id) ? 'Saved' : 'Save';
-  }
-  pushOverlayHistory();
-  openOverlay('bibleActionOverlay');
-}
-function closeBibleVerseActions(){
-  closeOverlay('bibleActionOverlay');
-  releaseOverlayHistory();
-}
-function bibleActionSave(){
-  if(!bibleActionVerse) return;
-  const a = bibleActionVerse;
-  toggleSavedLocation(bibleVerseId(a.code, a.ch, a.v), bibleSavedRef(a.code, a.ch, a.v));
-  closeBibleVerseActions();
-}
 /* The words of the edition on screen, the reference in that edition's own
    book name, and that edition's abbreviation. The three always travel
    together, so a Spanish verse can never go out labelled WEB. */
 function bibleShareText(a){
+  const ref = a.ref || bibleSavedRef(a.code, a.ch, a.v);
   return '“' + a.text + '”\n— ' +
-    bibleSavedRef(a.code, a.ch, a.v) + ' (' + activeTranslation().abbr + ')';
+    ref + ' (' + activeTranslation().abbr + ')';
 }
-function bibleActionShare(){
-  if(!bibleActionVerse) return;
-  const payload = bibleShareText(bibleActionVerse);
-  closeBibleVerseActions();
-  shareOrCopy(payload);
-}
-function bibleActionCopy(){
-  if(!bibleActionVerse) return;
-  const payload = bibleShareText(bibleActionVerse);
-  closeBibleVerseActions();
-  copyText(payload);
-}
-
 /* =========================================================
    SETTINGS — data ownership
    ========================================================= */
