@@ -1,6 +1,6 @@
 {
   "name": "daily-verse",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "private": true,
   "description": "A verse, a reflection, and a quiet moment each day.",
   "scripts": {
@@ -14,6 +14,8 @@
     "corpus:sync": "node scripts/corpus.js sync",
     "corpus:status": "node scripts/corpus.js status",
     "scripture:build": "node scripts/scripture.js build",
+    "bible:build": "node scripts/bible.js build",
+    "bible:verify": "node scripts/bible.js verify",
     "scripture:audit": "node scripts/scripture.js audit"
   },
   "engines": {

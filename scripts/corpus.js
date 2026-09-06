@@ -58,6 +58,17 @@ const EDITIONS = {
   'eng-web':   { id: 'eng-web',   language: 'English', lang: 'en' },
   'spaRV1909': { id: 'spaRV1909', language: 'Español', lang: 'es' },
 
+  /* AUDITED AND SHIPPED. Public Domain per the archive metadata, contributed
+     by BSB Publishing LLC, completed 2020, no draft marker. 66 books - its
+     declared scope is 'Bible without Deuterocanon' and all 66 are present -
+     1189 chapters, 0 empty addresses. Its numbering agrees with WEB: the 16
+     chapters whose verse sets differ are the standard critical-text
+     omissions (MAT 17:21, MRK 9:44, JHN 5:4, ACT 8:37 and so on) plus the
+     Romans doxology, all of which are ABSENCES at an address rather than a
+     different sentence at it. It prints 'the LORD' where WEB prints
+     'Yahweh'; that is its own published choice and is shown as published. */
+  'engbsb':    { id: 'engbsb',    language: 'English', lang: 'en' },
+
   /* HELD — downloaded, hashed and audited, but NOT shipped.
 
      Louis Segond 1910 numbers a psalm's title line as verse 1, so from there

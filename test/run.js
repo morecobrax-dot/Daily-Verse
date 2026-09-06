@@ -50,6 +50,7 @@ const SUITES = [
   C.testKnowledgeChecks,
   C.testFaithfulCopy,
   C.testTranslations,
+  C.testBibleReader,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,

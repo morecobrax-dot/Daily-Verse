@@ -838,6 +838,144 @@ blockquote.verse-text{
 .reflection-compact{ padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-xl); }
 
 
+/* ---- the Bible reader --------------------------------------------
+   Built from the same tokens as everything else. A Bible-specific colour or
+   type scale would drift from the rest of the app the first time either
+   changed, and the verse card already proved these tokens can carry
+   Scripture. */
+
+/* The edition, in the top bar of every Bible surface: reachable, and never
+   the loudest thing on screen. */
+.bible-edition{
+  flex-shrink: 0; min-width: var(--touch-min); min-height: var(--touch-min);
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 var(--space-sm);
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.08em; color: var(--text-dim);
+}
+.bible-edition:hover{ color: var(--accent); }
+
+/* Books. One column, full-width rows: a 66-cell grid of abbreviations is
+   unreadable one-handed and unusable for "San Mateo". */
+.book-list{ display: flex; flex-direction: column; margin-bottom: var(--space-lg); }
+.book-row{
+  min-height: var(--touch-min);
+  display: flex; align-items: center;
+  padding: var(--space-md) var(--space-sm);
+  background: none; border: none; border-bottom: 1px solid var(--border-quiet);
+  color: var(--text); font-family: var(--font-ui); font-size: var(--fs-body);
+  text-align: left; cursor: pointer;
+}
+.book-row:last-child{ border-bottom: none; }
+.book-row:hover{ color: var(--accent); }
+
+.bible-jump{ margin-bottom: var(--space-lg); }
+
+/* Chapters. Big square targets, because this is the step between deciding
+   to read and reading. */
+.chapter-grid{
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: var(--space-sm);
+}
+.chapter-cell{
+  min-height: var(--touch-min); min-width: var(--touch-min);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-family: var(--font-ui); font-size: var(--fs-body); font-weight: 600;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.chapter-cell:hover{ color: var(--accent); border-color: var(--accent); }
+
+/* The chapter itself. One flowing column of text, not a stack of cards:
+   a card around every verse turns a Bible into a feed. */
+.bible-reader-ref{ font-size: var(--fs-section); font-weight: 700; margin: 0; }
+
+.bible-sup{
+  font-family: var(--font-scripture); font-style: italic;
+  font-size: var(--fs-support); color: var(--text-dim);
+  margin-bottom: var(--space-md);
+}
+.bible-text{
+  font-family: var(--font-scripture);
+  font-size: var(--fs-verse); line-height: var(--lh-scripture);
+  color: var(--text); text-align: left;
+}
+/* Verse numbers are an address, not part of the sentence: smaller, quieter,
+   raised, and hidden from the accessibility tree so a screen reader reads
+   the chapter as continuous Scripture rather than "one" before every clause.
+   The reference is announced once, by the heading. */
+.bible-num{
+  font-family: var(--font-ui);
+  /* fs-exempt: a verse number is sized RELATIVE to the verse it marks, so
+     it follows the reader's Scripture text-size setting. Pinning a step
+     from the scale here would stop it tracking that setting at Large. */
+  font-size: 0.62em; font-weight: 600;
+  color: var(--text-faint); vertical-align: 0.45em;
+  margin-right: 0.3em; user-select: none;
+}
+.bible-v{ }
+.bible-v-focus .bible-vt{
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* An address the publisher left empty says so. A blank reads as a bug, and
+   skipping it silently hides a real difference between editions. */
+.bible-empty-note{
+  font-family: var(--font-ui); font-size: var(--fs-micro);
+  font-style: italic; color: var(--text-faint);
+}
+
+.bible-loading{ padding: var(--space-xl) 0; }
+
+.bible-nav{
+  display: flex; gap: var(--space-sm); align-items: stretch;
+  margin: var(--space-2xl) 0 var(--space-lg);
+}
+.bible-nav-btn{
+  flex: 1; min-height: var(--touch-min);
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: 2px; padding: var(--space-md);
+  background: var(--surface); color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  text-align: left; cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.bible-nav-btn:hover{ color: var(--accent); border-color: var(--accent); }
+.bible-nav-btn:last-child{ align-items: flex-end; text-align: right; }
+.bible-nav-label{
+  font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
+}
+.bible-nav-ref{ font-family: var(--font-ui); font-size: var(--fs-support); font-weight: 600; }
+/* The end of the last book. It holds the row's shape so "Previous" does not
+   jump across the screen, and it does not wrap round to Genesis. */
+.bible-nav-end{ flex: 1; }
+
+.bible-unavailable{ padding: var(--space-xl) 0; }
+.bible-unavailable-title{
+  font-family: var(--font-ui); font-size: var(--fs-section); font-weight: 700;
+  margin-bottom: var(--space-sm);
+}
+.bible-unavailable-actions{
+  display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-lg);
+}
+
+/* The quiet way into the reader from a passage already on screen. Not a
+   fourth equal action beside Save, Share and Reflect — those are what you do
+   WITH the verse, and this is where the verse lives. */
+.read-context{
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+  min-height: var(--touch-min);
+  background: none; border: none; padding: 0;
+  font-family: var(--font-ui); font-size: var(--fs-meta); font-weight: 600;
+  color: var(--text-dim); cursor: pointer;
+}
+.read-context:hover{ color: var(--accent); }
+
 /* ---- Learn ------------------------------------------------------
    The rule this section is built on: Scripture keeps the strongest
    presence, and everything else earns its hierarchy from type, spacing and
@@ -1539,6 +1677,75 @@ body.scroll-locked{
   </div>
 </div>
 
+<!-- THE BIBLE — a reading surface, reached from Learn and from every
+     Scripture the app already shows. Four pages on the existing overlay
+     engine rather than a fifth tab: the four-tab bar is balanced on a narrow
+     phone, and a reader reached from the Scripture in front of you is more
+     discoverable than one more icon. -->
+<div class="overlay overlay-page" id="bibleOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeBible()" aria-label="Back"></button>
+      <div class="page-topbar-title">Bible</div>
+      <button class="bible-edition" onclick="openTranslationPicker()"
+              aria-label="Change translation"><span id="bibleHomeAbbr"></span></button>
+    </div>
+    <div class="sheet-scroll" id="bibleBody"></div>
+  </div>
+</div>
+
+<div class="overlay overlay-page" id="bibleChaptersOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeBibleChapters()" aria-label="Back"></button>
+      <div class="page-topbar-title" id="bibleChaptersTitle"></div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="bibleChaptersBody"></div>
+  </div>
+</div>
+
+<div class="overlay overlay-page" id="bibleReaderOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeBibleReader()" aria-label="Back"></button>
+      <h2 class="page-topbar-title bible-reader-ref" id="bibleReaderRef"></h2>
+      <button class="bible-edition" onclick="openTranslationPicker()"
+              aria-label="Change translation"><span id="bibleReaderAbbr"></span></button>
+    </div>
+    <div class="sheet-scroll" id="bibleReaderBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="bibleJumpOverlay">
+  <div class="sheet">
+    <h2>Go to passage</h2>
+    <p class="sheet-sub">A book and a chapter, and a verse if you want one.</p>
+    <label class="form-label" for="bibleJumpInput">Reference</label>
+    <input class="field" id="bibleJumpInput" type="text" inputmode="text"
+           autocomplete="off" autocapitalize="words" spellcheck="false"
+           placeholder="John 3:16" onkeydown="if(event.key==='Enter'){event.preventDefault();submitBibleJump();}">
+    <div class="field-hint" id="bibleJumpError" role="alert"></div>
+    <div class="sheet-actions">
+      <button class="btn-secondary" onclick="closeBibleJump()">Cancel</button>
+      <button class="btn-primary" onclick="submitBibleJump()">Go</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="bibleActionOverlay">
+  <div class="sheet">
+    <h2 id="bibleActionRef"></h2>
+    <blockquote class="verse-quote" id="bibleActionQuote"></blockquote>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="bibleActionSave" aria-pressed="false" onclick="bibleActionSave()">Save</button>
+      <button class="btn-secondary" onclick="bibleActionCopy()">Copy</button>
+      <button class="btn-primary" onclick="bibleActionShare()">Share</button>
+    </div>
+    <button class="btn-quiet" onclick="closeBibleVerseActions()">Close</button>
+  </div>
+</div>
+
 <div class="overlay overlay-page" id="sourceOverlay">
   <div class="sheet">
     <div class="page-topbar">
@@ -1702,6 +1909,29 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-8-0',
+    version: '1.8.0',
+    title: 'The whole Bible',
+    date: '2026-09-06',
+    summary: 'Read any book, any chapter, in three public-domain translations. ' +
+             'Today is unchanged, and just as quick to open.',
+    newFeatures: [
+      'A Bible reader, from the top of Learn: pick a book, pick a chapter, read it',
+      'Previous and next chapter, straight across book endings, in the order your translation uses',
+      'Go to passage - type John 3:16, Psalm 23 or Rom 8:1',
+      'Read in context, on today&rsquo;s verse, on saved verses and in lessons, opens the passage where it actually sits',
+      'Continue reading picks up the book and chapter you left',
+      'The Berean Standard Bible, a second English translation in a more contemporary register',
+      'Save, copy or share any verse; the words, the reference and the translation always travel together'
+    ],
+    improvements: [
+      'Changing translation keeps the chapter you are on and changes only the words',
+      'A book one translation publishes and another does not is said plainly rather than swapped for something else',
+      'Books you have read stay on the device and open without a connection'
+    ],
+    fixes: []
+  },
   {
     id: 'v1-7-2',
     version: '1.7.2',
@@ -1931,6 +2161,10 @@ const KEYS = {
   onboarded:      'ui.onboarded',
   focusThemes:    'ui.focusThemes',
   focusStrength:  'ui.focusStrength',
+  /* Where the Bible reader last was. A book code and a chapter number:
+     no text, no timestamp, no count of days read. Additive, so nothing
+     already stored has to change shape for it to exist. */
+  bibleLast:      'ui.bibleLast',
   saved:          'data.saved',
   notes:          'data.notes',
   /* Which passage each day held. One record per day actually shown, and the
@@ -2653,12 +2887,12 @@ const SCRIPTURE_SOURCE = {
   license: 'undefined',
   publisher: 'undefined',
   divineName: 'undefined',
-  corpusSynced: '2026-09-05',
+  corpusSynced: '2026-09-06',
   datasetHash: 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916',
   dailyHash: '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41',
   dailyCount: 378,
   studyOnlyCount: 37,
-  built: '2026-09-05'
+  built: '2026-09-06'
 };
 
 /* One catalogue. `daily: 1` marks the passages the Today rotation may
@@ -3836,7 +4070,11 @@ const TRANSLATIONS = {
   "spaRV1909": { id: 'spaRV1909', title: 'Reina Valera 1909', abbr: 'RV1909', language: 'Español', lang: 'es', iso: 'spa', direction: 'LTR', publisher: 'eBible.org',
     copyright: 'Public Domain Dominio Público',
     books: { '1CH': '1 Crónicas', '1CO': '1 Corintios', '1JN': '1 Juan', '1PE': '1 Pedro', '1SA': '1 Samuel', '1TH': '1 Tesalonicenses', '1TI': '1 Timoteo', '2CH': '2 Crónicas', '2CO': '2 Corintios', '2PE': '2 Pedro', '2SA': '2 Samuel', '2TH': '2 Tesalonicenses', '2TI': '2 Timoteo', '3JN': '3 Juan', 'ACT': 'Hechos', 'COL': 'Colosenses', 'DAN': 'Daniel', 'DEU': 'Deuteronomio', 'ECC': 'Eclesiastés', 'EPH': 'Efesios', 'EST': 'Ester', 'EXO': 'Éxodo', 'EZK': 'Ezequiel', 'GAL': 'Gálatas', 'GEN': 'Génesis', 'HAB': 'Habacuc', 'HEB': 'Hebreos', 'ISA': 'Isaías', 'JAS': 'Santiago', 'JER': 'Jeremías', 'JHN': 'Juan', 'JOB': 'Job', 'JOL': 'Joel', 'JOS': 'Josué', 'LAM': 'Lamentaciones', 'LEV': 'Levítico', 'LUK': 'San Lucas', 'MAL': 'Malaquías', 'MAT': 'San Mateo', 'MIC': 'Miqueas', 'MRK': 'Marcos', 'NAM': 'Nahum', 'NEH': 'Nehemías', 'NUM': 'Números', 'PHP': 'Filipenses', 'PRO': 'Proverbios', 'PSA': 'Salmos', 'REV': 'Apocalipsis', 'ROM': 'Romanos', 'RUT': 'Rut', 'SNG': 'Cantar de los Cantares', 'TIT': 'Tito', 'ZEC': 'Zacarías', 'ZEP': 'Sofonías' },
-    datasetHash: 'effd30e42821bcb19cad18a652ae93b05ce280e06683a9fc5068335c40c15237', dailyHash: 'f8dcf92c1becb1ea08b8aca3c5e93a0ef928a5fc11c06ffb9ce7235064dbc5a2', isDefault: false }
+    datasetHash: 'effd30e42821bcb19cad18a652ae93b05ce280e06683a9fc5068335c40c15237', dailyHash: 'f8dcf92c1becb1ea08b8aca3c5e93a0ef928a5fc11c06ffb9ce7235064dbc5a2', isDefault: false },
+  "engbsb": { id: 'engbsb', title: 'English Berean Standard Bible', abbr: 'BSB', language: 'English', lang: 'en', iso: 'eng', direction: 'LTR', publisher: 'eBible.org',
+    copyright: 'Public Domain',
+    books: { '1CH': '1 Chronicles', '1CO': '1 Corinthians', '1JN': '1 John', '1PE': '1 Peter', '1SA': '1 Samuel', '1TH': '1 Thessalonians', '1TI': '1 Timothy', '2CH': '2 Chronicles', '2CO': '2 Corinthians', '2PE': '2 Peter', '2SA': '2 Samuel', '2TH': '2 Thessalonians', '2TI': '2 Timothy', '3JN': '3 John', 'ACT': 'Acts', 'COL': 'Colossians', 'DAN': 'Daniel', 'DEU': 'Deuteronomy', 'ECC': 'Ecclesiastes', 'EPH': 'Ephesians', 'EST': 'Esther', 'EXO': 'Exodus', 'EZK': 'Ezekiel', 'GAL': 'Galatians', 'GEN': 'Genesis', 'HAB': 'Habakkuk', 'HEB': 'Hebrews', 'ISA': 'Isaiah', 'JAS': 'James', 'JER': 'Jeremiah', 'JHN': 'John', 'JOB': 'Job', 'JOL': 'Joel', 'JOS': 'Joshua', 'LAM': 'Lamentations', 'LEV': 'Leviticus', 'LUK': 'Luke', 'MAL': 'Malachi', 'MAT': 'Matthew', 'MIC': 'Micah', 'MRK': 'Mark', 'NAM': 'Nahum', 'NEH': 'Nehemiah', 'NUM': 'Numbers', 'PHP': 'Philippians', 'PRO': 'Proverbs', 'PSA': 'Psalms', 'REV': 'Revelation', 'ROM': 'Romans', 'RUT': 'Ruth', 'SNG': 'Song', 'TIT': 'Titus', 'ZEC': 'Zechariah', 'ZEP': 'Zephaniah' },
+    datasetHash: '2af8fa91e4154ac6dd6407e579f7141d5e8277aee1bc7be5d88c56187caaec69', dailyHash: '9f6a97c43e89e6f7f88e5c975bf66e07a24ce5d45e108b081ddccf27043df125', isDefault: false }
 };
 
 /* Text for every edition other than the default, by canonical id. */
@@ -4257,6 +4495,423 @@ const TRANSLATION_TEXT = {
     'NEH.8.8': { text: 'Y leían en el libro de la ley de Dios claramente, y ponían el sentido, de modo que entendiesen la lectura.' },
     'LUK.24.27': { text: 'Y comenzando desde Moisés, y de todos los profetas, declarábales en todas las Escrituras lo que de él decían.' },
     'JER.29.10-11': { text: 'Porque así dijo Jehová: Cuando en Babilonia se cumplieren los setenta años, yo os visitaré, y despertaré sobre vosotros mi buena palabra, para tornaros á este lugar. Porque yo sé los pensamientos que tengo acerca de vosotros, dice Jehová, pensamientos de paz, y no de mal, para daros el fin que esperáis.' }
+  },
+  "engbsb": {
+    'GEN.2.2-3': { text: 'And by the seventh day God had finished the work He had been doing; so on that day He rested from all His work. Then God blessed the seventh day and sanctified it, because on that day He rested from all the work of creation that He had accomplished.' },
+    'GEN.28.15': { text: 'Look, I am with you, and I will watch over you wherever you go, and I will bring you back to this land. For I will not leave you until I have done what I have promised you.”' },
+    'GEN.50.20': { text: 'As for you, what you intended against me for evil, God intended for good, in order to accomplish a day like this—to preserve the lives of many people.' },
+    'EXO.14.14': { text: 'The LORD will fight for you; you need only to be still.”' },
+    'EXO.15.2': { text: 'The LORD is my strength and my song, and He has become my salvation. He is my God, and I will praise Him, my father’s God, and I will exalt Him.' },
+    'EXO.20.8-10': { text: 'Remember the Sabbath day by keeping it holy. Six days you shall labor and do all your work, but the seventh day is a Sabbath to the LORD your God, on which you must not do any work—neither you, nor your son or daughter, nor your manservant or maidservant or livestock, nor the foreigner within your gates.' },
+    'EXO.33.14': { text: 'And the LORD answered, “My Presence will go with you, and I will give you rest.”' },
+    'LEV.19.18': { text: 'Do not seek revenge or bear a grudge against any of your people, but love your neighbor as yourself. I am the LORD.' },
+    'NUM.6.24-26': { text: '‘May the LORD bless you and keep you; may the LORD cause His face to shine upon you and be gracious to you; may the LORD lift up His countenance toward you and give you peace.’' },
+    'DEU.6.5-7': { text: 'And you shall love the LORD your God with all your heart and with all your soul and with all your strength. These words I am commanding you today are to be upon your hearts. And you shall teach them diligently to your children and speak of them when you sit at home and when you walk along the road, when you lie down and when you get up.' },
+    'DEU.8.2': { text: 'Remember that these forty years the LORD your God led you all the way in the wilderness, so that He might humble you and test you in order to know what was in your heart, whether or not you would keep His commandments.' },
+    'DEU.31.6': { text: 'Be strong and courageous; do not be afraid or terrified of them, for it is the LORD your God who goes with you; He will never leave you nor forsake you.”' },
+    'DEU.31.8': { text: 'The LORD Himself goes before you; He will be with you. He will never leave you nor forsake you. Do not be afraid or discouraged.”' },
+    'JOS.1.7': { text: 'Above all, be strong and very courageous. Be careful to observe all the law that My servant Moses commanded you. Do not turn from it to the right or to the left, so that you may prosper wherever you go.' },
+    'JOS.1.9': { text: 'Have I not commanded you to be strong and courageous? Do not be afraid; do not be discouraged, for the LORD your God is with you wherever you go.”' },
+    'JOS.24.15': { text: 'But if it is unpleasing in your sight to serve the LORD, then choose for yourselves this day whom you will serve, whether the gods your fathers served beyond the Euphrates, or the gods of the Amorites in whose land you are living. As for me and my house, we will serve the LORD!”' },
+    'RUT.1.16': { text: 'But Ruth replied: “Do not urge me to leave you or to turn from following you. For wherever you go, I will go, and wherever you live, I will live; your people will be my people, and your God will be my God.' },
+    '1SA.12.24': { text: 'Above all, fear the LORD and serve Him faithfully with all your heart; consider what great things He has done for you.' },
+    '1SA.16.7': { text: 'But the LORD said to Samuel, “Do not consider his appearance or height, for I have rejected him; the LORD does not see as man does. For man sees the outward appearance, but the LORD sees the heart.”' },
+    '2SA.22.31': { text: 'As for God, His way is perfect; the word of the LORD is flawless. He is a shield to all who take refuge in Him.' },
+    '1CH.16.11': { text: 'Seek out the LORD and His strength; seek His face always.' },
+    '1CH.16.34': { text: 'Give thanks to the LORD, for He is good; His loving devotion endures forever.' },
+    '1CH.28.20': { text: 'David also said to Solomon his son, “Be strong and courageous, and do it. Do not be afraid or discouraged, for the LORD God, my God, is with you. He will neither fail you nor forsake you before all the work for the service of the house of the LORD is finished.' },
+    '2CH.15.7': { text: 'But as for you, be strong; do not be discouraged, for your work will be rewarded.”' },
+    '2CH.20.15': { text: 'And he said, “Listen, all you people of Judah and Jerusalem! Listen, King Jehoshaphat! This is what the LORD says: ‘Do not be afraid or discouraged because of this vast army, for the battle does not belong to you, but to God.' },
+    'NEH.8.10': { text: 'Then Nehemiah told them, “Go and eat what is rich, drink what is sweet, and send out portions to those who have nothing prepared, since today is holy to our Lord. Do not grieve, for the joy of the LORD is your strength.”' },
+    'NEH.9.17': { text: 'They refused to listen and failed to remember the wonders You performed among them. They stiffened their necks and appointed a leader to return them to their bondage in Egypt. But You are a forgiving God, gracious and compassionate, slow to anger and rich in loving devotion, and You did not forsake them.' },
+    'EST.4.14': { text: 'For if you remain silent at this time, relief and deliverance for the Jews will arise from another place, but you and your father’s house will perish. And who knows if perhaps you have come to the kingdom for such a time as this?”' },
+    'JOB.1.21': { text: 'saying: “Naked I came from my mother’s womb, and naked I will return. The LORD gave, and the LORD has taken away. Blessed be the name of the LORD.”' },
+    'JOB.19.25': { text: 'But I know that my Redeemer lives, and in the end He will stand upon the earth.' },
+    'JOB.28.28': { text: 'And He said to man, ‘Behold, the fear of the Lord, that is wisdom, and to turn away from evil is understanding.’”' },
+    'JOB.42.2': { text: '“I know that You can do all things and that no plan of Yours can be thwarted.' },
+    'PSA.1.1-3': { text: 'Blessed is the man who does not walk in the counsel of the wicked, or set foot on the path of sinners, or sit in the seat of mockers. But his delight is in the Law of the LORD, and on His law he meditates day and night. He is like a tree planted by streams of water, yielding its fruit in season, whose leaf does not wither, and who prospers in all he does.' },
+    'PSA.3.5': { text: 'I lie down and sleep; I wake again, for the LORD sustains me.' },
+    'PSA.3.6': { text: 'I will not fear the myriads set against me on every side.' },
+    'PSA.4.8': { text: 'I will lie down and sleep in peace, for You alone, O LORD, make me dwell in safety.' },
+    'PSA.5.3': { text: 'In the morning, O LORD, You hear my voice; at daybreak I lay my plea before You and wait in expectation.' },
+    'PSA.9.1': { text: 'I will give thanks to the LORD with all my heart; I will recount all Your wonders.', sup: 'For the choirmaster. To the tune of “The Death of the Son.” A Psalm of David.' },
+    'PSA.9.9-10': { text: 'The LORD is a refuge for the oppressed, a stronghold in times of trouble. Those who know Your name trust in You, for You, O LORD, have not forsaken those who seek You.' },
+    'PSA.16.7-8': { text: 'I will bless the LORD who counsels me; even at night my conscience instructs me. I have set the LORD always before me. Because He is at my right hand, I will not be shaken.' },
+    'PSA.16.11': { text: 'You have made known to me the path of life; You will fill me with joy in Your presence, with eternal pleasures at Your right hand.' },
+    'PSA.18.1-2': { text: 'I love You, O LORD, my strength. The LORD is my rock, my fortress, and my deliverer. My God is my rock, in whom I take refuge, my shield, and the horn of my salvation, my stronghold.', sup: 'For the choirmaster. Of David the servant of the LORD, who sang this song to the LORD on the day the LORD had delivered him from the hand of all his enemies and from the hand of Saul. He said:' },
+    'PSA.18.28': { text: 'For You, O LORD, light my lamp; my God lights up my darkness.' },
+    'PSA.19.1': { text: 'The heavens declare the glory of God; the skies proclaim the work of His hands.', sup: 'For the choirmaster. A Psalm of David.' },
+    'PSA.19.14': { text: 'May the words of my mouth and the meditation of my heart be pleasing in Your sight, O LORD, my Rock and my Redeemer.' },
+    'PSA.20.7': { text: 'Some trust in chariots and others in horses, but we trust in the name of the LORD our God.' },
+    'PSA.23.1-3': { text: 'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures; He leads me beside quiet waters. He restores my soul; He guides me in the paths of righteousness for the sake of His name.', sup: 'A Psalm of David.' },
+    'PSA.23.4': { text: 'Even though I walk through the valley of the shadow of death, I will fear no evil, for You are with me; Your rod and Your staff, they comfort me.' },
+    'PSA.25.4-5': { text: 'Show me Your ways, O LORD; teach me Your paths. Guide me in Your truth and teach me, for You are the God of my salvation; all day long I wait for You.' },
+    'PSA.27.1': { text: 'The LORD is my light and my salvation— whom shall I fear? The LORD is the stronghold of my life— whom shall I dread?', sup: 'Of David.' },
+    'PSA.27.11': { text: 'Teach me Your way, O LORD, and lead me on a level path, because of my oppressors.' },
+    'PSA.27.13-14': { text: 'Still I am certain to see the goodness of the LORD in the land of the living. Wait patiently for the LORD; be strong and courageous. Wait patiently for the LORD!' },
+    'PSA.28.7': { text: 'The LORD is my strength and my shield; my heart trusts in Him, and I am helped. Therefore my heart rejoices, and I give thanks to Him with my song.' },
+    'PSA.29.11': { text: 'The LORD gives His people strength; the LORD blesses His people with peace.' },
+    'PSA.30.5': { text: 'For His anger is fleeting, but His favor lasts a lifetime. Weeping may stay the night, but joy comes in the morning.' },
+    'PSA.30.11-12': { text: 'You turned my mourning into dancing; You peeled off my sackcloth and clothed me with joy, that my heart may sing Your praises and not be silent. O LORD my God, I will give thanks forever.' },
+    'PSA.31.24': { text: 'Be strong and courageous, all you who hope in the LORD.' },
+    'PSA.32.1-2': { text: 'Blessed is he whose transgressions are forgiven, whose sins are covered. Blessed is the man whose iniquity the LORD does not count against him, in whose spirit there is no deceit.', sup: 'Of David. A Maskil.' },
+    'PSA.32.8': { text: 'I will instruct you and teach you the way you should go; I will give you counsel and watch over you.' },
+    'PSA.33.20-22': { text: 'Our soul waits for the LORD; He is our help and our shield. For our hearts rejoice in Him, since we trust in His holy name. May Your loving devotion rest on us, O LORD, as we put our hope in You.' },
+    'PSA.34.1': { text: 'I will bless the LORD at all times; His praise will always be on my lips.', sup: 'Of David, when he pretended to be insane before Abimelech, so that the king drove him away.' },
+    'PSA.34.4': { text: 'I sought the LORD, and He answered me; He delivered me from all my fears.' },
+    'PSA.34.8': { text: 'Taste and see that the LORD is good; blessed is the man who takes refuge in Him!' },
+    'PSA.34.18': { text: 'The LORD is near to the brokenhearted; He saves the contrite in spirit.' },
+    'PSA.36.7': { text: 'How precious is Your loving devotion, O God, that the children of men take refuge in the shadow of Your wings!' },
+    'PSA.37.4': { text: 'Delight yourself in the LORD, and He will give you the desires of your heart.' },
+    'PSA.37.5-6': { text: 'Commit your way to the LORD; trust in Him, and He will do it. He will bring forth your righteousness like the dawn, your justice like the noonday sun.' },
+    'PSA.37.7': { text: 'Be still before the LORD and wait patiently for Him; do not fret when men prosper in their ways, when they carry out wicked schemes.' },
+    'PSA.37.23-24': { text: 'The steps of a man are ordered by the LORD who takes delight in his journey. Though he falls, he will not be overwhelmed, for the LORD is holding his hand.' },
+    'PSA.40.1': { text: 'I waited patiently for the LORD; He inclined to me and heard my cry.', sup: 'For the choirmaster. A Psalm of David.' },
+    'PSA.42.3-5': { text: 'My tears have been my food both day and night, while men ask me all day long, “Where is your God?” These things come to mind as I pour out my soul: how I walked with the multitude, leading the procession to the house of God with shouts of joy and praise. Why are you downcast, O my soul? Why the unease within me? Put your hope in God, for I will yet praise Him for the salvation of His presence.' },
+    'PSA.42.11': { text: 'Why are you downcast, O my soul? Why the unease within me? Put your hope in God, for I will yet praise Him, my Savior and my God.' },
+    'PSA.46.1': { text: 'God is our refuge and strength, an ever-present help in times of trouble.', sup: 'For the choirmaster. Of the sons of Korah. According to Alamoth. A song.' },
+    'PSA.46.10': { text: '“Be still and know that I am God; I will be exalted among the nations, I will be exalted over the earth.”' },
+    'PSA.48.14': { text: 'For this God is our God forever and ever; He will be our guide even till death.' },
+    'PSA.51.10': { text: 'Create in me a clean heart, O God, and renew a right spirit within me.' },
+    'PSA.55.22': { text: 'Cast your burden upon the LORD and He will sustain you; He will never let the righteous be shaken.' },
+    'PSA.56.3-4': { text: 'When I am afraid, I put my trust in You. In God, whose word I praise— in God I trust. I will not be afraid. What can man do to me?' },
+    'PSA.56.8': { text: 'You have taken account of my wanderings. Put my tears in Your bottle— are they not in Your book?' },
+    'PSA.57.2': { text: 'I cry out to God Most High, to God who fulfills His purpose for me.' },
+    'PSA.62.1-2': { text: 'In God alone my soul finds rest; my salvation comes from Him. He alone is my rock and my salvation. He is my fortress; I will never be shaken.', sup: 'For the choirmaster. According to Jeduthun. A Psalm of David.' },
+    'PSA.62.5-6': { text: 'Rest in God alone, O my soul, for my hope comes from Him. He alone is my rock and my salvation; He is my fortress; I will not be shaken.' },
+    'PSA.62.8': { text: 'Trust in Him at all times, O people; pour out your hearts before Him. God is our refuge. Selah' },
+    'PSA.63.1': { text: 'O God, You are my God. Earnestly I seek You; my soul thirsts for You. My body yearns for You in a dry and weary land without water.', sup: 'A Psalm of David, when he was in the Wilderness of Judah.' },
+    'PSA.68.19': { text: 'Blessed be the Lord, who daily bears our burden, the God of our salvation. Selah' },
+    'PSA.71.14': { text: 'But I will always hope and will praise You more and more.' },
+    'PSA.73.26': { text: 'My flesh and my heart may fail, but God is the strength of my heart and my portion forever.' },
+    'PSA.84.5': { text: 'Blessed are those whose strength is in You, whose hearts are set on pilgrimage.' },
+    'PSA.84.11': { text: 'For the LORD God is a sun and a shield; the LORD gives grace and glory; He withholds no good thing from those who walk with integrity.' },
+    'PSA.86.5': { text: 'For You, O Lord, are kind and forgiving, rich in loving devotion to all who call on You.' },
+    'PSA.90.12': { text: 'So teach us to number our days, that we may present a heart of wisdom.' },
+    'PSA.91.1-2': { text: 'He who dwells in the shelter of the Most High will abide in the shadow of the Almighty. I will say to the LORD, “You are my refuge and my fortress, my God, in whom I trust.”' },
+    'PSA.91.4': { text: 'He will cover you with His feathers; under His wings you will find refuge; His faithfulness is a shield and rampart.' },
+    'PSA.94.19': { text: 'When anxiety overwhelms me, Your consolation delights my soul.' },
+    'PSA.95.2': { text: 'Let us enter His presence with thanksgiving; let us make a joyful noise to Him in song.' },
+    'PSA.100.4': { text: 'Enter His gates with thanksgiving and His courts with praise; give thanks to Him and bless His name.' },
+    'PSA.103.1-2': { text: 'Bless the LORD, O my soul; all that is within me, bless His holy name. Bless the LORD, O my soul, and do not forget all His kind deeds—', sup: 'Of David.' },
+    'PSA.103.12': { text: 'As far as the east is from the west, so far has He removed our transgressions from us.' },
+    'PSA.105.4': { text: 'Seek out the LORD and His strength; seek His face always.' },
+    'PSA.107.1': { text: 'Give thanks to the LORD, for He is good; His loving devotion endures forever.' },
+    'PSA.111.10': { text: 'The fear of the LORD is the beginning of wisdom; all who follow His precepts gain rich understanding. His praise endures forever!' },
+    'PSA.112.7': { text: 'He does not fear bad news; his heart is steadfast, trusting in the LORD.' },
+    'PSA.116.7': { text: 'Return to your rest, O my soul, for the LORD has been good to you.' },
+    'PSA.118.6': { text: 'The LORD is on my side; I will not be afraid. What can man do to me?' },
+    'PSA.118.24': { text: 'This is the day that the LORD has made; we will rejoice and be glad in it.' },
+    'PSA.119.9': { text: 'How can a young man keep his way pure? By guarding it according to Your word.' },
+    'PSA.119.105': { text: 'Your word is a lamp to my feet and a light to my path.' },
+    'PSA.121.1-2': { text: 'I lift up my eyes to the hills. From where does my help come? My help comes from the LORD, the Maker of heaven and earth.', sup: 'A song of ascents.' },
+    'PSA.121.7-8': { text: 'The LORD will guard you from all evil; He will preserve your soul. The LORD will watch over your coming and going, both now and forevermore.' },
+    'PSA.126.5-6': { text: 'Those who sow in tears will reap with shouts of joy. He who goes out weeping, bearing a trail of seed, will surely return with shouts of joy, carrying sheaves of grain.' },
+    'PSA.127.1': { text: 'Unless the LORD builds the house, its builders labor in vain; unless the LORD protects the city, its watchmen stand guard in vain.', sup: 'A song of ascents. Of Solomon.' },
+    'PSA.127.2': { text: 'In vain you rise early and stay up late, toiling for bread to eat— for He gives sleep to His beloved.' },
+    'PSA.130.5': { text: 'I wait for the LORD; my soul does wait, and in His word I put my hope.' },
+    'PSA.131.1-2': { text: 'My heart is not proud, O LORD, my eyes are not haughty. I do not aspire to great things or matters too lofty for me. Surely I have stilled and quieted my soul; like a weaned child with his mother, like a weaned child is my soul within me.', sup: 'A song of ascents. Of David.' },
+    'PSA.133.1': { text: 'Behold, how good and pleasant it is when brothers live together in harmony!', sup: 'A song of ascents. Of David.' },
+    'PSA.136.1': { text: 'Give thanks to the LORD, for He is good. His loving devotion endures forever.' },
+    'PSA.138.3': { text: 'On the day I called, You answered me; You emboldened me and strengthened my soul.' },
+    'PSA.138.8': { text: 'The LORD will fulfill His purpose for me. O LORD, Your loving devotion endures forever— do not abandon the works of Your hands.' },
+    'PSA.139.1-3': { text: 'O LORD, You have searched me and known me. You know when I sit and when I rise; You understand my thoughts from afar. You search out my path and my lying down; You are aware of all my ways.', sup: 'For the choirmaster. A Psalm of David.' },
+    'PSA.139.9-10': { text: 'If I rise on the wings of the dawn, if I settle by the farthest sea, even there Your hand will guide me; Your right hand will hold me fast.' },
+    'PSA.139.13-14': { text: 'For You formed my inmost being; You knit me together in my mother’s womb. I praise You, for I am fearfully and wonderfully made. Marvelous are Your works, and I know this very well.' },
+    'PSA.139.23-24': { text: 'Search me, O God, and know my heart; test me and know my concerns. See if there is any offensive way in me; lead me in the way everlasting.' },
+    'PSA.143.8': { text: 'Let me hear Your loving devotion in the morning, for I have put my trust in You. Teach me the way I should walk, for to You I lift up my soul.' },
+    'PSA.145.8': { text: 'The LORD is gracious and compassionate, slow to anger and abounding in loving devotion.' },
+    'PSA.145.18': { text: 'The LORD is near to all who call on Him, to all who call out to Him in truth.' },
+    'PSA.146.5': { text: 'Blessed is he whose help is the God of Jacob, whose hope is in the LORD his God,' },
+    'PSA.147.3': { text: 'He heals the brokenhearted and binds up their wounds.' },
+    'PRO.2.6': { text: 'For the LORD gives wisdom; from His mouth come knowledge and understanding.' },
+    'PRO.3.3-4': { text: 'Never let loving devotion or faithfulness leave you; bind them around your neck, write them on the tablet of your heart. Then you will find favor and high regard in the sight of God and man.' },
+    'PRO.3.5-6': { text: 'Trust in the LORD with all your heart, and lean not on your own understanding; in all your ways acknowledge Him, and He will make your paths straight.' },
+    'PRO.3.24-26': { text: 'When you lie down, you will not be afraid; when you rest, your sleep will be sweet. Do not fear sudden danger or the ruin that overtakes the wicked, for the LORD will be your confidence and will keep your foot from the snare.' },
+    'PRO.4.7': { text: 'Wisdom is supreme; so acquire wisdom. And whatever you may acquire, gain understanding.' },
+    'PRO.4.23': { text: 'Guard your heart with all diligence, for from it flow springs of life.' },
+    'PRO.4.25-27': { text: 'Let your eyes look forward; fix your gaze straight ahead. Make a level path for your feet, and all your ways will be sure. Do not swerve to the right or to the left; turn your feet away from evil.' },
+    'PRO.9.10': { text: 'The fear of the LORD is the beginning of wisdom, and knowledge of the Holy One is understanding.' },
+    'PRO.10.12': { text: 'Hatred stirs up dissension, but love covers all transgressions.' },
+    'PRO.11.2': { text: 'When pride comes, disgrace follows, but with humility comes wisdom.' },
+    'PRO.11.14': { text: 'For lack of guidance, a nation falls, but with many counselors comes deliverance.' },
+    'PRO.11.25': { text: 'A generous soul will prosper, and he who refreshes others will himself be refreshed.' },
+    'PRO.12.1': { text: 'Whoever loves discipline loves knowledge, but he who hates correction is stupid.' },
+    'PRO.12.18': { text: 'Speaking rashly is like a piercing sword, but the tongue of the wise brings healing.' },
+    'PRO.13.4': { text: 'The slacker craves yet has nothing, but the soul of the diligent is fully satisfied.' },
+    'PRO.13.20': { text: 'He who walks with the wise will become wise, but the companion of fools will be destroyed.' },
+    'PRO.14.29': { text: 'A patient man has great understanding, but a quick-tempered man promotes folly.' },
+    'PRO.15.1': { text: 'A gentle answer turns away wrath, but a harsh word stirs up anger.' },
+    'PRO.15.22': { text: 'Plans fail for lack of counsel, but with many advisers they succeed.' },
+    'PRO.16.3': { text: 'Commit your works to the LORD and your plans will be achieved.' },
+    'PRO.16.9': { text: 'A man’s heart plans his course, but the LORD determines his steps.' },
+    'PRO.16.24': { text: 'Pleasant words are a honeycomb, sweet to the soul and healing to the bones.' },
+    'PRO.16.32': { text: 'He who is slow to anger is better than a warrior, and he who controls his temper is greater than one who captures a city.' },
+    'PRO.17.17': { text: 'A friend loves at all times, and a brother is born for adversity.' },
+    'PRO.17.22': { text: 'A joyful heart is good medicine, but a broken spirit dries up the bones.' },
+    'PRO.18.10': { text: 'The name of the LORD is a strong tower; the righteous run to it and are safe.' },
+    'PRO.18.13': { text: 'He who answers a matter before he hears it— this is folly and disgrace to him.' },
+    'PRO.18.24': { text: 'A man of many companions may come to ruin, but there is a friend who stays closer than a brother.' },
+    'PRO.19.11': { text: 'A man’s insight gives him patience, and his virtue is to overlook an offense.' },
+    'PRO.19.20': { text: 'Listen to counsel and accept discipline, that you may be wise the rest of your days.' },
+    'PRO.19.21': { text: 'Many plans are in a man’s heart, but the purpose of the LORD will prevail.' },
+    'PRO.20.24': { text: 'A man’s steps are from the LORD, so how can anyone understand his own way?' },
+    'PRO.21.5': { text: 'The plans of the diligent bring plenty, as surely as haste leads to poverty.' },
+    'PRO.22.24-25': { text: 'Do not make friends with an angry man, and do not associate with a hot-tempered man, or you may learn his ways and entangle yourself in a snare.' },
+    'PRO.23.18': { text: 'For surely there is a future, and your hope will not be cut off.' },
+    'PRO.24.16': { text: 'For though a righteous man may fall seven times, he still gets up; but the wicked stumble in bad times.' },
+    'PRO.25.15': { text: 'Through patience a ruler can be persuaded, and a gentle tongue can break a bone.' },
+    'PRO.25.28': { text: 'Like a city whose walls are broken down is a man who does not control his temper.' },
+    'PRO.27.6': { text: 'The wounds of a friend are faithful, but the kisses of an enemy are deceitful.' },
+    'PRO.27.17': { text: 'As iron sharpens iron, so one man sharpens another.' },
+    'PRO.28.1': { text: 'The wicked flee when no one pursues, but the righteous are as bold as a lion.' },
+    'PRO.28.13': { text: 'He who conceals his sins will not prosper, but whoever confesses and renounces them will find mercy.' },
+    'ECC.3.1': { text: 'To everything there is a season, and a time for every purpose under heaven:' },
+    'ECC.3.4': { text: 'a time to weep and a time to laugh, a time to mourn and a time to dance,' },
+    'ECC.3.12': { text: 'I know that there is nothing better for them than to rejoice and do good while they live,' },
+    'ECC.4.6': { text: 'Better one handful with tranquility than two handfuls with toil and pursuit of the wind.' },
+    'ECC.4.9-10': { text: 'Two are better than one, because they have a good return for their labor. For if one falls down, his companion can lift him up; but pity the one who falls without another to help him up!' },
+    'ECC.7.8': { text: 'The end of a matter is better than the beginning, and a patient spirit is better than a proud one.' },
+    'ECC.7.12': { text: 'For wisdom, like money, is a shelter, and the advantage of knowledge is that wisdom preserves the life of its owner.' },
+    'SNG.8.7': { text: 'Mighty waters cannot quench love; rivers cannot sweep it away. If a man were to give all the wealth of his house for love, his offer would be utterly scorned.' },
+    'ISA.1.18': { text: '“Come now, let us reason together,” says the LORD. “Though your sins are like scarlet, they will be as white as snow; though they are as red as crimson, they will become like wool.' },
+    'ISA.6.8': { text: 'Then I heard the voice of the Lord saying: “Whom shall I send? Who will go for Us?” And I said: “Here am I. Send me!”' },
+    'ISA.12.2': { text: 'Surely God is my salvation; I will trust and not be afraid. For the LORD GOD is my strength and my song, and He also has become my salvation.”' },
+    'ISA.26.3': { text: 'You will keep in perfect peace the steadfast of mind, because he trusts in You.' },
+    'ISA.26.4': { text: 'Trust in the LORD forever, because GOD the LORD is the Rock eternal.' },
+    'ISA.30.15': { text: 'For the Lord GOD, the Holy One of Israel, has said: “By repentance and rest you would be saved; your strength would lie in quiet confidence— but you were not willing.”' },
+    'ISA.30.21': { text: 'And whether you turn to the right or to the left, your ears will hear this command behind you: “This is the way. Walk in it.”' },
+    'ISA.32.17': { text: 'The work of righteousness will be peace; the service of righteousness will be quiet confidence forever.' },
+    'ISA.35.4': { text: 'Say to those with anxious hearts: “Be strong, do not fear! Behold, your God will come with vengeance. With divine retribution He will come to save you.”' },
+    'ISA.40.8': { text: 'The grass withers and the flowers fall, but the word of our God stands forever.”' },
+    'ISA.40.11': { text: 'He tends His flock like a shepherd; He gathers the lambs in His arms and carries them close to His heart. He gently leads the nursing ewes.' },
+    'ISA.40.29': { text: 'He gives power to the faint and increases the strength of the weak.' },
+    'ISA.40.31': { text: 'But those who wait upon the LORD will renew their strength; they will mount up with wings like eagles; they will run and not grow weary, they will walk and not faint.' },
+    'ISA.41.10': { text: 'Do not fear, for I am with you; do not be afraid, for I am your God. I will strengthen you; I will surely help you; I will uphold you with My right hand of righteousness.' },
+    'ISA.41.13': { text: 'For I am the LORD your God, who takes hold of your right hand and tells you: Do not fear, I will help you.' },
+    'ISA.42.16': { text: 'I will lead the blind by a way they did not know; I will guide them on unfamiliar paths. I will turn darkness into light before them and rough places into level ground. These things I will do for them, and I will not forsake them.' },
+    'ISA.43.1': { text: 'Now this is what the LORD says— He who created you, O Jacob, and He who formed you, O Israel: “Do not fear, for I have redeemed you; I have called you by your name; you are Mine!' },
+    'ISA.43.2': { text: 'When you pass through the waters, I will be with you; and when you go through the rivers, they will not overwhelm you. When you walk through the fire, you will not be scorched; the flames will not set you ablaze.' },
+    'ISA.43.19': { text: 'Behold, I am about to do something new; even now it is coming. Do you not see it? Indeed, I will make a way in the wilderness and streams in the desert.' },
+    'ISA.53.3-4': { text: 'He was despised and rejected by men, a man of sorrows, acquainted with grief. Like one from whom men hide their faces, He was despised, and we esteemed Him not. Surely He took on our infirmities and carried our sorrows; yet we considered Him stricken by God, struck down and afflicted.' },
+    'ISA.55.8-9': { text: '“For My thoughts are not your thoughts, neither are your ways My ways,” declares the LORD. “For as the heavens are higher than the earth, so My ways are higher than your ways and My thoughts than your thoughts.' },
+    'ISA.58.11': { text: 'The LORD will always guide you; He will satisfy you in a sun-scorched land and strengthen your frame. You will be like a well-watered garden, like a spring whose waters never fail.' },
+    'ISA.61.1-3': { text: 'The Spirit of the Lord GOD is on Me, because the LORD has anointed Me to preach good news to the poor. He has sent Me to bind up the brokenhearted, to proclaim liberty to the captives and freedom to the prisoners, to proclaim the year of the LORD’s favor and the day of our God’s vengeance, to comfort all who mourn, to console the mourners in Zion— to give them a crown of beauty for ashes, the oil of joy for mourning, and a garment of praise for a spirit of despair. So they will be called oaks of righteousness, the planting of the LORD, that He may be glorified.' },
+    'JER.1.5': { text: '“Before I formed you in the womb I knew you, and before you were born I set you apart and appointed you as a prophet to the nations.”' },
+    'JER.6.16': { text: 'This is what the LORD says: “Stand at the crossroads and look. Ask for the ancient paths: ‘Where is the good way?’ Then walk in it, and you will find rest for your souls. But they said, ‘We will not walk in it!’' },
+    'JER.17.7-8': { text: 'But blessed is the man who trusts in the LORD, whose confidence is in Him. He is like a tree planted by the waters that sends out its roots toward the stream. It does not fear when the heat comes, and its leaves are always green. It does not worry in a year of drought, nor does it cease to produce fruit.' },
+    'JER.29.11': { text: 'For I know the plans I have for you, declares the LORD, plans to prosper you and not to harm you, to give you a future and a hope.' },
+    'JER.31.34': { text: 'No longer will each man teach his neighbor or his brother, saying, ‘Know the LORD,’ because they will all know Me, from the least of them to the greatest, declares the LORD. For I will forgive their iniquities and will remember their sins no more.”' },
+    'LAM.3.22-23': { text: 'Because of the loving devotion of the LORD we are not consumed, for His mercies never fail. They are new every morning; great is Your faithfulness!' },
+    'LAM.3.25-26': { text: 'The LORD is good to those who wait for Him, to the soul who seeks Him. It is good to wait quietly for the salvation of the LORD.' },
+    'LAM.3.31-33': { text: 'For the Lord will not cast us off forever. Even if He causes grief, He will show compassion according to His abundant loving devotion. For He does not willingly afflict or grieve the sons of men.' },
+    'EZK.36.26': { text: 'I will give you a new heart and put a new spirit within you; I will remove your heart of stone and give you a heart of flesh.' },
+    'DAN.3.17-18': { text: 'If the God whom we serve exists, then He is able to deliver us from the blazing fiery furnace and from your hand, O king. But even if He does not, let it be known to you, O king, that we will not serve your gods or worship the golden statue you have set up.”' },
+    'JOL.2.25': { text: 'I will repay you for the years eaten by locusts— the swarming locust, the young locust, the destroying locust, and the devouring locust — My great army that I sent against you.' },
+    'MIC.6.8': { text: 'He has shown you, O man, what is good. And what does the LORD require of you but to act justly, to love mercy, and to walk humbly with your God?' },
+    'MIC.7.7': { text: 'But as for me, I will look to the LORD; I will wait for the God of my salvation. My God will hear me.' },
+    'MIC.7.18': { text: 'Who is a God like You, who pardons iniquity and passes over the transgression of the remnant of His inheritance— who does not retain His anger forever, because He delights in loving devotion?' },
+    'NAM.1.7': { text: 'The LORD is good, a stronghold in the day of distress; He cares for those who trust in Him.' },
+    'HAB.2.4': { text: 'Look at the proud one; his soul is not upright — but the righteous will live by faith —' },
+    'ZEP.3.17': { text: 'The LORD your God is among you; He is mighty to save. He will rejoice over you with gladness; He will quiet you with His love; He will rejoice over you with singing.”' },
+    'ZEC.4.6': { text: 'So he said to me, “This is the word of the LORD to Zerubbabel: Not by might nor by power, but by My Spirit, says the LORD of Hosts.' },
+    'MAL.3.6': { text: '“Because I, the LORD, do not change, you descendants of Jacob have not been destroyed.' },
+    'MAT.5.4': { text: 'Blessed are those who mourn, for they will be comforted.' },
+    'MAT.5.9': { text: 'Blessed are the peacemakers, for they will be called sons of God.' },
+    'MAT.5.16': { text: 'In the same way, let your light shine before men, that they may see your good deeds and glorify your Father in heaven.' },
+    'MAT.6.14-15': { text: 'For if you forgive men their trespasses, your heavenly Father will also forgive you. But if you do not forgive men their trespasses, neither will your Father forgive yours.' },
+    'MAT.6.26': { text: 'Look at the birds of the air: They do not sow or reap or gather into barns—and yet your heavenly Father feeds them. Are you not much more valuable than they?' },
+    'MAT.6.33': { text: 'But seek first the kingdom of God and His righteousness, and all these things will be added unto you.' },
+    'MAT.6.34': { text: 'Therefore do not worry about tomorrow, for tomorrow will worry about itself. Today has enough trouble of its own.' },
+    'MAT.7.7-8': { text: 'Ask, and it will be given to you; seek, and you will find; knock, and the door will be opened to you. For everyone who asks receives; he who seeks finds; and to him who knocks, the door will be opened.' },
+    'MAT.7.12': { text: 'In everything, then, do to others as you would have them do to you. For this is the essence of the Law and the Prophets.' },
+    'MAT.7.24-25': { text: 'Therefore everyone who hears these words of Mine and acts on them is like a wise man who built his house on the rock. The rain fell, the torrents raged, and the winds blew and beat against that house; yet it did not fall, because its foundation was on the rock.' },
+    'MAT.11.28-30': { text: 'Come to Me, all you who are weary and burdened, and I will give you rest. Take My yoke upon you and learn from Me; for I am gentle and humble in heart, and you will find rest for your souls. For My yoke is easy and My burden is light.”' },
+    'MAT.17.20': { text: '“Because you have so little faith,” He answered. “For truly I tell you, if you have faith the size of a mustard seed, you can say to this mountain, ‘Move from here to there,’ and it will move. Nothing will be impossible for you.”' },
+    'MAT.18.21-22': { text: 'Then Peter came to Jesus and asked, “Lord, how many times shall I forgive my brother who sins against me? Up to seven times?” Jesus answered, “I tell you, not just seven times, but seventy-seven times!' },
+    'MAT.22.37-39': { text: 'Jesus declared, “‘Love the Lord your God with all your heart and with all your soul and with all your mind.’ This is the first and greatest commandment. And the second is like it: ‘Love your neighbor as yourself.’' },
+    'MAT.24.13': { text: 'But the one who perseveres to the end will be saved.' },
+    'MAT.28.20': { text: 'and teaching them to obey all that I have commanded you. And surely I am with you always, even to the end of the age.”' },
+    'MRK.2.27': { text: 'Then Jesus declared, “The Sabbath was made for man, not man for the Sabbath.' },
+    'MRK.4.39': { text: 'Then Jesus got up and rebuked the wind and the sea. “Silence!” He commanded. “Be still!” And the wind died down, and it was perfectly calm.' },
+    'MRK.6.31': { text: 'And He said to them, “Come with Me privately to a solitary place, and let us rest for a while.” For many people were coming and going, and they did not even have time to eat.' },
+    'MRK.9.24': { text: 'Immediately the boy’s father cried out, “I do believe; help my unbelief!”' },
+    'MRK.10.27': { text: 'Jesus looked at them and said, “With man this is impossible, but not with God. For all things are possible with God.”' },
+    'MRK.11.24': { text: 'Therefore I tell you, whatever you ask for in prayer, believe that you have received it, and it will be yours.' },
+    'MRK.12.31': { text: 'The second is this: ‘Love your neighbor as yourself.’ No other commandment is greater than these.”' },
+    'LUK.6.37': { text: 'Do not judge, and you will not be judged. Do not condemn, and you will not be condemned. Forgive, and you will be forgiven.' },
+    'LUK.6.38': { text: 'Give, and it will be given to you. A good measure, pressed down, shaken together, and running over will be poured into your lap. For with the measure you use, it will be measured back to you.”' },
+    'LUK.9.23': { text: 'Then Jesus said to all of them, “If anyone wants to come after Me, he must deny himself and take up his cross daily and follow Me.' },
+    'LUK.10.41-42': { text: '“Martha, Martha,” the Lord replied, “you are worried and upset about many things. But only one thing is necessary. Mary has chosen the good portion, and it will not be taken away from her.”' },
+    'LUK.12.22-26': { text: 'Then Jesus said to His disciples, “Therefore I tell you, do not worry about your life, what you will eat, or about your body, what you will wear. For life is more than food, and the body more than clothes. Consider the ravens: They do not sow or reap, they have no storehouse or barn; yet God feeds them. How much more valuable you are than the birds! Who of you by worrying can add a single hour to his life? So if you cannot do such a small thing, why do you worry about the rest?' },
+    'LUK.18.1': { text: 'Then Jesus told them a parable about their need to pray at all times and not lose heart:' },
+    'JHN.3.16': { text: 'For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life.' },
+    'JHN.8.12': { text: 'Once again, Jesus spoke to the people and said, “I am the light of the world. Whoever follows Me will never walk in the darkness, but will have the light of life.”' },
+    'JHN.13.34': { text: 'A new commandment I give you: Love one another. As I have loved you, so you also must love one another.' },
+    'JHN.14.1': { text: '“Do not let your hearts be troubled. You believe in God; believe in Me as well.' },
+    'JHN.14.27': { text: 'Peace I leave with you; My peace I give to you. I do not give to you as the world gives. Do not let your hearts be troubled; do not be afraid.' },
+    'JHN.15.12': { text: 'This is My commandment, that you love one another as I have loved you.' },
+    'JHN.15.16': { text: 'You did not choose Me, but I chose you. And I appointed you to go and bear fruit—fruit that will remain—so that whatever you ask the Father in My name, He will give you.' },
+    'JHN.16.13': { text: 'However, when the Spirit of truth comes, He will guide you into all truth. For He will not speak on His own, but He will speak what He hears, and He will declare to you what is to come.' },
+    'JHN.16.33': { text: 'I have told you these things so that in Me you may have peace. In the world you will have tribulation. But take courage; I have overcome the world!”' },
+    'ACT.3.19': { text: 'Repent, then, and turn back, so that your sins may be wiped away,' },
+    'ACT.4.31': { text: 'After they had prayed, their meeting place was shaken, and they were all filled with the Holy Spirit and spoke the word of God boldly.' },
+    'ACT.20.24': { text: 'But I consider my life of no value to me, if only I may finish my course and complete the ministry I have received from the Lord Jesus—the ministry of testifying to the good news of God’s grace.' },
+    'ACT.20.35': { text: 'In everything, I showed you that by this kind of hard work we must help the weak, remembering the words of the Lord Jesus Himself: ‘It is more blessed to give than to receive.’”' },
+    'ROM.3.23-24': { text: 'for all have sinned and fall short of the glory of God, and are justified freely by His grace through the redemption that is in Christ Jesus.' },
+    'ROM.5.1': { text: 'Therefore, since we have been justified through faith, we have peace with God through our Lord Jesus Christ,' },
+    'ROM.5.3-5': { text: 'Not only that, but we also rejoice in our sufferings, because we know that suffering produces perseverance; perseverance, character; and character, hope. And hope does not disappoint us, because God has poured out His love into our hearts through the Holy Spirit, whom He has given us.' },
+    'ROM.8.1': { text: 'Therefore, there is now no condemnation for those who are in Christ Jesus.' },
+    'ROM.8.6': { text: 'The mind of the flesh is death, but the mind of the Spirit is life and peace,' },
+    'ROM.8.24-25': { text: 'For in this hope we were saved; but hope that is seen is no hope at all. Who hopes for what he can already see? But if we hope for what we do not yet see, we wait for it patiently.' },
+    'ROM.8.28': { text: 'And we know that God works all things together for the good of those who love Him, who are called according to His purpose.' },
+    'ROM.8.38-39': { text: 'For I am convinced that neither death nor life, neither angels nor principalities, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.' },
+    'ROM.10.17': { text: 'Consequently, faith comes by hearing, and hearing by the word of Christ.' },
+    'ROM.12.2': { text: 'Do not be conformed to this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what is the good, pleasing, and perfect will of God.' },
+    'ROM.12.10': { text: 'Be devoted to one another in brotherly love. Outdo yourselves in honoring one another.' },
+    'ROM.12.12': { text: 'Be joyful in hope, patient in affliction, persistent in prayer.' },
+    'ROM.12.15': { text: 'Rejoice with those who rejoice; weep with those who weep.' },
+    'ROM.12.18': { text: 'If it is possible on your part, live at peace with everyone.' },
+    'ROM.13.10': { text: 'Love does no wrong to its neighbor. Therefore love is the fulfillment of the law.' },
+    'ROM.15.5': { text: 'Now may the God who gives endurance and encouragement grant you harmony with one another in Christ Jesus,' },
+    'ROM.15.13': { text: 'Now may the God of hope fill you with all joy and peace as you believe in Him, so that you may overflow with hope by the power of the Holy Spirit.' },
+    '1CO.1.25': { text: 'For the foolishness of God is wiser than man’s wisdom, and the weakness of God is stronger than man’s strength.' },
+    '1CO.6.19-20': { text: 'Do you not know that your body is a temple of the Holy Spirit who is in you, whom you have received from God? You are not your own; you were bought at a price. Therefore glorify God with your body.' },
+    '1CO.9.24': { text: 'Do you not know that in a race all the runners run, but only one receives the prize? Run in such a way as to take the prize.' },
+    '1CO.10.13': { text: 'No temptation has seized you except what is common to man. And God is faithful; He will not let you be tempted beyond what you can bear. But when you are tempted, He will also provide an escape, so that you can stand up under it.' },
+    '1CO.10.31': { text: 'So whether you eat or drink or whatever you do, do it all to the glory of God.' },
+    '1CO.12.4-6': { text: 'There are different gifts, but the same Spirit. There are different ministries, but the same Lord. There are different ways of working, but the same God works all things in all people.' },
+    '1CO.13.4-7': { text: 'Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It is not rude, it is not self-seeking, it is not easily angered, it keeps no account of wrongs. Love takes no pleasure in evil, but rejoices in the truth. It bears all things, believes all things, hopes all things, endures all things.' },
+    '1CO.15.58': { text: 'Therefore, my beloved brothers, be steadfast and immovable. Always excel in the work of the Lord, because you know that your labor in the Lord is not in vain.' },
+    '1CO.16.13': { text: 'Be on the alert. Stand firm in the faith. Be men of courage. Be strong.' },
+    '1CO.16.14': { text: 'Do everything in love.' },
+    '2CO.1.3-4': { text: 'Blessed be the God and Father of our Lord Jesus Christ, the Father of compassion and the God of all comfort, who comforts us in all our troubles, so that we can comfort those in any trouble with the comfort we ourselves have received from God.' },
+    '2CO.4.8-9': { text: 'We are hard pressed on all sides, but not crushed; perplexed, but not in despair; persecuted, but not forsaken; struck down, but not destroyed.' },
+    '2CO.4.16-17': { text: 'Therefore we do not lose heart. Though our outer self is wasting away, yet our inner self is being renewed day by day. For our light and momentary affliction is producing for us an eternal glory that is far beyond comparison.' },
+    '2CO.4.18': { text: 'So we fix our eyes not on what is seen, but on what is unseen. For what is seen is temporary, but what is unseen is eternal.' },
+    '2CO.5.7': { text: 'For we walk by faith, not by sight.' },
+    '2CO.5.17': { text: 'Therefore if anyone is in Christ, he is a new creation. The old has passed away. Behold, the new has come!' },
+    '2CO.9.15': { text: 'Thanks be to God for His indescribable gift!' },
+    '2CO.12.9': { text: 'But He said to me, “My grace is sufficient for you, for My power is perfected in weakness.” Therefore I will boast all the more gladly in my weaknesses, so that the power of Christ may rest on me.' },
+    'GAL.5.13': { text: 'For you, brothers, were called to freedom; but do not use your freedom as an opportunity for the flesh. Rather, serve one another in love.' },
+    'GAL.5.22-23': { text: 'But the fruit of the Spirit is love, joy, peace, patience, kindness, goodness, faithfulness, gentleness, and self-control. Against such things there is no law.' },
+    'GAL.6.2': { text: 'Carry one another’s burdens, and in this way you will fulfill the law of Christ.' },
+    'GAL.6.7-8': { text: 'Do not be deceived: God is not to be mocked. Whatever a man sows, he will reap in return. The one who sows to please his flesh, from the flesh will reap destruction; but the one who sows to please the Spirit, from the Spirit will reap eternal life.' },
+    'GAL.6.9': { text: 'Let us not grow weary in well-doing, for in due time we will reap a harvest if we do not give up.' },
+    'EPH.1.7': { text: 'In Him we have redemption through His blood, the forgiveness of our trespasses, according to the riches of His grace' },
+    'EPH.2.8-9': { text: 'For it is by grace you have been saved through faith, and this not from yourselves; it is the gift of God, not by works, so that no one can boast.' },
+    'EPH.2.10': { text: 'For we are God’s workmanship, created in Christ Jesus to do good works, which God prepared in advance as our way of life.' },
+    'EPH.3.16': { text: 'I ask that out of the riches of His glory He may strengthen you with power through His Spirit in your inner being,' },
+    'EPH.4.2-3': { text: 'with all humility and gentleness, with patience, bearing with one another in love, and with diligence to preserve the unity of the Spirit through the bond of peace.' },
+    'EPH.4.29': { text: 'Let no unwholesome talk come out of your mouths, but only what is helpful for building up the one in need and bringing grace to those who listen.' },
+    'EPH.4.32': { text: 'Be kind and tenderhearted to one another, forgiving each other just as in Christ God forgave you.' },
+    'EPH.5.15-16': { text: 'Pay careful attention, then, to how you walk, not as unwise but as wise, redeeming the time, because the days are evil.' },
+    'EPH.5.20': { text: 'always giving thanks to God the Father for everything in the name of our Lord Jesus Christ.' },
+    'EPH.6.10-11': { text: 'Finally, be strong in the Lord and in His mighty power. Put on the full armor of God, so that you can make your stand against the devil’s schemes.' },
+    'PHP.1.6': { text: 'being confident of this, that He who began a good work in you will carry it on to completion until the day of Christ Jesus.' },
+    'PHP.2.3-4': { text: 'Do nothing out of selfish ambition or empty pride, but in humility consider others more important than yourselves. Each of you should look not only to your own interests, but also to the interests of others.' },
+    'PHP.3.13-14': { text: 'Brothers, I do not consider myself yet to have taken hold of it. But one thing I do: Forgetting what is behind and straining toward what is ahead, I press on toward the goal to win the prize of God’s heavenly calling in Christ Jesus.' },
+    'PHP.4.4': { text: 'Rejoice in the Lord always. I will say it again: Rejoice!' },
+    'PHP.4.6-7': { text: 'Be anxious for nothing, but in everything, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.' },
+    'PHP.4.8': { text: 'Finally, brothers, whatever is true, whatever is honorable, whatever is right, whatever is pure, whatever is lovely, whatever is admirable—if anything is excellent or praiseworthy—think on these things.' },
+    'PHP.4.11-13': { text: 'I am not saying this out of need, for I have learned to be content regardless of my circumstances. I know how to live humbly, and I know how to abound. I am accustomed to any and every situation—to being filled and being hungry, to having plenty and having need. I can do all things through Christ who gives me strength.' },
+    'COL.2.6-7': { text: 'Therefore, just as you have received Christ Jesus as Lord, continue to walk in Him, rooted and built up in Him, established in the faith as you were taught, and overflowing with thankfulness.' },
+    'COL.3.12': { text: 'Therefore, as the elect of God, holy and beloved, clothe yourselves with hearts of compassion, kindness, humility, gentleness, and patience.' },
+    'COL.3.13': { text: 'Bear with one another and forgive any complaint you may have against someone else. Forgive as the Lord forgave you.' },
+    'COL.3.14': { text: 'And over all these virtues put on love, which is the bond of perfect unity.' },
+    'COL.3.15': { text: 'Let the peace of Christ rule in your hearts, for to this you were called as members of one body. And be thankful.' },
+    'COL.3.17': { text: 'And whatever you do, in word or deed, do it all in the name of the Lord Jesus, giving thanks to God the Father through Him.' },
+    'COL.3.23-24': { text: 'Whatever you do, work at it with your whole being, for the Lord and not for men, because you know that you will receive an inheritance from the Lord as your reward. It is the Lord Christ you are serving.' },
+    'COL.4.5-6': { text: 'Act wisely toward outsiders, redeeming the time. Let your speech always be gracious, seasoned with salt, so that you may know how to answer everyone.' },
+    '1TH.5.11': { text: 'Therefore encourage and build one another up, just as you are already doing.' },
+    '1TH.5.14': { text: 'And we urge you, brothers, to admonish the unruly, encourage the fainthearted, help the weak, and be patient with everyone.' },
+    '1TH.5.16-18': { text: 'Rejoice at all times. Pray without ceasing. Give thanks in every circumstance, for this is God’s will for you in Christ Jesus.' },
+    '2TH.3.13': { text: 'But as for you, brothers, do not grow weary in well-doing.' },
+    '2TH.3.16': { text: 'Now may the Lord of peace Himself give you peace at all times and in every way. The Lord be with all of you.' },
+    '1TI.4.7-8': { text: 'But reject irreverent, silly myths. Instead, train yourself for godliness. For physical exercise is of limited value, but godliness is valuable in every way, holding promise for the present life and for the one to come.' },
+    '1TI.6.6-7': { text: 'Of course, godliness with contentment is great gain. For we brought nothing into the world, so we cannot carry anything out of it.' },
+    '2TI.1.7': { text: 'For God has not given us a spirit of fear, but of power, love, and self-control.' },
+    '2TI.1.9': { text: 'He has saved us and called us to a holy calling, not because of our works, but by His own purpose and by the grace He granted us in Christ Jesus before time began.' },
+    '2TI.4.7': { text: 'I have fought the good fight, I have finished the race, I have kept the faith.' },
+    'TIT.2.11-12': { text: 'For the grace of God has appeared, bringing salvation to everyone. It instructs us to renounce ungodliness and worldly passions, and to live sensible, upright, and godly lives in the present age,' },
+    'TIT.3.5': { text: 'He saved us, not by the righteous deeds we had done, but according to His mercy, through the washing of new birth and renewal by the Holy Spirit.' },
+    'HEB.4.9-10': { text: 'There remains, then, a Sabbath rest for the people of God. For whoever enters God’s rest also rests from his own work, just as God did from His.' },
+    'HEB.4.16': { text: 'Let us then approach the throne of grace with confidence, so that we may receive mercy and find grace to help us in our time of need.' },
+    'HEB.6.19': { text: 'We have this hope as an anchor for the soul, firm and secure. It enters the inner sanctuary behind the curtain,' },
+    'HEB.10.24-25': { text: 'And let us consider how to spur one another on to love and good deeds. Let us not neglect meeting together, as some have made a habit, but let us encourage one another, and all the more as you see the Day approaching.' },
+    'HEB.10.36': { text: 'You need to persevere, so that after you have done the will of God, you will receive what He has promised.' },
+    'HEB.11.1': { text: 'Now faith is the assurance of what we hope for and the certainty of what we do not see.' },
+    'HEB.11.6': { text: 'And without faith it is impossible to please God, because anyone who approaches Him must believe that He exists and that He rewards those who earnestly seek Him.' },
+    'HEB.12.1': { text: 'Therefore, since we are surrounded by such a great cloud of witnesses, let us throw off every encumbrance and the sin that so easily entangles, and let us run with endurance the race set out for us.' },
+    'HEB.12.2-3': { text: 'Let us fix our eyes on Jesus, the author and perfecter of our faith, who for the joy set before Him endured the cross, scorning its shame, and sat down at the right hand of the throne of God. Consider Him who endured such hostility from sinners, so that you will not grow weary and lose heart.' },
+    'HEB.12.11': { text: 'No discipline seems enjoyable at the time, but painful. Later on, however, it yields a harvest of righteousness and peace to those who have been trained by it.' },
+    'HEB.13.5': { text: 'Keep your lives free from the love of money and be content with what you have, for God has said: “Never will I leave you, never will I forsake you.”' },
+    'HEB.13.6': { text: 'So we say with confidence: “The Lord is my helper; I will not be afraid. What can man do to me?”' },
+    'JAS.1.2-4': { text: 'Consider it pure joy, my brothers, when you encounter trials of many kinds, because you know that the testing of your faith develops perseverance. Allow perseverance to finish its work, so that you may be mature and complete, not lacking anything.' },
+    'JAS.1.5': { text: 'Now if any of you lacks wisdom, he should ask God, who gives generously to all without finding fault, and it will be given to him.' },
+    'JAS.1.12': { text: 'Blessed is the man who perseveres under trial, because when he has stood the test, he will receive the crown of life that God has promised to those who love Him.' },
+    'JAS.1.17': { text: 'Every good and perfect gift is from above, coming down from the Father of the heavenly lights, with whom there is no change or shifting shadow.' },
+    'JAS.1.19-20': { text: 'My beloved brothers, understand this: Everyone should be quick to listen, slow to speak, and slow to anger, for man’s anger does not bring about the righteousness that God desires.' },
+    'JAS.2.17': { text: 'So too, faith by itself, if it does not result in action, is dead.' },
+    'JAS.3.17': { text: 'But the wisdom from above is first of all pure, then peace-loving, gentle, accommodating, full of mercy and good fruit, impartial, and sincere.' },
+    'JAS.4.7-8': { text: 'Submit yourselves, then, to God. Resist the devil, and he will flee from you. Draw near to God, and He will draw near to you. Cleanse your hands, you sinners, and purify your hearts, you double-minded.' },
+    'JAS.4.13-15': { text: 'Come now, you who say, “Today or tomorrow we will go to this or that city, spend a year there, carry on business, and make a profit.” You do not even know what will happen tomorrow! What is your life? You are a mist that appears for a little while and then vanishes. Instead, you ought to say, “If the Lord is willing, we will live and do this or that.”' },
+    'JAS.5.7-8': { text: 'Be patient, then, brothers, until the Lord’s coming. See how the farmer awaits the precious fruit of the soil—how patient he is for the fall and spring rains. You, too, be patient and strengthen your hearts, because the Lord’s coming is near.' },
+    'JAS.5.16': { text: 'Therefore confess your sins to each other and pray for each other so that you may be healed. The prayer of a righteous man has great power to prevail.' },
+    '1PE.1.3': { text: 'Blessed be the God and Father of our Lord Jesus Christ! By His great mercy He has given us new birth into a living hope through the resurrection of Jesus Christ from the dead,' },
+    '1PE.3.8': { text: 'Finally, all of you, be like-minded and sympathetic, love as brothers, be tenderhearted and humble.' },
+    '1PE.4.8': { text: 'Above all, love one another deeply, because love covers over a multitude of sins.' },
+    '1PE.4.10': { text: 'As good stewards of the manifold grace of God, each of you should use whatever gift he has received to serve one another.' },
+    '1PE.5.6-7': { text: 'Humble yourselves, therefore, under God’s mighty hand, so that in due time He may exalt you. Cast all your anxiety on Him, because He cares for you.' },
+    '1PE.5.10': { text: 'And after you have suffered for a little while, the God of all grace, who has called you to His eternal glory in Christ, will Himself restore you, secure you, strengthen you, and establish you.' },
+    '2PE.1.5-7': { text: 'For this very reason, make every effort to add to your faith virtue; and to virtue, knowledge; and to knowledge, self-control; and to self-control, perseverance; and to perseverance, godliness; and to godliness, brotherly kindness; and to brotherly kindness, love.' },
+    '2PE.3.9': { text: 'The Lord is not slow in keeping His promise as some understand slowness, but is patient with you, not wanting anyone to perish but everyone to come to repentance.' },
+    '1JN.1.9': { text: 'If we confess our sins, He is faithful and just to forgive us our sins and to cleanse us from all unrighteousness.' },
+    '1JN.3.18': { text: 'Little children, let us love not in word and speech, but in action and truth.' },
+    '1JN.4.7': { text: 'Beloved, let us love one another, because love comes from God. Everyone who loves has been born of God and knows God.' },
+    '1JN.4.11': { text: 'Beloved, if God so loved us, we also ought to love one another.' },
+    '1JN.4.18': { text: 'There is no fear in love, but perfect love drives out fear, because fear involves punishment. The one who fears has not been perfected in love.' },
+    '1JN.4.19': { text: 'We love because He first loved us.' },
+    '1JN.5.4': { text: 'because everyone born of God overcomes the world. And this is the victory that has overcome the world: our faith.' },
+    '3JN.1.4': { text: 'I have no greater joy than to hear that my children are walking in the truth.' },
+    'REV.21.4': { text: '‘He will wipe away every tear from their eyes,’ and there will be no more death or mourning or crying or pain, for the former things have passed away.”' },
+    'LUK.1.1-4': { text: 'Many have undertaken to compose an account of the things that have been fulfilled among us, just as they were handed down to us by the initial eyewitnesses and servants of the word. Therefore, having carefully investigated everything from the beginning, it seemed good also to me to write an orderly account for you, most excellent Theophilus, so that you may know the certainty of the things you have been taught.' },
+    'GEN.1.1': { text: 'In the beginning God created the heavens and the earth.' },
+    'REV.21.3-4': { text: 'And I heard a loud voice from the throne saying: “Behold, the dwelling place of God is with man, and He will dwell with them. They will be His people, and God Himself will be with them as their God. ‘He will wipe away every tear from their eyes,’ and there will be no more death or mourning or crying or pain, for the former things have passed away.”' },
+    'JHN.1.1-5': { text: 'In the beginning was the Word, and the Word was with God, and the Word was God. He was with God in the beginning. Through Him all things were made, and without Him nothing was made that has been made. In Him was life, and that life was the light of men. The Light shines in the darkness, and the darkness has not overcome it.' },
+    'JHN.1.14': { text: 'The Word became flesh and made His dwelling among us. We have seen His glory, the glory of the one and only Son from the Father, full of grace and truth.' },
+    '1CO.15.3-5': { text: 'For what I received I passed on to you as of first importance: that Christ died for our sins according to the Scriptures, that He was buried, that He was raised on the third day according to the Scriptures, and that He appeared to Cephas and then to the Twelve.' },
+    'ACT.17.11': { text: 'Now the Bereans were more noble-minded than the Thessalonians, for they received the message with great eagerness and examined the Scriptures every day to see if these teachings were true.' },
+    'ISA.9.6-7': { text: 'For unto us a child is born, unto us a son is given, and the government will be upon His shoulders. And He will be called Wonderful Counselor, Mighty God, Everlasting Father, Prince of Peace. Of the increase of His government and peace there will be no end. He will reign on the throne of David and over his kingdom, to establish and sustain it with justice and righteousness from that time and forevermore. The zeal of the LORD of Hosts will accomplish this.' },
+    'LUK.1.30-33': { text: 'So the angel told her, “Do not be afraid, Mary, for you have found favor with God. Behold, you will conceive and give birth to a son, and you are to give Him the name Jesus. He will be great and will be called the Son of the Most High. The Lord God will give Him the throne of His father David, and He will reign over the house of Jacob forever. His kingdom will never end!”' },
+    'HEB.1.1-3': { text: 'On many past occasions and in many different ways, God spoke to our fathers through the prophets. But in these last days He has spoken to us by His Son, whom He appointed heir of all things, and through whom He made the universe. The Son is the radiance of God’s glory and the exact representation of His nature, upholding all things by His powerful word. After He had provided purification for sins, He sat down at the right hand of the Majesty on high.' },
+    'MRK.1.14-15': { text: 'After the arrest of John, Jesus went into Galilee and proclaimed the gospel of God. “The time is fulfilled,” He said, “and the kingdom of God is near. Repent and believe in the gospel!”' },
+    'LUK.4.16-21': { text: 'Then Jesus came to Nazareth, where He had been brought up. As was His custom, He entered the synagogue on the Sabbath. And when He stood up to read, the scroll of the prophet Isaiah was handed to Him. Unrolling it, He found the place where it was written: “The Spirit of the Lord is on Me, because He has anointed Me to preach good news to the poor. He has sent Me to proclaim liberty to the captives and recovery of sight to the blind, to release the oppressed, to proclaim the year of the Lord’s favor.” Then He rolled up the scroll, returned it to the attendant, and sat down. The eyes of everyone in the synagogue were fixed on Him, and He began by saying, “Today this Scripture is fulfilled in your hearing.”' },
+    'MRK.1.40-42': { text: 'Then a leper came to Jesus, begging on his knees: “If You are willing, You can make me clean.” Moved with compassion, Jesus reached out His hand and touched the man. “I am willing,” He said. “Be clean!” And immediately the leprosy left him, and the man was cleansed.' },
+    'MRK.4.38-41': { text: 'But Jesus was in the stern, sleeping on the cushion. So they woke Him and said, “Teacher, don’t You care that we are perishing?” Then Jesus got up and rebuked the wind and the sea. “Silence!” He commanded. “Be still!” And the wind died down, and it was perfectly calm. “Why are you so afraid?” He asked. “Do you still have no faith?” Overwhelmed with fear, they asked one another, “Who is this, that even the wind and the sea obey Him?”' },
+    'MRK.10.42-45': { text: 'So Jesus called them together and said, “You know that those regarded as rulers of the Gentiles lord it over them, and their superiors exercise authority over them. But it shall not be this way among you. Instead, whoever wants to become great among you must be your servant, and whoever wants to be first must be the slave of all. For even the Son of Man did not come to be served, but to serve, and to give His life as a ransom for many.”' },
+    'ISA.53.5-6': { text: 'But He was pierced for our transgressions, He was crushed for our iniquities; the punishment that brought us peace was upon Him, and by His stripes we are healed. We all like sheep have gone astray, each one has turned to his own way; and the LORD has laid upon Him the iniquity of us all.' },
+    'LUK.24.36-43': { text: 'While they were describing these events, Jesus Himself stood among them and said, “Peace be with you.” But they were startled and frightened, thinking they had seen a spirit. “Why are you troubled,” Jesus asked, “and why do doubts arise in your hearts? Look at My hands and My feet. It is I Myself. Touch Me and see—for a spirit does not have flesh and bones, as you see I have.” And when He had said this, He showed them His hands and feet. While they were still in disbelief because of their joy and amazement, He asked them, “Do you have anything here to eat?” So they gave Him a piece of broiled fish, and He took it and ate it in front of them.' },
+    'MRK.8.34-35': { text: 'Then Jesus called the crowd to Him along with His disciples, and He told them, “If anyone wants to come after Me, he must deny himself and take up his cross and follow Me. For whoever wants to save his life will lose it, but whoever loses his life for My sake and for the gospel will save it.' },
+    'GEN.1.26-27': { text: 'Then God said, “Let Us make man in Our image, after Our likeness, to rule over the fish of the sea and the birds of the air, over the livestock, and over all the earth itself and every creature that crawls upon it.” So God created man in His own image; in the image of God He created him; male and female He created them.' },
+    'GEN.1.31': { text: 'And God looked upon all that He had made, and indeed, it was very good. And there was evening, and there was morning—the sixth day.' },
+    'GEN.3.8-10': { text: 'Then the man and his wife heard the voice of the LORD God walking in the garden in the breeze of the day, and they hid themselves from the presence of the LORD God among the trees of the garden. But the LORD God called out to the man, “Where are you?” “I heard Your voice in the garden,” he replied, “and I was afraid because I was naked; so I hid myself.”' },
+    'ROM.3.22-24': { text: 'And this righteousness from God comes through faith in Jesus Christ to all who believe. There is no distinction, for all have sinned and fall short of the glory of God, and are justified freely by His grace through the redemption that is in Christ Jesus.' },
+    'GEN.12.1-3': { text: 'Then the LORD said to Abram, “Leave your country, your kindred, and your father’s household, and go to the land I will show you. I will make you into a great nation, and I will bless you; I will make your name great, so that you will be a blessing. I will bless those who bless you and curse those who curse you; and all the families of the earth will be blessed through you.”' },
+    'ROM.5.6-8': { text: 'For at just the right time, while we were still powerless, Christ died for the ungodly. Very rarely will anyone die for a righteous man, though for a good man someone might possibly dare to die. But God proves His love for us in this: While we were still sinners, Christ died for us.' },
+    '1CO.15.17-20': { text: 'And if Christ has not been raised, your faith is futile; you are still in your sins. Then those also who have fallen asleep in Christ have perished. If our hope in Christ is for this life alone, we are to be pitied more than all men. But Christ has indeed been raised from the dead, the firstfruits of those who have fallen asleep.' },
+    'EPH.2.4-10': { text: 'But because of His great love for us, God, who is rich in mercy, made us alive with Christ even when we were dead in our trespasses. It is by grace you have been saved! And God raised us up with Christ and seated us with Him in the heavenly realms in Christ Jesus, in order that in the coming ages He might display the surpassing riches of His grace, demonstrated by His kindness to us in Christ Jesus. For it is by grace you have been saved through faith, and this not from yourselves; it is the gift of God, not by works, so that no one can boast. For we are God’s workmanship, created in Christ Jesus to do good works, which God prepared in advance as our way of life.' },
+    'MAT.6.5-8': { text: 'And when you pray, do not be like the hypocrites. For they love to pray standing in the synagogues and on the street corners to be seen by men. Truly I tell you, they already have their full reward. But when you pray, go into your inner room, shut your door, and pray to your Father, who is unseen. And your Father, who sees what is done in secret, will reward you. And when you pray, do not babble on like pagans, for they think that by their many words they will be heard. Do not be like them, for your Father knows what you need before you ask Him.' },
+    'MAT.6.9-13': { text: 'So then, this is how you should pray: ‘Our Father in heaven, hallowed be Your name. Your kingdom come, Your will be done, on earth as it is in heaven. Give us this day our daily bread. And forgive us our debts, as we also have forgiven our debtors. And lead us not into temptation, but deliver us from the evil one.’' },
+    'PSA.13.1-6': { text: 'How long, O LORD? Will You forget me forever? How long will You hide Your face from me? How long must I wrestle in my soul, with sorrow in my heart each day? How long will my enemy dominate me? Consider me and respond, O LORD my God. Give light to my eyes, lest I sleep in death, lest my enemy say, “I have overcome him,” and my foes rejoice when I fall. But I have trusted in Your loving devotion; my heart will rejoice in Your salvation. I will sing to the LORD, for He has been good to me.', sup: 'For the choirmaster. A Psalm of David.' },
+    'MRK.14.35-36': { text: 'Going a little farther, He fell to the ground and prayed that, if it were possible, the hour would pass from Him. “Abba, Father,” He said, “all things are possible for You. Take this cup from Me. Yet not what I will, but what You will.”' },
+    'LUK.5.15-16': { text: 'But the news about Jesus spread all the more, and great crowds came to hear Him and to be healed of their sicknesses. Yet He frequently withdrew to the wilderness to pray.' },
+    '2TI.3.16-17': { text: 'All Scripture is God-breathed and is useful for instruction, for conviction, for correction, and for training in righteousness, so that the man of God may be complete, fully equipped for every good work.' },
+    '1PE.2.24': { text: 'He Himself bore our sins in His body on the tree, so that we might die to sin and live to righteousness. “By His stripes you are healed.”' },
+    'PSA.23.1-6': { text: 'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures; He leads me beside quiet waters. He restores my soul; He guides me in the paths of righteousness for the sake of His name. Even though I walk through the valley of the shadow of death, I will fear no evil, for You are with me; Your rod and Your staff, they comfort me. You prepare a table before me in the presence of my enemies. You anoint my head with oil; my cup overflows. Surely goodness and mercy will follow me all the days of my life, and I will dwell in the house of the LORD forever.', sup: 'A Psalm of David.' },
+    'NEH.8.8': { text: 'So they read from the Book of the Law of God, explaining it and giving insight, so that the people could understand what was being read.' },
+    'LUK.24.27': { text: 'And beginning with Moses and all the Prophets, He explained to them what was written in all the Scriptures about Himself.' },
+    'JER.29.10-11': { text: 'For this is what the LORD says: “When Babylon’s seventy years are complete, I will attend to you and confirm My promise to restore you to this place. For I know the plans I have for you, declares the LORD, plans to prosper you and not to harm you, to give you a future and a hope.' }
   }
 };
 /* SCRIPTURE-END */
@@ -5820,6 +6475,8 @@ function renderToday(){
         (note ? 'Edit note' : 'Reflect') + '</button>' +
     '</div>' +
 
+    readInContextHtml(passage.id) +
+
     (showReflections && reflection ? reflectionHtml(reflection) : '') +
 
     (chosenAroundFocus(passage, key)
@@ -5920,8 +6577,14 @@ function shareText(passage){
 function sharePassage(id){
   const passage = inTranslation(passageById(id));
   if(!passage) return;
-  const payload = shareText(passage);
+  shareOrCopy(shareText(passage));
+}
 
+/* Extracted so the Bible reader shares exactly the way the daily verse
+   does. Two share paths would eventually disagree about what goes in the
+   text, and the thing that must never vary is that the words, the
+   reference and the edition travel together. */
+function shareOrCopy(payload){
   try{
     if(navigator && typeof navigator.share === 'function'){
       navigator.share({ text: payload })
@@ -5936,6 +6599,18 @@ function sharePassage(id){
     }
   }catch(e){}
   toast('Sharing is not available in this browser.', 'warning');
+}
+
+function copyText(payload){
+  try{
+    if(navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function'){
+      navigator.clipboard.writeText(payload)
+        .then(function(){ toast('Verse copied', 'success'); })
+        .catch(function(){ toast('Could not copy the verse.', 'error'); });
+      return;
+    }
+  }catch(e){}
+  toast('Copying is not available in this browser.', 'warning');
 }
 
 /* ---------- reflections ---------- */
@@ -6156,11 +6831,23 @@ function renderSaved(){
        that. Substituting a different passage under the same heading would be
        the app quietly rewriting someone's history. */
     if(!passage){
+      const loc = String(s.passage || '');
+      const isBible = /^[A-Z0-9]{3}[.][0-9]+[.][0-9]+$/.test(loc);
+      const words = isBible ? savedLocationText(loc) : null;
       return '<div class="panel" style="margin-bottom:var(--space-sm)">' +
-        '<div class="verse-row-ref"><span>' + escapeHtml(s.ref || s.passage || 'Unknown') + '</span>' +
-          savedRemoveButton(s.passage || s.id) + '</div>' +
-        '<div class="field-hint">This reading is not in the current Scripture set, so its ' +
-          'text cannot be shown. The reference is kept exactly as you saved it.</div>' +
+        '<div class="verse-row-ref"><span>' + escapeHtml(s.ref || loc || 'Unknown') +
+          (isBible ? ' <span class="verse-translation">' + escapeHtml(activeTranslation().abbr) +
+            '</span>' : '') + '</span>' +
+          savedRemoveButton(loc || s.id) + '</div>' +
+        (words
+          ? '<blockquote class="verse-quote" lang="' + escapeAttr(activeTranslation().lang) + '">' +
+              escapeHtml(words) + '</blockquote>'
+          : '<div class="field-hint">' + (isBible
+              ? 'Saved from the Bible. Open it to read the verse in ' +
+                escapeHtml(activeTranslation().title) + '.'
+              : 'This reading is not in the current Scripture set, so its text cannot be ' +
+                'shown. The reference is kept exactly as you saved it.') + '</div>') +
+        (isBible ? readInContextHtml(loc) : '') +
       '</div>';
     }
     return '<div class="panel" style="margin-bottom:var(--space-sm)">' +
@@ -6173,6 +6860,16 @@ function renderSaved(){
       '<blockquote class="verse-quote" lang="' + escapeAttr(translationLang(passage)) + '">' + escapeHtml(passage.text) + '</blockquote>' +
     '</div>';
   }).join('');
+}
+
+/* One control, three surfaces. It carries a canonical id and nothing
+   else: the reader resolves it in whatever edition is selected, so this
+   never has to know which translation is on screen. */
+function readInContextHtml(id){
+  const m = String(id || '').match(/^([A-Z0-9]{3})[.]([0-9]+)/);
+  if(!m) return '';
+  return '<button class="read-context" onclick="openPassageInBible(&quot;' +
+    escapeAttr(id) + '&quot;)">' + bookIcon(14) + 'Read in context</button>';
 }
 
 function savedRemoveButton(id){
@@ -6242,12 +6939,20 @@ function translationLang(p){
   return activeTranslation().lang;
 }
 
+/* Changing edition changes the WORDS. It never changes where you are:
+   the same canonical book and chapter stay open. A verse focus is
+   dropped rather than carried, because the publishers disagree about
+   which verse a handful of addresses hold, and moving a highlight to
+   where it 'should' be would be inventing a mapping. */
 function setTranslation(id){
   if(!TRANSLATIONS[id]) return;
   translation = id;
   Store.set(KEYS.translation, id);
+  bibleFocus = null;
+  bibleCache.books = {}; bibleCache.order = [];
   renderAll();
   paintPrefControls();
+  refreshBibleForEdition();
 }
 
 /* ---------- appearance ---------- */
@@ -6803,6 +7508,16 @@ function renderLearn(){
 
   let html = '<p class="page-intro">Understand Scripture, one guided lesson at a time.</p>';
 
+  /* The Bible, first and unmissable. A guided lesson is a way INTO
+     Scripture, so the Scripture itself belongs above the lessons rather
+     than behind a fifth tab. */
+  html +=
+    '<button class="continue-card bible-entry" onclick="openBible()">' +
+      '<span class="continue-study">Bible</span>' +
+      '<span class="continue-lesson">Read any book, chapter by chapter</span>' +
+      '<span class="continue-meta">' + escapeHtml(activeTranslation().title) + '</span>' +
+    '</button>';
+
   /* Continue, only when there is something to continue. */
   if(activeStudyRecord){
     const lessonId = resumeLessonId(activeStudyRecord);
@@ -7189,6 +7904,7 @@ function passageCardHtml(p){
       '<cite class="verse-ref">' + escapeHtml(p.ref) + '</cite>' +
       '<span class="verse-translation">' + escapeHtml(translationAbbr(p)) + '</span>' +
     '</div>' +
+    readInContextHtml(p.id) +
   '</article>';
 }
 
@@ -7288,6 +8004,617 @@ function rolloverIfDayChanged(){
   if(wasOnToday) selectedDay = now;
   renderToday();
   if(wasOnToday) centreSelectedDay();
+}
+
+/* =========================================================
+   THE BIBLE READER
+
+   The curated 415 passages and the complete Bible are different things and
+   this file keeps them different. The curated set carries themes,
+   reflections and daily eligibility; the reader carries none of that. It
+   resolves any canonical location to the words the selected edition prints
+   there, and nothing else. Making every verse a daily candidate is the one
+   failure this separation exists to prevent.
+
+   Nothing here is loaded at boot. A reader who opened the app for today's
+   verse pays none of the cost of three complete Bibles: the index for an
+   edition is one 4KB fetch, a book is one file, and both are asked for only
+   when somebody actually opens the Bible.
+   ========================================================= */
+
+const BIBLE_BASE = 'data/bible/';
+/* In memory only, and never persisted: this is publisher data, not the
+   reader's. It is also what the contracts populate directly, so the suite
+   exercises the same shipped bytes the browser would fetch. */
+const bibleCache = { index: {}, books: {}, order: [] };
+/* Three books is enough for reading forward, reading back, and the book you
+   came from, without holding several megabytes for a session that wandered. */
+const BIBLE_BOOK_CACHE = 3;
+
+let bibleBookCode = null;
+let bibleChapter = null;
+/* The verse a deep link asked for. Deliberately NOT persisted and dropped
+   whenever the edition changes — see openBibleAt. */
+let bibleFocus = null;
+/* Set when a book could not be fetched. Without it the reader sat on
+   "Loading..." for ever when a book had never been read online, which is
+   a lie: it was not loading, it was unavailable. */
+let bibleLoadFailed = false;
+
+function bibleCacheKey(ed, code){ return ed + '/' + code; }
+function cachedBibleIndex(ed){ return bibleCache.index[ed] || null; }
+function cachedBibleBook(ed, code){ return bibleCache.books[bibleCacheKey(ed, code)] || null; }
+
+function rememberBibleBook(ed, code, data){
+  const key = bibleCacheKey(ed, code);
+  if(!bibleCache.books[key]) bibleCache.order.push(key);
+  bibleCache.books[key] = data;
+  while(bibleCache.order.length > BIBLE_BOOK_CACHE){
+    delete bibleCache.books[bibleCache.order.shift()];
+  }
+}
+
+function fetchJson(url){
+  if(typeof fetch !== 'function') return Promise.reject(new Error('no fetch'));
+  return fetch(url).then(function(r){
+    if(!r.ok) throw new Error(url + ' — HTTP ' + r.status);
+    return r.json();
+  });
+}
+
+function loadBibleIndex(ed){
+  const hit = cachedBibleIndex(ed);
+  if(hit) return Promise.resolve(hit);
+  return fetchJson(BIBLE_BASE + ed + '/index.json').then(function(data){
+    bibleCache.index[ed] = data;
+    return data;
+  });
+}
+
+function loadBibleBook(ed, code){
+  const hit = cachedBibleBook(ed, code);
+  if(hit) return Promise.resolve(hit);
+  return fetchJson(BIBLE_BASE + ed + '/' + code + '.json').then(function(data){
+    rememberBibleBook(ed, code, data);
+    return data;
+  });
+}
+
+/* ---------- the shape of an edition ----------
+   Every question about what exists is answered by the edition's own index,
+   never by an assumption that all Bibles hold the same books. WEB Classic
+   ships 81; Reina Valera 1909 and the Berean Standard Bible ship 66. */
+function bibleBooks(ed){
+  const idx = cachedBibleIndex(ed);
+  return idx && idx.books ? idx.books : [];
+}
+function bibleBookMeta(ed, code){
+  return bibleBooks(ed).filter(function(b){ return b.c === code; })[0] || null;
+}
+function bibleHasBook(ed, code){ return !!bibleBookMeta(ed, code); }
+function bibleGroups(ed){
+  const groups = [
+    { id: 'ot', label: 'Old Testament' },
+    { id: 'nt', label: 'New Testament' },
+    /* Named for what the publisher included rather than for a position on
+       whether it belongs. An edition that ships none simply shows none. */
+    { id: 'dc', label: 'Deuterocanon' }
+  ];
+  return groups.map(function(g){
+    return { id: g.id, label: g.label,
+             books: bibleBooks(ed).filter(function(b){ return b.g === g.id; }) };
+  }).filter(function(g){ return g.books.length; });
+}
+
+/* Chapter arithmetic across book boundaries, in the order THIS edition
+   lists its books. Genesis 50 goes to Exodus 1; the last chapter of the
+   last book goes nowhere rather than wrapping round to Genesis. */
+function bibleStep(ed, code, chapter, dir){
+  const books = bibleBooks(ed);
+  const i = books.findIndex(function(b){ return b.c === code; });
+  if(i === -1) return null;
+  const next = chapter + dir;
+  if(next >= 1 && next <= books[i].ch) return { c: code, ch: next };
+  if(dir > 0){
+    const nb = books[i + 1];
+    return nb ? { c: nb.c, ch: 1 } : null;
+  }
+  const pb = books[i - 1];
+  return pb ? { c: pb.c, ch: pb.ch } : null;
+}
+
+/* ---------- references ----------
+   Deterministic, and matched against the publisher's own book names for the
+   edition in hand, so "Salmos 23" works while reading Spanish. No fuzzy
+   matching and no natural language: a reference either resolves to exactly
+   one book or it does not resolve. */
+function bibleNormalize(s){
+  return String(s == null ? '' : s)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function bibleMatchBook(ed, name){
+  const want = bibleNormalize(name);
+  if(!want) return null;
+  const books = bibleBooks(ed);
+  const norm = books.map(function(b){
+    return { b: b, n: bibleNormalize(b.n), code: bibleNormalize(b.c) };
+  });
+  let hit = norm.filter(function(x){ return x.n === want || x.code === want; });
+  if(hit.length === 1) return hit[0].b;
+  if(hit.length > 1) return null;
+  /* A prefix, but only an unambiguous one. "jo" matches Job, Joel, John and
+     Jonah, so it resolves to nothing rather than to a guess. */
+  if(want.length >= 3){
+    hit = norm.filter(function(x){ return x.n.indexOf(want) === 0; });
+    if(hit.length === 1) return hit[0].b;
+    if(hit.length > 1){
+      const shortest = hit.slice().sort(function(a, b){ return a.n.length - b.n.length; });
+      if(shortest[0].n.length < shortest[1].n.length) return shortest[0].b;
+    }
+  }
+  return null;
+}
+
+function parseBibleRef(ed, input){
+  const raw = String(input == null ? '' : input).trim();
+  if(!raw) return null;
+  /* <book> <chapter>[:<verse>[-<verse>]] — the book may carry a leading
+     number, as in "1 John", so the split is on the LAST run of digits. */
+  const m = raw.match(/^(.+?)\s*(\d+)\s*(?::\s*(\d+)\s*(?:\s*[-–]\s*(\d+))?)?\s*$/);
+  if(!m) {
+    /* A bare book name is a valid destination: its first chapter. */
+    const only = bibleMatchBook(ed, raw);
+    return only ? { c: only.c, ch: 1, from: null, to: null } : null;
+  }
+  const book = bibleMatchBook(ed, m[1]);
+  if(!book) return null;
+  const ch = Number(m[2]);
+  if(!(ch >= 1 && ch <= book.ch)) return null;
+  const from = m[3] ? Number(m[3]) : null;
+  const to = m[4] ? Number(m[4]) : from;
+  if(from !== null && (from < 1 || to < from)) return null;
+  return { c: book.c, ch: ch, from: from, to: to };
+}
+
+/* ---------- where the reader last was ----------
+   A book and a chapter. Not the text, not a timestamp, not a count of days
+   in the Bible: this is a convenience, and a reading streak is a different
+   and worse product. */
+function readBibleLast(){
+  const rec = Store.getJSON(KEYS.bibleLast, null);
+  if(!rec || typeof rec.c !== 'string' || typeof rec.ch !== 'number') return null;
+  return { c: rec.c, ch: rec.ch };
+}
+function rememberBibleLast(code, chapter){
+  Store.setJSON(KEYS.bibleLast, { c: code, ch: chapter });
+}
+
+/* ---------- opening ---------- */
+function openBible(){
+  refreshBibleForEdition();
+  renderBibleHome();
+  pushOverlayHistory();
+  openOverlay('bibleOverlay');
+  loadBibleIndex(translation).then(renderBibleHome).catch(function(){ renderBibleHome(); });
+}
+function closeBible(){ closeOverlay('bibleOverlay'); releaseOverlayHistory(); }
+function closeBibleChapters(){ closeOverlay('bibleChaptersOverlay'); releaseOverlayHistory(); }
+function closeBibleReader(){ closeOverlay('bibleReaderOverlay'); releaseOverlayHistory(); }
+
+/* The deep link every other surface uses. A canonical location in, the
+   reader out, in whatever edition is currently selected. */
+function openBibleAt(code, chapter, from, to){
+  bibleLoadFailed = false;
+  bibleBookCode = code;
+  bibleChapter = chapter || 1;
+  bibleFocus = (typeof from === 'number' && from > 0) ? { from: from, to: to || from } : null;
+  renderBibleReader();
+  pushOverlayHistory();
+  openOverlay('bibleReaderOverlay');
+  loadBibleIndex(translation)
+    .then(function(){
+      if(!bibleHasBook(translation, code)) return null;
+      return loadBibleBook(translation, code).then(function(){
+        rememberBibleLast(code, bibleChapter);
+      });
+    })
+    .then(renderBibleReader)
+    .catch(function(){ bibleLoadFailed = true; renderBibleReader(); });
+}
+
+/* Open a curated passage where it actually sits. The id already IS the
+   location, so nothing is looked up, guessed or duplicated. */
+function openPassageInBible(id){
+  const p = passageById(id);
+  if(!p) return;
+  const m = String(p.id).match(/^([A-Z0-9]{3})\.(\d+)(?:\.(\d+)(?:-(\d+))?)?$/);
+  if(!m) return;
+  openBibleAt(m[1], Number(m[2]), m[3] ? Number(m[3]) : null, m[4] ? Number(m[4]) : null);
+}
+
+function goToBibleBook(code){
+  bibleBookCode = code;
+  renderBibleChapters();
+  pushOverlayHistory();
+  openOverlay('bibleChaptersOverlay');
+  loadBibleBook(translation, code).then(renderBibleChapters).catch(function(){});
+}
+
+function goToBibleChapter(code, chapter){
+  closeBibleChapters();
+  openBibleAt(code, chapter, null, null);
+}
+
+function bibleStepTo(dir){
+  const to = bibleStep(translation, bibleBookCode, bibleChapter, dir);
+  if(!to) return;
+  bibleBookCode = to.c;
+  bibleChapter = to.ch;
+  bibleFocus = null;
+  bibleLoadFailed = false;
+  renderBibleReader();
+  loadBibleBook(translation, to.c).then(function(){
+    renderBibleReader();
+    rememberBibleLast(to.c, to.ch);
+    const host = document.getElementById('bibleReaderBody');
+    if(host && host.parentNode) host.parentNode.scrollTop = 0;
+  }).catch(function(){ bibleLoadFailed = true; renderBibleReader(); });
+}
+
+/* ---------- rendering ---------- */
+function bibleBookName(ed, code){
+  const meta = bibleBookMeta(ed, code);
+  return meta ? meta.n : code;
+}
+/* The reference as this edition would print it: its own book name, its own
+   language. Never an English name beside Spanish words. */
+function bibleRefLabel(ed, code, chapter){
+  return bibleBookName(ed, code) + ' ' + chapter;
+}
+
+function renderBibleHome(){
+  const host = document.getElementById('bibleBody');
+  if(!host) return;
+  const ed = translation;
+  const groups = bibleGroups(ed);
+  let html = '';
+
+  const last = readBibleLast();
+  if(last && bibleHasBook(ed, last.c)){
+    html +=
+      '<div class="section-label">Continue reading</div>' +
+      '<button class="continue-card" onclick="openBibleAt(\'' + escapeAttr(last.c) + '\', ' + last.ch + ')">' +
+        '<span class="continue-study" lang="' + escapeAttr(activeTranslation().lang) + '">' +
+          escapeHtml(bibleRefLabel(ed, last.c, last.ch)) + '</span>' +
+        '<span class="continue-meta">' + escapeHtml(activeTranslation().title) + '</span>' +
+      '</button>';
+  }
+
+  html +=
+    '<button class="list-row bible-jump" onclick="openBibleJump()">' +
+      '<span class="list-row-main">' +
+        '<span class="list-row-title">Go to passage</span>' +
+        '<span class="list-row-desc">A reference such as John 3:16</span>' +
+      '</span>' +
+      '<span class="list-row-arrow" aria-hidden="true"></span>' +
+    '</button>';
+
+  if(!groups.length){
+    html += '<div class="field-hint" style="margin-top:var(--space-lg)">Loading the books of ' +
+            escapeHtml(activeTranslation().title) + '…</div>';
+    host.innerHTML = html;
+    return;
+  }
+
+  groups.forEach(function(g){
+    html += '<div class="section-label">' + escapeHtml(g.label) + '</div>' +
+      '<div class="book-list">' +
+      g.books.map(function(b){
+        return '<button class="book-row" lang="' + escapeAttr(activeTranslation().lang) + '" ' +
+          'onclick="goToBibleBook(\'' + escapeAttr(b.c) + '\')">' +
+          escapeHtml(b.n) + '</button>';
+      }).join('') +
+      '</div>';
+  });
+  host.innerHTML = html;
+}
+
+function renderBibleChapters(){
+  const host = document.getElementById('bibleChaptersBody');
+  const title = document.getElementById('bibleChaptersTitle');
+  if(!host) return;
+  const ed = translation;
+  const meta = bibleBookMeta(ed, bibleBookCode);
+  if(title) title.textContent = meta ? meta.n : bibleBookCode;
+  if(!meta){ host.innerHTML = '<div class="field-hint">Loading…</div>'; return; }
+  let html = '<div class="chapter-grid" role="list">';
+  for(let n = 1; n <= meta.ch; n++){
+    html += '<button class="chapter-cell" role="listitem" ' +
+      'aria-label="Chapter ' + n + '" ' +
+      'onclick="goToBibleChapter(\'' + escapeAttr(bibleBookCode) + '\', ' + n + ')">' + n + '</button>';
+  }
+  host.innerHTML = html + '</div>';
+}
+
+function renderBibleReader(){
+  const host = document.getElementById('bibleReaderBody');
+  if(!host) return;
+  const ed = translation;
+  const t = activeTranslation();
+  const ref = document.getElementById('bibleReaderRef');
+  const abbr = document.getElementById('bibleReaderAbbr');
+  if(abbr) abbr.textContent = t.abbr;
+
+  const meta = bibleBookMeta(ed, bibleBookCode);
+  if(ref) ref.textContent = meta ? bibleRefLabel(ed, bibleBookCode, bibleChapter) : '';
+
+  /* A book this edition does not contain is a real answer, not an error. It
+     is never remapped to something else. */
+  if(cachedBibleIndex(ed) && !meta){
+    host.innerHTML =
+      '<div class="bible-unavailable">' +
+        '<p class="bible-unavailable-title">Not in this translation</p>' +
+        '<p class="field-hint">' + escapeHtml(bookNameFallback(bibleBookCode)) +
+          ' isn&rsquo;t part of ' + escapeHtml(t.title) + '. It is published in some ' +
+          'editions and not others, and nothing here will stand in for it.</p>' +
+        '<div class="bible-unavailable-actions">' +
+          '<button class="btn-secondary" onclick="openTranslationPicker()">Change translation</button>' +
+          '<button class="btn-secondary" onclick="closeBibleReader()">Back to books</button>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+
+  const book = cachedBibleBook(ed, bibleBookCode);
+  if(!book){
+    /* Books are kept as they are read, so what is offline is what has been
+       read. Saying "loading" to somebody with no connection is a promise
+       the app cannot keep. */
+    host.innerHTML = bibleLoadFailed
+      ? '<div class="bible-unavailable">' +
+          '<p class="bible-unavailable-title">Not available offline</p>' +
+          '<p class="field-hint">' + escapeHtml(bibleBookName(ed, bibleBookCode)) +
+            ' has not been downloaded yet. Books are kept on this device once you have ' +
+            'read them, so this one will be here after you open it with a connection.</p>' +
+          '<div class="bible-unavailable-actions">' +
+            '<button class="btn-secondary" onclick="retryBibleBook()">Try again</button>' +
+            '<button class="btn-secondary" onclick="closeBibleReader()">Back to books</button>' +
+          '</div>' +
+        '</div>'
+      : '<div class="field-hint bible-loading">Loading…</div>';
+    return;
+  }
+  const verses = book.ch[bibleChapter - 1];
+  if(!verses){ host.innerHTML = '<div class="field-hint">That chapter is not in this edition.</div>'; return; }
+
+  let html = '';
+  const sup = book.sup && book.sup[bibleChapter];
+  if(sup){
+    html += '<p class="bible-sup" lang="' + escapeAttr(t.lang) + '">' + escapeHtml(sup) + '</p>';
+  }
+
+  html += '<div class="bible-text" lang="' + escapeAttr(t.lang) + '">';
+  verses.forEach(function(text, i){
+    const n = i + 1;
+    const focused = bibleFocus && n >= bibleFocus.from && n <= bibleFocus.to;
+    if(!text){
+      /* An address the publisher left empty. Saying so is the honest
+         output; a blank line reads as a bug and a silent skip hides a real
+         difference between editions. */
+      html += '<span class="bible-v bible-v-empty" id="bv' + n + '">' +
+        '<span class="bible-num" aria-hidden="true">' + n + '</span>' +
+        '<span class="bible-empty-note">not in this edition</span> </span>';
+      return;
+    }
+    /* Tappable, but not announced as a control. A role and a label on every
+       verse would put "button" between the reader and every sentence of
+       Scripture; the number is already hidden for the same reason. */
+    html += '<span class="bible-v' + (focused ? ' bible-v-focus' : '') + '" id="bv' + n + '"' +
+      ' tabindex="0" onclick="openBibleVerseActions(' + n + ')"' +
+      ' onkeydown="if(event.key===&quot;Enter&quot;){event.preventDefault();openBibleVerseActions(' + n + ');}">' +
+      '<span class="bible-num" aria-hidden="true">' + n + '</span>' +
+      '<span class="bible-vt">' + escapeHtml(text) + '</span> </span>';
+  });
+  html += '</div>';
+
+  html +=
+    '<div class="bible-nav">' +
+      bibleNavButton(-1, 'Previous') +
+      bibleNavButton(1, 'Next') +
+    '</div>';
+
+  host.innerHTML = html;
+  if(bibleFocus){
+    const el = document.getElementById('bv' + bibleFocus.from);
+    if(el && typeof el.scrollIntoView === 'function'){
+      try{ el.scrollIntoView({ block: 'center', behavior: 'auto' }); }catch(e){}
+    }
+  }
+}
+
+function bibleNavButton(dir, label){
+  const to = bibleStep(translation, bibleBookCode, bibleChapter, dir);
+  if(!to) return '<span class="bible-nav-end" aria-hidden="true"></span>';
+  return '<button class="bible-nav-btn" onclick="bibleStepTo(' + dir + ')">' +
+    '<span class="bible-nav-label">' + escapeHtml(label) + '</span>' +
+    '<span class="bible-nav-ref" lang="' + escapeAttr(activeTranslation().lang) + '">' +
+      escapeHtml(bibleRefLabel(translation, to.c, to.ch)) + '</span>' +
+  '</button>';
+}
+
+/* A code is shown only when no edition in hand can name the book. */
+function bookNameFallback(code){
+  const eds = Object.keys(TRANSLATIONS);
+  for(let i = 0; i < eds.length; i++){
+    const meta = bibleBookMeta(eds[i], code);
+    if(meta) return meta.n;
+  }
+  return code;
+}
+
+function retryBibleBook(){
+  bibleLoadFailed = false;
+  renderBibleReader();
+  loadBibleBook(translation, bibleBookCode)
+    .then(function(){ renderBibleReader(); rememberBibleLast(bibleBookCode, bibleChapter); })
+    .catch(function(){ bibleLoadFailed = true; renderBibleReader(); });
+}
+
+/* ---------- go to passage ---------- */
+function openBibleJump(){
+  const input = document.getElementById('bibleJumpInput');
+  if(input) input.value = '';
+  setBibleJumpError('');
+  pushOverlayHistory();
+  openOverlay('bibleJumpOverlay');
+  if(input && typeof input.focus === 'function') input.focus();
+}
+function closeBibleJump(){ closeOverlay('bibleJumpOverlay'); releaseOverlayHistory(); }
+function setBibleJumpError(msg){
+  const el = document.getElementById('bibleJumpError');
+  if(el) el.textContent = msg || '';
+}
+function submitBibleJump(){
+  const input = document.getElementById('bibleJumpInput');
+  const parsed = parseBibleRef(translation, input ? input.value : '');
+  if(!parsed){
+    setBibleJumpError('That reference does not match a book in ' + activeTranslation().title + '.');
+    return;
+  }
+  closeBibleJump();
+  openBibleAt(parsed.c, parsed.ch, parsed.from, parsed.to);
+}
+
+/* ---------- the reader, and the rest of the app ----------
+   Everything below joins the Bible to surfaces that already exist. None of
+   it duplicates them: Saved stays one collection, Share stays one function,
+   and a canonical id stays the only thing anybody stores. */
+
+/* Repaint whatever Bible surface is open after the edition changes. The
+   location is kept; only the words and the book names change. */
+function refreshBibleForEdition(){
+  const homeAbbr = document.getElementById('bibleHomeAbbr');
+  if(homeAbbr) homeAbbr.textContent = activeTranslation().abbr;
+  const readerAbbr = document.getElementById('bibleReaderAbbr');
+  if(readerAbbr) readerAbbr.textContent = activeTranslation().abbr;
+  if(!isOverlayOpen('bibleOverlay') && !isOverlayOpen('bibleReaderOverlay') &&
+     !isOverlayOpen('bibleChaptersOverlay')) return;
+  loadBibleIndex(translation).then(function(){
+    renderBibleHome();
+    renderBibleChapters();
+    if(bibleBookCode && bibleHasBook(translation, bibleBookCode)){
+      loadBibleBook(translation, bibleBookCode).then(renderBibleReader).catch(renderBibleReader);
+    } else {
+      renderBibleReader();
+    }
+  }).catch(function(){ renderBibleReader(); });
+}
+
+function isOverlayOpen(id){
+  const el = document.getElementById(id);
+  return !!(el && el.classList.contains('open'));
+}
+
+/* ---------- saving a verse the curated set never heard of ----------
+   Same collection, same record shape, same key. A Bible verse and a daily
+   passage are both a canonical LOCATION, so a second bookmarks system would
+   be a second source of truth about the same thing. */
+function bibleVerseId(code, chapter, verse){ return code + '.' + chapter + '.' + verse; }
+
+function bibleSavedRef(code, chapter, verse){
+  return bibleBookName(translation, code) + ' ' + chapter + ':' + verse;
+}
+
+function toggleSavedLocation(id, ref){
+  if(!/^[A-Z0-9]{3}\.\d+\.\d+$/.test(String(id))) return;
+  const now = new Date().toISOString();
+  if(isSaved(id)){
+    savedVerses = savedVerses.filter(function(s){ return s.passage !== id; });
+    if(persistSaved()) toast('Removed from saved', 'neutral');
+  } else {
+    savedVerses.push({ id: savedIdFor(id), passage: id, ref: ref,
+                       savedAt: now, updatedAt: now });
+    if(persistSaved()) toast('Saved', 'success');
+  }
+  renderAll();
+  renderBibleReader();
+}
+
+/* A saved location resolved to words. The curated catalogue answers first
+   because it is already in memory and offline; the Bible corpus answers for
+   everything else. Neither stores text in the record. */
+function savedLocationText(id){
+  const curated = passageById(id);
+  if(curated) return inTranslation(curated).text;
+  const m = String(id).match(/^([A-Z0-9]{3})\.(\d+)\.(\d+)$/);
+  if(!m) return null;
+  const book = cachedBibleBook(translation, m[1]);
+  if(!book) return null;
+  const ch = book.ch[Number(m[2]) - 1];
+  if(!ch) return null;
+  const t = ch[Number(m[3]) - 1];
+  return t || null;
+}
+
+/* ---------- one verse, tapped ----------
+   Save and Share, and nothing else. Highlight colours, tags, folders and
+   per-verse journals are all things a reading app grows when nobody stops
+   it, and each one makes the next verse harder to simply read. */
+let bibleActionVerse = null;
+
+function openBibleVerseActions(verse){
+  const code = bibleBookCode, ch = bibleChapter;
+  const book = cachedBibleBook(translation, code);
+  if(!book) return;
+  const text = book.ch[ch - 1] && book.ch[ch - 1][verse - 1];
+  if(!text) return;
+  bibleActionVerse = { code: code, ch: ch, v: verse, text: text };
+  const title = document.getElementById('bibleActionRef');
+  if(title) title.textContent = bibleSavedRef(code, ch, verse) + ' · ' + activeTranslation().abbr;
+  const quote = document.getElementById('bibleActionQuote');
+  if(quote){
+    quote.textContent = text;
+    quote.setAttribute('lang', activeTranslation().lang);
+  }
+  const saveBtn = document.getElementById('bibleActionSave');
+  if(saveBtn){
+    const id = bibleVerseId(code, ch, verse);
+    saveBtn.setAttribute('aria-pressed', isSaved(id) ? 'true' : 'false');
+    saveBtn.textContent = isSaved(id) ? 'Saved' : 'Save';
+  }
+  pushOverlayHistory();
+  openOverlay('bibleActionOverlay');
+}
+function closeBibleVerseActions(){
+  closeOverlay('bibleActionOverlay');
+  releaseOverlayHistory();
+}
+function bibleActionSave(){
+  if(!bibleActionVerse) return;
+  const a = bibleActionVerse;
+  toggleSavedLocation(bibleVerseId(a.code, a.ch, a.v), bibleSavedRef(a.code, a.ch, a.v));
+  closeBibleVerseActions();
+}
+/* The words of the edition on screen, the reference in that edition's own
+   book name, and that edition's abbreviation. The three always travel
+   together, so a Spanish verse can never go out labelled WEB. */
+function bibleShareText(a){
+  return '“' + a.text + '”\n— ' +
+    bibleSavedRef(a.code, a.ch, a.v) + ' (' + activeTranslation().abbr + ')';
+}
+function bibleActionShare(){
+  if(!bibleActionVerse) return;
+  const payload = bibleShareText(bibleActionVerse);
+  closeBibleVerseActions();
+  shareOrCopy(payload);
+}
+function bibleActionCopy(){
+  if(!bibleActionVerse) return;
+  const payload = bibleShareText(bibleActionVerse);
+  closeBibleVerseActions();
+  copyText(payload);
 }
 
 /* =========================================================

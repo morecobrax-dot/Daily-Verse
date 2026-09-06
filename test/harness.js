@@ -341,6 +341,8 @@ const BRIDGE = [
   'appearance', 'APPEARANCES', 'LIGHT_THEME_COLOR',
   'TEXT_SIZES', 'SAVED_VIEWS', 'FOCUS_STRENGTHS', 'RAIL_DAYS',
   'DOW', 'MONTHS', 'currentTab',
+  'BIBLE_BASE', 'BIBLE_BOOK_CACHE', 'bibleCache',
+  'bibleLoadFailed', 'bibleBookCode', 'bibleChapter', 'bibleFocus', 'bibleActionVerse',
   'TOAST_MS', 'MAX_TOASTS', 'TOAST_VARIANTS',
   'OVERLAY_Z_BASE', '_openSheetStack', '_sheetOpeners', '_lockDepth', '_lockedScrollY',
   '_historyDepth', '_pendingSelfPops', '_confirmResolve'

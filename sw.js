@@ -10,13 +10,18 @@
  * config:sync. That bumps the version, the cache name changes, and phones
  * pick up the new code.
  *
- * This only ever caches application CODE. Everything a person creates lives
+ * Bible book files under data/bible/ are cache-FIRST: within a release they
+ * never change, so once a book has been read it is served from the cache and
+ * works offline. They ride the same versioned cache as the shell, so a new
+ * release cannot serve last release's corpus alongside this release's code.
+ *
+ * This only ever caches application CODE and publisher Scripture. Everything a person creates lives
  * in localStorage under the app's own namespace and is never touched here —
  * clearing these caches cannot lose a single record.
  */
 
 /* APP-CACHE-BEGIN */
-const CACHE_NAME = 'daily-verse-v1.7.2';
+const CACHE_NAME = 'daily-verse-v1.8.0';
 /* APP-CACHE-END */
 
 const ASSETS = [
@@ -59,10 +64,31 @@ function cachePrefix(){
 
 /* Network-first for the shell, so a freshly deployed update is picked up as
  * soon as there is a connection, with the cache as the offline fallback. */
+function isBibleData(url){ return url.pathname.indexOf('/data/bible/') !== -1; }
+
 self.addEventListener('fetch', event => {
   const req = event.request;
   if(req.method !== 'GET') return;
   if(new URL(req.url).origin !== location.origin) return;
+  const url = new URL(req.url);
+
+  /* Scripture is immutable within a release, so the cache is the fast path
+     and the network only fills gaps. Crucially this never falls back to
+     index.html: answering a request for a book with a page of HTML would
+     surface as a parse error rather than as "you do not have this offline",
+     and the reader can only tell the truth if the failure is a real one. */
+  if(isBibleData(url)){
+    event.respondWith(
+      caches.match(req).then(hit => hit || fetch(req).then(res => {
+        if(res && res.ok){
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(req, copy)).catch(() => {});
+        }
+        return res;
+      }))
+    );
+    return;
+  }
 
   event.respondWith(
     fetch(req)

@@ -1672,8 +1672,17 @@ function testDays(){
   const bareCss = stripComments(css());
   T('the rail is positioned by assigning scrollLeft',
     /rail\.scrollLeft = left;/.test(bareJs));
+  /* Scoped to the rail's own code. The ban was written to stop the RAIL
+     animating to the chosen day, but it was spelled as "scrollIntoView
+     appears nowhere", which also forbids placing a linked verse in the
+     Bible reader - a different surface, a one-shot jump, and explicitly
+     an unanimated one. Smooth scrolling stays banned everywhere. */
+  const railFns = bareJs.slice(bareJs.indexOf('function centreSelectedDay('),
+                               bareJs.indexOf('function renderDayRail('));
   T('no animated scroll request is used to place it',
-    !/scrollIntoView/.test(bareJs) && !/behavior:\s*'smooth'/.test(bareJs));
+    railFns.length > 100 && railFns.indexOf('scrollIntoView') === -1 &&
+    bareJs.indexOf(String.raw`behavior: 'smooth'`) === -1 &&
+    bareJs.indexOf(String.raw`behavior:'smooth'`) === -1);
   T('and the rail does not declare smooth scrolling in CSS either',
     !/\.day-rail\{[^}]*scroll-behavior:\s*smooth/.test(bareCss));
 
@@ -1742,8 +1751,23 @@ function testPersonalisation(){
     stripComments(selector + scorer).indexOf('noteDraft') === -1);
 
   sub('nothing leaves the device');
-  T('there is no network call in the app at all',
-    !/\bfetch\s*\(/.test(stripComments(src)) && !/XMLHttpRequest/.test(src));
+  /* This said "no fetch anywhere", which was a proxy for the thing that
+     actually matters: nothing about a reader reaches another machine. The
+     Bible reader fetches its own static book files out of this app's own
+     directory, so the proxy broke while the property it stood for held
+     completely. The property is now asserted directly, and more strictly
+     than the proxy ever did. */
+  const bareSrc = stripComments(src);
+  T('no XMLHttpRequest anywhere', src.indexOf('XMLHttpRequest') === -1);
+  T('no beacon, socket or remote image loader',
+    ['sendBeacon', 'new WebSocket', 'new Image('].every(x => bareSrc.indexOf(x) === -1));
+  T('the only data path is a relative one inside this app',
+    bareSrc.indexOf(String.raw`const BIBLE_BASE = 'data/bible/';`) !== -1);
+  const calls = bareSrc.split('fetch(').slice(1).map(c => c.slice(0, c.indexOf(')')));
+  T('every fetch names that path and nothing else', calls.length > 0 &&
+    calls.every(c => c.indexOf('url') !== -1), calls.join(' | '));
+  T('no absolute or protocol-relative URL is fetched anywhere',
+    ['fetch("http', "fetch('http", 'fetch(`http', 'fetch("//', "fetch('//"].every(x => bareSrc.indexOf(x) === -1));
   T('preferences are stored under the app\'s own ui namespace',
     ['focusThemes', 'focusStrength', 'onboarded'].every(k => {
       const app = H.loadApp();
@@ -3835,6 +3859,272 @@ function testTranslations(){
     corpus.shippedEditions().join() + ' vs ' + ids.join());
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 38 — THE FULL BIBLE, AND THE READER OVER IT
+
+   The curated 415 passages had their own verification and it proved nothing
+   about the other thirty thousand verses. This is the full corpus's own
+   check: every file re-derived from the pinned archives, every book the
+   publisher shipped and no book they did not, and a reader that can move
+   through it without ever showing the wrong sentence at the right address.
+
+   The cache is filled from the shipped files on disk, so these assertions
+   run against exactly the bytes a phone would fetch.
+   --------------------------------------------------------- */
+function testBibleReader(){
+  section('CONTRACT 38 — the full Bible, and the reader over it');
+  const fsx = require('fs');
+  const pathx = require('path');
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx;
+  const src = js();
+  const bible = require('../scripts/bible.js');
+  const corpus = require('../scripts/corpus.js');
+  const lock = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible.lock.json'), 'utf8'));
+  const dir = pathx.join(H.ROOT, 'data', 'bible');
+
+  const editions = Object.keys(lock.editions);
+  const readJson = (ed, name) => JSON.parse(fsx.readFileSync(pathx.join(dir, ed, name), 'utf8'));
+
+  /* Fill the reader's cache from the shipped files. No fetch exists in the
+     harness, and stubbing one would test the stub. */
+  editions.forEach(ed => {
+    c.bibleCache.index[ed] = readJson(ed, 'index.json');
+  });
+  const loadBook = (ed, code) => {
+    const data = readJson(ed, code + '.json');
+    c.bibleCache.books[ed + '/' + code] = data;
+    return data;
+  };
+
+  sub('every shipped byte came from a pinned publisher archive');
+  T('the corpus is built by a tool, not by hand',
+    fsx.existsSync(pathx.join(H.ROOT, 'scripts', 'bible.js')));
+  T('every edition records the archives it was built from',
+    editions.every(ed => lock.builtFrom[ed] &&
+      Object.keys(lock.builtFrom[ed]).length > 0), editions.join(', '));
+  T('and every one of those archives is pinned by digest',
+    editions.every(ed => Object.keys(lock.builtFrom[ed])
+      .every(k => /^[0-9a-f]{64}$/.test(lock.builtFrom[ed][k].sha256))));
+  T('every generated file is pinned by digest too',
+    editions.every(ed => Object.keys(lock.editions[ed])
+      .every(f => /^[0-9a-f]{64}$/.test(lock.editions[ed][f].sha256))));
+
+  /* The shipped bytes, hashed. bible:verify re-derives them from the
+     archives; this proves the files on disk are those bytes. */
+  const crypto = require('crypto');
+  let mismatched = [], count = 0;
+  editions.forEach(ed => {
+    Object.keys(lock.editions[ed]).forEach(f => {
+      count++;
+      const p = pathx.join(dir, ed, f);
+      if(!fsx.existsSync(p)){ mismatched.push(ed + '/' + f + ' missing'); return; }
+      const h = crypto.createHash('sha256').update(fsx.readFileSync(p, 'utf8')).digest('hex');
+      if(h !== lock.editions[ed][f].sha256) mismatched.push(ed + '/' + f);
+    });
+  });
+  T('every shipped file matches its digest', mismatched.length === 0 && count > 200,
+    mismatched.slice(0, 3).join(', ') || String(count) + ' files');
+
+  sub('each edition holds what its publisher published, and nothing else');
+  /* The failure this prevents is a fake common canon: forcing every edition
+     into one book list, or quietly adding books to the one that has fewer. */
+  const shape = {};
+  editions.forEach(ed => {
+    const idx = c.bibleCache.index[ed];
+    shape[ed] = idx.books.length;
+    T(ed + ' lists its books in the publisher order',
+      idx.books.length > 0 && idx.books.every(b => /^[A-Z0-9]{3}$/.test(b.c) && b.ch > 0 && b.n));
+    T(ed + ' groups every book it has', idx.books.every(b => ['ot', 'nt', 'dc'].indexOf(b.g) !== -1));
+    /* Chapter counts are declared; a book file that disagreed would break
+       every chapter picker and every next/previous. */
+    const sample = idx.books.filter((b, i) => i % 7 === 0);
+    const wrong = sample.filter(b => loadBook(ed, b.c).ch.length !== b.ch);
+    T(ed + ' declares the chapter count each book actually has',
+      wrong.length === 0, wrong.map(b => b.c).join(', '));
+  });
+  T('WEB Classic ships the 81 books it publishes', shape['eng-web'] === 81, String(shape['eng-web']));
+  T('Reina Valera 1909 ships 66, and is not padded to match',
+    shape['spaRV1909'] === 66, String(shape['spaRV1909']));
+  T('a deuterocanonical book is present in WEB and absent from RV1909',
+    c.bibleHasBook('eng-web', 'TOB') && !c.bibleHasBook('spaRV1909', 'TOB'));
+
+  sub('no chapter is missing, duplicated or out of sequence');
+  const seqBad = [];
+  editions.forEach(ed => {
+    c.bibleCache.index[ed].books.slice(0, 12).forEach(b => {
+      const book = loadBook(ed, b.c);
+      if(book.ch.some(ch => !Array.isArray(ch) || ch.length === 0)) seqBad.push(ed + ' ' + b.c + ' empty chapter');
+      if(book.c !== b.c) seqBad.push(ed + ' ' + b.c + ' code mismatch');
+    });
+  });
+  T('every chapter is a non-empty list of verses', seqBad.length === 0, seqBad.slice(0, 3).join(', '));
+
+  sub('moving through a book, and out of it');
+  const step = (ed, code, ch, d) => c.bibleStep(ed, code, ch, d);
+  T('the next chapter is the next chapter',
+    JSON.stringify(step('eng-web', 'JHN', 3, 1)) === JSON.stringify({ c: 'JHN', ch: 4 }));
+  T('the end of a book continues into the next one',
+    JSON.stringify(step('eng-web', 'GEN', 50, 1)) === JSON.stringify({ c: 'EXO', ch: 1 }));
+  T('and going back crosses the same boundary',
+    JSON.stringify(step('eng-web', 'EXO', 1, -1)) === JSON.stringify({ c: 'GEN', ch: 50 }));
+  /* The failure this prevents: wrapping. Reaching the end of Revelation and
+     landing in Genesis reads as a bug and loses the reader's place. */
+  T('the last chapter of the last book leads nowhere',
+    step('eng-web', 'REV', 22, 1) === null);
+  T('and the first chapter of the first book has nothing before it',
+    step('eng-web', 'GEN', 1, -1) === null);
+  T('stepping is done in THIS edition order, not a fixed one',
+    step('spaRV1909', 'MAL', 4, 1).c === 'MAT');
+
+  sub('a reference resolves to one place or to none');
+  const P = (ed, s) => c.parseBibleRef(ed, s);
+  T('book, chapter and verse', JSON.stringify(P('eng-web', 'John 3:16')) ===
+    JSON.stringify({ c: 'JHN', ch: 3, from: 16, to: 16 }));
+  T('a range keeps both ends', JSON.stringify(P('eng-web', 'John 3:16-18')) ===
+    JSON.stringify({ c: 'JHN', ch: 3, from: 16, to: 18 }));
+  T('a numbered book', P('eng-web', '1 John 2').c === '1JN');
+  T('an abbreviation', P('eng-web', 'Rom 8:1').c === 'ROM');
+  T('a bare book name opens its first chapter',
+    P('eng-web', 'Genesis').c === 'GEN' && P('eng-web', 'Genesis').ch === 1);
+  /* WEB names the book "Psalms" and also ships "Psalm 151". The prefix
+     matched both, so this used to resolve to nothing at all. */
+  T('Psalm 23 resolves even though Psalm 151 also starts with Psalm',
+    P('eng-web', 'Psalm 23').c === 'PSA' && P('eng-web', 'Psalm 23').ch === 23);
+  T('the publisher book names of the edition in hand are what match',
+    P('spaRV1909', 'Salmos 23').c === 'PSA' && P('eng-web', 'Salmos 23') === null);
+  T('an ambiguous prefix resolves to nothing rather than to a guess',
+    P('eng-web', 'Jo') === null);
+  /* When a prefix does name several books, the shortest name is the one it
+     is a name FOR. No book list shipped here contains two equal-shortest
+     candidates, so the refusal branch below it is defensive rather than
+     reachable - but the rule itself is exercised every time somebody types
+     Psalm, and the deuterocanonical book it competes with stays reachable
+     by its own full name. */
+  T('the shortest matching name wins, and the longer book is still reachable',
+    P('eng-web', 'Psalm 23').c === 'PSA' &&
+    c.bibleMatchBook('eng-web', 'Psalm 151').c === 'PS2');
+  T('a chapter the book does not have is refused', P('eng-web', 'John 99') === null);
+  T('so is a book nobody publishes', P('eng-web', 'Hezekiah 1') === null);
+  T('and so is nonsense', P('eng-web', 'nonsense') === null && P('eng-web', '') === null);
+
+  sub('choosing an edition changes the words, never the place');
+  const r = H.loadApp({ sharedStorage: new Map() });
+  editions.forEach(ed => { r.ctx.bibleCache.index[ed] = readJson(ed, 'index.json'); });
+  ['eng-web', 'spaRV1909'].forEach(ed => {
+    r.ctx.bibleCache.books[ed + '/JHN'] = readJson(ed, 'JHN.json');
+  });
+  const enJohn = r.ctx.bibleCache.books['eng-web/JHN'].ch[2];
+  const esJohn = r.ctx.bibleCache.books['spaRV1909/JHN'].ch[2];
+  T('the same chapter exists in both editions', enJohn.length > 30 && esJohn.length > 30);
+  T('and holds different words', enJohn[15] !== esJohn[15]);
+  T('the English reference uses the English name',
+    r.ctx.bibleRefLabel('eng-web', 'JHN', 3) === 'John 3');
+  T('the Spanish reference uses the publisher Spanish name',
+    r.ctx.bibleRefLabel('spaRV1909', 'JHN', 3) === 'Juan 3');
+  /* A book one edition does not publish is reported, never remapped. */
+  T('a book missing from an edition is simply missing',
+    !r.ctx.bibleHasBook('spaRV1909', 'TOB'));
+  T('and the reader says so rather than substituting another book',
+    /Not in this translation/.test(src) &&
+    /isn&rsquo;t part of/.test(src));
+
+  sub('where the reader was, and nothing more');
+  const k = H.loadApp({ sharedStorage: new Map() });
+  T('nothing is stored until somebody reads something',
+    k.storage.getItem('daily-verse.ui.bibleLast') === null);
+  k.ctx.rememberBibleLast('JHN', 4);
+  const stored = JSON.parse(k.storage.getItem('daily-verse.ui.bibleLast'));
+  T('a place is a book and a chapter', stored.c === 'JHN' && stored.ch === 4);
+  T('and carries no text, no time and no count',
+    Object.keys(stored).sort().join() === 'c,ch', Object.keys(stored).join());
+  const k2 = H.loadApp({ sharedStorage: k.storage.__map || new Map() });
+  T('a malformed record is ignored rather than trusted', (() => {
+    const j = new Map(); j.set('daily-verse.ui.bibleLast', '{"c":123}');
+    return H.loadApp({ sharedStorage: j }).ctx.readBibleLast() === null;
+  })());
+
+  sub('saving a verse the curated catalogue never held');
+  const s2 = H.loadApp({ sharedStorage: new Map() });
+  T('a Bible location is not in the curated set', s2.ctx.passageById('1CH.26.18') === null);
+  s2.ctx.toggleSavedLocation('1CH.26.18', '1 Chronicles 26:18');
+  const rec = JSON.parse(s2.storage.getItem('daily-verse.data.saved'))[0];
+  T('it saves as a canonical location', rec.passage === '1CH.26.18');
+  T('and stores no Scripture text in the record',
+    Object.keys(rec).every(f => typeof rec[f] !== 'string' || rec[f].length < 40),
+    Object.keys(rec).join(', '));
+  T('saving twice removes it rather than duplicating it', (() => {
+    s2.ctx.toggleSavedLocation('1CH.26.18', '1 Chronicles 26:18');
+    return JSON.parse(s2.storage.getItem('daily-verse.data.saved')).length === 0;
+  })());
+  T('a location that is not one is refused', (() => {
+    s2.ctx.toggleSavedLocation('not-a-location', 'x');
+    return JSON.parse(s2.storage.getItem('daily-verse.data.saved')).length === 0;
+  })());
+
+  sub('a share from the reader can never mislabel itself');
+  const sh = H.loadApp({ sharedStorage: new Map() });
+  editions.forEach(ed => { sh.ctx.bibleCache.index[ed] = readJson(ed, 'index.json'); });
+  sh.ctx.bibleCache.books['eng-web/JHN'] = readJson('eng-web', 'JHN.json');
+  sh.ctx.bibleCache.books['spaRV1909/JHN'] = readJson('spaRV1909', 'JHN.json');
+  const enText = sh.ctx.bibleCache.books['eng-web/JHN'].ch[2][15];
+  const esText = sh.ctx.bibleCache.books['spaRV1909/JHN'].ch[2][15];
+  const enShare = sh.ctx.bibleShareText({ code: 'JHN', ch: 3, v: 16, text: enText });
+  T('English text goes out labelled WEB', /WEB/.test(enShare) && enShare.indexOf(enText) !== -1);
+  sh.ctx.setTranslation('spaRV1909');
+  const esShare = sh.ctx.bibleShareText({ code: 'JHN', ch: 3, v: 16, text: esText });
+  T('Spanish text goes out labelled RV1909, with a Spanish reference',
+    /RV1909/.test(esShare) && /Juan 3:16/.test(esShare) && !/WEB/.test(esShare), esShare.slice(0, 48));
+
+  sub('the daily experience is not made heavier by any of this');
+  /* The failure this prevents: a reader who opened the app for today's verse
+     paying the parse cost of three complete Bibles. */
+  const boot = H.loadApp({ sharedStorage: new Map() });
+  T('no Bible book is loaded at boot',
+    Object.keys(boot.ctx.bibleCache.books).length === 0 &&
+    Object.keys(boot.ctx.bibleCache.index).length === 0);
+  T('the corpus is fetched, not inlined',
+    src.indexOf('data/bible/') !== -1 && !/"c":"GEN","n":"Genesis"/.test(src));
+  T('index.html carries no chapter array of its own', !/"ch":\[\[/.test(src));
+  T('and the reader keeps only a few books in memory',
+    c.BIBLE_BOOK_CACHE >= 1 && c.BIBLE_BOOK_CACHE <= 5, String(c.BIBLE_BOOK_CACHE));
+
+  sub('the curated Daily corpus is untouched by the reader existing');
+  const S = require('../scripts/scripture.js');
+  T('415 curated passages', c.SCRIPTURE.length === 415, String(c.SCRIPTURE.length));
+  T('378 of them daily', c.SCRIPTURE.filter(p => p.daily).length === 378);
+  T('the WEB dataset hash has not moved',
+    S.datasetHash(c.SCRIPTURE) === 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916',
+    S.datasetHash(c.SCRIPTURE));
+  T('nor has the daily hash',
+    S.datasetHash(c.SCRIPTURE.filter(p => p.daily)) ===
+      '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41');
+  /* The reader must not have turned the whole Bible into daily candidates. */
+  T('the Bible did not become 31,000 daily readings',
+    c.eligiblePassages().length < 400, String(c.eligiblePassages().length));
+
+  sub('the offline promise is one the service worker actually keeps');
+  const sw = H.readSW();
+  T('Bible data is served cache-first', /isBibleData\(url\)/.test(sw) &&
+    /caches\.match\(req\)\.then\(hit => hit \|\| fetch\(req\)/.test(sw));
+  /* Answering a request for a book with the app shell would surface as a
+     parse error instead of an honest "you do not have this offline". */
+  T('and a missing book never falls back to the page itself',
+    sw.indexOf('isBibleData') < sw.indexOf("caches.match('./index.html')"));
+  /* The defect this prevents, found by pulling the plug: a book never read
+     online sat on "Loading..." for ever. It was not loading. Books are kept
+     as they are read, so the honest answer is that this one is not here
+     yet, with a way to try again. */
+  T('a book that cannot be fetched says so instead of loading for ever',
+    ['Not available offline', 'has not been downloaded yet', 'bibleLoadFailed = true'].every(x => src.indexOf(x) !== -1));
+  T('and offers a retry rather than a dead end',
+    src.indexOf('function retryBibleBook(') !== -1 && src.indexOf('Try again') !== -1);
+  T('the flag is cleared on every fresh open, so it cannot stick',
+    src.indexOf('bibleLoadFailed = false;') !== -1);
+  T('book files ride the versioned cache, so releases cannot mix corpora',
+    /caches\.open\(CACHE_NAME\)[\s\S]{0,120}c\.put\(req, copy\)/.test(sw));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -3844,5 +4134,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader
 };

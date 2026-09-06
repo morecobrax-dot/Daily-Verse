@@ -80,7 +80,35 @@
           "entries": 8
         }
       }
+    },
+    "engbsb": {
+      "id": "engbsb",
+      "language": "English",
+      "lang": "en",
+      "held": "under audit - rights, canon and versification not yet verified",
+      "title": "English Berean Standard Bible",
+      "abbr": "BSB",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "English",
+      "iso": "eng",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/engbsb_vpl.zip",
+          "bytes": 4324626,
+          "sha256": "51d4d53b37d3ba2147b8eeb0697eb36d339d08acdda97baec8c4ed606faf2361",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/engbsb_usfx.zip",
+          "bytes": 3081348,
+          "sha256": "7ec2e485d4127fa6b6f49a02dc1f1ab8faf7aca94294a0501cd338a66258577e",
+          "entries": 8
+        }
+      }
     }
   },
-  "syncedAt": "2026-09-05"
+  "syncedAt": "2026-09-06"
 }

@@ -69,9 +69,19 @@ const RULES = [
   { label: 'fitness system name',       re: /\b(muscle recovery|exercise registry|shadow trainer|readiness score|capability model|movement library|training block|progression engine)\b/gi, flags: '' }
 ];
 
+/* The derived Bible corpus is publisher text, not code this project wrote,
+   and it is where a scan like this stops being useful: the fitness
+   vocabulary pattern matched "hamstring" in Joshua 11:6. What the scan
+   exists to catch is residue of the starter in OUR source, so it reads our
+   source. The corpus has its own verification in scripts/bible.js, which
+   re-derives every byte from the pinned archives. */
+const SKIP_TREES = ['data/bible'];
+
 function walk(dir, out){
   fs.readdirSync(dir, { withFileTypes: true }).forEach(e => {
     if(SKIP_DIRS.has(e.name)) return;
+    const relDir = path.relative(ROOT, path.join(dir, e.name)).split(path.sep).join('/');
+    if(SKIP_TREES.indexOf(relDir) !== -1) return;
     const full = path.join(dir, e.name);
     if(e.isDirectory()) walk(full, out);
     else out.push(full);
