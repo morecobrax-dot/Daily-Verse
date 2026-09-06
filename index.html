@@ -2096,6 +2096,18 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v1-10-1',
+    version: '1.10.1',
+    title: 'Short psalms count too',
+    date: '2026-09-06',
+    summary: 'A chapter that fits on one screen can now be marked as read.',
+    newFeatures: [],
+    improvements: [],
+    fixes: [
+      'A chapter shorter than the screen &mdash; Psalm 117, for instance &mdash; was never marked as read. It has no end to scroll to, and the check that should have noticed it had stopped running after the first chapter of a session'
+    ]
+  },
+  {
     id: 'v1-10-0',
     version: '1.10.0',
     title: 'Marks in the margin',
@@ -8937,10 +8949,17 @@ const READ_END_SLACK_PX = 24;
 function watchChapterEnd(){
   const scroller = document.getElementById('bibleReaderBody');
   if(!scroller) return;
-  if(bibleScrollWatch && bibleScrollWatch.el === scroller) return;   // already watching
-  if(bibleScrollWatch){
-    try{ bibleScrollWatch.el.removeEventListener('scroll', bibleScrollWatch.fn); }catch(e){}
+  if(!bibleScrollWatch || bibleScrollWatch.el !== scroller){
+    if(bibleScrollWatch){
+      try{ bibleScrollWatch.el.removeEventListener('scroll', bibleScrollWatch.fn); }catch(e){}
+    }
+    attachChapterScrollWatch(scroller);
   }
+  /* Every chapter is asked, because every chapter has its own length. */
+  if(scroller.scrollHeight <= scroller.clientHeight + READ_END_SLACK_PX) maybeMarkRead();
+}
+
+function attachChapterScrollWatch(scroller){
   const fn = function(){
     if(scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - READ_END_SLACK_PX){
       maybeMarkRead();
@@ -8948,9 +8967,6 @@ function watchChapterEnd(){
   };
   scroller.addEventListener('scroll', fn, { passive: true });
   bibleScrollWatch = { el: scroller, fn: fn };
-  /* A chapter shorter than the screen has no end to scroll to: it is all
-     already in front of the reader, so the dwell alone decides. */
-  if(scroller.scrollHeight <= scroller.clientHeight + READ_END_SLACK_PX) maybeMarkRead();
 }
 
 function beginReadSession(code, chapter, entryVerse){

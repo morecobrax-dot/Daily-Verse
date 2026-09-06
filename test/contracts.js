@@ -4458,6 +4458,21 @@ function testReaderQuality(){
   const bare = stripComments(js());
   T('the end-of-chapter check reads geometry and writes nothing',
     /scroller\.scrollTop \+ scroller\.clientHeight >= scroller\.scrollHeight/.test(bare));
+  /* Found on production: the scroller element outlives every chapter, so
+     "already watching" was true from the second chapter onward and the early
+     return skipped the geometry check with it. A psalm shorter than the
+     screen has no end to scroll to, so that check is the only thing that can
+     ever mark it - and it had stopped running. Attaching the listener is
+     what must not repeat; measuring THIS chapter has to happen every time. */
+  T('a chapter shorter than the screen is still asked whether it was read', (() => {
+    const fn = bare.slice(bare.indexOf('function watchChapterEnd()'),
+                          bare.indexOf('function attachChapterScrollWatch('));
+    const guard = fn.indexOf('attachChapterScrollWatch(scroller);');
+    const check = fn.indexOf('scroller.clientHeight + READ_END_SLACK_PX');
+    /* the measurement must come AFTER the attach branch closes, not inside it */
+    return guard !== -1 && check !== -1 && check > guard &&
+           fn.slice(guard, check).indexOf('}') !== -1;
+  })());
   T('it is one passive listener for the whole chapter, not one per verse',
     /addEventListener\('scroll', fn, \{ passive: true \}\)/.test(bare) &&
     (bare.match(/addEventListener\('scroll'/g) || []).length <= 2);
