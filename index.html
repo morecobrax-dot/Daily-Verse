@@ -1703,6 +1703,22 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v1-7-2',
+    version: '1.7.2',
+    title: 'Release dates, on the right day',
+    date: '2026-09-05',
+    summary: 'This page showed every release one day early for anyone west of the UK. ' +
+             'It now shows the day each one was actually released.',
+    newFeatures: [],
+    improvements: [],
+    fixes: [
+      'A date written as a calendar day is now read as one. It had been read as a moment ' +
+        'in UTC, which fell on the previous day for readers behind it, so a release dated ' +
+        '5 September appeared as 4 September in the Americas and 1 January appeared as ' +
+        '31 December of the year before'
+    ]
+  },
+  {
     id: 'v1-7-1',
     version: '1.7.1',
     title: 'A quieter Settings',
@@ -7494,10 +7510,30 @@ function escapeHtml(str){
 }
 function escapeAttr(str){ return escapeHtml(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
+/* Two different kinds of value arrive here and they do not mean the same
+   thing. A bare YYYY-MM-DD is a CIVIL DATE: it names that calendar day
+   everywhere, and the language is the wrong tool for reading one, because
+   it parses the date-only form as UTC MIDNIGHT. Passing such a string
+   straight to new Date() printed every release a day early for everyone
+   behind UTC -- the same failure dateFromKey() exists to avoid, and just as
+   invisible on a machine sitting on or east of the meridian. Anything
+   carrying a time is a real INSTANT and keeps its timezone behaviour,
+   because that is the whole point of an instant. */
 function formatDate(iso){
   if(!iso) return '—';
   try{
-    const d = new Date(iso);
+    const civil = typeof iso === 'string' && /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(iso);
+    let d;
+    if(civil){
+      const y = Number(civil[1]), m = Number(civil[2]) - 1, day = Number(civil[3]);
+      d = new Date(y, m, day);
+      d.setFullYear(y);            /* years under 100 would land in the 1900s */
+      /* 2026-02-30 rolls forward into a real date. The string form rejected
+         it, so this must too, rather than inventing a day nobody wrote. */
+      if(d.getMonth() !== m || d.getDate() !== day) return '—';
+    } else {
+      d = new Date(iso);
+    }
     if(isNaN(d.getTime())) return '—';
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }catch(e){ return '—'; }

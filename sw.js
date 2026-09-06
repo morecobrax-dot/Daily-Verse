@@ -16,7 +16,7 @@
  */
 
 /* APP-CACHE-BEGIN */
-const CACHE_NAME = 'daily-verse-v1.7.1';
+const CACHE_NAME = 'daily-verse-v1.7.2';
 /* APP-CACHE-END */
 
 const ASSETS = [

@@ -873,6 +873,95 @@ function testRelease(){
     c.APP_UPDATES.every(u => (u.newFeatures || []).length + (u.improvements || []).length +
                              (u.fixes || []).length > 0));
 
+  sub('a release date names the same calendar day everywhere');
+  /* The failure this prevents, which shipped in 1.7.1 and earlier: a bare
+     YYYY-MM-DD handed to new Date() is parsed as UTC MIDNIGHT, so a release
+     stored as 2026-09-05 rendered "Sep 4, 2026" for every reader behind UTC.
+     It was invisible to anyone testing on or east of the meridian, which is
+     the same way round as the day-key failure CONTRACT 21 guards. A civil
+     date names a calendar day; only an instant may move with the zone.
+     Behaviour is tested here, not implementation: the formatter is loaded
+     under seven real zones spanning UTC+14 to UTC-11. */
+  const ZONES = ['UTC', 'America/New_York', 'America/Los_Angeles', 'Europe/London',
+                 'Asia/Tokyo', 'Pacific/Kiritimati', 'Pacific/Midway'];
+  const CIVIL = ['2026-09-05', '2026-01-01', '2026-12-31', '2028-02-29',
+                 '2026-02-28', '2026-03-01', '2026-06-30', '2026-07-01'];
+  const INSTANT = '2026-09-05T03:42:00Z';
+  const TZ0 = process.env.TZ;
+  let seen;
+  try{
+    seen = ZONES.map(tz => {
+      process.env.TZ = tz;
+      const z = H.loadApp().ctx;
+      return {
+        tz: tz,
+        offset: new Date().getTimezoneOffset(),
+        civil: CIVIL.map(d => z.formatDate(d)),
+        /* what the old UTC-midnight parse produced, measured in this zone */
+        buggy: CIVIL.map(d => new Date(d).getDate()),
+        releases: z.APP_UPDATES.map(u => z.formatDate(u.date)),
+        instant: z.formatDate(INSTANT),
+        eveningKey: z.dayKey(new Date(2026, 8, 3, 23, 30)),
+        railLast: z.railDayKeys()[z.railDayKeys().length - 1],
+        todayKey: z.todayKey()
+      };
+    });
+  } finally {
+    /* A leaked TZ would silently re-time every contract after this one,
+       including the day-key ones. It is restored even if a load throws. */
+    if(TZ0 === undefined) delete process.env.TZ; else process.env.TZ = TZ0;
+  }
+  const holds = (out, ymd) => {
+    const want = String(Number(ymd.slice(8, 10)));
+    return new RegExp('(^|[^0-9])' + want + '([^0-9]|$)').test(out);
+  };
+
+  T('the harness really did move the clock', new Set(seen.map(z => z.offset)).size >= 5,
+    seen.map(z => z.tz + '=' + z.offset).join(', '));
+  T('including zones both behind and ahead of UTC',
+    seen.some(z => z.offset > 0) && seen.some(z => z.offset < 0));
+  /* If this fails the rest is vacuous: it proves the old parse really does
+     land a day early in the zones being tested. */
+  T('and in a zone behind UTC the UTC-midnight parse does land a day early',
+    seen.filter(z => z.offset > 0).every(z =>
+      z.buggy.every((day, i) => day !== Number(CIVIL[i].slice(8, 10)))),
+    'the failure is reproducible here');
+
+  T('a civil date renders the day it was written, in every zone',
+    seen.every(z => z.civil.every((out, i) => holds(out, CIVIL[i]))),
+    seen.filter(z => !z.civil.every((out, i) => holds(out, CIVIL[i])))
+        .map(z => z.tz + ': ' + z.civil.join(',')).slice(0, 2).join(' ; '));
+  T('and renders identically in all of them',
+    new Set(seen.map(z => z.civil.join('|'))).size === 1,
+    seen.map(z => z.tz + '=' + z.civil[0]).join(', '));
+  T('new year, year end, leap day and month boundaries all hold',
+    seen.every(z => holds(z.civil[1], CIVIL[1]) && holds(z.civil[2], CIVIL[2]) &&
+                    holds(z.civil[3], CIVIL[3]) && holds(z.civil[6], CIVIL[6]) &&
+                    holds(z.civil[7], CIVIL[7])),
+    seen[0].civil.join(', '));
+
+  T('every shipped release entry renders its own stored day',
+    seen.every(z => z.releases.every((out, i) => holds(out, c.APP_UPDATES[i].date))),
+    seen[0].releases.slice(0, 3).join(' | '));
+  T('and none of them renders as unknown',
+    seen.every(z => z.releases.every(out => out.length > 5)),
+    seen[0].releases.slice(0, 3).join(' | '));
+
+  /* The other half of the contract. An instant is a moment, and a moment
+     genuinely does fall on different calendar days in different places.
+     Flattening these into civil dates would be the opposite mistake. */
+  T('a real timestamp still belongs to a moment, not to a calendar square',
+    new Set(seen.map(z => z.instant)).size > 1,
+    seen.map(z => z.tz + '=' + z.instant).join(', '));
+
+  /* Today must not have moved a millimetre. */
+  T('a local evening still keys to that local day, in every zone',
+    seen.every(z => z.eveningKey === '2026-09-03'),
+    seen.map(z => z.tz + '=' + z.eveningKey).join(', '));
+  T('the rail still ends on today, in every zone',
+    seen.every(z => z.railLast === z.todayKey),
+    seen.map(z => z.tz + '=' + z.railLast + '/' + z.todayKey).join(', '));
+
   sub('the app ships its own history, not an inherited one');
   /* The failure this prevents is an INHERITED history — the foundation's
      release list shipping inside this product as though it were its own.
