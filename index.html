@@ -1486,7 +1486,8 @@ blockquote.verse-quote{
   position: relative;
   background: var(--surface); width: 100%;
   max-height: calc(92dvh - var(--inset-top));
-  display: flex; flex-direction: column; overflow: hidden;
+  display: flex; flex-direction: column;
+  overflow: hidden; overflow: clip;
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   border-top: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
@@ -1899,10 +1900,10 @@ body.scroll-locked{
 <div class="overlay overlay-page" id="bibleReaderOverlay">
   <div class="sheet">
     <div class="page-topbar">
-      <button class="icon-btn" onclick="closeBibleReader()" aria-label="Back"></button>
+      <button class="icon-btn" onclick="closeBibleReader()" aria-label="Back to the Bible"></button>
       <h2 class="page-topbar-title bible-reader-ref" id="bibleReaderRef"></h2>
       <button class="bible-edition" onclick="openTranslationPicker()"
-              aria-label="Change translation"><span id="bibleReaderAbbr"></span></button>
+              id="bibleReaderEdition"><span id="bibleReaderAbbr"></span></button>
     </div>
     <div class="sheet-scroll" id="bibleReaderBody"></div>
     <!-- Appears only while a verse is chosen. Part of the sheet's flex
@@ -2095,6 +2096,21 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-10-2',
+    version: '1.10.2',
+    title: 'The way back stays put',
+    date: '2026-09-06',
+    summary: 'Jumping to a reference no longer pushes the back arrow off the top of the screen.',
+    newFeatures: [],
+    improvements: [
+      'The back control says where it goes, and the translation button now says which translation you are reading rather than only that it can be changed'
+    ],
+    fixes: [
+      'After going to a reference, the chapter header &mdash; back arrow, title and translation &mdash; sat behind the status bar with no way to tap back. Bringing the linked verse into view was scrolling the whole page rather than the chapter',
+      'A reader page can no longer be scrolled at all, so nothing can carry its header off the screen again'
+    ]
+  },
   {
     id: 'v1-10-1',
     version: '1.10.1',
@@ -8779,14 +8795,23 @@ function renderBibleReader(){
     '</div>';
 
   host.innerHTML = html;
+  /* A header that has scrolled off the top has taken the only way back
+     with it, so this is checked rather than assumed. */
+  if(host.parentNode && host.parentNode.scrollTop) host.parentNode.scrollTop = 0;
   /* The chapter is on screen now, so watch for its end and repaint the dock
      for whatever is still selected. */
   watchChapterEnd();
   renderVerseDock();
   if(bibleFocus){
     const el = document.getElementById('bv' + bibleFocus.from);
-    if(el && typeof el.scrollIntoView === 'function'){
-      try{ el.scrollIntoView({ block: 'center', behavior: 'auto' }); }catch(e){}
+    if(el){
+      try{
+        /* Measured against the scroller, so only the scroller moves. */
+        const seen = el.getBoundingClientRect();
+        const view = host.getBoundingClientRect();
+        const middle = Math.max(0, (host.clientHeight - seen.height) / 2);
+        host.scrollTop = Math.max(0, host.scrollTop + (seen.top - view.top) - middle);
+      }catch(e){}
     }
   }
 }
@@ -9191,6 +9216,11 @@ function submitBibleJump(){
 function refreshBibleForEdition(){
   const readerAbbr = document.getElementById('bibleReaderAbbr');
   if(readerAbbr) readerAbbr.textContent = activeTranslation().abbr;
+  /* The label carries the STATE as well as the action: a screen reader was
+     told "change translation" and never which one was being read. */
+  const readerEd = document.getElementById('bibleReaderEdition');
+  if(readerEd) readerEd.setAttribute('aria-label',
+    'Translation: ' + activeTranslation().title + '. Change it.');
   if(currentTab !== 'bible' && !isOverlayOpen('bibleReaderOverlay') &&
      !isOverlayOpen('bibleChaptersOverlay')) return;
   loadBibleIndex(translation).then(function(){

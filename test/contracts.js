@@ -4481,6 +4481,34 @@ function testReaderQuality(){
     /el\.setAttribute\('data-hl', color\)/.test(bare) &&
     !/function applyHighlight\([\s\S]{0,220}renderBibleReader\(\)/.test(bare));
 
+  sub('the way out of a chapter cannot be scrolled off the screen');
+  /* Photographed on a phone: after jumping to a reference, the top bar sat
+     behind the status bar - back arrow over the clock, edition over the
+     battery, title lost behind the Dynamic Island. The sheet's own
+     scrollTop was 60. scrollIntoView() scrolls EVERY scrollable ancestor,
+     and overflow:hidden still makes one, so placing the linked verse moved
+     the header too. centreSelectedDay() carries this exact lesson in a
+     comment; the reader repeated the mistake. */
+  T('the linked verse is placed by moving the scroller, not its ancestors',
+    bare.indexOf('scrollIntoView') === -1, 'no scrollIntoView anywhere in the app');
+  T('and it is placed by assigning scrollTop on the chapter scroller',
+    bare.indexOf('host.scrollTop = Math.max(0, host.scrollTop + (seen.top - view.top)') !== -1);
+  /* overflow:hidden clips but still creates a scroll container, so a focus,
+     a keyboard, or any future scrollIntoView could move a sheet and take
+     its header with it. overflow:clip creates no scroll container at all. */
+  T('a sheet is not a scroll container, so its header cannot be moved', (() => {
+    const i = style.indexOf('.sheet{');
+    const block = style.slice(i, style.indexOf('}', i));
+    return block.indexOf('overflow: clip') !== -1 && block.indexOf('overflow: hidden') !== -1;
+  })());
+  T('and the reader puts a scrolled sheet back regardless',
+    bare.indexOf('if(host.parentNode && host.parentNode.scrollTop) host.parentNode.scrollTop = 0;') !== -1);
+  T('the top bar still pays the safe-area inset it owns',
+    style.indexOf('padding: calc(var(--space-sm) + var(--inset-top)) var(--space-sm) var(--space-sm);') !== -1);
+  T('the way back names where it goes, and the edition names itself',
+    src.indexOf('aria-label="Back to the Bible"') !== -1 &&
+    src.indexOf("'Translation: ' + activeTranslation().title") !== -1);
+
   sub('the sheet that had no gutter has one');
   /* Photographed on a phone: the title sat flush against the screen edge
      because this sheet put content straight into .sheet, which carries no
