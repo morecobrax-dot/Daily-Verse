@@ -837,14 +837,6 @@ blockquote.verse-text{
 .verse-text-compact{ font-size: var(--fs-reflect); }
 .reflection-compact{ padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-xl); }
 
-/* The dataset fingerprint. Monospace because it is meant to be compared,
-   not read. */
-.fingerprint{
-  font-family: var(--font-mono); font-size: var(--fs-micro);
-  color: var(--text-dim); word-break: break-all; line-height: 1.5;
-  background: var(--surface-sunken); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: var(--space-md);
-}
 
 /* ---- Learn ------------------------------------------------------
    The rule this section is built on: Scripture keeps the strongest
@@ -1046,11 +1038,19 @@ blockquote.verse-text{
 /* A chosen row in a picker. The word carries the state; the tick and the
    accent only reinforce it. */
 /* The publisher's own licence wording, quoted rather than summarised. */
+/* The licence draws no rule of its own: the detail row above it already
+   ends in one, and two hairlines a few pixels apart read as a mistake. */
 .source-licence{
   margin-top: var(--space-md); padding-top: var(--space-md);
-  border-top: 1px solid var(--border-quiet);
   font-size: var(--fs-meta); line-height: var(--lh-body); color: var(--text-faint);
 }
+/* The version, and nothing else about the build. Low emphasis on purpose:
+   useful when reporting a problem, noise the rest of the time. */
+.app-version{
+  margin: var(--space-xl) 0 0; text-align: center;
+  font-size: var(--fs-micro); color: var(--text-faint);
+}
+
 .picked{
   flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--space-xs);
   font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
@@ -1354,23 +1354,16 @@ body.scroll-locked{
   <main class="view" id="view-settings">
     <div class="section-label">Scripture</div>
     <div class="list">
-      <button class="list-row" onclick="openBibleLanguage()">
-        <span class="list-row-main">
-          <span class="list-row-title">Bible language</span>
-          <span class="list-row-desc" id="bibleLanguageValue"></span>
-        </span>
-        <span class="list-row-arrow" aria-hidden="true"></span>
-      </button>
       <button class="list-row" onclick="openTranslationPicker()">
         <span class="list-row-main">
-          <span class="list-row-title">Translation</span>
+          <span class="list-row-title">Bible translation</span>
           <span class="list-row-desc" id="translationValue"></span>
         </span>
         <span class="list-row-arrow" aria-hidden="true"></span>
       </button>
     </div>
     <p class="field-hint" style="margin:var(--space-sm) 0 var(--space-lg)">
-      Scripture can be read in any of these. Reflections and Learn are written in English.</p>
+      Reflections and the Learn studies are written in English, whichever translation you read.</p>
 
     <div class="section-label">Appearance</div>
     <div class="panel">
@@ -1438,8 +1431,7 @@ body.scroll-locked{
         <span class="list-row-arrow" aria-hidden="true"></span>
       </button>
     </div>
-    <div class="section-label">Identity</div>
-    <div class="panel" id="identityPanel"></div>
+    <p class="app-version" id="appVersionLine"></p>
   </main>
 
   <nav class="tabbar" aria-label="Main">
@@ -1536,17 +1528,6 @@ body.scroll-locked{
 </div>
 
 <!-- SCRIPTURE & SOURCES — a Bible app has to be able to answer "says who?" -->
-<div class="overlay overlay-page" id="bibleLanguageOverlay">
-  <div class="sheet">
-    <div class="page-topbar">
-      <button class="icon-btn" onclick="closeBibleLanguage()" aria-label="Back"></button>
-      <div class="page-topbar-title">Bible language</div>
-      <span class="topbar-spacer"></span>
-    </div>
-    <div class="sheet-scroll" id="bibleLanguageBody"></div>
-  </div>
-</div>
-
 <div class="overlay overlay-page" id="translationOverlay">
   <div class="sheet">
     <div class="page-topbar">
@@ -1617,7 +1598,8 @@ body.scroll-locked{
       <span class="topbar-spacer"></span>
     </div>
     <div class="sheet-scroll">
-      <p class="page-intro">Everything this app stores lives on this device, under its own namespace. Export a copy you control.</p>
+      <p class="page-intro">Everything this app stores stays on this device. Nothing is sent
+        anywhere, and nothing here is readable by another site. Export a copy you control.</p>
       <div class="stat-grid" id="dataStats"></div>
       <div class="section-label">Backup</div>
       <div class="list">
@@ -1720,6 +1702,24 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-7-1',
+    version: '1.7.1',
+    title: 'A quieter Settings',
+    date: '2026-09-05',
+    summary: 'Settings now shows what you can change and what is worth knowing, and ' +
+             'nothing about how the app is built.',
+    newFeatures: [],
+    improvements: [
+      'One row chooses your Bible, grouped by language, in place of two rows that set the same thing',
+      'Scripture & sources leads with the translations, who published them, and what each licence permits',
+      'Build details — identifiers, checksums, storage and cache names — are no longer shown to readers. Every one of them is still checked on every build, and the published text is still re-derived from the publisher’s own files',
+      'Backup & data describes what is stored in plain words'
+    ],
+    fixes: [
+      'Removed a doubled rule under each licence statement in Scripture & sources'
+    ]
+  },
   {
     id: 'v1-7-0',
     version: '1.7.0',
@@ -2589,7 +2589,7 @@ const Domain = {
    shell that are not the product's business. */
 function renderAll(){
   Domain.render();
-  renderIdentity();
+  renderAppVersion();
   renderUpdatesDot();
 }
 
@@ -6324,10 +6324,11 @@ function paintPrefControls(){
     b.setAttribute('aria-checked', String(on));
     b.setAttribute('aria-selected', String(on));
   });
-  const bl = document.getElementById('bibleLanguageValue');
-  if(bl) bl.textContent = activeTranslation().language;
+  /* One row, one preference. Language is a property of the edition, never a
+     second stored value, so naming both on one row is the whole answer to
+     "what am I reading?" without a control that writes the same key twice. */
   const tv = document.getElementById('translationValue');
-  if(tv) tv.textContent = activeTranslation().title;
+  if(tv) tv.textContent = activeTranslation().title + ' · ' + activeTranslation().language;
   const a = document.getElementById('appearanceToggle');
   if(a) a.setAttribute('aria-checked', String(appearance === 'light'));
   const t = document.getElementById('reflectToggle');
@@ -6416,11 +6417,9 @@ function closeFocusSettings(){
    leaving the app. That is the whole reason this page exists. The detail is
    layered: the plain answer first, the machine-checkable evidence last, so
    the page is readable by someone who only wanted to know the translation. */
-/* Language first, then edition within it. They are separate pages because
-   they are separate questions: a second English translation would appear
-   under English without this needing to change. */
-function openBibleLanguage(){ renderBibleLanguage(); pushOverlayHistory(); openOverlay('bibleLanguageOverlay'); }
-function closeBibleLanguage(){ closeOverlay('bibleLanguageOverlay'); releaseOverlayHistory(); }
+/* One page, grouped by language. Language is a property of an edition, so a
+   second English translation appears under English without this changing,
+   and a reader never meets two controls that write the same preference. */
 function openTranslationPicker(){ renderTranslationPicker(); pushOverlayHistory(); openOverlay('translationOverlay'); }
 function closeTranslationPicker(){ closeOverlay('translationOverlay'); releaseOverlayHistory(); }
 
@@ -6435,35 +6434,6 @@ function pickerRow(opts){
     '</span>' +
     (opts.on ? '<span class="picked">' + checkIcon(15) + 'Selected</span>' : '') +
   '</button>';
-}
-
-function renderBibleLanguage(){
-  const host = document.getElementById('bibleLanguageBody');
-  if(!host) return;
-  const groups = translationsByLanguage();
-  host.innerHTML =
-    '<p class="page-intro">The language Scripture is shown in. The rest of the app stays in English.</p>' +
-    '<div class="list" role="radiogroup" aria-label="Bible language">' +
-      groups.map(function(g){
-        return pickerRow({
-          title: g.language, lang: g.lang,
-          desc: g.editions.map(function(t){ return t.title; }).join(', '),
-          on: g.lang === activeTranslation().lang,
-          onclick: 'chooseLanguage(\'' + escapeAttr(g.lang) + '\')'
-        });
-      }).join('') +
-    '</div>';
-}
-
-/* Choosing a language selects its edition. With one edition per language
-   that is the whole interaction; with two it becomes the first of two. */
-function chooseLanguage(lang){
-  const g = translationsByLanguage().filter(function(x){ return x.lang === lang; })[0];
-  if(!g || !g.editions.length) return;
-  const already = g.editions.filter(function(t){ return t.id === translation; })[0];
-  setTranslation(already ? already.id : g.editions[0].id);
-  renderBibleLanguage();
-  closeBibleLanguage();
 }
 
 function renderTranslationPicker(){
@@ -6506,7 +6476,7 @@ function renderSource(){
   const eligible = eligiblePassages().length;
 
   host.innerHTML =
-    '<p class="page-intro">Every verse here is quoted from one public-domain translation, ' +
+    '<p class="page-intro">Every verse here is quoted from a public-domain translation, ' +
       'taken directly from the publisher&rsquo;s own released text. Nothing is paraphrased, ' +
       'nothing was typed out by hand, and nothing is trimmed to read more neatly.</p>' +
 
@@ -6518,7 +6488,10 @@ function renderSource(){
         detailRow('Language', t.language) +
         detailRow('Shown as', t.abbr) +
         detailRow('Published by', t.publisher) +
-        (id === translation ? detailRow('Currently reading', 'Yes') : '') +
+        (id === translation
+          ? '<div class="detail-row source-current"><span class="picked">' + checkIcon(15) +
+            'Currently reading</span></div>'
+          : '') +
         '<p class="source-licence">' + escapeHtml(t.copyright) + '</p>' +
       '</div>';
     }).join('') +
@@ -6554,21 +6527,7 @@ function renderSource(){
       '&rdquo; where many print &ldquo;the LORD&rdquo;, and the Spanish prints ' +
       '&ldquo;Jehov&aacute;&rdquo;. Wording, punctuation and even verse numbering can vary. ' +
       'None of that is corrected here: Daily Verse shows each translation exactly as its ' +
-      'publisher released it, and never swaps a rendering for a more familiar one.</div>' +
-
-    '<div class="section-label">For the record</div>' +
-    '<div class="panel">' +
-      detailRow('Edition id', s.edition) +
-      detailRow('Corpus synced', s.corpusSynced) +
-      detailRow('Dataset built', s.built) +
-      detailRow('Passages', String(SCRIPTURE.length)) +
-    '</div>' +
-    '<div class="field-hint" style="margin-top:var(--space-md)">Dataset fingerprint</div>' +
-    '<div class="fingerprint">' + escapeHtml(s.datasetHash) + '</div>' +
-    '<div class="field-hint" style="margin-top:var(--space-sm)">' +
-      'A checksum of every reference and every character of text in this build. ' +
-      'Rebuilding from the published edition produces the same value, which is what ' +
-      'makes the claim above checkable rather than a promise.</div>';
+      'publisher released it, and never swaps a rendering for a more familiar one.</div>';
 }
 
 function detailRow(label, value){
@@ -7341,9 +7300,8 @@ function renderDataStats(){
     const parsed = Store.getJSON(k, null);
     if(Array.isArray(parsed)) records += parsed.filter(isRecord).length;
   });
-  el.innerHTML = statHtml(records, 'Records') +
-                 statHtml(keys.length, 'Keys') +
-                 statHtml(bytes < 1024 ? bytes + ' B' : (bytes / 1024).toFixed(1) + ' KB', 'Stored');
+  el.innerHTML = statHtml(records, 'Entries') +
+                 statHtml(bytes < 1024 ? bytes + ' B' : (bytes / 1024).toFixed(1) + ' KB', 'Size');
 }
 
 function exportData(){
@@ -7515,22 +7473,15 @@ function renderUpdates(){
 }
 
 /* =========================================================
-   IDENTITY PANEL — proves config is derived, not typed
+   APP VERSION - the one build fact a reader has any use for. Everything else
+   this app knows about itself (id, storage prefix, cache name, backend) is
+   checked by the contract suite and by config:verify, where it belongs, and
+   is not information a reader can act on.
    ========================================================= */
-function renderIdentity(){
-  const el = document.getElementById('identityPanel');
+function renderAppVersion(){
+  const el = document.getElementById('appVersionLine');
   if(!el) return;
-  const rows = [
-    ['App id', APP_CONFIG.id],
-    ['Version', APP_VERSION],
-    ['Storage', Store.prefix() + '…'],
-    ['Cache', CACHE_NAMESPACE],
-    ['Storage backend', Store.backend()]
-  ];
-  el.innerHTML = rows.map(r =>
-    '<div class="detail-row"><span class="detail-label">' + escapeHtml(r[0]) + '</span>' +
-    '<span class="detail-value" style="font-family:var(--font-mono)">' + escapeHtml(r[1]) + '</span></div>'
-  ).join('');
+  el.textContent = APP_CONFIG.name + ' · Version ' + APP_VERSION;
 }
 
 /* =========================================================

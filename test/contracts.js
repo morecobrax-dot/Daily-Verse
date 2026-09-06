@@ -1288,8 +1288,85 @@ function testScripture(){
   T('the reader can reach all of that without leaving the app',
     /function renderSource\(/.test(src) && /source-licence/.test(src) &&
     /t\.copyright/.test(src));
-  T('the fingerprint is shown too, so the claim is checkable in the product',
-    /datasetHash/.test(src) && /fingerprint/.test(src));
+  /* This used to assert that the dataset fingerprint was PRINTED on the
+     Sources page: 64 hex characters under a heading, on the one screen a
+     reader opens to find out which Bible they are holding. Two things were
+     wrong with it. The fingerprint is engineering exhaust at that spot --
+     nobody choosing a translation can act on it. And the assertion never
+     checked what it claimed: it matched the WORD fingerprint anywhere in
+     the file, so it kept passing after the block was deleted, satisfied by
+     nothing but an old release note. What makes provenance checkable is the
+     pinned corpus, the derived region and npm run scripture:verify, which
+     are asserted above and in CONTRACT 36. What is asserted here instead is
+     stronger: the evidence still exists, the reader is still told the truth
+     in words they can use, and none of the machinery is put in front of
+     them. */
+  sub('the evidence is kept, and kept out of the way');
+  const ui = H.loadApp({ sharedStorage: new Map() });
+  const paint = (fn, host) => {
+    try{ ui.ctx[fn](); }catch(e){ return 'THREW ' + e.message; }
+    const el = ui.dom.document.getElementById(host);
+    return el ? String(el.innerHTML || el.textContent || '') : 'NOHOST ' + host;
+  };
+  const sourceHtml = paint('renderSource', 'sourceBody');
+  const surfaces = {
+    'Scripture and sources': sourceHtml,
+    'the translation picker': paint('renderTranslationPicker', 'translationBody'),
+    'Backup and data': paint('renderDataStats', 'dataStats'),
+    'the release notes': paint('renderUpdates', 'updatesBody'),
+    'the version line': paint('renderAppVersion', 'appVersionLine')
+  };
+  const broken = Object.keys(surfaces).filter(k =>
+    !surfaces[k] || /^(THREW|NOHOST)/.test(surfaces[k]));
+  T('every screen reachable from Settings still renders', broken.length === 0,
+    broken.map(k => k + ': ' + surfaces[k]).join('; '));
+
+  /* Sources still answers the says-who question, per edition, in the words
+     of the publisher rather than a summary of them. */
+  Object.keys(c.TRANSLATIONS).forEach(id => {
+    const t = c.TRANSLATIONS[id];
+    T('Sources names ' + t.abbr + ' in full',
+      sourceHtml.indexOf(c.escapeHtml(t.title)) !== -1, t.title);
+    T('Sources credits who published ' + t.abbr,
+      sourceHtml.indexOf(c.escapeHtml(t.publisher)) !== -1, t.publisher);
+    T('Sources quotes the ' + t.abbr + ' licence rather than summarising it',
+      sourceHtml.indexOf(c.escapeHtml(t.copyright)) !== -1, String(t.copyright).slice(0, 40));
+  });
+  T('Sources still discloses that the writing this app does is English only',
+    /written in English/.test(sourceHtml));
+  T('and that wording, punctuation and verse numbering differ between editions',
+    /Wording, punctuation and even verse numbering/.test(sourceHtml));
+  T('and explains the psalm title lines it keeps',
+    /naming an author or a tune/.test(sourceHtml));
+
+  /* Nothing a reader cannot act on. Tags are stripped first, because the
+     claim is about what is SHOWN: an edition id inside an onclick is how
+     the picker works, not something anybody reads. */
+  const shown = h => h.replace(/<[^>]*>/g, ' ');
+  const internals = [
+    ['a content hash', h => /[0-9a-f]{32,}/.test(h)],
+    ['the cache name', h => h.indexOf(c.CACHE_NAMESPACE) !== -1],
+    ['the storage prefix', h => h.indexOf(c.Store.prefix()) !== -1],
+    ['storage plumbing', h => /localStorage|namespace|storage backend|schema/i.test(h)],
+    ['corpus plumbing', h => /Edition id|Corpus synced|Dataset built|eng-web|spaRV1909/.test(h)]
+  ];
+  const leaks = [];
+  Object.keys(surfaces).forEach(where => internals.forEach(pair => {
+    if(pair[1](shown(surfaces[where]))) leaks.push(where + ' shows ' + pair[0]);
+  }));
+  T('no screen in Settings shows a reader an internal identifier',
+    leaks.length === 0, leaks.join('; '));
+  T('the version line names the app and its version, and stops there',
+    /^Daily Verse . Version [0-9]+[.][0-9]+[.][0-9]+$/.test(surfaces['the version line']),
+    surfaces['the version line']);
+  T('the settings screen carries no identity panel at all',
+    !/identityPanel|Storage backend|Edition id|Corpus synced|Dataset built/.test(src));
+
+  /* And the fingerprint itself is exactly where it was, still re-derivable. */
+  T('the fingerprint is still shipped, and still equals a fresh derivation',
+    /^[0-9a-f]{64}$/.test(c.SCRIPTURE_SOURCE.datasetHash) &&
+    c.SCRIPTURE_SOURCE.datasetHash === require('../scripts/scripture.js').datasetHash(c.SCRIPTURE),
+    c.SCRIPTURE_SOURCE.datasetHash);
   /* The label now names the edition being SHOWN rather than the one the app
      was built from, because those became different things. Still beside the
      verse, which is the part that matters. */
