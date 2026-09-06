@@ -309,10 +309,10 @@ function testNavigation(){
   T('and it is instant, not animated', /behavior: 'instant'/.test(js()));
 
   sub('only one view is ever active');
-  c.switchTab('settings');
+  c.switchTab('bible');
   const active = [...d.querySelectorAll('.view')].filter(v => v.classList.contains('active'));
   T('exactly one active view', active.length === 1, String(active.length));
-  T('it is the one asked for', active[0].id === 'view-settings');
+  T('it is the one asked for', active[0].id === 'view-bible');
 }
 
 /* =========================================================
@@ -2363,7 +2363,11 @@ function testLearnNavigation(){
   T('there are exactly four', tabs.length === 4, tabs.join(', '));
   T('and the ceiling is not raised', tabs.length <= 4);
   T('Today is first', tabs[0] === 'today');
-  T('Learn is second', tabs[1] === 'learn');
+  T('Bible is second', tabs[1] === 'bible');
+  T('Learn is third', tabs[2] === 'learn');
+  T('Saved is fourth', tabs[3] === 'saved');
+  /* The ceiling did not move. Which four destinations deserve it did. */
+  T('Settings is not one of them', tabs.indexOf('settings') === -1, tabs.join(', '));
   T('the app boots on Today', c.currentTab === 'today', c.currentTab);
   T('Today is the view marked active in the markup',
     /<main class="view active" id="view-today">/.test(src));
@@ -4125,6 +4129,150 @@ function testBibleReader(){
     /caches\.open\(CACHE_NAME\)[\s\S]{0,120}c\.put\(req, copy\)/.test(sw));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 39 — WHAT THE BOTTOM OF THE SCREEN CLAIMS THE APP IS
+
+   Four slots, and they are the whole product's table of contents. A complete
+   Bible sat behind Learn for a release because it arrived as an experiment
+   and nothing moved it once it stopped being one. This contract fixes which
+   four destinations hold the slots, that Settings is not one of them, and
+   that making Settings a utility did not cost it its way back.
+   --------------------------------------------------------- */
+function testPrimaryNavigation(){
+  section('CONTRACT 39 — four destinations, and a utility');
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx, d = app.dom.document;
+  const src = H.readApp();
+
+  sub('the four slots, and what is in them');
+  const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab).filter(Boolean);
+  T('exactly four primary destinations', tabs.length === 4, tabs.join(', '));
+  T('in the order the product reads in',
+    tabs.join(',') === 'today,bible,learn,saved', tabs.join(','));
+  T('and the ceiling was not raised to fit Bible in',
+    tabs.length <= 4 && (src.match(/class="tab-btn/g) || []).length === 4);
+  T('Settings is not a primary destination', tabs.indexOf('settings') === -1);
+  T('every slot still resolves to a view', tabs.every(t => !!d.getElementById('view-' + t)));
+  T('Today is still where the app opens',
+    c.currentTab === 'today' && /<main class="view active" id="view-today">/.test(src));
+
+  sub('Bible is one tap, not two');
+  /* The failure this prevents is the shape it replaced: a tab that opens a
+     screen whose job is to offer a button that opens the Bible. */
+  c.goToTab('bible');
+  T('the tab switches straight to the Bible view', c.currentTab === 'bible' &&
+    d.getElementById('view-bible').classList.contains('active'));
+  T('no intermediate open-the-Bible screen exists',
+    src.indexOf('openBible()') === -1 && src.indexOf("id=\"bibleOverlay\"") === -1);
+  T('and the Bible home renders into the tab itself',
+    /<main class="view" id="view-bible">[\s\S]{0,120}id="bibleBody"/.test(src));
+
+  sub('Learn kept the lessons and gave up the door');
+  const learn = H.loadApp({ sharedStorage: new Map() });
+  learn.ctx.goToTab('learn');
+  const learnHtml = learn.dom.document.getElementById('learnBody').innerHTML;
+  T('Learn no longer carries a Bible landing card',
+    learnHtml.indexOf('bible-entry') === -1 && learnHtml.indexOf('openBible') === -1);
+  T('but it still carries the studies', learnHtml.length > 200);
+  /* The contextual link is a different thing and stays: it is about the
+     passage in front of you, not about the Bible as a destination. */
+  T('Read in context survives inside a lesson', /function readInContextHtml\(/.test(src) &&
+    /readInContextHtml\(p\.id\)/.test(src));
+
+  sub('Settings is reachable from anywhere, and is nobody’s tab');
+  T('there is a gear in the shared header',
+    /id="settingsBtn"[^>]*aria-label="Settings"/.test(src));
+  T('it names itself for a screen reader', /aria-label="Settings"/.test(src));
+  T('it opens the settings page', /onclick="openSettings\(\)"/.test(src));
+  T('the header it lives in is on every tab, so it is not duplicated',
+    (src.match(/id="settingsBtn"/g) || []).length === 1);
+  T('Settings kept its content exactly', ['Scripture', 'Appearance', 'Reading', 'About', 'Data']
+    .every(x => src.indexOf('<div class="section-label">' + x + '</div>') !== -1));
+  T('and became an overlay page rather than a route',
+    /id="settingsOverlay"/.test(src) && !/pushState\([^)]*\/settings/.test(src));
+
+  sub('closing Settings puts you back where you opened it');
+  /* The failure this prevents: a Settings screen that returns everybody to
+     Today. Settings never touches currentTab, so the tab underneath is
+     still the tab you were on - which is why this holds for all four. */
+  ['today', 'bible', 'learn', 'saved'].forEach(tab => {
+    const a = H.loadApp({ sharedStorage: new Map() });
+    a.ctx.goToTab(tab);
+    a.ctx.openSettings();
+    const open = a.dom.document.getElementById('settingsOverlay').classList.contains('open');
+    a.ctx.closeSettings();
+    const shut = !a.dom.document.getElementById('settingsOverlay').classList.contains('open');
+    T('from ' + tab + ': opens, closes, and leaves you on ' + tab,
+      open && shut && a.ctx.currentTab === tab, a.ctx.currentTab);
+  });
+  T('Settings does not change which tab you are on',
+    !/function openSettings\(\)\{[\s\S]{0,200}switchTab/.test(src.replace(/\n\s*/g, ' ')));
+
+  sub('device back closes Settings before it leaves the app');
+  T('it takes a history entry on the way in and gives it back on the way out',
+    /function openSettings\(\)\{[\s\S]{0,200}pushOverlayHistory\(\);/.test(src.replace(/\n\s*/g, ' ')) &&
+    /function closeSettings\(\)\{[\s\S]{0,160}releaseOverlayHistory\(\);/.test(src.replace(/\n\s*/g, ' ')));
+  /* Focus restoration is the overlay engine's, not a second implementation. */
+  T('and focus returns through the engine that already does it',
+    /_sheetOpeners\.set\(id,/.test(src) && /_sheetOpeners\.get\(id\)/.test(src));
+
+  sub('the Bible keeps its place when you go elsewhere and come back');
+  const b = H.loadApp({ sharedStorage: new Map() });
+  b.ctx.rememberBibleLast('JHN', 3);
+  b.ctx.goToTab('bible');
+  b.ctx.goToTab('learn');
+  b.ctx.goToTab('bible');
+  const last = b.ctx.readBibleLast();
+  T('the book and chapter survive leaving the tab',
+    last && last.c === 'JHN' && last.ch === 3, JSON.stringify(last));
+  T('and the chosen edition survives with them',
+    b.ctx.translation === b.ctx.DEFAULT_TRANSLATION);
+  T('no scroll coordinate is kept alongside them',
+    Object.keys(last).sort().join() === 'c,ch', Object.keys(last).join());
+
+  sub('the tabs are peers, and none of them is advertising');
+  const navMarkup = src.slice(src.indexOf('<nav class="tabbar"'), src.indexOf('</nav>'));
+  T('every tab is the same kind of control',
+    (navMarkup.match(/class="tab-btn/g) || []).length === 4);
+  T('none carries a badge, dot or NEW mark',
+    !/badge|NEW<|notification|pulse/i.test(navMarkup), navMarkup.length > 0 ? 'clean' : '');
+  T('the active one is announced, not only tinted', (() => {
+    const a = H.loadApp({ sharedStorage: new Map() });
+    a.ctx.goToTab('bible');
+    const marked = [...a.dom.document.querySelectorAll('.tab-btn')]
+      .filter(x => x.getAttribute('aria-current') === 'page').map(x => x.dataset.tab);
+    return marked.length === 1 && marked[0] === 'bible';
+  })());
+
+  sub('Today and Bible do not look like the same button');
+  /* Today used to draw the open book. Handing that to Bible and leaving
+     Today with it too would make the two most-used tabs indistinguishable. */
+  T('Bible draws the open book', /bible:\s*'<path d="M2\.4 4\.2c/.test(src));
+  T('and Today draws something else entirely',
+    /today:\s*'<path d="M1\.6 12\.6h12\.8"/.test(src));
+  T('every tab has a mark of its own', (() => {
+    const m = src.slice(src.indexOf('Domain.tabIcons = {'), src.indexOf('Domain.hydrate'));
+    const drawn = ['today', 'bible', 'learn', 'saved', 'settings'].map(k => {
+      const i = m.indexOf(k + ':');
+      return i === -1 ? null : m.slice(i, m.indexOf('\n', i));
+    });
+    return drawn.every(Boolean) && new Set(drawn).size === drawn.length;
+  })());
+
+  sub('nothing else about the product moved');
+  T('no router was introduced',
+    !/pushState\(\{[^}]*path/.test(src) && !/window\.location\.hash\s*=/.test(src));
+  T('the contextual links all still exist',
+    /readInContextHtml\(passage\.id\)/.test(src) &&
+    /function openPassageInBible\(/.test(src));
+  T('Saved still resolves Bible locations', /savedLocationText\(loc\)/.test(src));
+  T('the reader pages are untouched',
+    ['bibleReaderOverlay', 'bibleChaptersOverlay', 'bibleJumpOverlay', 'bibleActionOverlay']
+      .every(id => src.indexOf('id="' + id + '"') !== -1));
+  T('and storage grew by nothing at all',
+    c.DATA_SCHEMA_VERSION === 2 && Object.keys(c.KEYS).indexOf('bibleTab') === -1);
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -4134,5 +4282,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation
 };

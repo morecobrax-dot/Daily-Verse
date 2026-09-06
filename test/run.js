@@ -51,6 +51,7 @@ const SUITES = [
   C.testFaithfulCopy,
   C.testTranslations,
   C.testBibleReader,
+  C.testPrimaryNavigation,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,

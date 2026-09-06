@@ -1461,6 +1461,7 @@ body.scroll-locked{
       <h1 class="app-title" id="appTitle">Daily Verse</h1>
       <div class="header-actions">
         <button class="icon-btn" id="updatesBtn" aria-label="What's new" onclick="openUpdates()"></button>
+        <button class="icon-btn" id="settingsBtn" aria-label="Settings" onclick="openSettings()"></button>
       </div>
     </div>
   </header>
@@ -1472,6 +1473,13 @@ body.scroll-locked{
       <div class="day-rail" id="dayRail" role="tablist" aria-label="Choose a day"></div>
     </div>
     <div id="todayBody"></div>
+  </main>
+
+  <!-- BIBLE — the whole text, one tap from anywhere. Promoted out of Learn
+       in 1.9.0: a complete Bible discovered only by opening a study was a
+       navigation accident, not a hierarchy. -->
+  <main class="view" id="view-bible">
+    <div id="bibleBody"></div>
   </main>
 
   <!-- LEARN — guided study, optional and never in Today's way -->
@@ -1489,101 +1497,19 @@ body.scroll-locked{
   </main>
 
   <!-- SETTINGS — reading preferences, provenance, data ownership -->
-  <main class="view" id="view-settings">
-    <div class="section-label">Scripture</div>
-    <div class="list">
-      <button class="list-row" onclick="openTranslationPicker()">
-        <span class="list-row-main">
-          <span class="list-row-title">Bible translation</span>
-          <span class="list-row-desc" id="translationValue"></span>
-        </span>
-        <span class="list-row-arrow" aria-hidden="true"></span>
-      </button>
-    </div>
-    <p class="field-hint" style="margin:var(--space-sm) 0 var(--space-lg)">
-      Reflections and the Learn studies are written in English, whichever translation you read.</p>
-
-    <div class="section-label">Appearance</div>
-    <div class="panel">
-      <div class="toggle-row">
-        <span class="list-row-main">
-          <span class="list-row-title">Light mode</span>
-          <span class="list-row-desc">Use a brighter theme for reading</span>
-        </span>
-        <button class="toggle" id="appearanceToggle" role="switch" aria-checked="false"
-                aria-label="Light mode" onclick="toggleAppearance()"></button>
-      </div>
-    </div>
-    <div class="section-label">Reading</div>
-    <div class="panel">
-      <span class="form-label" id="textSizeLabel">Verse text size</span>
-      <div class="segmented" role="radiogroup" aria-labelledby="textSizeLabel" id="textSizeSeg"
-           style="margin-bottom:var(--space-sm)">
-        <button role="radio" aria-checked="true" aria-selected="true" data-size="standard"
-                onclick="setTextSize('standard')">Standard</button>
-        <button role="radio" aria-checked="false" aria-selected="false" data-size="large"
-                onclick="setTextSize('large')">Large</button>
-      </div>
-      <div class="toggle-row">
-        <span class="list-row-main">
-          <span class="list-row-title">Show reflections</span>
-          <span class="list-row-desc">Off shows Scripture on its own</span>
-        </span>
-        <button class="toggle" id="reflectToggle" role="switch" aria-checked="true"
-                aria-label="Show reflections" onclick="toggleReflections()"></button>
-      </div>
-    </div>
-    <div class="list" style="margin-top:var(--space-sm)">
-      <button class="list-row" onclick="openFocusSettings()">
-        <span class="list-row-main">
-          <span class="list-row-title">Reading focus</span>
-          <span class="list-row-desc">Themes you would like more of</span>
-        </span>
-        <span class="list-row-arrow" aria-hidden="true"></span>
-      </button>
-    </div>
-    <div class="section-label">About</div>
-    <div class="list">
-      <button class="list-row" onclick="openSource()">
-        <span class="list-row-main">
-          <span class="list-row-title">Scripture &amp; sources</span>
-          <span class="list-row-desc">Which translation this is, and where the text came from</span>
-        </span>
-        <span class="list-row-arrow" aria-hidden="true"></span>
-      </button>
-      <button class="list-row" onclick="openUpdates()">
-        <span class="list-row-main">
-          <span class="list-row-title">What's new</span>
-          <span class="list-row-desc">Every release, most recent first</span>
-        </span>
-        <span class="list-row-arrow" aria-hidden="true"></span>
-      </button>
-    </div>
-    <div class="section-label">Data</div>
-    <div class="list">
-      <button class="list-row" onclick="openDataSettings()">
-        <span class="list-row-main">
-          <span class="list-row-title">Backup &amp; data</span>
-          <span class="list-row-desc">Export, import, or reset what this app has stored</span>
-        </span>
-        <span class="list-row-arrow" aria-hidden="true"></span>
-      </button>
-    </div>
-    <p class="app-version" id="appVersionLine"></p>
-  </main>
 
   <nav class="tabbar" aria-label="Main">
     <button class="tab-btn active" data-tab="today" aria-current="page" onclick="goToTab('today')">
       <span class="glyph" aria-hidden="true"></span>Today
+    </button>
+    <button class="tab-btn" data-tab="bible" onclick="goToTab('bible')">
+      <span class="glyph" aria-hidden="true"></span>Bible
     </button>
     <button class="tab-btn" data-tab="learn" onclick="goToTab('learn')">
       <span class="glyph" aria-hidden="true"></span>Learn
     </button>
     <button class="tab-btn" data-tab="saved" onclick="goToTab('saved')">
       <span class="glyph" aria-hidden="true"></span>Saved
-    </button>
-    <button class="tab-btn" data-tab="settings" onclick="goToTab('settings')">
-      <span class="glyph" aria-hidden="true"></span>Settings
     </button>
   </nav>
 </div>
@@ -1682,15 +1608,99 @@ body.scroll-locked{
      engine rather than a fifth tab: the four-tab bar is balanced on a narrow
      phone, and a reader reached from the Scripture in front of you is more
      discoverable than one more icon. -->
-<div class="overlay overlay-page" id="bibleOverlay">
+<!-- SETTINGS — a utility, not a destination. Same content as the tab it used
+     to be; only where it is reached from changed. Riding the overlay engine
+     means device back closes it, focus returns to the gear that opened it,
+     and the tab underneath is still the tab you were on. -->
+<div class="overlay overlay-page" id="settingsOverlay">
   <div class="sheet">
     <div class="page-topbar">
-      <button class="icon-btn" onclick="closeBible()" aria-label="Back"></button>
-      <div class="page-topbar-title">Bible</div>
-      <button class="bible-edition" onclick="openTranslationPicker()"
-              aria-label="Change translation"><span id="bibleHomeAbbr"></span></button>
+      <button class="icon-btn" onclick="closeSettings()" aria-label="Back"></button>
+      <div class="page-topbar-title">Settings</div>
+      <span class="topbar-spacer"></span>
     </div>
-    <div class="sheet-scroll" id="bibleBody"></div>
+    <div class="sheet-scroll">
+    <div class="section-label">Scripture</div>
+    <div class="list">
+      <button class="list-row" onclick="openTranslationPicker()">
+        <span class="list-row-main">
+          <span class="list-row-title">Bible translation</span>
+          <span class="list-row-desc" id="translationValue"></span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+    <p class="field-hint" style="margin:var(--space-sm) 0 var(--space-lg)">
+      Reflections and the Learn studies are written in English, whichever translation you read.</p>
+
+    <div class="section-label">Appearance</div>
+    <div class="panel">
+      <div class="toggle-row">
+        <span class="list-row-main">
+          <span class="list-row-title">Light mode</span>
+          <span class="list-row-desc">Use a brighter theme for reading</span>
+        </span>
+        <button class="toggle" id="appearanceToggle" role="switch" aria-checked="false"
+                aria-label="Light mode" onclick="toggleAppearance()"></button>
+      </div>
+    </div>
+    <div class="section-label">Reading</div>
+    <div class="panel">
+      <span class="form-label" id="textSizeLabel">Verse text size</span>
+      <div class="segmented" role="radiogroup" aria-labelledby="textSizeLabel" id="textSizeSeg"
+           style="margin-bottom:var(--space-sm)">
+        <button role="radio" aria-checked="true" aria-selected="true" data-size="standard"
+                onclick="setTextSize('standard')">Standard</button>
+        <button role="radio" aria-checked="false" aria-selected="false" data-size="large"
+                onclick="setTextSize('large')">Large</button>
+      </div>
+      <div class="toggle-row">
+        <span class="list-row-main">
+          <span class="list-row-title">Show reflections</span>
+          <span class="list-row-desc">Off shows Scripture on its own</span>
+        </span>
+        <button class="toggle" id="reflectToggle" role="switch" aria-checked="true"
+                aria-label="Show reflections" onclick="toggleReflections()"></button>
+      </div>
+    </div>
+    <div class="list" style="margin-top:var(--space-sm)">
+      <button class="list-row" onclick="openFocusSettings()">
+        <span class="list-row-main">
+          <span class="list-row-title">Reading focus</span>
+          <span class="list-row-desc">Themes you would like more of</span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="section-label">About</div>
+    <div class="list">
+      <button class="list-row" onclick="openSource()">
+        <span class="list-row-main">
+          <span class="list-row-title">Scripture &amp; sources</span>
+          <span class="list-row-desc">Which translation this is, and where the text came from</span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+      <button class="list-row" onclick="openUpdates()">
+        <span class="list-row-main">
+          <span class="list-row-title">What's new</span>
+          <span class="list-row-desc">Every release, most recent first</span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="section-label">Data</div>
+    <div class="list">
+      <button class="list-row" onclick="openDataSettings()">
+        <span class="list-row-main">
+          <span class="list-row-title">Backup &amp; data</span>
+          <span class="list-row-desc">Export, import, or reset what this app has stored</span>
+        </span>
+        <span class="list-row-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+    <p class="app-version" id="appVersionLine"></p>
+    </div>
   </div>
 </div>
 
@@ -1909,6 +1919,24 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-9-0',
+    version: '1.9.0',
+    title: 'Bible, in the bar',
+    date: '2026-09-06',
+    summary: 'The Bible is now one of the four things along the bottom, instead of ' +
+             'something you found inside Learn.',
+    newFeatures: [
+      'Bible is a primary tab: one tap from anywhere, straight to the books'
+    ],
+    improvements: [
+      'Today, Bible, Learn, Saved &mdash; four destinations, still four',
+      'Settings moved to a gear at the top of the screen, reachable from every tab, and closing it leaves you where you were',
+      'Learn is about the lessons again; the Bible card that sat above them has gone',
+      'Today keeps a sunrise and the Bible takes the open book, so no two tabs draw the same thing'
+    ],
+    fixes: []
+  },
   {
     id: 'v1-8-0',
     version: '1.8.0',
@@ -6373,6 +6401,7 @@ function noteFor(key){
 function goToTab(tab){
   switchTab(tab);
   if(tab === 'today'){ renderToday(); centreSelectedDay(); }
+  if(tab === 'bible'){ enterBible(); }
 }
 
 /* ---------- day selection ---------- */
@@ -7508,15 +7537,10 @@ function renderLearn(){
 
   let html = '<p class="page-intro">Understand Scripture, one guided lesson at a time.</p>';
 
-  /* The Bible, first and unmissable. A guided lesson is a way INTO
-     Scripture, so the Scripture itself belongs above the lessons rather
-     than behind a fifth tab. */
-  html +=
-    '<button class="continue-card bible-entry" onclick="openBible()">' +
-      '<span class="continue-study">Bible</span>' +
-      '<span class="continue-lesson">Read any book, chapter by chapter</span>' +
-      '<span class="continue-meta">' + escapeHtml(activeTranslation().title) + '</span>' +
-    '</button>';
+  /* The Bible card that used to sit here is gone: Bible is a primary tab
+     as of 1.9.0, and two prominent doors to the same room a thumb-width
+     apart is worse than one. "Read in context" inside a lesson stays -
+     that one is about the passage in front of you, not about the Bible. */
 
   /* Continue, only when there is something to continue. */
   if(activeStudyRecord){
@@ -7953,10 +7977,18 @@ function completeLesson(){
 
 /* ---------- this product claims the foundation's four seams ---------- */
 Domain.tabIcons = {
-  today:    '<path d="M2.4 4.2c1.9-.9 3.7-.9 5.6 0 1.9-.9 3.7-.9 5.6 0v7.9c-1.9-.9-3.7-.9-5.6 0-1.9-.9-3.7-.9-5.6 0z"/><path d="M8 4.2v7.9"/>',
+  /* Today is a day, so it is a sunrise over a horizon. Bible inherits the
+     open book, which is what it was always drawing. */
+  today:    '<path d="M1.6 12.6h12.8"/><path d="M4.1 12.6a3.9 3.9 0 0 1 7.8 0"/>' +
+            '<path d="M8 2.1v1.7M3.2 4.3l1.2 1.2M12.8 4.3l-1.2 1.2"/>',
+  bible:    '<path d="M2.4 4.2c1.9-.9 3.7-.9 5.6 0 1.9-.9 3.7-.9 5.6 0v7.9c-1.9-.9-3.7-.9-5.6 0-1.9-.9-3.7-.9-5.6 0z"/><path d="M8 4.2v7.9"/>',
   learn:    '<circle cx="8" cy="8" r="5.9"/><path d="M10.4 5.6 9.1 9.1 5.6 10.4 6.9 6.9Z"/>',
   saved:    '<path d="M4.2 2.6h7.6v10.8L8 10.8l-3.8 2.6z"/>',
-  settings: '<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M14.2 8h-1.6M3.4 8H1.8M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1M12.4 12.4l-1.1-1.1M4.7 4.7 3.6 3.6"/>'
+  /* A hub, a rim and teeth. It was a hub and teeth alone, which reads as a
+     small sun - fine when Today was a book, confusing now that Today is a
+     sunrise. The rim is the whole difference. */
+  settings: '<circle cx="8" cy="8" r="2.1"/><circle cx="8" cy="8" r="5.2"/>' +
+            '<path d="M8 1.3v1.4M8 13.3v1.4M14.7 8h-1.4M2.7 8H1.3"/>'
 };
 Domain.hydrate = loadVerseData;
 /* applyTextSize() runs on every render rather than only when the control is
@@ -8192,14 +8224,14 @@ function rememberBibleLast(code, chapter){
 }
 
 /* ---------- opening ---------- */
-function openBible(){
+/* The Bible tab paints from whatever is already cached, then fills in the
+   book list when the edition index arrives. There is no intermediate
+   "open the Bible" screen: one tap on the tab IS the Bible. */
+function enterBible(){
   refreshBibleForEdition();
   renderBibleHome();
-  pushOverlayHistory();
-  openOverlay('bibleOverlay');
   loadBibleIndex(translation).then(renderBibleHome).catch(function(){ renderBibleHome(); });
 }
-function closeBible(){ closeOverlay('bibleOverlay'); releaseOverlayHistory(); }
 function closeBibleChapters(){ closeOverlay('bibleChaptersOverlay'); releaseOverlayHistory(); }
 function closeBibleReader(){ closeOverlay('bibleReaderOverlay'); releaseOverlayHistory(); }
 
@@ -8293,13 +8325,22 @@ function renderBibleHome(){
   }
 
   html +=
-    '<button class="list-row bible-jump" onclick="openBibleJump()">' +
+    '<div class="list">' +
+    '<button class="list-row" onclick="openTranslationPicker()">' +
+      '<span class="list-row-main">' +
+        '<span class="list-row-title">Bible translation</span>' +
+        '<span class="list-row-desc">' + escapeHtml(activeTranslation().title) + '</span>' +
+      '</span>' +
+      '<span class="list-row-arrow" aria-hidden="true"></span>' +
+    '</button>' +
+    '<button class="list-row" onclick="openBibleJump()">' +
       '<span class="list-row-main">' +
         '<span class="list-row-title">Go to passage</span>' +
         '<span class="list-row-desc">A reference such as John 3:16</span>' +
       '</span>' +
       '<span class="list-row-arrow" aria-hidden="true"></span>' +
-    '</button>';
+    '</button>' +
+    '</div>';
 
   if(!groups.length){
     html += '<div class="field-hint" style="margin-top:var(--space-lg)">Loading the books of ' +
@@ -8462,6 +8503,18 @@ function retryBibleBook(){
     .catch(function(){ bibleLoadFailed = true; renderBibleReader(); });
 }
 
+/* ---------- settings ----------
+   A utility reached from every tab, and it deliberately does NOT change
+   which tab you are on. Closing it therefore returns you to Today from
+   Today and to Bible from Bible, without anything having to remember
+   where you came from. The overlay engine restores focus to the gear. */
+function openSettings(){
+  paintPrefControls();
+  pushOverlayHistory();
+  openOverlay('settingsOverlay');
+}
+function closeSettings(){ closeOverlay('settingsOverlay'); releaseOverlayHistory(); }
+
 /* ---------- go to passage ---------- */
 function openBibleJump(){
   const input = document.getElementById('bibleJumpInput');
@@ -8495,11 +8548,9 @@ function submitBibleJump(){
 /* Repaint whatever Bible surface is open after the edition changes. The
    location is kept; only the words and the book names change. */
 function refreshBibleForEdition(){
-  const homeAbbr = document.getElementById('bibleHomeAbbr');
-  if(homeAbbr) homeAbbr.textContent = activeTranslation().abbr;
   const readerAbbr = document.getElementById('bibleReaderAbbr');
   if(readerAbbr) readerAbbr.textContent = activeTranslation().abbr;
-  if(!isOverlayOpen('bibleOverlay') && !isOverlayOpen('bibleReaderOverlay') &&
+  if(currentTab !== 'bible' && !isOverlayOpen('bibleReaderOverlay') &&
      !isOverlayOpen('bibleChaptersOverlay')) return;
   loadBibleIndex(translation).then(function(){
     renderBibleHome();
@@ -8900,6 +8951,8 @@ function paintStaticIcons(){
     const glyph = btn.querySelector('.glyph');
     if(glyph && btn.dataset.tab) glyph.innerHTML = tabIcon(btn.dataset.tab);
   });
+  const gear = document.getElementById('settingsBtn');
+  if(gear && !gear.innerHTML) gear.innerHTML = tabIcon('settings');
   const back = chevronLeft(20);
   document.querySelectorAll('.page-topbar .icon-btn:empty').forEach(b => { b.innerHTML = back; });
   document.querySelectorAll('.list-row-arrow:empty').forEach(a => { a.innerHTML = chevronRight(15); });
