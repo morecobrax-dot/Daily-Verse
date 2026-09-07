@@ -2097,6 +2097,23 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v1-10-3',
+    version: '1.10.3',
+    title: 'Scripture stays on the screen',
+    date: '2026-09-06',
+    summary: 'A chapter is no longer rebuilt while you are reading it, and chapters ' +
+             'are marked as read only when you say so.',
+    newFeatures: [],
+    improvements: [
+      'Marking a chapter read, or saving a verse, now changes only what it needs to &mdash; the Scripture in front of you is left alone'
+    ],
+    fixes: [
+      'Scripture could vanish mid-chapter, leaving a blank screen. Marking a chapter as read rebuilt every verse of the chapter underneath you, and on a phone that could not survive being done mid-scroll',
+      'A chapter could mark itself read while you were still near the beginning. Touching the end of a chapter once &mdash; a fast flick, or the toolbar changing size &mdash; armed a timer that fired seconds later without checking where you had got to',
+      'Automatic read-marking is switched off for now. Mark as read, and Mark as unread, still work at the end of every chapter, and nothing already marked has changed'
+    ]
+  },
+  {
     id: 'v1-10-2',
     version: '1.10.2',
     title: 'The way back stays put',
@@ -8934,7 +8951,10 @@ function markChapterRead(code, chapter, announce){
       onAction: 'markChapterUnread(\'' + escapeAttr(code) + '\', ' + chapter + ')'
     });
   }
-  renderBibleReader();
+  /* One button label. NOT renderBibleReader(), which assigns innerHTML and
+     would rebuild all eighty verses of Luke 1 under a moving finger - the
+     thing iOS could not survive. */
+  paintChapterReadState();
   return true;
 }
 function markChapterUnread(code, chapter){
@@ -8944,7 +8964,7 @@ function markChapterUnread(code, chapter){
   /* Undoing is also a decision: the chapter must not immediately re-mark
      itself from the same session that just marked it. */
   bibleReadSession.blocked = true;
-  renderBibleReader();
+  paintChapterReadState();
   renderBibleChapters();
 }
 function toggleChapterRead(code, chapter){
@@ -8957,6 +8977,22 @@ function toggleChapterRead(code, chapter){
    link. A chapter counts as read when somebody started near its beginning,
    stayed a moment, and reached the end of it. Nothing about this is written
    to storage until that is true: session progress lives here, in memory. */
+/* OFF, deliberately, and this is the whole switch.
+
+   A physical iPhone marked Luke 1 read while the reader was at verse 3.
+   Reproduced here: touch the end of a chapter once inside the dwell window
+   - a flick, a rubber-band overscroll, the toolbar collapsing and changing
+   clientHeight - and a timer was armed that marked the chapter read up to
+   2.5s later, wherever the reader had moved to by then. It never re-asked
+   where they were.
+
+   The timer flaw is fixed below, but a wrong "read" is a lie about
+   somebody's own history, and one manual tap costs nothing next to that.
+   Automatic completion stays off until it has been proved on real
+   hardware. Flip this to true to re-enable; everything else is intact,
+   and no stored record changes either way. */
+const AUTO_READ_ENABLED = false;
+
 const READ_MIN_DWELL_MS = 2500;
 const READ_ENTRY_MAX_VERSE = 3;
 let bibleReadSession = { code: null, chapter: null, entry: 1, openedAt: 0, blocked: false };
@@ -8984,12 +9020,19 @@ function watchChapterEnd(){
   if(scroller.scrollHeight <= scroller.clientHeight + READ_END_SLACK_PX) maybeMarkRead();
 }
 
+/* One definition, asked by the scroll listener and again by the timer, so
+   the two can never disagree about where the reader is. */
+function atChapterEnd(){
+  const sc = document.getElementById('bibleReaderBody');
+  if(!sc) return false;
+  /* A chapter that has not been laid out yet reports nothing useful, and
+     must not be read as "already at the end". */
+  if(sc.scrollHeight <= 0) return false;
+  return sc.scrollTop + sc.clientHeight >= sc.scrollHeight - READ_END_SLACK_PX;
+}
+
 function attachChapterScrollWatch(scroller){
-  const fn = function(){
-    if(scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - READ_END_SLACK_PX){
-      maybeMarkRead();
-    }
-  };
+  const fn = function(){ if(atChapterEnd()) maybeMarkRead(); };
   scroller.addEventListener('scroll', fn, { passive: true });
   bibleScrollWatch = { el: scroller, fn: fn };
 }
@@ -9006,8 +9049,12 @@ function beginReadSession(code, chapter, entryVerse){
 
 
 function maybeMarkRead(){
+  if(!AUTO_READ_ENABLED) return;
   const s = bibleReadSession;
   if(s.blocked) return;
+  /* The end of the chapter has to be true NOW, not when the timer was
+     set. This is the defect that marked Luke 1 read at verse 3. */
+  if(!atChapterEnd()) return;
   if(s.code !== bibleBookCode || s.chapter !== bibleChapter) return;
   /* Arrived at the end of the chapter because a link put you there. */
   if(s.entry > READ_ENTRY_MAX_VERSE) return;
@@ -9016,6 +9063,7 @@ function maybeMarkRead(){
   const waited = Date.now() - s.openedAt;
   if(waited < READ_MIN_DWELL_MS){
     if(bibleDwellTimer) clearTimeout(bibleDwellTimer);
+    /* Re-enters this function, which asks atChapterEnd() again. */
     bibleDwellTimer = setTimeout(maybeMarkRead, READ_MIN_DWELL_MS - waited + 50);
     return;
   }
@@ -9064,6 +9112,19 @@ function removeHighlight(){ applyHighlight(null); }
    Class and attribute changes on the verses that changed. The chapter's DOM
    is NOT rebuilt: rebuilding it for a highlight would throw away scroll
    anchoring mid-read, which is the last thing this reader needs. */
+/* The chapter-end control, and only it: this is the entire visual
+   difference a read-state change makes inside the reader. It exists so
+   that marking a chapter never has to go near the Scripture. */
+function paintChapterReadState(){
+  const host = document.getElementById('chapterEnd');
+  if(!host || !bibleBookCode) return;
+  const btn = host.querySelector('button');
+  if(!btn) return;
+  btn.innerHTML = isChapterRead(bibleBookCode, bibleChapter)
+    ? checkIcon(15) + ' Read'
+    : 'Mark as read';
+}
+
 function paintVerseStates(){
   const host = document.getElementById('bibleReaderBody');
   if(!host) return;
@@ -9261,7 +9322,9 @@ function toggleSavedLocation(id, ref){
     if(persistSaved()) toast('Saved', 'success');
   }
   renderAll();
-  renderBibleReader();
+  /* The reader shows no per-verse saved state, so there is nothing in the
+     chapter to repaint. Rebuilding it to reflect nothing is how Scripture
+     went missing mid-scroll. */
 }
 
 /* A saved location resolved to words. The curated catalogue answers first

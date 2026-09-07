@@ -4427,14 +4427,39 @@ function testReaderQuality(){
   R.ctx.beginReadSession('JHN', 3, 1);
   R.ctx.bibleReadSession.openedAt = Date.now() - 60000;
   R.ctx.maybeMarkRead();
-  T('starting at the beginning and reaching the end does',
-    R.ctx.isChapterRead('JHN', 3));
+  /* THE HOTFIX. A physical iPhone marked Luke 1 read while the reader was
+     at verse 3. Reproduced: touching the end once inside the dwell window
+     armed a timer that fired up to 2.5s later and marked the chapter read
+     without ever re-asking where the reader now was. Automatic completion
+     is off until that is proved safe on real hardware, because a wrong
+     "read" is a lie about somebody's own history. */
+  T('automatic completion is switched off', c.AUTO_READ_ENABLED === false);
+  T('so even a perfect read-through does not mark it',
+    !R.ctx.isChapterRead('JHN', 3));
+  T('and the switch is a single named flag, so it can be turned back on',
+    src.indexOf('const AUTO_READ_ENABLED = false;') !== -1 &&
+    src.indexOf('if(!AUTO_READ_ENABLED) return;') !== -1);
+  /* The record shape is unchanged by the hotfix; it is simply reached by
+     the manual route now, which is the only route there is. */
+  R.ctx.markChapterRead('JHN', 3, false);
   const readRec = JSON.parse(R.storage.getItem('daily-verse.data.bibleRead'))[0];
   T('the record is a chapter and a time, and nothing else',
     readRec.id === 'JHN.3' && Object.keys(readRec).sort().join() === 'id,readAt,updatedAt',
     Object.keys(readRec).join());
   T('it does not record which edition was on screen',
     JSON.stringify(readRec).indexOf('eng-web') === -1);
+
+  /* The defect, stated as the rule it broke: a deferred decision has to ask
+     the question again when it fires, not trust an answer from 2.5 seconds
+     ago. Both the scroll listener and the timer now go through one
+     definition of "at the end". */
+  T('the deferred check re-asks where the reader is',
+    src.indexOf('function atChapterEnd()') !== -1 &&
+    src.indexOf('if(!atChapterEnd()) return;') !== -1);
+  T('and the scroll listener asks the same question, not its own',
+    src.indexOf('const fn = function(){ if(atChapterEnd()) maybeMarkRead(); };') !== -1);
+  T('a chapter that has not been laid out is never already at its end',
+    src.indexOf('if(sc.scrollHeight <= 0) return false;') !== -1);
 
   sub('and a reader can always say so themselves');
   R.ctx.markChapterUnread('JHN', 3);
@@ -4457,7 +4482,7 @@ function testReaderQuality(){
      on a 7700px chapter is a write per frame. */
   const bare = stripComments(js());
   T('the end-of-chapter check reads geometry and writes nothing',
-    /scroller\.scrollTop \+ scroller\.clientHeight >= scroller\.scrollHeight/.test(bare));
+    bare.indexOf('sc.scrollTop + sc.clientHeight >= sc.scrollHeight - READ_END_SLACK_PX') !== -1);
   /* Found on production: the scroller element outlives every chapter, so
      "already watching" was true from the second chapter onward and the early
      return skipped the geometry check with it. A psalm shorter than the
@@ -4480,6 +4505,40 @@ function testReaderQuality(){
     /function paintVerseStates\(\)/.test(bare) &&
     /el\.setAttribute\('data-hl', color\)/.test(bare) &&
     !/function applyHighlight\([\s\S]{0,220}renderBibleReader\(\)/.test(bare));
+
+  /* The second half of the iPhone defect. markChapterRead() called
+     renderBibleReader(), which assigns host.innerHTML - so marking a
+     chapter read rebuilt all eighty verses of Luke 1 under a moving
+     finger. Saving a verse did the same, for a state the reader does not
+     even display. Replacing Scripture mid-fling is what iOS could not
+     survive. Only a real chapter CHANGE may rebuild the chapter. */
+  const FNEND = String.fromCharCode(10) + '}';   // end of a top-level function
+  const rebuilders = ['markChapterRead', 'markChapterUnread', 'toggleChapterRead',
+                      'toggleSavedLocation', 'applyHighlight', 'removeHighlight',
+                      'toggleVerseSelection', 'clearVerseSelection', 'paintVerseStates',
+                      'saveSelectedVerses', 'paintChapterReadState'];
+  const offenders = rebuilders.filter(fn => {
+    const i = bare.indexOf('function ' + fn + '(');
+    if(i === -1) return false;
+    const body = bare.slice(i, bare.indexOf(FNEND, i));
+    return body.indexOf('renderBibleReader()') !== -1;
+  });
+  T('no state change rebuilds the chapter DOM', offenders.length === 0, offenders.join(', '));
+  T('marking a chapter read repaints one control instead',
+    bare.indexOf('function paintChapterReadState()') !== -1 && (() => {
+      const i = bare.indexOf('function markChapterRead(');
+      return bare.slice(i, bare.indexOf(FNEND, i)).indexOf('paintChapterReadState()') !== -1;
+    })());
+  /* Rebuilding is still right for a genuinely new chapter. */
+  T('and a real chapter change still does rebuild it', (() => {
+    const i = bare.indexOf('function bibleStepTo(');
+    return bare.slice(i, bare.indexOf(FNEND, i)).indexOf('renderBibleReader()') !== -1;
+  })());
+
+  /* A toast must not be able to change the height of Scripture. */
+  T('the toast lives outside the chapter, fixed to the page',
+    /<div class="toast-host" id="toastHost"/.test(src) &&
+    /.toast-host{[^}]*position: fixed/.test(style));
 
   sub('the way out of a chapter cannot be scrolled off the screen');
   /* Photographed on a phone: after jumping to a reference, the top bar sat
