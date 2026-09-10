@@ -1,0 +1,294 @@
+{
+  "_about": "Devotional series. Scripture-grounded application, written toward particular life patterns. This file carries canonical passage ids and editorial prose ONLY. It never carries Scripture text: the words come from the shipped editions at render time, through the same resolver Today and Learn use. A verse typed in here would be a verse this app asserts on its own authority, outside every check that defends the rest.",
+  "_authoring": {
+    "readingMax": 5200,
+    "considerMax": 200,
+    "considerCountMax": 2,
+    "practiceMax": 320,
+    "prayerMax": 600,
+    "rules": [
+      "Ground every claim in the anchor and the context actually read, and list that context in 'basis'.",
+      "Application is application. Never present it in a register that makes it sound like the passage said it.",
+      "Never tell a reader that God has spoken to them privately, arranged their circumstances, or promised them an outcome.",
+      "Where a reading is genuinely disputed, say so plainly and keep the entry off the disputed point.",
+      "A series is written toward a set of life patterns. The Scripture in it belongs to everyone.",
+      "Every paragraph must carry something the one before it did not. If it only restates the last one more warmly, cut it.",
+      "Length is not a target. A complete idea at 600 words beats a padded one at 850."
+    ]
+  },
+  "version": 1,
+  "series": [
+    {
+      "id": "the-weight-you-carry",
+      "title": "The Weight You Carry",
+      "summary": "Six readings on responsibility, and on the difference between carrying what is yours and carrying everything.",
+      "audience": "Anyone who has quietly decided that handling it alone is what being dependable means.",
+      "forWhom": "men",
+      "access": "free",
+      "entries": [
+        {
+          "id": "wyc-1",
+          "title": "What's actually yours to carry",
+          "passages": [
+            "Galatians 6:2-5"
+          ],
+          "basis": [
+            "Galatians 6:1-5",
+            "Galatians 6:6-10"
+          ],
+          "reading": "There is a kind of yes that costs more than it looks like it will. Someone describes a problem, and before they have finished you already know you are going to fix it. Not because you were asked. Because you can, and because being the person who can is part of how you understand yourself.\n\nPaul puts two instructions almost side by side here, and read quickly they contradict each other. Help each other with the load. Then, a sentence later, everyone carries their own. Readers have noticed for a long time that the two sentences do not use the same word. The first is a crushing thing, the kind of weight that buckles a man's knees. The second is closer to the pack a soldier carries as a matter of course — his own kit, his own share, nobody else's business to shoulder.\n\nThat distinction is doing the work. Paul is not being sentimental about community and then abruptly stern about self-reliance. He is drawing a line between the weight that will break someone if nobody helps, and the ordinary load that is simply theirs. You are asked to get under the first. You are not asked to take the second, and taking it may not be kindness at all.\n\nIt helps to notice what he is talking about. The paragraph opens with someone caught in a moral failure, and the instruction is to restore that person gently, watching yourself while you do it. So the burden in view is not a flat tyre or an awkward email. It is the sort of trouble a person cannot get out from under alone, the kind where shame makes asking almost impossible.\n\nMost of what men take on is not that. It is a colleague's deadline absorbed at eleven at night. An adult son's consequences quietly paid off. A friend's argument with his wife, carried around for a week as though it were solvable from outside. None of that is the crushing weight Paul has in view. It is somebody else's ordinary kit, and picking it up does two things at once: it exhausts you, and it tells the other man he is not capable of his own life.\n\nThere is a harder question underneath, and Paul raises it himself in the middle of the passage. He tells them to examine their own work rather than measuring it against the man next to them. That is an odd thing to put in a paragraph about burdens, unless the two are connected. They are. A good deal of what looks like responsibility is comparison wearing better clothes. If I am the one holding everything, I am the one who matters most in the room. The load is heavy, but it is also proof.\n\nSo the audit is not only practical. Take one thing you are carrying that is not yours and ask what you would lose if you set it down. Some of it is real love and some of it is position, and it is worth knowing which is which before your body tells you.\n\nNone of this is an argument for detachment. The chapter goes straight on to talk about not losing heart in doing good, about a harvest that comes if you do not give up. Paul is not thinning out obligation. He is aiming it. A man who carries everything indiscriminately will have nothing left for the person who is actually going under, and that person is the one the instruction was written for.",
+          "consider": [
+            "What are you carrying at the moment that is somebody else's ordinary load rather than a weight that would crush them?",
+            "If you set one of those down, what would you be afraid of losing?"
+          ],
+          "practice": "Name one thing you are carrying for someone who is capable of carrying it. This week, do not pick it up. If it helps, tell them plainly that you think they have it.",
+          "prayer": "Father, I have confused being needed with being useful, and I have called it responsibility. Show me the difference between the man who is going under and the man whose ordinary work I have quietly taken over. Give me the nerve to help where help is real, and the nerve to stand back where it is not. Amen.",
+          "relatedPassages": [
+            "Galatians 6:9-10"
+          ]
+        },
+        {
+          "id": "wyc-2",
+          "title": "The short fuse",
+          "passages": [
+            "James 1:19-20"
+          ],
+          "basis": [
+            "James 1:12-18",
+            "James 1:19-27"
+          ],
+          "reading": "Anger is fast. It arrives before you have decided anything, before you could have decided anything, and by the time you are aware of it your voice has already changed. That speed is the whole problem, and it is what James goes after. He gives three things in a deliberate order — take in first, answer later, and let anger be the slowest of the three — and the order is itself the instruction. He is not asking a man to feel differently. He is asking him to arrive later.\n\nThen he gives a reason, and it is worth reading carefully because it is narrower than it is usually quoted. He does not say anger is sin. He says that a man's anger does not produce the kind of life God is after. That is a claim about output, not about morality. Your anger may be entirely justified and still build nothing. Most of it is at least partly justified. That is precisely why it is so hard to put down.\n\nAnger is also convincing. It feels like competence. It feels like finally taking something seriously after a long stretch of being reasonable. In the moment it has the texture of moral clarity, and that is the trick of it — the sensation of being right is nearly indistinguishable from the sensation of being right.\n\nUnderneath most of it there is something being guarded. Watch where yours actually fires. Not the large injustices, where you are usually calmer than you expect. The small ones: being contradicted in front of people who report to you, a plan changed without being consulted, a teenager's tone. Those are not moral emergencies. They are places where standing, competence or control has been touched, and the anger arrives to defend the perimeter.\n\nThat is a more useful question than whether you were justified. When your voice drops and your chest goes tight, what exactly is being protected? Sometimes it is a person and the anger is right. Often it is an image, and the anger is only expensive.\n\nJames has already made the point that God is not the source of what pulls a man apart, and that what comes down from him is good and does not flicker. He is contrasting two kinds of momentum. One is quick, self-defending, and leaves damage the man will spend a fortnight repairing. The other is slower, comes from somewhere steadier, and is what he goes on to describe as actually doing something with what you have heard rather than looking at yourself and walking away.\n\nThe practical shape of this is unglamorous. There is a gap — a second, maybe two — between the surge and the sentence. You cannot stop the surge. You can, with practice, stop living as though the sentence were involuntary. Most men who are known for their temper have simply never worked in that gap, and they describe it afterwards as though weather had happened to them.\n\nIt is worth being honest about the cost of not doing this. A short fuse rarely destroys a marriage or a career in one detonation. It erodes. People begin managing you. They bring you news later, softened, or not at all, and you end up with less information about your own life than anyone else in the house has.",
+          "consider": [
+            "Where does your anger fire fastest, and what is it usually protecting when it does?",
+            "Who in your life has started bringing you news carefully?"
+          ],
+          "practice": "The next time your voice starts to change, say nothing for a slow count of five before you answer. Once this week, write down afterwards what you thought was at stake.",
+          "prayer": "Lord, I am quick where I should be slow, and I have called it caring. When something rises in me this week, hold me in the gap before I speak long enough to see what I am guarding. Where my anger is honest, keep it useful. Where it is only defending my own standing, let it die quietly and cost no one anything. Amen.",
+          "relatedPassages": [
+            "James 1:22-25"
+          ]
+        },
+        {
+          "id": "wyc-3",
+          "title": "When no one is watching",
+          "passages": [
+            "Psalm 15:1-5"
+          ],
+          "basis": [
+            "Psalm 15:1-5",
+            "Psalm 24:3-6"
+          ],
+          "reading": "Most men have two versions of themselves, and the gap between them is small enough to ignore for years. There is the man other people can describe, and the man who exists in the hour when nothing is being observed and nothing will be reported. Psalm 15 is interested in the second one.\n\nIt opens as a question at a door. Who gets to stay here? In its original setting this was likely sung as people approached the sanctuary, and the question is the sort a gatekeeper asks. What follows is the answer, and the striking thing is how ordinary it is. Nothing about sacrifices. Nothing about religious accomplishment. Instead: a man tells the truth inside himself, does not run his neighbour down, does not repeat a rumour that would cost someone their name, does not lend money in a way that traps the borrower, will not be bought to testify against an innocent man.\n\nThese are all private. Every one of them happens where there is no audience, or where the only audience is someone with no power to hold you to it. That seems to be the point. The psalm is not describing a public reputation. It is describing what a man is when reputation is not in play.\n\nOne line lands harder than the rest. Among the marks of this person is that he makes a promise, discovers it has turned out badly for him, and keeps it anyway. Not a promise that cost nothing. A promise where the bill arrived, and he paid it.\n\nThat is a specific and uncomfortable test, because everyone can name one. The quote you gave before you understood the job. The commitment made when you had more time than you have now. The word given to someone who has since become inconvenient, and who would probably not fight you if you quietly withdrew it. There is almost always a defensible way out. That is exactly what makes it a test of character rather than of circumstance.\n\nIt is worth being careful about what the psalm is doing, because it can be read as a checklist that earns entry, and that is not how the psalms handle it. It is a portrait, not a transaction — a description of the kind of life that belongs in the presence of God, sung by people who understood themselves to be there by his welcome rather than their performance. Read as a bill of qualification it will only produce either despair or self-congratulation, and both miss it.\n\nRead as a portrait it does something better. It gives you a set of very small, very concrete places to look. Not your convictions. Your invoices, your promises, the way you talk about a colleague to someone who will never repeat it.\n\nThe psalm closes by saying this man is not shaken. That is not offered as a reward for good behaviour; it reads more like a description of what such a life is actually like from inside. A man who has closed the gap between his two versions has less to manage. There is no second account to keep straight, nothing to remember having said, no version to protect. Duplicity is not only wrong. It is heavy, and men carry it for decades without ever naming the weight.",
+          "consider": [
+            "What promise are you currently holding that has turned out to cost more than you expected?",
+            "Where is the gap widest between the man others could describe and the man you actually are?"
+          ],
+          "practice": "Identify one commitment you have been quietly looking for a way out of. Decide this week whether to keep it or to go to the person directly and say you cannot. Do not let it lapse by silence.",
+          "prayer": "God, there is a version of me only I can see, and it has been drifting from the one everybody else meets. Where I have given my word and gone looking for an exit, hold me to it. Where I have talked about someone in a room they will never hear about, I am sorry. Make the private man and the public one the same man. Amen.",
+          "relatedPassages": [
+            "Psalm 24:3-5"
+          ]
+        },
+        {
+          "id": "wyc-4",
+          "title": "Wanting more",
+          "passages": [
+            "Ecclesiastes 2:18-23"
+          ],
+          "basis": [
+            "Ecclesiastes 2:1-11",
+            "Ecclesiastes 2:24-26"
+          ],
+          "reading": "Ecclesiastes is spoken here by a man who has done what most people only plan. He built houses, planted vineyards, made gardens and pools, bought herds and singers and everything else he could think of, and he says he did not refuse himself anything he wanted. This is not a man moralising about ambition from outside it. He got there.\n\nAnd then, in the passage here, he says he hated it. Not the work itself — the fact that he has to leave it to whoever comes next, a man who did not build it and may well be a fool, and who will inherit the lot regardless. Everything he made with his own judgement passes to someone whose judgement he cannot vouch for. He calls the nights sleepless and the days painful, and he means it about the work he loved.\n\nWhat he is complaining about is not effort. It is permanence. He wanted the thing he built to be, in some final sense, his, and it will not be. Not because he failed. Because that is not available to anyone.\n\nThat is a colder observation than most devotional writing wants to sit with, and Ecclesiastes is unusual in Scripture for refusing to soften it. The book does not tell you your work will be rewarded if you persevere. It tells you the outcome is outside your hands and always was, and that the sooner a man knows this the less of his life he will spend bargaining for something nobody gets.\n\nThe question this puts to a working man is sharper than whether he is too ambitious. Ambition is not the target here; the Teacher's problem is not that he built too much. It is what he expected the building to do for him. So: what are you actually expecting yours to deliver? Security is the usual answer, and it is at least partly honest. But most men are also buying something less concrete — the sense that when this is finished, they will have arrived somewhere and can stop justifying their existence. That is the purchase the passage says will not clear.\n\nThere is a test in it. Imagine what you are building outliving you badly. Handed to someone careless, sold, split up, its name changed. If that thought is unbearable rather than merely sad, the work has been carrying more than work can carry.\n\nWhat the Teacher offers next is small, and easy to miss because it is so modest. A few verses on, he lands somewhere modest: eat, drink, find some good in the work itself — and he adds that this comes from God's hand. That is not a promise of legacy. It is permission to enjoy the day you are in, the meal in front of you, the job while you have it, without requiring any of it to be permanent before it is allowed to be good.\n\nFor a man who has spent twenty years deferring his life until the next thing is secured, that reads less like consolation and more like an instruction he has been avoiding.",
+          "consider": [
+            "What are you expecting your work to give you that work cannot actually provide?",
+            "If what you are building were handed to someone careless, would that be sad, or unbearable?"
+          ],
+          "practice": "Take one evening this week and do not work, plan or check anything connected to what you are building. Eat a meal slowly. Treat it as obedience rather than as a break you have earned.",
+          "prayer": "God, the day I am building toward keeps moving, and Ecclesiastes tells me plainly it always will. I have wanted my work to make me permanent. Teach me to do it well and hold it loosely, to eat today's meal instead of deferring it, and to receive the good of my work as something given rather than something owed. Amen.",
+          "relatedPassages": [
+            "Ecclesiastes 2:24-25"
+          ]
+        },
+        {
+          "id": "wyc-5",
+          "title": "Desire with integrity",
+          "passages": [
+            "1 Thessalonians 4:3-8"
+          ],
+          "basis": [
+            "1 Thessalonians 4:1-2",
+            "1 Thessalonians 4:9-12"
+          ],
+          "reading": "Desire is not the problem, and any writing on this subject that begins as though it were will lose the argument in the first paragraph. Paul does not treat it as a defect. He treats it as something with enormous power that has to be handled like anything else with enormous power — knowingly, and with a clear sense of who else is standing nearby.\n\nHe frames the whole paragraph as a continuation of instructions he has already given about how to live in a way that pleases God, and he ties it to being set apart. Then he says something a modern reader tends to slide past: that each of them should know how to handle himself in this, with honour rather than as a man driven by appetite who does not know God. The verb matters. He assumes it is learnable. It is a competence, not a temperament, and men are not simply born with more or less of it.\n\nThere is a genuine translation question in the middle of this passage — the word Paul uses can mean a man's own body or can be read as referring to his wife, and translators have gone both ways for centuries. It would be dishonest to build a devotional on a reading that is still disputed, so leave it standing. What is not disputed is the sentence that follows, and it is the one that carries the weight.\n\nPaul says that in this matter no one should wrong or take advantage of a brother. That is the line that changes the shape of the subject. He has moved it from private discipline to another person's interests. Desire, in his account, always has a second name attached — someone who can be defrauded, someone whose life can be quietly spent for another man's appetite.\n\nThis is a more searching test than the one most men apply. The usual question is whether a boundary was crossed, and it is a question about the self: did I do something wrong, did I get away with it, how bad was it. Paul's question is about somebody else. Did I treat a person as a person. Was there someone in that room, in that photograph, in that conversation, whose life had its own weight and its own future, and did I think about them at all?\n\nMost failures here do not begin with a decision. They begin with a slow reclassification — someone stops being a person with a history and becomes a category, an image, an opportunity. Once that has happened the rest follows almost without effort, and the man can usually explain it to himself as something that occurred rather than something he did.\n\nPaul closes it seriously. He says God did not call them to impurity but in holiness, and that rejecting this is not rejecting a man's opinion but God. He is not shaming them; the passage is addressed to people he has just told he is pleased with. But he is refusing to treat it as a minor matter of preference.\n\nWhat he does not do is leave them alone with it. The very next thing he writes is about loving one another, and about living quietly and minding their own affairs and working with their hands. This is not filed under private struggle. It sits inside a life with other people in it, ordinary work, and something to do — which is, in practice, most of what integrity here is actually made of.",
+          "consider": [
+            "In the last month, where did someone stop being a person to you and become a category?",
+            "What in your ordinary week makes this harder, and what would it cost to change it?"
+          ],
+          "practice": "Identify the specific hour, place or state of mind where this is hardest for you. Change one concrete thing about it this week — the room, the device, the time — rather than resolving to try harder.",
+          "prayer": "Father, Paul will not let me keep this between me and my own record. There are people I have made into categories. Forgive me for that, and undo it in how I think. Teach me to handle this with honour, and give me an ordinary life full enough of work and people that I am not fighting it alone in the dark. Amen.",
+          "relatedPassages": [
+            "1 Thessalonians 4:9-12"
+          ]
+        },
+        {
+          "id": "wyc-6",
+          "title": "You were not built to carry it alone",
+          "passages": [
+            "Exodus 18:13-24"
+          ],
+          "basis": [
+            "Exodus 18:1-12",
+            "Exodus 18:25-27"
+          ],
+          "reading": "Jethro watches his son-in-law work for one full day. That is the detail the story hangs on. He does not hear a report or form an opinion from a distance. He sits there from morning until evening while the people queue in front of Moses, one dispute after another, and he says nothing until he has seen the whole thing.\n\nThen he asks a question that is almost rude in its directness: what is it that you are actually doing here? And why are you doing it by yourself while everyone stands around waiting?\n\nMoses gives the answer any competent man gives. The people come to me. They need decisions. I know the law and they do not. It is all true. That is what makes it worth paying attention to — Moses is not being lazy or self-important, he is describing a genuine need that he is genuinely qualified to meet, and he is meeting it. By every standard he would recognise, he is doing well.\n\nJethro tells him it is not good. Not inefficient. Not unsustainable. Not good. And then he explains why, and the explanation has two halves that men usually only hear one of. You will wear yourself out — that is the half that gets quoted. And these people with you will wear out too. The self-sufficiency is not only costing Moses. It is costing everybody who has to stand in his queue.\n\nThat second half is the sharper one. A man who insists on handling everything tends to think of the cost as his own to absorb, which makes it feel almost noble. It rarely is only his. The team that cannot move without his sign-off, the wife who cannot get a decision until he has capacity, the son whose question waits until Sunday — they are all in the queue, and the queue is the problem.\n\nJethro's proposal is not that Moses do less that matters. He tells him to keep the part only he can do and to give away the part that anyone capable and honest could handle. That distinction is the whole of it, and most men have never actually made it on paper. There is usually far less in the first category than we like to think.\n\nThere is something else here that is easy to miss and hard to swallow. Jethro is a Midianite priest. He is not part of Israel. He is family, he is older, and he has just arrived — and Moses, who has spoken with God at the burning bush and in front of Pharaoh, listens to him and does what he says. The text says simply that he listened and did everything his father-in-law had said. No argument recorded. No period of resistance.\n\nA man who can hear that kind of correction from that direction is rarer than a man who can lead. It requires him to accept that someone outside the situation could see it more clearly than he could from inside it, and that being the one God spoke to does not make him the one who sees everything.\n\nThis is where a series about carrying weight has to end, because everything before it can be turned into another argument for self-reliance. Take responsibility for what is yours. Govern your temper. Keep your word when it costs. Hold your ambition loosely. Handle desire with honour. All of it can be assembled into a picture of a man who needs nobody, and that picture is not in Exodus. Moses got the correction, and took it, and the record of his obedience is the shape of the work afterwards.",
+          "consider": [
+            "What are you currently the bottleneck for, and who is standing in that queue?",
+            "Who has told you something true about your load that you have not acted on?"
+          ],
+          "practice": "Write two short lists: what genuinely only you can do, and what you have simply never handed over. Give one thing from the second list to a capable person this week, and do not check on it.",
+          "prayer": "Lord, other people have been waiting on me for longer than I noticed, and I called it dependability. Show me what is actually mine and what I have only ever kept. Give me the humility Moses had when an outsider told him the truth about his own work, and make me able to hear it from the people already trying to tell me. Amen.",
+          "relatedPassages": [
+            "Exodus 18:25-26"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "steady-ground",
+      "title": "Steady Ground",
+      "summary": "Six readings on steadiness that does not depend on approval, usefulness, or knowing how things will turn out.",
+      "audience": "Anyone whose sense of being all right has quietly become dependent on managing everything well.",
+      "forWhom": "women",
+      "access": "free",
+      "entries": [
+        {
+          "id": "sg-1",
+          "title": "The measuring",
+          "passages": [
+            "Psalm 131:1-3"
+          ],
+          "basis": [
+            "Psalm 131:1-3",
+            "Psalm 130:5-8"
+          ],
+          "reading": "Comparison rarely announces itself. It arrives as information. You see how someone else's house looks on a Tuesday morning, how her children speak to her, what she has managed while also doing the thing you have not started, and none of it feels like envy. It feels like data about yourself.\n\nPsalm 131 is three verses long and it is about a person who has stopped doing that. It is one of the shortest psalms in the collection and it does not argue. David says his heart is not lifted up, that he does not have his eyes on things above him, that he has not gone chasing after matters too great and too difficult for him.\n\nThat middle claim is worth slowing down on, because it is not humility in the sense of thinking poorly of yourself. It is a decision about scope. There are things that are genuinely beyond a person's remit — other people's opinions, outcomes years out, the interior life of someone who has not told you about it — and he says he has stopped occupying himself with them. Not that he has stopped caring. That he has stopped handling them as though they were his to arrange.\n\nThen comes the image the psalm is remembered for, and the precision of it is easy to lose. He does not say he is like a child with its mother. He says he is like a weaned child. That is a specific thing. A nursing child is content in its mother's arms because it is getting something. A weaned child in the same arms wants nothing from her at that moment. It has been through the hard part already — the distress of losing the thing it was sure it needed — and has come out the other side able to be near her simply because she is his mother.\n\nSo the steadiness in this psalm is not the calm of someone whose needs are being met on schedule. It is the calm on the far side of not getting something. That is a much more useful picture, because most steadiness that depends on things going well is not steadiness at all. It is just a good week.\n\nAnd he says he has quieted his soul, which is a verb with effort in it. It reads like something he did, and by implication something he has had to do more than once. This is not a temperament some people are issued at birth. It is a practice, and the psalm is short enough to suggest it is not complicated so much as repeated.\n\nThe psalm just before it in the collection is about waiting through the night the way watchmen do — people whose whole job is to stand in the dark and be certain the sun is coming without being able to make it come any faster. The two sit next to each other, and they are describing the same posture from different angles.\n\nComparison is, in the end, a way of occupying yourself with things too great — with a verdict on your own life that you are not in a position to issue, assembled from evidence you do not actually have. The psalm's answer is not to argue you out of it. It is to describe someone who put it down, and to end by turning outward and telling everyone else to hope in the Lord, which is a strange and generous way for a private poem about one person's quieted heart to finish.",
+          "consider": [
+            "Whose life are you currently using as evidence about your own, and what do you actually know about it?",
+            "What are you handling as though it were yours to arrange that is genuinely outside your remit?"
+          ],
+          "practice": "Notice the next time you open something that reliably starts you measuring. Close it, and name out loud one thing that is actually in front of you today.",
+          "prayer": "Lord, other lives have quietly become the measure of mine, and I called it paying attention. Quiet me. Not by handing me everything I have been measuring myself against, but by making me able to sit here without it. Teach me the difference between what is mine to carry and what is simply too great for me. Amen.",
+          "relatedPassages": [
+            "Psalm 130:5-6"
+          ]
+        },
+        {
+          "id": "sg-2",
+          "title": "More than what you're needed for",
+          "passages": [
+            "Luke 10:38-42"
+          ],
+          "basis": [
+            "Luke 10:25-37",
+            "Luke 11:1-4"
+          ],
+          "reading": "Martha deserves a better defence than she usually gets. She opened her home. In that culture hospitality was not a nicety, it was an obligation with real social weight, and the work of it was substantial and largely invisible. Somebody had to do it or the guest went unfed. She was not fussing. She was doing the thing that needed doing, and she was doing it while her sister sat down.\n\nIt is also worth noticing where Luke puts this story. Immediately before it is the parable of a man who stops on a road, handles a bleeding stranger, pays for his care and arranges his recovery — a story whose entire point is that the religious professionals did nothing and the outsider acted. Luke has just spent a page commending doing. He is not now turning around to say that action is inferior to sitting still. Whatever is going on between these sisters, it is not a ranking of two kinds of temperament.\n\nWhat Jesus actually names is narrower than the sermon usually is. He says her name twice, which in that idiom is closer to tenderness than to rebuke, and he says she is anxious and agitated about many things. He does not say she is doing the wrong task. He says something about her interior state while she does it — worried, and pulled in several directions at once.\n\nAnd it is worth saying plainly what this passage does not do, because it is often asked to carry it. It is not a general teaching about where a person's identity comes from. That doctrine is taught elsewhere in Scripture and taught clearly; it is simply not what these five verses are doing. This is a scene in a house on a particular afternoon, about attention, and about a guest who will not be there long.\n\nThat is the thing Martha is missing, and it is time-limited. Jesus is in her house now. The meal will be needed either way, but he will not be sitting in that room indefinitely, and Mary has noticed something about the hour that Martha has not. What Jesus says will not be taken from her is not a reward for a personality type. It is the thing she is currently receiving, which is him, while he is there.\n\nThe risk this describes is not busyness in the abstract. It is subtler: that usefulness becomes the only mode you know how to be in, until you cannot be with someone without also doing something for them. It is possible to serve a person all evening and never once be present to them. Many women are extremely good at the first and have quietly lost access to the second, and it is not laziness that took it — it is competence, rewarded for years.\n\nThere is a small detail worth holding. Martha's complaint is not really about the workload. She asks Jesus to make her sister help, which means what she wants is not fewer dishes but company in the resentment. That is usually where this lands. The tiredness is real, but the sting underneath is being the one who notices what needs doing while everyone else appears untroubled by it.\n\nWhat happens in the next chapter is that the disciples ask Jesus to teach them to pray, and he gives them something short and daily. It is not the same scene, but it points in a similar direction: the life he is forming in them has time in it that is not productive, and is not therefore wasted.",
+          "consider": [
+            "When did you last spend time with someone without also doing something for them?",
+            "When you are resentful about the workload, is it the work you want changed, or being the only one who sees it?"
+          ],
+          "practice": "Choose one ordinary interaction this week — a phone call, a meal, ten minutes with someone in your house — and do nothing else during it. No task running alongside.",
+          "prayer": "Jesus, I know how to be useful, and I have made it the only way I know how to be with people. I am agitated about a great many things and most of them are real. Teach me to sit down while you are in the room. Let me serve because I love them, not because I do not know what else to be. Amen.",
+          "relatedPassages": [
+            "Luke 11:1-4"
+          ]
+        },
+        {
+          "id": "sg-3",
+          "title": "I cannot come down",
+          "passages": [
+            "Nehemiah 6:1-4"
+          ],
+          "basis": [
+            "Nehemiah 4:1-6",
+            "Nehemiah 6:5-14"
+          ],
+          "reading": "Nehemiah is on a wall. The gaps are closed, the doors are not yet hung, and his opponents send a friendly invitation: come and meet us out on the plain, let us talk. It sounds reasonable. It sounds, in fact, like exactly the kind of thing a person is supposed to say yes to — dialogue, a meeting, a chance to smooth things over with people who have been difficult.\n\nHe reads it correctly. The text says he understood that they meant to harm him, and the invitation is a way of getting him off the wall and out of the city, alone, on open ground a day's walk away.\n\nWhat he does next is the part worth studying. He does not accuse them. He does not explain that he knows what they are doing. He does not defend himself at all. He sends back a description of what he is doing and why stopping is not available: the work is significant, he is in the middle of it, and it would halt if he left it to come down to them.\n\nAnd then they ask again, and he says the same thing. Four times, the same message. He does not escalate his language, he does not soften it, and he does not eventually get worn down into a compromise meeting halfway. He just repeats himself.\n\nThat is a more useful model than most of what gets called boundaries, because it requires almost no confrontation. There is no accusation to defend, no relationship formally broken, nothing to apologise for later. It is a sentence about his own commitments rather than a judgement about their motives — and it works precisely because it gives them nothing to argue with. You cannot really rebut someone telling you what they are doing.\n\nThe repetition is not incidental. The pressure in this chapter does not come as one dramatic confrontation that can be won and finished. It comes as a fourth invitation, and then a fifth approach in a different form — an open letter designed to be read by others, full of rumours about his motives, and after that a man inside the city hired to frighten him into hiding. It arrives as attrition. Most does. The question is rarely whether you can say no once, but whether you can say it the fourth time without either exploding or giving in out of sheer fatigue.\n\nIt is worth being precise about what the work was, because this passage gets stretched. Nehemiah is not protecting a personal ambition or a project he found meaningful. He had a specific commission, publicly known, with an end point. The principle here is not that whatever you care about most is sacred and everyone else should accommodate it. It is narrower and more usable: when you have genuinely been given something to do, an interruption is not automatically owed a yes simply because refusing feels impolite.\n\nThat distinction matters, because the most common failure is not being too guarded. It is not having decided in advance what the work is. A woman who has never named it will treat every request as equally legitimate, and will end up allocating her life by whoever asked most recently or most insistently. Nehemiah could answer in one sentence, four times, without hesitating, because he already knew what he was on the wall for.",
+          "consider": [
+            "What have you actually been given to do in this season, clearly enough to say it in one sentence?",
+            "Which request keeps returning, and what does saying no to it the fourth time cost you?"
+          ],
+          "practice": "Write one plain sentence describing the work of this season. Use it, unchanged and without justification, the next time you are asked to come down off the wall.",
+          "prayer": "God, I say yes to things because refusing feels unkind, and then I resent the people I said yes to. Make me clear about what you have actually given me to do. Give me a plain answer I can repeat without anger and without apology, and steadiness for the fourth time of asking, when I am tired and it would be easier to give in. Amen.",
+          "relatedPassages": [
+            "Nehemiah 6:9"
+          ]
+        },
+        {
+          "id": "sg-4",
+          "title": "If I perish",
+          "passages": [
+            "Esther 4:12-16"
+          ],
+          "basis": [
+            "Esther 4:1-11",
+            "Esther 5:1-2"
+          ],
+          "reading": "Esther's hesitation is not cowardice, and it should not be read that way. The law was specific and she quotes it: anyone who goes to the king in the inner court uninvited is put to death unless he holds out the golden sceptre. She adds one more piece of information that gets skipped — she has not been called for thirty days. She is not guessing about her standing. She has evidence, and it is not encouraging.\n\nMordecai's answer has three parts, and the middle one is the part that is almost never quoted. First: do not imagine that being in the palace will save you when this falls. Second — and this is the striking one — if you stay silent, relief and rescue will come from somewhere else. He does not tell her she is the only hope. He tells her she is not. The thing will happen without her, and she and her family will simply not be part of it.\n\nThen the third part, which has become one of the most quoted sentences in the Bible and is almost always quoted wrongly. Mordecai asks who knows whether she has come into her position for a time like this. That is a question. He does not tell her that God has placed her there for this purpose; he raises the possibility and leaves it open. He cannot see the outcome any more than she can, and the book of Esther is famously restrained about naming God's involvement at all.\n\nThat restraint is worth respecting, because the sentence is regularly used to tell people that God has engineered their circumstances for a specific destiny they can now be confident about. Mordecai says nothing of the sort. He offers a possibility as a reason to act, not a guarantee to rely on.\n\nAnd Esther, in her answer, refuses the guarantee too. She asks them to fast for three days, says she and her household will do the same, and then says she will go to the king even though the law forbids it — and if she dies, she dies. That is not fatalism and it is not confidence. It is a decision made without knowing, which is the only kind of courage that has ever existed. Certainty does not require any.\n\nIt is worth sitting with how ordinary the mechanics are. She does not receive a vision. Nothing is confirmed to her. She gets a hard argument from a relative, she asks people to go without food alongside her, and then she puts on her robes and walks into a room. The next chapter records the sceptre extended, but she did not know that when she went, and the text is careful to let her not know it.\n\nThis is where most courage actually lives — not in the moment of danger, which is usually brief and strangely clear, but in the hours beforehand, when the outcome is unavailable and you have to decide anyway. Whatever steadiness Esther has is not built on knowing it will work. It is built on having decided what she will do if it does not.",
+          "consider": [
+            "What decision are you delaying until you can be more certain how it will turn out?",
+            "If it went badly, what would you want to be able to say about how you handled it?"
+          ],
+          "practice": "Take one decision you have been holding until you feel sure. Decide it this week on what you know now, and tell one person you have decided.",
+          "prayer": "God, I keep asking for certainty before I will move, and Esther did not get any. I do not know how this ends and I am not going to. Give me enough courage for the part I can see. If it goes badly, keep me from bitterness; if it goes well, keep me from imagining I arranged it. Amen.",
+          "relatedPassages": [
+            "Esther 4:14"
+          ]
+        },
+        {
+          "id": "sg-5",
+          "title": "Call me Mara",
+          "passages": [
+            "Ruth 1:19-21"
+          ],
+          "basis": [
+            "Ruth 1:1-18",
+            "Ruth 1:22"
+          ],
+          "reading": "Naomi has been gone for years, and when she walks back into Bethlehem the whole town stirs. The women say her name as a question — is this really her?\n\nAnd she refuses it. Do not call me by that name, she says. Her name meant something like pleasant, and she tells them to call her by a name that means bitter instead, because that is what has happened to her.\n\nThen she says the rest of it, and it is worth not softening. She says she went out full and came back empty. She names the Almighty as the one who made her life bitter, who brought her home with nothing, that he has testified against her and afflicted her. She does not say circumstances did this. She does not attribute it to the famine or the road or bad luck. She puts it directly at God's door and says it in front of the entire town.\n\nWhat happens next is the part that should change how the passage is read. Nobody corrects her. No one steps in with a better theology. The narrator does not add a line explaining that Naomi was mistaken, or overwrought, or would understand later. Her speech is simply recorded and allowed to stand.\n\nThat matters, because grief is very often met with immediate correction. Someone says the true and unbearable thing, and within about a sentence they are being managed — reminded of what they still have, redirected to a promise, gently told that God is working. Some of that is well-meant and some of it is because the listener cannot tolerate the silence. Either way it teaches people to grieve quietly and in private, where nobody has to be uncomfortable.\n\nScripture does not do that here. It also does not do it in the psalms, where a third or more of the songs are complaints, some of which end without resolution. Naomi's language belongs to a long tradition of people speaking to God bluntly about what he has allowed, and being included in the text rather than edited out of it.\n\nAnd her losses were real. Her husband died. Both of her sons died. She was a foreigner in Moab with no legal standing and no means, and she is coming home to a town that remembers her as someone else. She is not being dramatic. She is being accurate about her situation, and her accuracy includes God.\n\nThere is one word she is wrong about, though the story is in no hurry to point it out. She says she came back empty, and Ruth is standing next to her — the daughter-in-law who has just refused to leave, whose loyalty the narrator has already made a great deal of. Naomi cannot see her yet. Grief is like that: it is accurate about the loss and unreliable about the inventory.\n\nThe chapter ends with a single quiet sentence noting that they arrived at the start of the barley harvest. It is not offered as an answer to anything she has said. It is a detail about timing, laid down without comment, and the reader is left to hold it alongside her lament rather than instead of it.",
+          "consider": [
+            "What have you not said honestly to God because it sounded too bitter to say out loud?",
+            "Who in your life is grieving, and what would it take to sit with them without improving it?"
+          ],
+          "practice": "Write down one sentence about a loss, exactly as bitterly as you actually feel it, addressed to God. Do not soften it, and do not add a resolution at the end.",
+          "prayer": "God, I say the acceptable thing to you and hold the rest back, in case the truth of it is more than you want from me. Naomi said hers in front of the whole town and you left it in the book. Let me be that honest. And where I have declared myself empty, give me eyes for what is standing beside me that I cannot see yet. Amen.",
+          "relatedPassages": [
+            "Ruth 1:16-17"
+          ]
+        },
+        {
+          "id": "sg-6",
+          "title": "Come away and rest",
+          "passages": [
+            "Mark 6:30-32"
+          ],
+          "basis": [
+            "Mark 6:7-13",
+            "Mark 6:33-34"
+          ],
+          "reading": "The apostles come back and they cannot stop talking. Mark says they gathered round Jesus and reported everything — all of it, what they had done and what they had taught. He had sent them out in pairs with almost nothing, and now they are back, full of it, and by the sound of the sentence they are all speaking at once.\n\nWhat he says to them is not what a person might expect at the high point of a successful mission. He does not ask for details or plan the next stage. He tells them to come away by themselves to a quiet place and rest.\n\nMark then explains why, and the explanation is oddly domestic. There were so many people coming and going that they had not even had a chance to eat. Not that they were spiritually depleted, or needed to process, or were at risk of burnout in any language Mark would recognise. They had not eaten. The reason given for the rest is a bodily one, and Jesus treats that as sufficient.\n\nThat is worth pausing on, because most people will only authorise rest once they can produce a serious enough justification for it. Exhaustion that has become a problem. A deadline that has passed. Illness. Here the reason is simply that the conditions of the work had made ordinary human maintenance impossible, and that was reason enough for him to call a halt.\n\nAnd then it does not work.\n\nThe very next verses say the crowd saw them leaving, worked out where they were going, and got there on foot ahead of them. When Jesus comes ashore the quiet place is full of people. He does not send them away. Mark says compassion moved him, so he started teaching them, and shortly afterwards he feeds all of them.\n\nAny honest reading of this passage has to include that. The rest was interrupted. Whatever this text is teaching about rest, it is not teaching that those who follow Jesus will reliably get it when they need it, because in the very next scene they do not. It would be easy to write a devotional that stops at the invitation and lets the reader assume a quiet afternoon followed. Mark does not give us one.\n\nWhat survives the interruption is the instinct. Jesus' first response to people who had been working without eating was to take them somewhere quiet. That was his judgement about what they needed, made before the crowd arrived and unaffected by whether the plan succeeded. The interruption changed the afternoon. It did not change his assessment of what was reasonable.\n\nSo the passage gives two things rather than one. It gives permission — rest is a legitimate answer to being at the end of your physical resources, and it does not require a more impressive reason than that. And it gives realism — a day can be taken from you by people with genuine needs, and Jesus did not treat that as a failure or lecture the crowd for their timing.\n\nThat combination is more useful than either alone. Permission without realism produces guilt every time the plan collapses. Realism without permission produces a person who never attempts the quiet place at all, having learned that it will only be interrupted.",
+          "consider": [
+            "What reason do you think you need before rest is allowed? Where did you learn that?",
+            "When your attempt at rest is interrupted, do you treat it as a failure of your planning?"
+          ],
+          "practice": "Take a rest this week that you have not earned by finishing anything. Decide beforehand that if it gets interrupted, you will not treat the whole attempt as void.",
+          "prayer": "Jesus, I keep waiting until I have a reason serious enough to justify stopping. You told them to come away because they had not eaten, and that was enough for you. Let it be enough for me. And when the quiet place fills up with people, keep me from deciding it was pointless to have gone. Amen.",
+          "relatedPassages": [
+            "Mark 6:33-34"
+          ]
+        }
+      ]
+    }
+  ]
+}

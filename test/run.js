@@ -53,6 +53,7 @@ const SUITES = [
   C.testBibleReader,
   C.testPrimaryNavigation,
   C.testReaderQuality,
+  C.testDevotions,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,

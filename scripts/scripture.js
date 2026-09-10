@@ -210,7 +210,7 @@ function build(){
     study.push(rec);
   });
 
-  assertNoEmbeddedScripture(built.studies, byId, errors);
+  assertNoEmbeddedScripture(studyOverlapItems(built.studies), byId, errors);
 
   if(errors.length){
     const e = new Error(errors.length + ' passage(s) failed to derive');
@@ -444,56 +444,81 @@ function buildStudies(doc, errors){
    with \"In the beginning\" — and short marked citations sit beside the verse
    card that carries the reference. A six-word run of the shipped text is no
    longer a citation; it is the verse. */
-function assertNoEmbeddedScripture(studies, byId, errors){
-  const RUN = 6;
-  const norm = t => t.toLowerCase()
-    .replace(/[‘’']/g, "'")
-    .replace(/[^a-z' ]+/g, ' ')
-    .replace(/\s+/g, ' ').trim();
-
-  /* Every run of the whole catalogue, not merely of the passages this lesson
-     quotes — a lesson reproducing some other passage is the same failure. */
+/* Build the index of forbidden runs once: every six-word sequence in the
+   whole catalogue, mapped to the reference it came from. Scanning only the
+   passages a given piece of writing cites would miss the more likely
+   failure, which is prose reproducing some OTHER passage. */
+function scriptureRunIndex(byId, RUN){
   const runs = new Map();
   byId.forEach(p => {
-    const w = norm(p.text).split(' ');
+    const w = normForOverlap(p.text).split(' ');
     for(let i = 0; i + RUN <= w.length; i++){
       const k = w.slice(i, i + RUN).join(' ');
       if(!runs.has(k)) runs.set(k, p.ref);
     }
   });
+  return runs;
+}
 
+function normForOverlap(t){
+  return String(t).toLowerCase()
+    .replace(/[‘’']/g, "'")
+    .replace(/[^a-z' ]+/g, ' ')
+    .replace(/ +/g, ' ').trim();
+}
+
+/* THE CONTENT-TRUST PRIMITIVE.
+
+   `items` is a list of { where, fields } - `where` names the thing for the
+   error message, `fields` is a map of reader-visible field name to string.
+   Anything a reader can SEE belongs in fields; a field that renders text
+   and is exempt from this check is exactly the hole the guard exists to
+   close. Six consecutive words of any shipped passage is the verse; naming
+   a phrase is how writing about Scripture works and stays legal.
+
+   Generalised in the Devotions phase. Learn passes the same fields it
+   always did, so its protection is unchanged. */
+function assertNoEmbeddedScripture(items, byId, errors){
+  const RUN = 6;
+  const runs = scriptureRunIndex(byId, RUN);
+  items.forEach(item => {
+    const fields = item.fields || {};
+    Object.keys(fields).forEach(field => {
+      if(typeof fields[field] !== 'string') return;
+      const w = normForOverlap(fields[field]).split(' ');
+      const seen = new Set();
+      for(let i = 0; i + RUN <= w.length; i++){
+        const k = w.slice(i, i + RUN).join(' ');
+        if(runs.has(k) && !seen.has(k)){
+          seen.add(k);
+          errors.push(item.where + ' — ' + field + ' reproduces Scripture (' +
+            runs.get(k) + '): "' + k + '". Cite the passage; do not retype it.');
+        }
+      }
+    });
+  });
+}
+
+/* The study-shaped view of the same check. */
+function studyOverlapItems(studies){
+  const items = [];
   studies.forEach(s => {
     s.lessons.forEach(l => {
-      /* The figure is scanned too. A field that renders text to a reader and
-         is exempt from the Scripture check is exactly the hole this guard
-         exists to close. */
+      /* The figure is scanned too, and so are the checks: an option or an
+         explanation is exactly where a verse would get retyped without
+         anyone noticing. */
       const figureText = l.figure
         ? [l.figure.heading].concat(l.figure.rows.map(r => r.label + ' ' + r.value)).join(' ')
         : '';
-      /* Checks render text to a reader, so they are scanned like everything
-         else. An option or an explanation is exactly where a verse would
-         get retyped without anyone noticing. */
       const checkText = Array.isArray(l.checks)
         ? l.checks.map(c => [c.prompt, c.explain].concat(c.options || []).join(' ')).join(' ')
         : '';
-      const fields = { understand: l.understand, lookCloser: l.lookCloser,
-                       reflect: l.reflect, title: l.title, figure: figureText,
-                       check: checkText };
-      Object.keys(fields).forEach(field => {
-        if(typeof fields[field] !== 'string') return;
-        const w = norm(fields[field]).split(' ');
-        const seen = new Set();
-        for(let i = 0; i + RUN <= w.length; i++){
-          const k = w.slice(i, i + RUN).join(' ');
-          if(runs.has(k) && !seen.has(k)){
-            seen.add(k);
-            errors.push(s.id + '/' + l.id + ' — ' + field + ' reproduces Scripture (' +
-              runs.get(k) + '): "' + k + '". Cite the passage; do not retype it.');
-          }
-        }
-      });
+      items.push({ where: s.id + '/' + l.id, fields: {
+        understand: l.understand, lookCloser: l.lookCloser, reflect: l.reflect,
+        title: l.title, figure: figureText, check: checkText } });
     });
   });
+  return items;
 }
 
 /* A hash over the content that matters — id and text, in catalogue order.
@@ -828,4 +853,5 @@ if(require.main === module){
   }
 }
 
-module.exports = { BOOKS, parseRef, canonicalId, collapse, build, datasetHash };
+module.exports = { BOOKS, parseRef, canonicalId, collapse, build, datasetHash,
+                   assertNoEmbeddedScripture, scriptureRunIndex, normForOverlap };

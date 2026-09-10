@@ -16,7 +16,8 @@
     "scripture:build": "node scripts/scripture.js build",
     "bible:build": "node scripts/bible.js build",
     "bible:verify": "node scripts/bible.js verify",
-    "scripture:audit": "node scripts/scripture.js audit"
+    "scripture:audit": "node scripts/scripture.js audit",
+    "devotions:verify": "node scripts/devotions.js"
   },
   "engines": {
     "node": ">=18"

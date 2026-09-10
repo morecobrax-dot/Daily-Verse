@@ -4610,6 +4610,238 @@ function testReaderQuality(){
   }
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 41 — THE DEVOTIONAL CATALOGUE
+
+   Devotional writing is the first content here that takes a passage and says
+   something about the reader's own life. Quoting a verse can be checked by a
+   hash; application cannot. So these assertions defend the things that CAN
+   be checked, and are deliberately honest about the fact that none of them
+   prove a devotional is true or good.
+
+   Phase A ships no reader. Several assertions below exist to keep it that
+   way, because a feature that looks finished before its content is proven is
+   how bad content ships.
+   --------------------------------------------------------- */
+function testDevotions(){
+  section('CONTRACT 41 — the devotional catalogue');
+  const fsx = require('fs');
+  const pathx = require('path');
+  const D = require('../scripts/devotions.js');
+  const S = require('../scripts/scripture.js');
+  const corpus = require('../scripts/corpus.js');
+  const src = H.readApp();
+  const doc = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'devotions.json'), 'utf8'));
+  const entries = [];
+  doc.series.forEach(s => s.entries.forEach(e => entries.push({ s: s, e: e, where: s.id + '/' + e.id })));
+
+  sub('the approved Phase A catalogue, and nothing more');
+  T('exactly two series', doc.series.length === 2, doc.series.map(s => s.id).join(', '));
+  T('exactly twelve entries', entries.length === 12, String(entries.length));
+  T('six entries in each', doc.series.every(s => s.entries.length === 6),
+    doc.series.map(s => s.id + '=' + s.entries.length).join(', '));
+  T('the two approved series, by id',
+    doc.series.map(s => s.id).sort().join() === 'steady-ground,the-weight-you-carry',
+    doc.series.map(s => s.id).join(', '));
+  T('series ids are unique', new Set(doc.series.map(s => s.id)).size === doc.series.length);
+  T('entry ids are unique within their series',
+    doc.series.every(s => new Set(s.entries.map(e => e.id)).size === s.entries.length));
+  T('every entry id is stable and namespaced to its series',
+    entries.every(x => /^(wyc|sg)-[1-6]$/.test(x.e.id)),
+    entries.map(x => x.e.id).join(', '));
+
+  sub('who a series is for, and what it costs');
+  T('forWhom is one of the three allowed values',
+    doc.series.every(s => D.FOR_WHOM.indexOf(s.forWhom) !== -1),
+    doc.series.map(s => s.id + '=' + s.forWhom).join(', '));
+  T('the two series are aimed as approved',
+    doc.series.find(s => s.id === 'the-weight-you-carry').forWhom === 'men' &&
+    doc.series.find(s => s.id === 'steady-ground').forWhom === 'women');
+  /* Phase A has no entitlement system of any kind, so anything other than
+     free would be a lie told by the data. */
+  T('every shipped series is free', doc.series.every(s => s.access === 'free'),
+    doc.series.map(s => s.access).join(', '));
+  T('the access field only ever holds an allowed value',
+    doc.series.every(s => D.ACCESS.indexOf(s.access) !== -1));
+
+  sub('every entry can be reviewed by a person');
+  T('every entry has at least one anchor passage',
+    entries.every(x => Array.isArray(x.e.passages) && x.e.passages.length));
+  /* Basis is what makes an editorial claim checkable at all. An entry
+     without it cannot be reviewed by anyone, including its author. */
+  T('every entry records the context actually read',
+    entries.every(x => Array.isArray(x.e.basis) && x.e.basis.length),
+    entries.filter(x => !(x.e.basis || []).length).map(x => x.where).join(', '));
+  T('basis is wider than the anchor, not a copy of it',
+    entries.every(x => x.e.basis.join() !== x.e.passages.join()),
+    entries.filter(x => x.e.basis.join() === x.e.passages.join()).map(x => x.where).join(', '));
+  T('every entry has a reading', entries.every(x => typeof x.e.reading === 'string' && x.e.reading.trim().length > 400));
+
+  sub('no Scripture text lives in this file');
+  /* The whole point of the canonical model: the file carries locations, and
+     the shipped editions carry words. */
+  const blob = JSON.stringify(doc);
+  const web = corpus.verses('eng-web');
+  let longest = 0, worst = '';
+  entries.forEach(x => {
+    (x.e.passages || []).forEach(ref => {
+      const p = S.parseRef(ref);
+      if(!p) return;
+      for(let v = p.from; v <= p.to; v++){
+        const t = web.get(p.code + ' ' + p.chapter + ':' + v);
+        if(!t) continue;
+        /* any 40-character stretch of the actual verse appearing verbatim */
+        const clean = String(t).trim();
+        for(let i = 0; i + 40 <= clean.length; i += 10){
+          const chunk = clean.slice(i, i + 40);
+          if(blob.indexOf(chunk) !== -1 && chunk.length > longest){ longest = chunk.length; worst = x.where + ': ' + chunk; }
+        }
+      }
+    });
+  });
+  T('no anchor verse appears verbatim in the catalogue', longest === 0, worst);
+
+  sub('every reference resolves, in every edition a reader might have');
+  /* A devotional whose anchor is missing in Spanish is a devotional that
+     breaks the moment somebody switches edition. */
+  const eds = corpus.shippedEditions();
+  const verses = {}; eds.forEach(e => { verses[e] = corpus.verses(e); });
+  const badRefs = [];
+  let refCount = 0;
+  entries.forEach(x => {
+    ['passages', 'basis', 'relatedPassages'].forEach(field => {
+      (x.e[field] || []).forEach(ref => {
+        refCount++;
+        const p = S.parseRef(ref);
+        if(!p){ badRefs.push(x.where + ' ' + field + ' ' + ref + ' unparseable'); return; }
+        eds.forEach(ed => {
+          for(let v = p.from; v <= p.to; v++){
+            const t = verses[ed].get(p.code + ' ' + p.chapter + ':' + v);
+            if(t === undefined) badRefs.push(x.where + ' ' + ref + ' missing in ' + ed);
+            else if(!String(t).trim()) badRefs.push(x.where + ' ' + ref + ' empty in ' + ed);
+          }
+        });
+      });
+    });
+  });
+  T('every reference resolves with real text in all three editions',
+    badRefs.length === 0 && refCount > 40, badRefs.slice(0, 3).join('; ') || (refCount + ' refs'));
+
+  sub('the writing stays inside its declared limits');
+  const max = doc._authoring;
+  T('the authoring limits are declared in the file',
+    max && max.readingMax > 0 && max.considerMax > 0 && max.considerCountMax > 0);
+  const over = [];
+  entries.forEach(x => {
+    if(x.e.reading.length > max.readingMax) over.push(x.where + ' reading ' + x.e.reading.length);
+    (x.e.consider || []).forEach((q, i) => {
+      if(q.length > max.considerMax) over.push(x.where + ' consider' + (i + 1) + ' ' + q.length);
+    });
+    if((x.e.consider || []).length > max.considerCountMax) over.push(x.where + ' consider count');
+    if(x.e.practice && x.e.practice.length > max.practiceMax) over.push(x.where + ' practice ' + x.e.practice.length);
+    if(x.e.prayer && x.e.prayer.length > max.prayerMax) over.push(x.where + ' prayer ' + x.e.prayer.length);
+  });
+  T('nothing exceeds its limit', over.length === 0, over.join(', '));
+  /* Length is not a target: an entry at the ceiling usually means padding. */
+  T('and nothing is written to the ceiling either',
+    entries.every(x => x.e.reading.length < max.readingMax * 0.85),
+    Math.max(...entries.map(x => x.e.reading.length)) + ' of ' + max.readingMax);
+
+  sub('prose does not reproduce Scripture');
+  /* The SAME primitive Learn uses, run for real over this catalogue. It
+     caught eight places during authoring; it is not decoration. */
+  const overlapErrors = [];
+  const byId = [];
+  const seenRef = new Set();
+  entries.forEach(x => {
+    ['passages', 'basis'].forEach(f => (x.e[f] || []).forEach(ref => {
+      if(seenRef.has(ref)) return;
+      seenRef.add(ref);
+      const p = S.parseRef(ref);
+      if(!p) return;
+      const parts = [];
+      for(let v = p.from; v <= p.to; v++){
+        const t = web.get(p.code + ' ' + p.chapter + ':' + v);
+        if(t) parts.push(t);
+      }
+      if(parts.length) byId.push({ ref: ref, text: S.collapse(parts.join(' ')) });
+    }));
+  });
+  S.assertNoEmbeddedScripture(
+    entries.map(x => ({ where: x.where, fields: D.entryFields(x.e) })), byId, overlapErrors);
+  T('no six-word run of any anchor or context passage appears in prose',
+    overlapErrors.length === 0, overlapErrors.slice(0, 2).join('; '));
+  T('and the guard was actually given something to check',
+    byId.length > 20, byId.length + ' passages indexed');
+
+  sub('prose does not claim more than it may');
+  const claimErrors = [];
+  entries.forEach(x => {
+    const fields = D.entryFields(x.e);
+    Object.keys(fields).forEach(field => {
+      const norm = S.normForOverlap(fields[field]);
+      D.FORBIDDEN_CLAIMS.forEach(c => {
+        if(norm.indexOf(c.pattern) !== -1) claimErrors.push(x.where + ' ' + field + ': ' + c.pattern);
+      });
+      D.STEREOTYPE_CLAIMS.forEach(p => {
+        if(norm.indexOf(p) !== -1) claimErrors.push(x.where + ' ' + field + ': ' + p);
+      });
+    });
+  });
+  T('no entry claims God has spoken privately, arranged circumstances or promised an outcome',
+    claimErrors.length === 0, claimErrors.slice(0, 3).join('; '));
+  T('and no entry tells a whole sex what it is like',
+    D.STEREOTYPE_CLAIMS.length > 8 && claimErrors.length === 0);
+
+  sub('the two series read as authored, not generated');
+  /* Not a proof of quality - nothing automated is - but these are the
+     specific tells that were actually found and fixed during the editorial
+     pass, so they are worth holding. */
+  const firsts = entries.map(x => x.e.reading.split(/\s/)[0].toLowerCase().replace(/[^a-z]/g, ''));
+  T('no two readings open with the same word',
+    new Set(firsts).size === firsts.length, firsts.join(', '));
+  const prayerOpens = entries.filter(x => x.e.prayer)
+    .map(x => x.e.prayer.split(',').slice(1).join(',').trim().split(/\s+/).slice(0, 3).join(' ').toLowerCase());
+  T('prayers are not built from one interchangeable opening',
+    new Set(prayerOpens).size >= prayerOpens.length - 1, prayerOpens.join(' | '));
+  const banned = ['this verse reminds us', 'in todays fast paced', 'at the end of the day',
+                  'in a world where', 'heres the thing'];
+  const cadence = [];
+  entries.forEach(x => {
+    const t = S.normForOverlap(x.e.reading + ' ' + (x.e.prayer || ''));
+    banned.forEach(b => { if(t.indexOf(b) !== -1) cadence.push(x.where + ': ' + b); });
+  });
+  T('none of the known filler cadences appear', cadence.length === 0, cadence.join('; '));
+
+  sub('Phase A shipped no reader, deliberately');
+  /* A feature that looks finished before its content is proven is how bad
+     content ships. None of this may exist yet. */
+  const uiTells = ['devotionsOverlay', 'renderDevotions', 'data-tab="devotions"',
+                   'devotionProgress', 'devotionNotes', 'DEVOTIONS'];
+  const leaked = uiTells.filter(t => src.indexOf(t) !== -1);
+  T('no Devotions UI, tab or state exists in the app yet', leaked.length === 0, leaked.join(', '));
+  T('the tab bar still has exactly the shipped destinations',
+    (src.match(/class="tab-btn/g) || []).length === 4);
+  /* An earlier version of this scanned for words like "upgrade" and
+     "unlock", which are schema migration and the overlay engine here. The
+     property is that the premium CONCEPT has not reached the app at all,
+     so that is what is asserted. The schema may carry access; the app may
+     not yet know the word. */
+  T('the premium concept has not reached the app',
+    src.toLowerCase().indexOf('premium') === -1);
+  T('and the catalogue declares access without any way to act on it',
+    doc.series.every(s => typeof s.access === 'string') &&
+    src.indexOf('access') === -1 || src.toLowerCase().indexOf('premium') === -1);
+
+  sub('nothing a reader owns was touched');
+  T('the schema did not move', H.loadApp().ctx.DATA_SCHEMA_VERSION === 2);
+  T('no devotional storage key exists yet',
+    src.indexOf('data.devotion') === -1 && src.indexOf('ui.devotion') === -1);
+  T('the curated Scripture hash is unchanged',
+    S.datasetHash(H.loadApp().ctx.SCRIPTURE) ===
+      'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916');
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -4619,5 +4851,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions
 };
