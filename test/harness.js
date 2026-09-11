@@ -335,6 +335,8 @@ const BRIDGE = [
   'SCRIPTURE', 'SCRIPTURE_SOURCE', 'REFLECTIONS', 'THEMES', 'FOCUS_CHOICES',
   'TRANSLATIONS', 'TRANSLATION_TEXT', 'translation', 'DEFAULT_TRANSLATION',
   'STUDIES', 'STUDIES_VERSION', 'studyProgress', 'studyNotes', 'checkAnswers',
+  'DEVOTIONS', 'DEVOTIONS_VERSION', 'devotionProgress',
+  'openDevotionSeriesId', 'openDevotionEntryId',
   'openStudyId', 'openLessonId',
   'savedVerses', 'notes', 'assignments', 'selectedDay', 'savedView', 'editingNoteDate',
   'textSize', 'showReflections', 'focusThemes', 'focusStrength', 'onboarded',

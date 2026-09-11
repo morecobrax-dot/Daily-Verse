@@ -293,7 +293,26 @@ function testNavigation(){
   const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab).filter(Boolean);
   T('the tab bar declares tabs', tabs.length >= 2, String(tabs.length));
   tabs.forEach(t => T('tab "' + t + '" has a view', !!d.getElementById('view-' + t)));
-  T('the app ships only as many tabs as it needs', tabs.length <= 4, String(tabs.length));
+  /* FIVE, not four, and not an arbitrary five.
+
+     The ceiling exists because a thumb has to reach every destination on a
+     phone held in one hand, and because a bar of identical small targets
+     stops being navigation and becomes a list. It was four while there were
+     four destinations. Devotions is a fifth destination, not a fifth link:
+     it is a place with its own content, its own history and its own reason
+     to be returned to, and reaching it through Learn would have said it was
+     a kind of lesson, which is exactly what it is not.
+
+     Five was measured before it was allowed. At 320px - the narrowest phone
+     this app supports - five flex slots are 64px each, every one of them
+     comfortably over the 44px minimum, and the widest label still fits on
+     one line. It is checked at that width in CONTRACT 42 rather than
+     asserted here from arithmetic.
+
+     SIX would not survive that measurement, and nothing about this comment
+     should be read as room to try. */
+  T('the app ships only as many tabs as it needs', tabs.length <= 5, String(tabs.length));
+  T('and a sixth would not fit a 320px phone, so it is refused', tabs.length < 6);
 
   sub('an unknown tab is a no-op, not a blank screen');
   c.switchTab('saved');
@@ -2358,15 +2377,20 @@ function testLearnNavigation(){
   const c = app.ctx, d = app.dom.document;
   const src = H.readApp();
 
-  sub('four tabs, and Today is still the one you land on');
+  sub('five tabs, and Today is still the one you land on');
   const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab).filter(Boolean);
-  T('there are exactly four', tabs.length === 4, tabs.join(', '));
-  T('and the ceiling is not raised', tabs.length <= 4);
+  T('there are exactly five', tabs.length === 5, tabs.join(', '));
+  T('and the ceiling is not raised again', tabs.length <= 5);
+  /* The order is the product's argument, read left to right: the day you are
+     in, the text itself, what it asks of you, how to understand it, and what
+     you chose to keep. Devotions sits between Bible and Learn because applying
+     a passage is nearer to reading it than studying it is. */
   T('Today is first', tabs[0] === 'today');
   T('Bible is second', tabs[1] === 'bible');
-  T('Learn is third', tabs[2] === 'learn');
-  T('Saved is fourth', tabs[3] === 'saved');
-  /* The ceiling did not move. Which four destinations deserve it did. */
+  T('Devotions is third', tabs[2] === 'devotions');
+  T('Learn is fourth', tabs[3] === 'learn');
+  T('Saved is fifth, and was not demoted to make room', tabs[4] === 'saved');
+  /* Which destinations deserve a slot moved. Settings still does not. */
   T('Settings is not one of them', tabs.indexOf('settings') === -1, tabs.join(', '));
   T('the app boots on Today', c.currentTab === 'today', c.currentTab);
   T('Today is the view marked active in the markup',
@@ -2406,7 +2430,7 @@ function testLearnNavigation(){
   T('and that place re-centres the rail on the way back into Today',
     /if\(tab === 'today'\)\{ renderToday\(\); centreSelectedDay\(\); \}/.test(bare));
   T('every tab button routes through it',
-    (src.match(/onclick="goToTab\('/g) || []).length === 4,
+    (src.match(/onclick="goToTab\('/g) || []).length === 5,
     String((src.match(/onclick="goToTab\('/g) || []).length));
   T('and none still calls switchTab directly from the tab bar',
     !/data-tab="[a-z]+" onclick="switchTab\(/.test(src));
@@ -4139,18 +4163,20 @@ function testBibleReader(){
    that making Settings a utility did not cost it its way back.
    --------------------------------------------------------- */
 function testPrimaryNavigation(){
-  section('CONTRACT 39 — four destinations, and a utility');
+  section('CONTRACT 39 — five destinations, and a utility');
   const app = H.loadApp({ sharedStorage: new Map() });
   const c = app.ctx, d = app.dom.document;
   const src = H.readApp();
 
-  sub('the four slots, and what is in them');
+  sub('the five slots, and what is in them');
   const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab).filter(Boolean);
-  T('exactly four primary destinations', tabs.length === 4, tabs.join(', '));
+  T('exactly five primary destinations', tabs.length === 5, tabs.join(', '));
   T('in the order the product reads in',
-    tabs.join(',') === 'today,bible,learn,saved', tabs.join(','));
-  T('and the ceiling was not raised to fit Bible in',
-    tabs.length <= 4 && (src.match(/class="tab-btn/g) || []).length === 4);
+    tabs.join(',') === 'today,bible,devotions,learn,saved', tabs.join(','));
+  /* The ceiling moved once, for a destination, after being measured. It did
+     not move to fit Bible in and it does not move again for a link. */
+  T('the bar and the markup agree about how many there are',
+    tabs.length <= 5 && (src.match(/class="tab-btn/g) || []).length === 5);
   T('Settings is not a primary destination', tabs.indexOf('settings') === -1);
   T('every slot still resolves to a view', tabs.every(t => !!d.getElementById('view-' + t)));
   T('Today is still where the app opens',
@@ -4233,7 +4259,7 @@ function testPrimaryNavigation(){
   sub('the tabs are peers, and none of them is advertising');
   const navMarkup = src.slice(src.indexOf('<nav class="tabbar"'), src.indexOf('</nav>'));
   T('every tab is the same kind of control',
-    (navMarkup.match(/class="tab-btn/g) || []).length === 4);
+    (navMarkup.match(/class="tab-btn/g) || []).length === 5);
   T('none carries a badge, dot or NEW mark',
     !/badge|NEW<|notification|pulse/i.test(navMarkup), navMarkup.length > 0 ? 'clean' : '');
   T('the active one is announced, not only tinted', (() => {
@@ -4813,15 +4839,31 @@ function testDevotions(){
   });
   T('none of the known filler cadences appear', cadence.length === 0, cadence.join('; '));
 
-  sub('Phase A shipped no reader, deliberately');
-  /* A feature that looks finished before its content is proven is how bad
-     content ships. None of this may exist yet. */
-  const uiTells = ['devotionsOverlay', 'renderDevotions', 'data-tab="devotions"',
-                   'devotionProgress', 'devotionNotes', 'DEVOTIONS'];
-  const leaked = uiTells.filter(t => src.indexOf(t) !== -1);
-  T('no Devotions UI, tab or state exists in the app yet', leaked.length === 0, leaked.join(', '));
-  T('the tab bar still has exactly the shipped destinations',
-    (src.match(/class="tab-btn/g) || []).length === 4);
+  sub('the catalogue reached the app without changing on the way');
+  /* Phase A asserted that NO reader existed, so that a feature could not
+     look finished before its content was proven. The content is now proven
+     and the reader is shipped, so the assertion that replaces it is the one
+     that matters from here: what the app renders is what this file says,
+     entry for entry, and no prose was retyped on the way in. */
+  const shipped = H.loadApp().ctx.DEVOTIONS;
+  T('the app ships both series, in the catalogue\u2019s own order',
+    shipped.map(s => s.id).join() === doc.series.map(s => s.id).join());
+  T('and every entry, in order, under its own id',
+    shipped.map(s => s.entries.map(e => e.id).join()).join('|') ===
+    doc.series.map(s => s.entries.map(e => e.id).join()).join('|'));
+  T('the reading a person sees is the reading that was reviewed, character for character',
+    shipped.every((s, i) => s.entries.every((e, j) =>
+      e.reading === doc.series[i].entries[j].reading &&
+      e.title === doc.series[i].entries[j].title &&
+      (e.practice || '') === (doc.series[i].entries[j].practice || '') &&
+      (e.prayer || '') === (doc.series[i].entries[j].prayer || ''))));
+  T('and so is every question',
+    shipped.every((s, i) => s.entries.every((e, j) =>
+      e.consider.join('|') === (doc.series[i].entries[j].consider || []).join('|'))));
+  /* `basis` is how an editorial claim is checked by a person. It is not a
+     screen element, and shipping it would invite one. */
+  T('authoring provenance stayed out of the app',
+    shipped.every(s => s.entries.every(e => e.basis === undefined)));
   /* An earlier version of this scanned for words like "upgrade" and
      "unlock", which are schema migration and the overlay engine here. The
      property is that the premium CONCEPT has not reached the app at all,
@@ -4835,11 +4877,364 @@ function testDevotions(){
 
   sub('nothing a reader owns was touched');
   T('the schema did not move', H.loadApp().ctx.DATA_SCHEMA_VERSION === 2);
-  T('no devotional storage key exists yet',
-    src.indexOf('data.devotion') === -1 && src.indexOf('ui.devotion') === -1);
+  /* One collection, and only one. Notes, a last-opened pointer and anything
+     else a later phase might want are all still absent, and each of them
+     would be a separate decision rather than a detail. */
+  T('devotional progress is the only devotional key',
+    src.indexOf("devotionProgress: 'data.devotionProgress'") !== -1 &&
+    src.indexOf('data.devotionNotes') === -1 &&
+    src.indexOf('ui.devotion') === -1);
   T('the curated Scripture hash is unchanged',
     S.datasetHash(H.loadApp().ctx.SCRIPTURE) ===
       'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916');
+}
+
+/* ---------------------------------------------------------
+   CONTRACT 42 — THE DEVOTIONS EXPERIENCE
+
+   Phase A proved the writing. This proves the reader: that the catalogue
+   reaches a screen intact, that Scripture is resolved rather than carried,
+   that progress records a decision somebody made rather than a guess about
+   what they read, and that none of it rebuilds the page under their thumb.
+
+   The last one is not a theoretical concern. The Bible reader spent three
+   releases learning that a state change which rebuilds the reading surface
+   destroys the reader's place, and that inferring "read" from scroll
+   geometry writes false history. Devotions was built with both already
+   known, and these assertions are what keep it that way.
+   --------------------------------------------------------- */
+function testDevotionsExperience(){
+  section('CONTRACT 42 — the Devotions experience');
+  const fsx = require('fs');
+  const pathx = require('path');
+  const src = H.readApp();
+  const bibleDir = pathx.join(H.ROOT, 'data', 'bible');
+  const readJson = (ed, name) => JSON.parse(fsx.readFileSync(pathx.join(bibleDir, ed, name), 'utf8'));
+
+  /* A live app with the Bible cache filled from the shipped files. There is
+     no fetch in the harness, and stubbing one would test the stub. */
+  function freshApp(){
+    const a = H.loadApp({ sharedStorage: new Map() });
+    a.ctx.bibleCache.index['eng-web'] = readJson('eng-web', 'index.json');
+    return a;
+  }
+  function cacheBook(c, ed, code){
+    c.bibleCache.books[ed + '/' + code] = readJson(ed, code + '.json');
+  }
+
+  const app = freshApp();
+  const c = app.ctx, d = app.dom.document;
+  const D = c.DEVOTIONS;
+
+  sub('the fifth destination, and the conditions that let it fit');
+  /* Measured in a real browser at 320px, which is the narrowest phone this
+     app supports: five slots of 64px, every one 53.4px tall, and the widest
+     label - "Devotions" - 52.4px inside a 56px content box. 3.6px of slack.
+     Also measured at 375, 390, 430 and 812x375: no wrap, no overflow, and
+     every target over 44px at all five.
+
+     A DOM stub cannot measure text, so what is asserted here is the set of
+     conditions that measurement depended on. If any of them changes, the
+     measurement is void and has to be taken again. */
+  const nav = src.slice(src.indexOf('<nav class="tabbar"'), src.indexOf('</nav>'));
+  const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab);
+  T('five slots, in the measured order',
+    tabs.join(',') === 'today,bible,devotions,learn,saved', tabs.join(','));
+  T('they share the bar equally, so no tab is compressed against another',
+    /\.tab-btn\{[^}]*flex: 1;/.test(src));
+  /* Wrapping is the failure that would actually be ugly: one tab two lines
+     tall and the whole bar visibly broken. It is made impossible rather
+     than relied upon not to happen. */
+  T('a label can never wrap to a second line', /\.tab-btn\{ white-space: nowrap; \}/.test(src));
+  T('and crowding was not solved by shrinking the type',
+    /\.tab-btn\{[^}]*font-size: var\(--fs-micro\);/.test(src));
+  T('every tab still clears the touch minimum',
+    /\.tab-btn\{[^}]*min-height: var\(--touch-min\);/.test(src));
+  T('the bar still respects the bottom inset',
+    /\.tabbar\{[^}]*padding-bottom: var\(--inset-bottom\);/.test(src));
+  T('no tab carries a badge, a dot or a NEW mark', !/badge|NEW<|notification/i.test(nav));
+  T('Settings did not come back as a sixth', tabs.indexOf('settings') === -1);
+  T('Devotions draws its own mark, not one already in use',
+    /devotions: '<path d="M8 13\.8V6\.2"\/>/.test(src) &&
+    src.indexOf('function devotionMark(') !== -1);
+
+  sub('the home shows what exists, and does not announce what does not');
+  c.goToTab('devotions');
+  /* Read out of the generated markup: the harness models the HTML string a
+     render produced, not the elements inside it. */
+  const homeLabels = () => (d.getElementById('devotionsBody').innerHTML
+    .match(/<div class="section-label">([^<]*)<\/div>/g) || [])
+    .map(s => s.replace(/<[^>]*>/g, ''));
+  T('both series are offered',
+    d.getElementById('devotionsBody').innerHTML.indexOf('The Weight You Carry') !== -1 &&
+    d.getElementById('devotionsBody').innerHTML.indexOf('Steady Ground') !== -1);
+  T('the populated audiences each get a heading',
+    homeLabels().indexOf('For men') !== -1 && homeLabels().indexOf('For women') !== -1);
+  /* The data model allows forWhom:'everyone' and the catalogue has none.
+     An empty section headed "For everyone" would be an announcement that
+     something is missing; the section is simply absent. */
+  T('and the empty audience is absent rather than empty',
+    homeLabels().every(l => !/everyone/i.test(l)) &&
+    D.every(s => s.forWhom !== 'everyone'));
+  T('no empty state is shown while there is a catalogue',
+    !/nothing here yet/i.test(d.getElementById('devotionsBody').innerHTML));
+  /* Two series do not need a filter. A control that narrows a list of two
+     is a control that does nothing. */
+  T('no filter control was built for a catalogue of two',
+    !/data-devotion-filter|devotionFilter/.test(src));
+  T('and nothing on screen mentions price, tier or a lock',
+    ['premium', 'locked', 'upgrade', 'subscribe', 'trial']
+      .every(w => d.getElementById('devotionsBody').innerHTML.toLowerCase().indexOf(w) === -1));
+
+  sub('Continue is derived from progress, never stored beside it');
+  T('nothing is offered before anything has been opened',
+    homeLabels().every(l => !/continue/i.test(l)), homeLabels().join(', '));
+  c.openDevotionEntry('steady-ground', 'sg-1');
+  c.completeDevotionEntry();                       // sg-1 done, sg-2 open
+  c.closeDevotionEntry(); c.closeDevotionSeries();
+  T('after finishing one, Continue offers the next one',
+    homeLabels().indexOf('Continue reading') !== -1 &&
+    /continue-card[\s\S]*More than what you.{1,6}re needed for[\s\S]*Reading 2 of 6/
+      .test(d.getElementById('devotionsBody').innerHTML),
+    homeLabels().join(', '));
+  T('and it is the FIRST unfinished entry, not the last one opened',
+    c.resumeDevotionEntryId(c.devotionSeriesById('steady-ground')) === 'sg-2');
+  c.openDevotionEntry('steady-ground', 'sg-5');    // re-read something later on
+  c.closeDevotionEntry(); c.closeDevotionSeries();
+  T('opening a later entry does not move the resume point',
+    c.resumeDevotionEntryId(c.devotionSeriesById('steady-ground')) === 'sg-2');
+  /* A last-opened pointer would be a second opinion about where somebody
+     is, and the two can disagree. There is exactly one. */
+  T('no last-opened pointer exists to disagree with progress',
+    src.indexOf('ui.devotionLast') === -1 && src.indexOf('devotionLast') === -1);
+  const rec = c.devotionProgressFor('steady-ground');
+  T('and the stored record holds a list of ids and nothing derived',
+    Object.keys(rec).sort().join() === 'done,id,startedAt,updatedAt',
+    Object.keys(rec).join());
+  T('no percentage or count was written down',
+    JSON.stringify(rec).indexOf('percent') === -1 && typeof rec.count === 'undefined');
+
+  sub('opening is not reading, and only a tap says otherwise');
+  const app2 = freshApp();
+  const c2 = app2.ctx;
+  c2.openDevotionEntry('the-weight-you-carry', 'wyc-1');
+  T('opening an entry starts the series but completes nothing',
+    c2.devotionProgressFor('the-weight-you-carry').done.length === 0);
+  c2.completeDevotionEntry();
+  T('the intentional action completes it',
+    c2.devotionProgressFor('the-weight-you-carry').done.join() === 'wyc-1');
+  T('and moves on to the next reading', c2.openDevotionEntryId === 'wyc-2');
+  c2.openDevotionEntryId = 'wyc-1';
+  c2.completeDevotionEntry();
+  T('completing the same entry twice adds nothing and moves nobody back',
+    c2.devotionProgressFor('the-weight-you-carry').done.join() === 'wyc-1');
+  /* The Bible reader inferred "read" from scroll geometry and wrote false
+     history into somebody's record. Devotions has never had the option. */
+  /* Exactly the Devotions block. Sliced from its first statement rather
+     than from its banner, because the banner's words also open the HTML
+     comment above the view - and slicing from there quietly swept in the
+     whole foundation, which does use a timer, for toasts. */
+  const devSrc = src.slice(src.indexOf('let devotionProgress = [];'),
+                           src.indexOf("this product claims the foundation's four seams"));
+  T('and the slice under examination is the Devotions code and only that',
+    devSrc.length > 8000 && devSrc.length < 40000 &&
+    devSrc.indexOf('function completeDevotionEntry') !== -1 &&
+    devSrc.indexOf('function renderToday') === -1, String(devSrc.length));
+  T('nothing in Devotions watches a scroll position',
+    devSrc.indexOf('scrollTop >') === -1 &&
+    devSrc.indexOf('IntersectionObserver') === -1 &&
+    devSrc.indexOf('addEventListener(\'scroll\'') === -1);
+  T('and no timer decides anything either',
+    devSrc.indexOf('setTimeout') === -1 && devSrc.indexOf('setInterval') === -1);
+
+  sub('a state change does not rebuild what somebody is reading');
+  /* THE rule this product learned the hard way. Finishing the last entry of
+     a series changes state while the reader is still inside the reading, so
+     it is the case that must repaint one control and touch nothing else. */
+  const app3 = freshApp();
+  const c3 = app3.ctx, d3 = app3.dom.document;
+  cacheBook(c3, 'eng-web', 'EXO');
+  const r3 = c3.ensureDevotionStarted('the-weight-you-carry');
+  r3.done = ['wyc-1', 'wyc-2', 'wyc-3', 'wyc-4', 'wyc-5'];
+  c3.openDevotionEntry('the-weight-you-carry', 'wyc-6');
+  /* Count the calls rather than compare DOM nodes. The harness does not
+     model children made by innerHTML, so a node comparison here would be
+     null === null - a test that passes and proves nothing. Node identity
+     was checked in a real browser: the body, the first paragraph and the
+     anchor were all the same nodes afterwards and scrollTop held at 1200px.
+     What is asserted here is the cause of that: the rebuild never runs. */
+  const realRender = c3.renderDevotionEntry;
+  let rebuilds = 0, footPaints = 0;
+  c3.renderDevotionEntry = function(){ rebuilds++; return realRender.apply(this, arguments); };
+  const realFoot = c3.paintDevotionFoot;
+  c3.paintDevotionFoot = function(){ footPaints++; return realFoot.apply(this, arguments); };
+  c3.completeDevotionEntry();
+  T('finishing the last entry does not rebuild the reading',
+    rebuilds === 0, rebuilds + ' rebuild(s)');
+  T('it repaints the one control that changed',
+    footPaints === 1, footPaints + ' paint(s)');
+  T('the series was completed all the same',
+    c3.devotionProgressFor('the-weight-you-carry').done.length === 6);
+  T('the foot of the page now says so',
+    /series complete/i.test(d3.getElementById('devotionFoot').innerHTML));
+  T('and the reader was not thrown out of the entry they were reading',
+    c3.openDevotionEntryId === 'wyc-6' && c3.isOverlayOpen('devotionReaderOverlay'));
+  /* Moving to the NEXT entry is navigation, and a rebuild there is correct.
+     The distinction is the whole point: without it this assertion would be
+     satisfied by a reader that never updates at all. */
+  rebuilds = 0;
+  c3.openDevotionEntryId = 'wyc-2';
+  c3.completeDevotionEntry();
+  T('but moving to the next reading does rebuild, because that is navigation',
+    rebuilds === 1 && c3.openDevotionEntryId === 'wyc-3', rebuilds + ', ' + c3.openDevotionEntryId);
+  c3.renderDevotionEntry = realRender;
+  c3.paintDevotionFoot = realFoot;
+
+  sub('Scripture is resolved, never carried');
+  const app4 = freshApp();
+  const c4 = app4.ctx, d4 = app4.dom.document;
+  cacheBook(c4, 'eng-web', 'GAL');
+  c4.openDevotionEntry('the-weight-you-carry', 'wyc-1');
+  /* Asserted against the generated markup, which the harness models, not
+     against nodes inside it, which it does not. */
+  const html4 = d4.getElementById('devotionReaderBody').innerHTML;
+  const gal = readJson('eng-web', 'GAL.json').ch[5];
+  T('the reading actually rendered', html4.length > 3000, String(html4.length));
+  T('the anchor is the publisher’s own text, first verse to last',
+    html4.indexOf(c4.escapeHtml(gal[1].trim()).slice(0, 40)) !== -1 &&
+    html4.indexOf(c4.escapeHtml(gal[4].trim()).slice(0, 40)) !== -1);
+  T('it carries its reference and its edition, as every quotation here does',
+    html4.indexOf('>Galatians 6:2-5<') !== -1 && html4.indexOf('>WEB<') !== -1);
+  T('and it is marked with the language it is written in',
+    html4.indexOf('class="verse-text" lang="en"') !== -1);
+  T('Scripture is set in the Scripture card, apart from the prose around it',
+    html4.indexOf('<article class="verse-card">') !== -1 &&
+    html4.indexOf('<div class="devotion-reading">') !== -1 &&
+    html4.indexOf('verse-card') < html4.indexOf('devotion-reading'));
+  /* The entries hold locations. If a word of Scripture were typed into one
+     it would be outside the derived region and outside every check. */
+  T('not one entry carries Scripture text',
+    D.every(s => s.entries.every(e =>
+      e.anchor.every(a => typeof a.c === 'string' && a.text === undefined))));
+  T('a reference is a book CODE, so it means the same in every edition',
+    D.every(s => s.entries.every(e =>
+      e.anchor.concat(e.related).every(a => /^[A-Z0-9]{3}$/.test(a.c) && a.ch > 0))));
+
+  sub('the reader’s own edition, and no quiet substitution');
+  const app5 = freshApp();
+  const c5 = app5.ctx, d5 = app5.dom.document;
+  c5.bibleCache.index['spaRV1909'] = readJson('spaRV1909', 'index.json');
+  cacheBook(c5, 'spaRV1909', 'GAL');
+  c5.translation = 'spaRV1909';
+  c5.openDevotionEntry('the-weight-you-carry', 'wyc-1');
+  const es = readJson('spaRV1909', 'GAL.json').ch[5];
+  const html5 = d5.getElementById('devotionReaderBody').innerHTML;
+  T('a Spanish reader gets Spanish words',
+    html5.indexOf(c5.escapeHtml(es[1].trim()).slice(0, 30)) !== -1);
+  T('and not the English ones', html5.indexOf(gal[1].trim().slice(0, 30)) === -1);
+  /* Rule 47: an edition's own book name, never an English one imported to
+     sit above Spanish text. */
+  T('under the edition’s own name for the book',
+    /<cite class="verse-ref">G[^<]*latas 6:2-5<\/cite>/.test(html5),
+    (html5.match(/<cite class="verse-ref">[^<]*/) || [''])[0]);
+  T('and the edition is named beside it', html5.indexOf('>RV1909<') !== -1);
+  T('the devotional prose is NOT translated, and does not pretend to be',
+    html5.indexOf('There is a kind of yes that costs more') !== -1);
+  T('and its language is the edition’s, on the Scripture only',
+    html5.indexOf('class="verse-text" lang="es"') !== -1);
+
+  sub('the sections a reading actually has');
+  const readerHtml = html4;
+  T('Consider is a list of questions and not a form',
+    readerHtml.indexOf('<ul class="devotion-consider">') !== -1 &&
+    !/<textarea|<input/.test(readerHtml));
+  T('Practice is one line, not a checkbox',
+    readerHtml.indexOf('devotion-practice') !== -1 &&
+    !/type="checkbox"/.test(readerHtml));
+  /* A prayer is this app's own words. Quotation marks or the Scripture face
+     would present it as something sourced. */
+  T('Prayer is set as editorial writing, not as a quotation',
+    /\.devotion-prayer\{[^}]*font-style: italic;/.test(src) &&
+    !/\.devotion-prayer[^{]*\{[^}]*font-family: var\(--font-scripture\)/.test(src) &&
+    !/\.devotion-prayer::(before|after)/.test(src));
+  T('Related Scripture opens the Bible at a canonical location',
+    /openDevotionRelated\(&#39;GAL&#39;, 6, 9, 10\)|openDevotionRelated\('GAL', 6, 9, 10\)/
+      .test(readerHtml), readerHtml.indexOf('openDevotionRelated') !== -1 ? 'present' : 'absent');
+  /* Only when there is something to show. An empty heading is a promise the
+     content did not keep. */
+  const noRelated = D.reduce((n, s) => n + s.entries.filter(e => !e.related.length).length, 0);
+  T('and a section with nothing in it is not rendered at all',
+    /entry\.related && entry\.related\.length/.test(src) &&
+    /entry\.consider && entry\.consider\.length/.test(src) &&
+    noRelated === 0);
+
+  sub('nothing a reader already owned was disturbed');
+  T('the schema did not move', c.DATA_SCHEMA_VERSION === 2);
+  /* MIGRATIONS is keyed by the version it produces, not a list. An additive
+     optional collection reads as empty when it is absent, which is exactly
+     what a reader who has opened no devotional looks like — so there is
+     nothing to migrate, and no new key belongs here. */
+  T('and no migration was invented for an additive collection',
+    Object.keys(c.MIGRATIONS).join() === '1', Object.keys(c.MIGRATIONS).join());
+  /* An id-bearing array is exported by key walk and merged by id. Devotional
+     progress needed no backup code at all, which is the whole reason the
+     collection is shaped this way. */
+  const back = H.loadApp({ sharedStorage: new Map() });
+  const bc = back.ctx;
+  bc.openDevotionEntry('steady-ground', 'sg-1');
+  bc.completeDevotionEntry();
+  const payload = {};
+  bc.Store.listKeys().forEach(k => { payload[k] = bc.Store.get(k); });
+  T('devotional progress is in the backup payload',
+    Object.keys(payload).indexOf('data.devotionProgress') !== -1,
+    Object.keys(payload).join(', '));
+  const restored = H.loadApp({ sharedStorage: new Map() });
+  const rr = restored.ctx.mergeBackup(payload);
+  restored.ctx.Domain.hydrate();
+  T('and it comes back through the ordinary merge',
+    restored.ctx.devotionProgressFor('steady-ground').done.join() === 'sg-1',
+    JSON.stringify(restored.ctx.devotionProgress));
+  T('the merge reported it as a collection it understood', rr.collections > 0);
+  /* Merging the same backup twice must not duplicate a record or a done id. */
+  restored.ctx.mergeBackup(payload);
+  restored.ctx.Domain.hydrate();
+  T('merging it twice changes nothing',
+    restored.ctx.devotionProgress.length === 1 &&
+    restored.ctx.devotionProgressFor('steady-ground').done.join() === 'sg-1');
+  /* The catalogue is code, not somebody's data. */
+  T('the static catalogue is not written into a backup',
+    Object.keys(payload).every(k => k.indexOf('devotionProgress') !== -1 ||
+      String(payload[k]).indexOf('The Weight You Carry') === -1));
+
+  sub('the other collections were left exactly where they were');
+  const keep = H.loadApp({ sharedStorage: new Map() });
+  const kc = keep.ctx;
+  kc.toggleSaved(kc.SCRIPTURE[0].id);
+  const savedBefore = JSON.stringify(kc.savedVerses);
+  const studyBefore = JSON.stringify(kc.studyProgress);
+  const readBefore = JSON.stringify(kc.bibleRead);
+  kc.openDevotionEntry('the-weight-you-carry', 'wyc-1');
+  kc.completeDevotionEntry();
+  T('a saved verse is untouched by devotional progress',
+    JSON.stringify(kc.savedVerses) === savedBefore);
+  T('study progress is untouched', JSON.stringify(kc.studyProgress) === studyBefore);
+  T('and so is what the Bible reader knows',
+    JSON.stringify(kc.bibleRead) === readBefore);
+  T('devotional progress kept its own key, and only its own',
+    kc.Store.listKeys().filter(k => k.indexOf('devotion') !== -1).join() ===
+      'data.devotionProgress',
+    kc.Store.listKeys().filter(k => k.indexOf('devotion') !== -1).join());
+
+  sub('the access field exists in the data and nowhere on a screen');
+  T('every shipped series is free', D.every(s => s.access === 'free'));
+  /* Entitlement is future architecture. The reader must behave as though the
+     field is not there, and a word of it reaching the interface would be a
+     promise this app has made no arrangements to keep. */
+  T('the reader never reads it',
+    devSrc.indexOf('.access') === -1 && devSrc.indexOf('access ===') === -1);
+  T('and no tier wording exists anywhere in the app',
+    ['premium', 'paywall', 'entitlement', 'subscri']
+      .every(w => src.toLowerCase().indexOf(w) === -1));
 }
 
 module.exports = {
@@ -4851,5 +5246,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience
 };

@@ -49,6 +49,7 @@ const ROOT = path.join(__dirname, '..');
 const APP_PATH = path.join(ROOT, 'index.html');
 const CURATION = path.join(ROOT, 'data', 'curation.json');
 const STUDIES = path.join(ROOT, 'data', 'studies.json');
+const DEVOTIONS = path.join(ROOT, 'data', 'devotions.json');
 
 /* Standard SIL/UBS book codes, which is what the corpus is keyed by. */
 const BOOKS = {
@@ -95,6 +96,62 @@ function collapse(s){ return String(s).replace(/\s+/g, ' ').trim(); }
    DERIVE
    --------------------------------------------------------- */
 function readStudies(){ return JSON.parse(fs.readFileSync(STUDIES, 'utf8')); }
+function readDevotions(){ return JSON.parse(fs.readFileSync(DEVOTIONS, 'utf8')); }
+
+/* ---------- devotional anchors ----------
+   A devotional carries a human reference ("Galatians 6:2-5"). The app must
+   never parse that at runtime: bibleMatchBook() matches against the book
+   names of the ACTIVE edition, so an English reference would simply fail to
+   resolve for a reader on Reina Valera. Resolving here, against the canon,
+   means the app only ever handles a book CODE — which is the same in every
+   edition, and is exactly what rule 50 asks for.
+
+   A reference that does not resolve in every shipped edition stops the
+   build. The alternative is a devotional whose Scripture silently vanishes
+   the moment somebody changes translation. */
+function resolveDevotionRef(ref, where, editionVerses, errors){
+  const p = parseRef(ref);
+  if(!p){ errors.push(where + ' — "' + ref + '" cannot be parsed as a reference'); return null; }
+  Object.keys(editionVerses).forEach(ed => {
+    for(let v = p.from; v <= p.to; v++){
+      const t = editionVerses[ed].get(p.code + ' ' + p.chapter + ':' + v);
+      if(t === undefined || !String(t).trim()){
+        errors.push(where + ' — ' + ref + ' has no verse ' + v + ' in ' + ed);
+      }
+    }
+  });
+  return { ref: ref, c: p.code, ch: p.chapter, from: p.from, to: p.to };
+}
+
+function buildDevotions(doc, errors){
+  const editionVerses = {};
+  corpus.shippedEditions().forEach(ed => { editionVerses[ed] = corpus.verses(ed); });
+  let refCount = 0;
+  const series = (doc.series || []).map(s => {
+    const entries = (s.entries || []).map(e => {
+      const where = s.id + '/' + e.id;
+      const resolve = list => (list || []).map(r => {
+        refCount++;
+        return resolveDevotionRef(r, where, editionVerses, errors);
+      }).filter(Boolean);
+      return {
+        id: e.id, title: e.title,
+        anchor: resolve(e.passages),
+        reading: e.reading,
+        consider: (e.consider || []).slice(),
+        practice: e.practice || '',
+        prayer: e.prayer || '',
+        /* `basis` is authoring provenance — what was read to write this. It
+           is checked by devotions:verify and by contract, and is not shipped:
+           nothing on screen is derived from it. */
+        related: resolve(e.relatedPassages)
+      };
+    });
+    return { id: s.id, title: s.title, summary: s.summary, audience: s.audience,
+             forWhom: s.forWhom, access: s.access, entries: entries };
+  });
+  return { series: series, version: Number(doc.version || 1), refCount: refCount };
+}
 
 /* Derive one passage from the corpus. The single place text is produced, so
    a daily reading and a study reading cannot be built by different rules and
@@ -164,6 +221,7 @@ function derivePassage(ref, verses, supers, errors){
 function build(){
   const cur = readCuration();
   const studyDoc = readStudies();
+  const devotionDoc = readDevotions();
   const verses = corpus.verses(corpus.DEFAULT_EDITION);
   const supers = corpus.superscriptions(corpus.DEFAULT_EDITION);
   const lock = corpus.readLock();
@@ -212,6 +270,12 @@ function build(){
 
   assertNoEmbeddedScripture(studyOverlapItems(built.studies), byId, errors);
 
+  /* ---- 3. the devotional anchors, resolved to canonical locations ----
+     These are ordinary Bible references, not curated passages: their words
+     come from data/bible/ at read time, the same as any chapter. Nothing
+     is added to the canonical set, so the dataset hash cannot move. */
+  const devotions = buildDevotions(devotionDoc, errors);
+
   if(errors.length){
     const e = new Error(errors.length + ' passage(s) failed to derive');
     e.detail = errors;
@@ -219,6 +283,7 @@ function build(){
   }
   const canonical = daily.concat(study);
   return { passages: canonical, daily: daily, study: study,
+           devotions: devotions,
            translations: buildTranslations(canonical, lock),
            studies: built.studies, studyDoc: studyDoc, lock: lock, curation: cur };
 }
@@ -609,6 +674,33 @@ function region(built){
            "    lessons: [\n" + lessons + "\n    ] }";
   }).join(',\n');
 
+  /* Devotional series. Editorial prose and canonical LOCATIONS — never a
+     word of Scripture. The anchor's text is fetched from data/bible/ in
+     whichever edition the reader has chosen, so switching translation
+     changes the passage above a devotional and nothing else about it. */
+  const devotionRows = built.devotions.series.map(function(s){
+    const entries = s.entries.map(function(e){
+      const refs = function(list){
+        return '[' + list.map(function(r){
+          return "{ ref: '" + esc(r.ref) + "', c: '" + esc(r.c) + "', ch: " + r.ch +
+                 ', from: ' + r.from + ', to: ' + r.to + ' }';
+        }).join(', ') + ']';
+      };
+      return "      { id: '" + esc(e.id) + "', title: '" + esc(e.title) + "',\n" +
+        '        anchor: ' + refs(e.anchor) + ',\n' +
+        "        reading: '" + esc(e.reading) + "',\n" +
+        '        consider: [' + e.consider.map(function(q){ return "'" + esc(q) + "'"; }).join(', ') + '],\n' +
+        (e.practice ? "        practice: '" + esc(e.practice) + "',\n" : '') +
+        (e.prayer ? "        prayer: '" + esc(e.prayer) + "',\n" : '') +
+        '        related: ' + refs(e.related) + ' }';
+    }).join(',\n');
+    return "  { id: '" + esc(s.id) + "', title: '" + esc(s.title) + "',\n" +
+           "    summary: '" + esc(s.summary) + "',\n" +
+           "    audience: '" + esc(s.audience) + "',\n" +
+           "    forWhom: '" + esc(s.forWhom) + "', access: '" + esc(s.access) + "',\n" +
+           '    entries: [\n' + entries + '\n    ] }';
+  }).join(',\n');
+
   /* Every shipped edition, including the default, described from its own
      archive metadata. Text for the default lives inline in SCRIPTURE; the
      others carry theirs here, keyed by the same canonical id. */
@@ -686,6 +778,15 @@ function region(built){
     '',
     'const STUDIES = [',
     studyRows,
+    '];',
+    '',
+    '/* Devotional series — this app\u2019s own writing, applied to a life. Like a',
+    '   lesson, an entry carries canonical LOCATIONS and never Scripture text:',
+    '   the anchor is read out of data/bible/ in the reader\u2019s own edition. */',
+    'const DEVOTIONS_VERSION = ' + built.devotions.version + ';',
+    '',
+    'const DEVOTIONS = [',
+    devotionRows,
     '];',
     '',
     '/* The editions this app ships. A canonical id names a LOCATION; an',

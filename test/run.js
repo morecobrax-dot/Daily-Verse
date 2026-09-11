@@ -54,6 +54,7 @@ const SUITES = [
   C.testPrimaryNavigation,
   C.testReaderQuality,
   C.testDevotions,
+  C.testDevotionsExperience,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,
