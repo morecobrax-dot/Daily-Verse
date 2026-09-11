@@ -79,6 +79,12 @@ function buildEdition(id, report){
   const { order, books } = structure(id);
   const names = corpus.bookNames(id);
   const supers = corpus.superscriptions(id);
+  /* Verse spans the publisher printed as one block. Carried so the reader can
+     label that verse "20-21" and draw nothing at 21, instead of printing an
+     empty line there and claiming the verse is "not in this edition" — which
+     would be a false statement about the publisher's own text. The Chinese
+     Union Version does this 70 times. */
+  const spans = corpus.bridgedSpans(id);
   const files = {};
   const index = { edition: id, books: [] };
   let chapterCount = 0, verseCount = 0, supCount = 0, emptyCount = 0;
@@ -96,6 +102,7 @@ function buildEdition(id, report){
 
     const ch = [];
     const sup = {};
+    const bridged = {};
     for(const n of nums){
       const vs = chapters.get(n);
       const max = Math.max(...vs.keys());
@@ -108,6 +115,11 @@ function buildEdition(id, report){
         const t = vs.has(v) ? vs.get(v) : '';
         if(!t) emptyCount++;
         arr.push(t);
+      }
+      /* Record the spans this chapter carries, first verse -> last. */
+      for(let v = 1; v <= max; v++){
+        const last = spans.get(code + ' ' + n + ':' + v);
+        if(last && last > v){ bridged[n] = bridged[n] || {}; bridged[n][v] = last; }
       }
       verseCount += arr.length;
       chapterCount++;
@@ -133,6 +145,7 @@ function buildEdition(id, report){
     const name = names[code] || code;
     files[code] = { c: code, n: name, ch: ch };
     if(Object.keys(sup).length) files[code].sup = sup;
+    if(Object.keys(bridged).length) files[code].bv = bridged;
     index.books.push({ c: code, n: name, g: groupOf(code, order), ch: ch.length });
   }
 

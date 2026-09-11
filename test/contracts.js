@@ -3720,7 +3720,13 @@ function testTranslations(){
     T(id + ' is pinned in the lock', !!(lock.editions[id] && lock.editions[id].archives));
     T(id + ' pins every archive by digest',
       Object.keys(lock.editions[id].archives).every(k => /^[0-9a-f]{64}$/.test(lock.editions[id].archives[k].sha256)));
-    T(id + ' declares a language code for screen readers', /^[a-z]{2}$/.test(t.lang), t.lang);
+    /* A BCP 47 tag, which for Chinese MUST carry its script: zh-Hans and
+       zh-Hant are two different sets of glyphs, and a bare "zh" leaves a
+       screen reader and a font stack to guess which one they are looking
+       at. Two letters, optionally a four-letter script subtag — still tight
+       enough to reject a language NAME or an edition id in this field. */
+    T(id + ' declares a language code for screen readers',
+      /^[a-z]{2}(-[A-Z][a-z]{3})?$/.test(t.lang), t.lang);
   });
 
   sub('the English baseline did not move');
@@ -5237,6 +5243,257 @@ function testDevotionsExperience(){
       .every(w => src.toLowerCase().indexOf(w) === -1));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 43 — THE TRANSLATION LIBRARY
+
+   CONTRACT 37 proved that two editions could share one canon. This proves it
+   at seven, across five languages and two scripts, and it defends the three
+   things that get harder with every edition added:
+
+     RIGHTS         nothing ships whose licence was not read from the
+                    publisher's own metadata and pinned by hash
+     NUMBERING      nothing ships whose verse numbers disagree with the
+                    canonical ids a reader's saved verses are made of
+     NEUTRALITY     a highlight, a saved verse and a read chapter mean the
+                    same place in all seven, and never grow a copy per edition
+
+   The held editions matter as much as the shipped ones. Three are sitting in
+   the registry right now with their archives downloaded and hashed, and the
+   only thing keeping them off a reader's screen is one field. These
+   assertions make sure that field is load-bearing.
+   --------------------------------------------------------- */
+function testTranslationLibrary(){
+  section('CONTRACT 43 — the translation library');
+  const fsx = require('fs');
+  const pathx = require('path');
+  const corpus = require('../scripts/corpus.js');
+  const versify = require('../scripts/versify.js');
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx, d = app.dom.document;
+  const src = H.readApp();
+  const lock = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'corpus.lock.json'), 'utf8'));
+  const bibleLock = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible.lock.json'), 'utf8'));
+  const shipped = corpus.shippedEditions();
+  const held = Object.keys(corpus.EDITIONS).filter(id => corpus.EDITIONS[id].held);
+
+  sub('what ships, and what does not');
+  T('seven editions ship', shipped.length === 7, shipped.join(', '));
+  T('the app carries exactly those seven',
+    Object.keys(c.TRANSLATIONS).sort().join() === shipped.slice().sort().join(),
+    Object.keys(c.TRANSLATIONS).join(', '));
+  T('across five languages',
+    new Set(shipped.map(id => corpus.EDITIONS[id].lang)).size === 5,
+    shipped.map(id => corpus.EDITIONS[id].lang).join(', '));
+  /* A held edition is downloaded, hashed and sitting in the same registry.
+     The ONLY thing between it and a reader is this flag, so nothing may
+     reach the app that carries it. */
+  T('three editions are held', held.length === 3, held.join(', '));
+  T('and not one of them reached the app',
+    held.every(id => !c.TRANSLATIONS[id] && !c.TRANSLATION_TEXT[id]), held.join(', '));
+  T('nor the reader corpus on disk',
+    held.every(id => !fsx.existsSync(pathx.join(H.ROOT, 'data', 'bible', id))));
+  T('nor the built file lock', held.every(id => !bibleLock.editions[id]));
+  T('every held edition says why, in words a person can act on',
+    held.every(id => typeof corpus.EDITIONS[id].held === 'string' &&
+                     corpus.EDITIONS[id].held.length > 20),
+    held.map(id => id + ': ' + corpus.EDITIONS[id].held).join(' | '));
+
+  sub('rights were read from the publisher, never typed here');
+  const registrySrc = fsx.readFileSync(pathx.join(H.ROOT, 'scripts', 'corpus.js'), 'utf8');
+  const decl = registrySrc.slice(registrySrc.indexOf('const EDITIONS = {'),
+                                 registrySrc.indexOf('const DEFAULT_EDITION'));
+  /* Rule 52. A licence in source is a claim; one read out of the archive and
+     hashed is evidence. The registry may declare an id, a language label and
+     a hold reason — a copyright string appearing here would mean somebody
+     decided the rights rather than reading them. */
+  T('the registry declares no licence of its own',
+    !/copyright|licen[cs]e|public domain/i.test(decl.replace(/\/\*[\s\S]*?\*\//g, '')));
+  shipped.forEach(id => {
+    const e = lock.editions[id];
+    T(id + ' pins a publisher licence statement',
+      !!e && typeof e.copyright === 'string' && /public domain/i.test(e.copyright),
+      e ? String(e.copyright).slice(0, 40) : 'missing');
+    T(id + ' pins both archives by SHA-256',
+      !!e && e.archives && ['vpl', 'usfx'].every(a =>
+        e.archives[a] && /^[0-9a-f]{64}$/.test(e.archives[a].sha256)));
+    T(id + ' carries the publisher’s own names and script',
+      !!e && !!e.title && !!e.titleLocal && !!e.abbr && !!e.iso && !!e.script);
+  });
+
+  sub('numbering agrees with the ids a reader’s records are made of');
+  /* The whole corpus, not the curated 415. Louis Segond passed a 415-passage
+     check and was still wrong: every one of those references resolved, and 58
+     psalms in it hold a different sentence than our ids mean. */
+  const canon = versify.chapterMap(versify.CANON);
+  const canonSup = corpus.superscriptions(versify.CANON);
+  shipped.forEach(id => {
+    if(id === versify.CANON) return;
+    const r = versify.auditEdition(id, canon, canonSup);
+    T(id + ' has no superscription shift', r.shiftChapters.length === 0,
+      r.shiftChapters.slice(0, 4).join(' '));
+    T(id + ' has no unexplained extra verses', r.unexplained.length === 0,
+      r.unexplained.slice(0, 2).join('; '));
+    T(id + ' was actually compared against the whole corpus',
+      r.chaptersCompared > 1100, String(r.chaptersCompared));
+  });
+  /* The positive control. If this ever passes, the audit has stopped working
+     and every verdict above it is worthless. */
+  const seg = versify.auditEdition('fraLSG', canon, canonSup);
+  T('and the edition known to be shifted is still caught',
+    seg.shiftChapters.length > 50, seg.shiftChapters.length + ' shifted chapters');
+  T('including the psalm that would have been a wrong daily reading',
+    seg.shiftChapters.indexOf('PSA 20') !== -1);
+
+  sub('an absence is an absence, and is not filled in');
+  /* Chinese prints Numbers 1:20-21 as one block. Our ids address 21; the
+     publisher put no separate sentence there. Nothing is invented for it and
+     nothing is remapped. */
+  const zh = corpus.verses('cmn-cu89s');
+  const spans = corpus.bridgedSpans('cmn-cu89s');
+  T('the publisher’s bridged spans are read, not dropped',
+    spans.size > 60 && !!zh.get('NUM 1:20'), spans.size + ' spans');
+  T('and the text is anchored where the publisher anchored it',
+    spans.get('NUM 1:20') === 21 && zh.get('NUM 1:20').length > 20 && !zh.has('NUM 1:21'));
+  const numJson = JSON.parse(fsx.readFileSync(
+    pathx.join(H.ROOT, 'data', 'bible', 'cmn-cu89s', 'NUM.json'), 'utf8'));
+  T('the reader is told the span rather than shown a blank verse',
+    numJson.bv && numJson.bv['1'] && numJson.bv['1']['20'] === 21);
+  T('and it labels that verse with its whole span',
+    /bridged\[n\] \? n \+ '-' \+ bridged\[n\] : String\(n\)/.test(src));
+  T('"not in this edition" is never printed over a verse that IS in it',
+    /if\(coveredByBridge\[n\]\) return;/.test(src));
+
+  sub('two scripts, kept apart');
+  const s = c.TRANSLATIONS['cmn-cu89s'], t = c.TRANSLATIONS['cmn-cu89t'];
+  T('both Chinese editions ship', !!s && !!t);
+  T('each declares its own script to a screen reader',
+    s.lang === 'zh-Hans' && t.lang === 'zh-Hant', s.lang + ' / ' + t.lang);
+  T('and its own name, in its own script',
+    s.titleLocal === '新标点和合本' &&
+    t.titleLocal === '新標點和合本',
+    s.titleLocal + ' / ' + t.titleLocal);
+  /* Two publications, not one text transformed. Converting between scripts
+     here would be this app rewriting Chinese. */
+  const sJhn = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible', 'cmn-cu89s', 'JHN.json'), 'utf8'));
+  const tJhn = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible', 'cmn-cu89t', 'JHN.json'), 'utf8'));
+  T('the two are genuinely different files', sJhn.ch[2][15] !== tJhn.ch[2][15]);
+  T('and each is derived from its own archive, not converted from the other',
+    lock.editions['cmn-cu89s'].archives.vpl.sha256 !== lock.editions['cmn-cu89t'].archives.vpl.sha256);
+  T('their book names differ where the scripts differ',
+    sJhn.n !== tJhn.n, sJhn.n + ' / ' + tJhn.n);
+
+  sub('the picker scales by grouping, not by growing');
+  const groups = c.translationsByLanguage();
+  T('it groups by language', groups.length === 5, groups.map(g => g.language).join(' | '));
+  T('English holds the three English editions',
+    groups.find(g => g.lang === 'en').editions.length === 3);
+  T('every shipped edition appears exactly once',
+    groups.reduce((n, g) => n + g.editions.length, 0) === shipped.length);
+  T('no held edition appears at all',
+    groups.every(g => g.editions.every(e => held.indexOf(e.id) === -1)));
+  c.renderTranslationPicker();
+  const picker = d.getElementById('translationBody').innerHTML;
+  T('each row carries the publisher’s own abbreviation',
+    shipped.every(id => picker.indexOf('>' + c.TRANSLATIONS[id].abbr + '<') !== -1));
+  T('the current edition is marked as chosen',
+    (picker.match(/aria-checked="true"/g) || []).length === 1);
+  /* No technical plumbing on a reader's screen. The evidence lives in the
+     lock file, which is where evidence belongs. */
+  T('no hash, archive id or build date is shown',
+    !/[0-9a-f]{16}/.test(picker) && picker.indexOf('_vpl') === -1 &&
+    picker.indexOf('sha256') === -1);
+  /* Five groups of one to three rows is a list, not a haystack. */
+  T('and no search field was added for a list this short',
+    picker.indexOf('type="search"') === -1 && picker.indexOf('translationSearch') === -1);
+
+  sub('a reference resolves in the reader’s own language');
+  const dir = pathx.join(H.ROOT, 'data', 'bible');
+  shipped.forEach(id => { c.bibleCache.index[id] = JSON.parse(
+    fsx.readFileSync(pathx.join(dir, id, 'index.json'), 'utf8')); });
+  let unresolved = 0, totalBooks = 0;
+  shipped.forEach(id => {
+    c.bibleBooks(id).forEach(b => {
+      totalBooks++;
+      const hit = c.bibleMatchBook(id, b.n);
+      if(!hit || hit.c !== b.c) unresolved++;
+    });
+  });
+  T('every book of every edition resolves from its own published name',
+    unresolved === 0 && totalBooks > 450, totalBooks + ' books, ' + unresolved + ' unresolved');
+  T('a native reference parses', (() => {
+    const zhRef = c.parseBibleRef('cmn-cu89s', '约翰福音 3:16');
+    const deRef = c.parseBibleRef('deu1912', 'Römer 8:28');
+    return !!zhRef && zhRef.c === 'JHN' && zhRef.ch === 3 && !!deRef && deRef.c === 'ROM';
+  })());
+  T('an accent may be typed or left off', (() => {
+    const a = c.parseBibleRef('deu1912', 'Romer 8:28');
+    return !!a && a.c === 'ROM' && a.ch === 8;
+  })());
+  /* This folding threw away every character that was not a Latin letter,
+     which silently made Chinese unnavigable. */
+  T('and folding a name no longer discards non-Latin scripts',
+    c.bibleNormalize('约翰福音').length > 0);
+  T('an ambiguous prefix is still refused rather than guessed',
+    c.parseBibleRef('eng-web', 'jo 3:16') === null);
+  T('and a name from the other script is refused too',
+    c.parseBibleRef('cmn-cu89s', '約翰福音 3:16') === null);
+
+  sub('what a reader owns is a place, in every edition');
+  const u = H.loadApp({ sharedStorage: new Map() });
+  const uc = u.ctx;
+  uc.setHighlight('JHN.3.16', 'amber');
+  uc.toggleSavedLocation('JHN.3.16', 'John 3:16');
+  uc.markChapterRead('JHN', 3, false);
+  const before = JSON.stringify([uc.bibleHighlights, uc.savedVerses, uc.bibleRead]);
+  shipped.forEach(id => { uc.translation = id; uc.Domain.hydrate(); });
+  T('walking every edition creates no second copy of anything',
+    uc.bibleHighlights.length === 1 && uc.savedVerses.length === 1 && uc.bibleRead.length === 1,
+    uc.bibleHighlights.length + '/' + uc.savedVerses.length + '/' + uc.bibleRead.length);
+  T('and changes nothing that was stored', JSON.stringify(
+    [uc.bibleHighlights, uc.savedVerses, uc.bibleRead]) === before);
+  T('a record holds a canonical location and no words',
+    uc.bibleHighlights[0].id === 'JHN.3.16' &&
+    !/loved|amó|liebt|爱/.test(JSON.stringify(uc.bibleHighlights)));
+  /* A saved verse used to keep the book name of whatever edition was open
+     when it was saved, so a verse saved in Chinese came back as
+     "民数记 1:20  WEB" — a Chinese name under an English abbreviation. */
+  T('a saved reference is computed now, not kept from the day it was saved',
+    /bibleBookName\(translation, m\[1\]\) \+ ' ' \+ m\[2\] \+ ':' \+ m\[3\]\s*\n?\s*: \(s\.ref/.test(src) ||
+    src.indexOf('const shownRef = isBible') !== -1);
+
+  sub('nothing a previous release proved was undone');
+  T('the curated dataset hash has not moved',
+    c.SCRIPTURE_SOURCE.datasetHash ===
+      'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916');
+  T('nor the daily hash',
+    c.SCRIPTURE_SOURCE.dailyHash ===
+      '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41');
+  T('the curated catalogue is still 415 passages, 378 of them daily',
+    c.SCRIPTURE.length === 415 && c.SCRIPTURE.filter(p => p.daily).length === 378);
+  T('every curated passage exists in every shipped edition',
+    shipped.filter(id => id !== c.DEFAULT_TRANSLATION)
+      .every(id => Object.keys(c.TRANSLATION_TEXT[id]).length === 415),
+    shipped.map(id => id + '=' + (c.TRANSLATION_TEXT[id] ? Object.keys(c.TRANSLATION_TEXT[id]).length : 'default')).join(' '));
+  T('the schema did not move for static content', c.DATA_SCHEMA_VERSION === 2);
+  T('Devotions and Learn are untouched',
+    c.DEVOTIONS.length === 2 && c.STUDIES.length === 8);
+  T('and the tab bar is still five destinations',
+    (src.match(/class="tab-btn/g) || []).length === 5);
+
+  sub('every generated byte can be re-derived');
+  T('the file lock covers every shipped edition',
+    shipped.every(id => bibleLock.editions[id] && bibleLock.editions[id]['index.json']));
+  const files = shipped.reduce((n, id) => n + Object.keys(bibleLock.editions[id]).length, 0);
+  T('and every book file in them', files === 484, String(files));
+  T('each entry is a real digest',
+    shipped.every(id => Object.keys(bibleLock.editions[id]).every(f =>
+      /^[0-9a-f]{64}$/.test(bibleLock.editions[id][f].sha256))));
+  /* Corpora are application data. A backup carries what a person wrote and
+     chose, and putting a Bible in it would make every export tens of MB. */
+  T('no Bible text can enter a backup',
+    uc.Store.listKeys().every(k => String(uc.Store.get(k)).indexOf('In the beginning') === -1));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -5246,5 +5503,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary
 };

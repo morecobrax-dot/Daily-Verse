@@ -91,7 +91,78 @@ const EDITIONS = {
      was that day's reading. It stays here, with its hashes in the lock, until
      an authoritative mapping exists. */
   'fraLSG':    { id: 'fraLSG',    language: 'Français', lang: 'fr',
-                 held: 'versification does not align with our canonical ids' }
+                 held: 'versification does not align with our canonical ids' },
+
+  /* ---- GATE 3 ----
+     Six candidates were downloaded, hashed and audited. Four ship and two
+     hold, which is the outcome the gate is for: an edition earns `held`
+     removed only when its rights, its canon and its numbering all check out,
+     and `npm run versify` proves the last of those against the whole corpus.
+
+     All six are Public Domain and Redistributable per eBible's own catalogue,
+     and all six are complete 66-book Bibles whose numbering agrees with our
+     canonical ids. The two holds are not about the text. */
+
+  /* SHIPPED. Public Domain, Redistributable and Certified per eBible's
+     catalogue, completed 1901, 66 books. Its numbering agrees with ours
+     everywhere except the Romans doxology, which every edition but WEB
+     Classic prints at 16:26-27 — an append past our last verse, not a
+     displacement. Its 16 empty addresses are the classic critical-text
+     omissions (MAT 17:21, MRK 9:44, JHN 5:4, ACT 8:37 …) at exactly the
+     numbers our ids use, which is corroboration that its numbering is ours. */
+  'eng-asv':   { id: 'eng-asv',   language: 'English',    lang: 'en' },
+
+  /* SHIPPED. Public Domain, Redistributable and Certified, completed 1912,
+     66 books, 1187 of 1189 chapters numbered identically to ours. */
+  'deu1912':   { id: 'deu1912',   language: 'Deutsch',    lang: 'de' },
+
+  /* HELD — and not for anything wrong with the Bible.
+
+     Rights, canon and numbering all pass: Public Domain, Redistributable,
+     Certified, 66 books, numbering identical to ours in 1187 of 1189
+     chapters. The problem is its name. The archive's `abbreviationLocal` is
+     "DO885" and its rights page carries the line "The Diodati Bible was
+     published in 1885" — both of which belong to ita1885, a DIFFERENT
+     Italian edition that eBible publishes separately.
+
+     Four other publisher identifiers agree the text itself is the Riveduta:
+     title "Riveduta Bibbia 1927", dateCompleted 1927, swordName ita1927eb,
+     FCBHID ITARIV. So the words are almost certainly right. But the only
+     authoritative abbreviation this pipeline has for it names another
+     translation, and the two honest options are to print "DO885" beside
+     "Riveduta Bibbia 1927" — which tells a reader the wrong thing — or to
+     type an abbreviation by hand, which is the one thing rule 52 forbids.
+
+     It holds until the archive names it correctly. Nothing else about it
+     needs to change. */
+  'ita1927':   { id: 'ita1927',   language: 'Italiano',   lang: 'it',
+                 held: 'the archive’s abbreviation belongs to a different Italian edition' },
+
+  /* HELD — eBible marks it Certified: False.
+
+     Every edition this app has ever shipped is Certified: True, and so is
+     the French one it holds for other reasons, so certification is the
+     standard here rather than a detail. It is not a rubber stamp either:
+     only 59% of the 1550 editions in the catalogue carry it.
+
+     There is no alternative. eBible publishes exactly two full Dutch Bibles
+     and the other one — NBG-vertaling 1951 — is under copyright. So Dutch
+     holds, and holds honestly, rather than being filled with the only thing
+     available. */
+  'nld':       { id: 'nld',       language: 'Nederlands', lang: 'nl',
+                 held: 'the publisher has not certified this edition' },
+
+  /* SHIPPED, both scripts. Public Domain, Redistributable and Certified.
+     Two separate publications, not one text transformed: eBible builds each
+     from its own source, and converting between scripts here would be this
+     app rewriting Chinese.
+
+     They bridge 70 verse spans — one block of text printed across two verse
+     numbers, `<v v="20-21">` — which the VPL parser used to drop on the
+     floor. See verses(). The audit that found it is why these ship with 141
+     addresses of text rather than 141 blanks. */
+  'cmn-cu89s': { id: 'cmn-cu89s', language: '中文（简体）', lang: 'zh-Hans' },
+  'cmn-cu89t': { id: 'cmn-cu89t', language: '中文（繁體）', lang: 'zh-Hant' }
 };
 const DEFAULT_EDITION = 'eng-web';
 /* The editions the app actually ships, in display order. */
@@ -310,6 +381,11 @@ function derivedMeta(id){
   const langBlock = xml.slice(xml.indexOf('<language>'), xml.indexOf('</language>'));
   return {
     title: pick(ident, 'name'),
+    /* The edition's own name for itself: 'Lutherbibel 1912' beside the
+       catalogue's English 'German Luther Bible 1912'. Both are the
+       publisher's; the picker leads with this one and keeps the English
+       underneath, so a reader sees the name the edition actually goes by. */
+    titleLocal: pick(ident, 'nameLocal'),
     abbr: pick(ident, 'abbreviationLocal') || pick(ident, 'abbreviation'),
     scope: pick(ident, 'scope'),
     languageName: pick(langBlock, 'name'),
@@ -320,15 +396,48 @@ function derivedMeta(id){
   };
 }
 
-/* Verse text, keyed "BOOK C:V" with standard SIL/UBS book codes. */
+/* Verse text, keyed "BOOK C:V" with standard SIL/UBS book codes.
+
+   BRIDGED VERSES. A publisher may print one block of text for a span of
+   verses — `<v b="NUM" c="1" v="20-21">` — where separating them would mean
+   inventing a sentence break the translator did not make. The Chinese Union
+   Version does this 70 times; WEB Classic does it 6 times in Sirach.
+
+   This regex required `v="(\d+)"`, so every one of those blocks failed to
+   match and was DROPPED ENTIRELY. Nothing reported it: the address simply
+   had no text, which is indistinguishable from a publisher leaving it blank.
+
+   In WEB Classic that cost exactly one verse — 4 Maccabees 8:28-29. Its five
+   other bridged spans are empty in the archive itself, so those really are
+   publisher omissions and always were. The Chinese Union Version bridges 70
+   times and every one of them carries text, which is how this surfaced: 141
+   addresses would have shipped blank.
+
+   The text is anchored at the FIRST verse of the span, which is where the
+   publisher's own USFX puts it (`bcv="NUM.1.20"` on that same block). The
+   remaining addresses in the span genuinely have no separate text, so they
+   stay absent — an absence is an absence, and inventing a split here would
+   be writing Scripture. */
 function verses(id){
   const map = new Map();
-  const re = /<v b="([A-Z0-9]{3})" c="(\d+)" v="(\d+)">([\s\S]*?)<\/v>/g;
+  const re = /<v b="([A-Z0-9]{3})" c="(\d+)" v="(\d+)(?:-\d+)?">([\s\S]*?)<\/v>/g;
   const xml = cachedFile(id || DEFAULT_EDITION, '_vpl.xml');
   let m;
   while((m = re.exec(xml)) !== null) map.set(m[1] + ' ' + m[2] + ':' + m[3], m[4]);
   if(!map.size) throw new Error('no verses parsed from the cached corpus for ' + (id || DEFAULT_EDITION));
   return map;
+}
+
+/* The spans a publisher printed as one block, keyed "BOOK C:first" -> last.
+   Carried so a reader can be told the verse they are looking at covers 20-21
+   rather than being left to wonder why 21 is missing. */
+function bridgedSpans(id){
+  const out = new Map();
+  const re = /<v b="([A-Z0-9]{3})" c="(\d+)" v="(\d+)-(\d+)">/g;
+  const xml = cachedFile(id || DEFAULT_EDITION, '_vpl.xml');
+  let m;
+  while((m = re.exec(xml)) !== null) out.set(m[1] + ' ' + m[2] + ':' + m[3], Number(m[4]));
+  return out;
 }
 
 /* The publisher's own name for each book, keyed by SIL code. Spanish gets
@@ -377,5 +486,5 @@ if(require.main === module){
   }
 }
 
-module.exports = { EDITIONS, DEFAULT_EDITION, shippedEditions, archivesFor, bookNames, CACHE, cacheDir, LOCK, readLock,
+module.exports = { EDITIONS, DEFAULT_EDITION, shippedEditions, archivesFor, bookNames, bridgedSpans, CACHE, cacheDir, LOCK, readLock,
                    sha256, verses, superscriptions, unzip, cachedFile, derivedMeta };

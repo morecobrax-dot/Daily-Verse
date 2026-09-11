@@ -5,6 +5,7 @@
       "language": "English",
       "lang": "en",
       "title": "World English Bible Classic",
+      "titleLocal": "World English Bible Classic",
       "abbr": "WEB",
       "scope": "Bible with Deuterocanon",
       "languageName": "English",
@@ -32,6 +33,7 @@
       "language": "Español",
       "lang": "es",
       "title": "Reina Valera 1909",
+      "titleLocal": "Santa Biblia — Reina Valera 1909",
       "abbr": "RV1909",
       "scope": "Bible without Deuterocanon",
       "languageName": "Spanish",
@@ -58,7 +60,9 @@
       "id": "fraLSG",
       "language": "Français",
       "lang": "fr",
+      "held": "versification does not align with our canonical ids",
       "title": "French Louis Segond 1910 Bible",
+      "titleLocal": "Louis Segond 1910",
       "abbr": "F10",
       "scope": "Bible without Deuterocanon",
       "languageName": "French",
@@ -85,8 +89,8 @@
       "id": "engbsb",
       "language": "English",
       "lang": "en",
-      "held": "under audit - rights, canon and versification not yet verified",
       "title": "English Berean Standard Bible",
+      "titleLocal": "Berean Standard Bible",
       "abbr": "BSB",
       "scope": "Bible without Deuterocanon",
       "languageName": "English",
@@ -108,7 +112,177 @@
           "entries": 8
         }
       }
+    },
+    "eng-asv": {
+      "id": "eng-asv",
+      "language": "English",
+      "lang": "en",
+      "title": "American Standard Version (1901)",
+      "titleLocal": "American Standard Version (1901)",
+      "abbr": "ASV",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "English",
+      "iso": "eng",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain This public domain Bible translation is brought to you courtesy of eBible.org. If you would like to make a donation to help keep free Bible access like this going, please visit https://eBible.org/give.php .",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/eng-asv_vpl.zip",
+          "bytes": 4331683,
+          "sha256": "78936cfa0d2909d7c6979ba270e676855d94d44586ba567ee51b30cf30fd5130",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/eng-asv_usfx.zip",
+          "bytes": 2887114,
+          "sha256": "365da92d6d9b09260f63b4d86e867cc06a54dc67a5a6a1342de7ab8fffa57961",
+          "entries": 8
+        }
+      }
+    },
+    "deu1912": {
+      "id": "deu1912",
+      "language": "Deutsch",
+      "lang": "de",
+      "title": "German Luther Bible 1912",
+      "titleLocal": "Lutherbibel 1912",
+      "abbr": "L1912",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "German, Standard",
+      "iso": "deu",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/deu1912_vpl.zip",
+          "bytes": 4541244,
+          "sha256": "62977ec165164def0f4815b846ca4af20fcd141fcc6c347ce791b59c2eca6678",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/deu1912_usfx.zip",
+          "bytes": 2503194,
+          "sha256": "c289e07aa5ca717d2071509c3617b96a5ab37cbd5823cc61e4e09fc4da8315c4",
+          "entries": 8
+        }
+      }
+    },
+    "ita1927": {
+      "id": "ita1927",
+      "language": "Italiano",
+      "lang": "it",
+      "held": "the archive’s abbreviation belongs to a different Italian edition",
+      "title": "Italian Riveduta Bible",
+      "titleLocal": "Riveduta Bibbia 1927",
+      "abbr": "DO885",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "Italian",
+      "iso": "ita",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/ita1927_vpl.zip",
+          "bytes": 4662532,
+          "sha256": "53832e54a6a265f3f49551f095cb6592a235d91319548b1769b66e1c7e9b08d3",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/ita1927_usfx.zip",
+          "bytes": 1585579,
+          "sha256": "b0332f79afd25ca84cbe5324fa80393db795012feee1ff903fddcbb7d0ecbf09",
+          "entries": 8
+        }
+      }
+    },
+    "nld": {
+      "id": "nld",
+      "language": "Nederlands",
+      "lang": "nl",
+      "held": "the publisher has not certified this edition",
+      "title": "Dutch Bible 1917",
+      "titleLocal": "De Heilige Schrift 1917",
+      "abbr": "NLD",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "Dutch",
+      "iso": "nld",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/nld_vpl.zip",
+          "bytes": 4597190,
+          "sha256": "da68b80442a9beefafa20c565de5f361de438fc58075c1e6dc973a38d88d4065",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/nld_usfx.zip",
+          "bytes": 1566386,
+          "sha256": "29a6b50b778b28bc864b5d6ecff63e7caf6f6338648b22f27ed2b556c90e4e5b",
+          "entries": 8
+        }
+      }
+    },
+    "cmn-cu89s": {
+      "id": "cmn-cu89s",
+      "language": "中文（简体）",
+      "lang": "zh-Hans",
+      "title": "Chinese Union Version (simplified)",
+      "titleLocal": "新标点和合本",
+      "abbr": "CUVs",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "Chinese",
+      "iso": "cmn",
+      "script": "CJK",
+      "direction": "LTR",
+      "copyright": "Public Domain",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/cmn-cu89s_vpl.zip",
+          "bytes": 4119112,
+          "sha256": "8c9969ea5659835c132f9ce93101b948cd04edf298ca507ae50bbe77858d5027",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/cmn-cu89s_usfx.zip",
+          "bytes": 1538314,
+          "sha256": "60d711b9914178e4f7492a2ee66a2a3601ecf31d5f402979d29161b479575833",
+          "entries": 8
+        }
+      }
+    },
+    "cmn-cu89t": {
+      "id": "cmn-cu89t",
+      "language": "中文（繁體）",
+      "lang": "zh-Hant",
+      "title": "Chinese Union Version (traditional)",
+      "titleLocal": "新標點和合本",
+      "abbr": "CUVt",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "Chinese",
+      "iso": "cmn",
+      "script": "CJK",
+      "direction": "LTR",
+      "copyright": "Public Domain",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/cmn-cu89t_vpl.zip",
+          "bytes": 4126771,
+          "sha256": "49aca5dffaeeb27c24f05ec30a7e64080f36c0e132095b83f2773b2c9b4455b7",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/cmn-cu89t_usfx.zip",
+          "bytes": 1547744,
+          "sha256": "26568f1a3b8d877f9cb58614d855756b5751556599ff2c0efb933d12336eb3bb",
+          "entries": 8
+        }
+      }
     }
   },
-  "syncedAt": "2026-09-06"
+  "syncedAt": "2026-09-11"
 }

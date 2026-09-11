@@ -109,15 +109,18 @@ function readDevotions(){ return JSON.parse(fs.readFileSync(DEVOTIONS, 'utf8'));
    A reference that does not resolve in every shipped edition stops the
    build. The alternative is a devotional whose Scripture silently vanishes
    the moment somebody changes translation. */
-function resolveDevotionRef(ref, where, editionVerses, errors){
+function resolveDevotionRef(ref, where, editionVerses, editionSpans, errors){
   const p = parseRef(ref);
   if(!p){ errors.push(where + ' — "' + ref + '" cannot be parsed as a reference'); return null; }
   Object.keys(editionVerses).forEach(ed => {
     for(let v = p.from; v <= p.to; v++){
       const t = editionVerses[ed].get(p.code + ' ' + p.chapter + ':' + v);
-      if(t === undefined || !String(t).trim()){
-        errors.push(where + ' — ' + ref + ' has no verse ' + v + ' in ' + ed);
-      }
+      if(t !== undefined && String(t).trim()) continue;
+      /* Printed inside a block the publisher spans across several verses —
+         present, just not separately numbered. Same rule the curated build
+         uses; see insideCollectedSpan(). */
+      if(insideCollectedSpan(editionSpans[ed], p.code, p.chapter, v, p.from)) continue;
+      errors.push(where + ' — ' + ref + ' has no verse ' + v + ' in ' + ed);
     }
   });
   return { ref: ref, c: p.code, ch: p.chapter, from: p.from, to: p.to };
@@ -125,14 +128,18 @@ function resolveDevotionRef(ref, where, editionVerses, errors){
 
 function buildDevotions(doc, errors){
   const editionVerses = {};
-  corpus.shippedEditions().forEach(ed => { editionVerses[ed] = corpus.verses(ed); });
+  const editionSpans = {};
+  corpus.shippedEditions().forEach(ed => {
+    editionVerses[ed] = corpus.verses(ed);
+    editionSpans[ed] = corpus.bridgedSpans(ed);
+  });
   let refCount = 0;
   const series = (doc.series || []).map(s => {
     const entries = (s.entries || []).map(e => {
       const where = s.id + '/' + e.id;
       const resolve = list => (list || []).map(r => {
         refCount++;
-        return resolveDevotionRef(r, where, editionVerses, errors);
+        return resolveDevotionRef(r, where, editionVerses, editionSpans, errors);
       }).filter(Boolean);
       return {
         id: e.id, title: e.title,
@@ -156,15 +163,33 @@ function buildDevotions(doc, errors){
 /* Derive one passage from the corpus. The single place text is produced, so
    a daily reading and a study reading cannot be built by different rules and
    drift apart. Returns a record or pushes a reason and returns null. */
-function derivePassage(ref, verses, supers, errors){
+/* Is this address inside a block the publisher printed for a span of verses,
+   whose anchor we have already collected?
+
+   The Chinese Union Version prints Luke 1:1-2 as one block. Its text lives at
+   1:1 and there is no separate 1:2 — so a passage running 1:1-4 is complete
+   even though `LUK 1:2` is not a key. The anchor has to be inside the passage
+   for this to hold: if the span began before the passage did, the words are
+   at an address we are not reading, and that IS a failure. */
+function insideCollectedSpan(spans, code, chapter, v, from){
+  if(!spans) return false;
+  for(let a = from; a < v; a++){
+    const last = spans.get(code + ' ' + chapter + ':' + a);
+    if(last && last >= v) return true;
+  }
+  return false;
+}
+
+function derivePassage(ref, verses, supers, errors, spans){
   const p = parseRef(ref);
   if(!p){ errors.push(ref + ' — cannot be parsed as a reference'); return null; }
 
   const parts = [];
   for(let v = p.from; v <= p.to; v++){
     const key = p.code + ' ' + p.chapter + ':' + v;
-    if(!verses.has(key)){ errors.push(ref + ' — ' + key + ' is not in the corpus'); return null; }
-    parts.push(verses.get(key));
+    if(verses.has(key)){ parts.push(verses.get(key)); continue; }
+    if(insideCollectedSpan(spans, p.code, p.chapter, v, p.from)) continue;
+    errors.push(ref + ' — ' + key + ' is not in the corpus'); return null;
   }
 
   let text = collapse(parts.join(' '));
@@ -223,6 +248,7 @@ function build(){
   const studyDoc = readStudies();
   const devotionDoc = readDevotions();
   const verses = corpus.verses(corpus.DEFAULT_EDITION);
+  const spans = corpus.bridgedSpans(corpus.DEFAULT_EDITION);
   const supers = corpus.superscriptions(corpus.DEFAULT_EDITION);
   const lock = corpus.readLock();
   if(!lock) throw new Error('no data/corpus.lock.json — run `npm run corpus:sync` first');
@@ -244,7 +270,7 @@ function build(){
     const badTheme = entry.themes.filter(t => !themes.has(t));
     if(badTheme.length){ errors.push(entry.ref + ' — unknown theme(s): ' + badTheme.join(', ')); return; }
 
-    const rec = derivePassage(entry.ref, verses, supers, errors);
+    const rec = derivePassage(entry.ref, verses, supers, errors, spans);
     if(!rec) return;
     rec.themes = entry.themes.slice();
     rec.daily = 1;
@@ -259,7 +285,7 @@ function build(){
     if(!p) return;                       // already reported by buildStudies
     const id = canonicalId(p);
     if(byId.has(id)) return;             // a lesson quoting a daily reading reuses it
-    const rec = derivePassage(ref, verses, supers, errors);
+    const rec = derivePassage(ref, verses, supers, errors, spans);
     if(!rec) return;
     /* No theme tags: themes exist to order the daily rotation, and a passage
        that is never rotated has no use for them. */
@@ -305,9 +331,10 @@ function buildTranslations(canonical, lock){
     if(id === corpus.DEFAULT_EDITION) return;
     const verses = corpus.verses(id);
     const supers = corpus.superscriptions(id);
+    const spans = corpus.bridgedSpans(id);
     const errors = [];
     const passages = canonical.map(p => {
-      const rec = derivePassage(p.ref, verses, supers, errors);
+      const rec = derivePassage(p.ref, verses, supers, errors, spans);
       if(!rec) return null;
       if(rec.id !== p.id){
         errors.push(p.ref + ' — resolved to ' + rec.id + ' in ' + id + ', not ' + p.id);
@@ -716,6 +743,7 @@ function region(built){
     return '  ' + JSON.stringify(id) + ': {' +
       " id: '" + esc(id) + "'," +
       " title: '" + esc(e.title) + "'," +
+      " titleLocal: '" + esc(e.titleLocal || e.title) + "'," +
       " abbr: '" + esc(e.abbr) + "'," +
       " language: '" + esc(conf.language) + "'," +
       " lang: '" + esc(conf.lang) + "'," +
