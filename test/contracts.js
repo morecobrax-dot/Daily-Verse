@@ -5287,7 +5287,11 @@ function testTranslationLibrary(){
   /* A held edition is downloaded, hashed and sitting in the same registry.
      The ONLY thing between it and a reader is this flag, so nothing may
      reach the app that carries it. */
-  T('three editions are held', held.length === 3, held.join(', '));
+  /* Four since Gate 4 added the Ostervald, held on its own evidence. An exact
+     set rather than a count, so a held edition cannot be swapped for another
+     without this changing. */
+  T('four editions are held, and they are exactly these',
+    held.slice().sort().join() === 'fraLSG,fra_fob,ita1927,nld', held.join(', '));
   T('and not one of them reached the app',
     held.every(id => !c.TRANSLATIONS[id] && !c.TRANSLATION_TEXT[id]), held.join(', '));
   T('nor the reader corpus on disk',
@@ -5494,6 +5498,219 @@ function testTranslationLibrary(){
     uc.Store.listKeys().every(k => String(uc.Store.get(k)).indexOf('In the beginning') === -1));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 44 — THE NUMBERING AUDIT MUST NOT SAY SAFE WHEN IT CANNOT SEE
+
+   scripts/versify.js is the gate every translation passes through, and in
+   Gate 4 it was found to call four kinds of wrong-sentence failure SAFE:
+
+     an unmarked merge that ends a chapter early    Ostervald 2 Cor 13, Ps 66
+     a chapter tail renumbered into the next         Segond Numbers 29/30
+     a verse split in the middle of a chapter        Segond 1 Kings 22
+     a two-verse psalm title                         Segond Psalm 51, 52 …
+
+   and it had no way at all to see a verse printed twice (Ostervald Luke
+   10:41-42, one of this app's daily readings).
+
+   Real editions prove the rules against real data, but a rule is only proven
+   to CATCH a failure if it is shown one. Most of these failures exist in no
+   shipped Bible, so each is constructed here from our own reference edition
+   with exactly one thing done to it. The constructed editions are numbering
+   only; nothing here is ever shown to a reader.
+   --------------------------------------------------------- */
+function testNumberingAudit(){
+  section('CONTRACT 44 — the numbering audit does not call what it cannot see safe');
+  const corpus = require('../scripts/corpus.js');
+  const versify = require('../scripts/versify.js');
+  const canon = versify.chapterMap(versify.CANON);
+  const canonSup = corpus.superscriptions(versify.CANON);
+  const webVerses = corpus.verses(versify.CANON);
+
+  /* One book of our reference edition, as an edition in its own right. */
+  function book(code){
+    const verses = new Map(), sups = new Map();
+    for(const [k, t] of webVerses) if(k.indexOf(code + ' ') === 0) verses.set(k, t);
+    for(const [k, t] of canonSup) if(k.indexOf(code + ' ') === 0) sups.set(k, t);
+    return { verses: verses, superscriptions: sups, spans: new Map() };
+  }
+  const chapterOf = k => k.slice(0, k.lastIndexOf(':'));
+  function texts(src, ch){
+    const out = [];
+    for(const [k, t] of src.verses) if(chapterOf(k) === ch) out.push(t);
+    return out;
+  }
+  /* Replace a chapter's verses, keeping every other key in its order. */
+  function withChapter(src, ch, arr){
+    const out = new Map();
+    let placed = false;
+    for(const [k, t] of src.verses){
+      if(chapterOf(k) === ch){
+        if(!placed){ arr.forEach((x, i) => out.set(ch + ':' + (i + 1), x)); placed = true; }
+        continue;
+      }
+      out.set(k, t);
+    }
+    return Object.assign({}, src, { verses: out });
+  }
+  const audit = (src, id) => versify.auditEdition(id || 'constructed', canon, canonSup, src);
+  const has = (list, prefix) => list.some(x => x.indexOf(prefix) === 0);
+
+  sub('the harness itself changes nothing');
+  /* If a book of our own edition is not clean against our own edition, every
+     assertion below is measuring the harness rather than the rules. */
+  const same = audit(book('ROM'));
+  T('a book compared with itself is clean', same.clean && same.chaptersCompared === 16 &&
+    same.boundaryChapters.length === 0 && same.reviewKeys.length === 0 && same.duplicates.length === 0,
+    same.chaptersCompared + ' compared');
+
+  sub('a chapter that ends early is not assumed to be an omission');
+  /* 2 Corinthians 13, as the Ostervald prints it: our 12 and 13 merged into
+     its 12 with no bridge markup, so its 13 is our 14. */
+  const cor = book('2CO');
+  const c13 = texts(cor, '2CO 13');
+  const merged = audit(withChapter(cor, '2CO 13', c13.slice(0, 11).concat([c13[11] + ' ' + c13[12], c13[13]])));
+  T('an unmarked merge is sent for review', merged.reviewKeys.indexOf('2CO 13') !== -1,
+    merged.reviewChapters.join('; '));
+  T('and is not reported as a safe absence', !has(merged.absenceChapters, '2CO 13'),
+    merged.absenceChapters.join('; '));
+  T('and the edition does not pass', merged.clean === false);
+  /* The same shape, but the publisher SAID so: the last two verses printed as
+     one block with the span declared. That is the Chinese Union Version's
+     Deuteronomy 13, and it is fine. */
+  const declared = withChapter(cor, '2CO 13', c13.slice(0, 12).concat([c13[12] + ' ' + c13[13]]));
+  declared.spans = new Map([['2CO 13:13', 14]]);
+  const decl = audit(declared);
+  T('the same shortfall declared by a bridge is a safe absence',
+    has(decl.absenceChapters, '2CO 13') && decl.reviewKeys.length === 0 && decl.clean,
+    decl.absenceChapters.join('; ') + ' / review: ' + decl.reviewKeys.join(','));
+
+  sub('an appended verse is only safe when it came from somewhere');
+  /* Segond's Numbers 29/30: our 29:40 printed as its 30:1. Numbers 30 looks
+     appended to, and every address in it is shifted. */
+  const num = book('NUM');
+  const n29 = texts(num, 'NUM 29'), n30 = texts(num, 'NUM 30');
+  const moved = audit(withChapter(withChapter(num, 'NUM 29', n29.slice(0, 39)), 'NUM 30', [n29[39]].concat(n30)));
+  T('a tail renumbered into the next chapter is not a boundary split',
+    !has(moved.boundaryChapters, 'NUM 30'), moved.boundaryChapters.join('; '));
+  T('it is unexplained, and the edition is unsafe',
+    has(moved.unexplained, 'NUM 30') && moved.safe === false, moved.unexplained.join('; '));
+  /* Segond's 1 Kings 22: verse 43 split in two, so its 45 is our 44. The
+     chapter is one longer at the end and both neighbours are unchanged —
+     exactly the shape of a harmless append. */
+  const kgs = book('1KI');
+  const k22 = texts(kgs, '1KI 22');
+  const s = k22[42], m = Math.floor(s.length / 2);
+  const split = audit(withChapter(kgs, '1KI 22', k22.slice(0, 42).concat([s.slice(0, m), s.slice(m)], k22.slice(43))));
+  T('a verse split mid-chapter is not called a boundary split',
+    !has(split.boundaryChapters, '1KI 22'), split.boundaryChapters.join('; '));
+  T('it goes to review, so a person has to look',
+    split.reviewKeys.indexOf('1KI 22') !== -1 && split.clean === false);
+  /* The Romans doxology: fewer verses at the end of 14, more at the end of 16,
+     15 unchanged. That is verses moving, and it is the one append the numbering
+     can vouch for. */
+  const rom = book('ROM');
+  const r14 = texts(rom, 'ROM 14'), r16 = texts(rom, 'ROM 16');
+  const reloc = audit(withChapter(withChapter(rom, 'ROM 14', r14.slice(0, 23)), 'ROM 16', r16.concat([r14[24], r14[25]])));
+  T('a relocation from earlier in the same book stays a safe boundary split',
+    has(reloc.boundaryChapters, 'ROM 16') && reloc.clean, reloc.boundaryChapters.join('; ') +
+    ' / review: ' + reloc.reviewKeys.join(','));
+  T('and the shortfall it came from is explained, not flagged',
+    reloc.absenceChapters.some(x => x.indexOf('ROM 14') === 0 && x.indexOf('relocated to ROM 16') !== -1),
+    reloc.absenceChapters.join('; '));
+
+  sub('a psalm title of any length, and a book of a different shape');
+  /* A two-verse Hebrew title makes the psalm two longer. The rule used to
+     match exactly one. */
+  const psa = book('PSA');
+  const p51 = texts(psa, 'PSA 51');
+  const titled = withChapter(psa, 'PSA 51', ['title, first line', 'title, second line'].concat(p51));
+  titled.superscriptions = new Map([...psa.superscriptions].filter(([k]) => k !== 'PSA 51'));
+  const two = audit(titled);
+  T('a title numbered as two verses is still a shift',
+    has(two.shiftChapters, 'PSA 51') && two.safe === false, two.shiftChapters.join('; '));
+  /* Joel in three chapters or four. A different chapter count was reported
+     and then left out of the verdict. */
+  const jol = book('JOL');
+  const j3 = texts(jol, 'JOL 3');
+  const four = withChapter(jol, 'JOL 3', j3.slice(0, 10));
+  j3.slice(10).forEach((t, i) => four.verses.set('JOL 4:' + (i + 1), t));
+  const joel = audit(four);
+  T('a book with a different number of chapters is unsafe',
+    joel.chapterCountDiff.length === 1 && joel.safe === false, joel.chapterCountDiff.join('; '));
+
+  sub('a verse printed twice');
+  const act = book('ACT');
+  const a19 = texts(act, 'ACT 19');
+  const twice = audit(withChapter(act, 'ACT 19', a19.slice(0, 40).concat([a19[39]])));
+  T('two adjacent addresses holding the same text are caught',
+    twice.duplicates.indexOf('ACT 19:40 = 19:41') !== -1, twice.duplicates.join('; '));
+  T('and that alone makes the edition unsafe, whatever the numbering says',
+    twice.safe === false && twice.chaptersCompared === 28 && twice.shiftChapters.length === 0 &&
+    twice.unexplained.length === 0 && twice.reviewKeys.length === 0);
+
+  sub('a person’s review is recorded, and a new ambiguity still fails');
+  /* The same unmarked merge, reported under a shipped edition's id: that
+     edition's recorded reviews do not cover it, so it cannot pass. */
+  const underShipped = audit(withChapter(cor, '2CO 13', c13.slice(0, 11).concat([c13[11] + ' ' + c13[12], c13[13]])), 'cmn-cu89s');
+  T('an ambiguity nobody has reviewed fails a shipped edition',
+    underShipped.unreviewed.indexOf('2CO 13') !== -1 && underShipped.clean === false);
+  T('every recorded review says what was found',
+    Object.keys(versify.REVIEWED).every(id => Object.keys(versify.REVIEWED[id]).every(k =>
+      typeof versify.REVIEWED[id][k] === 'string' && versify.REVIEWED[id][k].length > 30)));
+  T('only shipped editions carry recorded reviews',
+    Object.keys(versify.REVIEWED).every(id => corpus.EDITIONS[id] && !corpus.EDITIONS[id].held),
+    Object.keys(versify.REVIEWED).join(', '));
+
+  sub('every shipped edition passes the stricter audit');
+  corpus.shippedEditions().filter(id => id !== versify.CANON).forEach(id => {
+    const r = versify.auditEdition(id, canon, canonSup);
+    T(id + ' is clean, with every ambiguity already reviewed', r.clean,
+      'unreviewed: ' + r.unreviewed.join(', ') + ' / duplicates: ' + r.duplicates.join(', '));
+    T(id + ' prints no verse twice', r.duplicates.length === 0);
+  });
+  const cuv = versify.auditEdition('cmn-cu89s', canon, canonSup);
+  T('the Chinese Union Version’s reviews are exactly the three that were looked at',
+    cuv.reviewKeys.slice().sort().join() === '3JN 1,JHN 7,REV 12', cuv.reviewKeys.join(', '));
+  /* Gate 3 reported 414 of 415 for this edition. Luke 1:1-2 is one block in
+     it, and the check did not know that. Every word was always on screen. */
+  const cuvCurated = versify.curatedCheck('cmn-cu89s');
+  T('and all 415 curated passages resolve in it, counting bridged spans',
+    cuvCurated.total === 415 && cuvCurated.missing.length === 0, cuvCurated.missing.join('; '));
+
+  sub('the known-bad edition is caught harder, not softer');
+  const seg = versify.auditEdition('fraLSG', canon, canonSup);
+  T('Segond still shows at least its 62 title shifts, including Psalm 20',
+    seg.shiftChapters.length >= 62 && seg.shiftChapters.indexOf('PSA 20') !== -1, String(seg.shiftChapters.length));
+  T('its two-verse titles are among them', has(seg.shiftChapters, 'PSA 51 (+2)'));
+  T('Numbers 30 and 1 Samuel 24 are no longer called safe',
+    has(seg.unexplained, 'NUM 30') && has(seg.unexplained, '1SA 24') &&
+    !has(seg.boundaryChapters, 'NUM 30') && !has(seg.boundaryChapters, '1SA 24'));
+  T('1 Kings 22 and Isaiah 9 are sent to review',
+    seg.reviewKeys.indexOf('1KI 22') !== -1 && seg.reviewKeys.indexOf('ISA 9') !== -1);
+  T('and the only boundary split it still has is the Romans doxology',
+    seg.boundaryChapters.length === 1 && has(seg.boundaryChapters, 'ROM 16'), seg.boundaryChapters.join('; '));
+
+  sub('the held candidates are held for what the evidence says');
+  const fob = versify.auditEdition('fra_fob', canon, canonSup);
+  T('the Ostervald does not pass', fob.safe === false && fob.clean === false);
+  T('its numbered psalm titles are found',
+    ['PSA 51', 'PSA 52', 'PSA 54', 'PSA 60'].every(p => fob.shiftChapters.indexOf(p) !== -1),
+    fob.shiftChapters.join(' '));
+  T('its unmarked merges are no longer passed as missing verses',
+    fob.reviewKeys.indexOf('PSA 66') !== -1 && fob.reviewKeys.indexOf('2CO 13') !== -1,
+    fob.reviewKeys.join(', '));
+  T('and its duplicated verses are found, including a daily reading',
+    fob.duplicates.indexOf('LUK 10:41 = 10:42') !== -1 && fob.duplicates.indexOf('ACT 19:40 = 19:41') !== -1,
+    fob.duplicates.join('; '));
+  /* The Riveduta's numbering has always been fine. It is held for its name,
+     and this makes sure nobody later "fixes" the hold by pointing at a
+     numbering problem it does not have. */
+  const riv = versify.auditEdition('ita1927', canon, canonSup);
+  T('the Riveduta’s numbering is clean, so its hold is about metadata alone',
+    riv.clean && riv.duplicates.length === 0 &&
+    /DO885/.test(corpus.EDITIONS.ita1927.held));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -5503,5 +5720,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit
 };

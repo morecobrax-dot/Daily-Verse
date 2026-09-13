@@ -173,7 +173,7 @@
       "id": "ita1927",
       "language": "Italiano",
       "lang": "it",
-      "held": "the archive’s abbreviation belongs to a different Italian edition",
+      "held": "its only abbreviation, DO885, is unverified and sits beside a version note describing a different edition",
       "title": "Italian Riveduta Bible",
       "titleLocal": "Riveduta Bibbia 1927",
       "abbr": "DO885",
@@ -282,7 +282,36 @@
           "entries": 8
         }
       }
+    },
+    "fra_fob": {
+      "id": "fra_fob",
+      "language": "Français",
+      "lang": "fr",
+      "held": "shifted psalm and epistle numbering, and duplicated verses in the source text",
+      "title": "French Ostervald Bible",
+      "titleLocal": "La Sainte Bible",
+      "abbr": "FOB",
+      "scope": "Bible without Deuterocanon",
+      "languageName": "French",
+      "iso": "fra",
+      "script": "Latin",
+      "direction": "LTR",
+      "copyright": "Public Domain",
+      "archives": {
+        "vpl": {
+          "url": "https://ebible.org/Scriptures/fra_fob_vpl.zip",
+          "bytes": 4622926,
+          "sha256": "65c331bb048d58c7434ad9471fb43e7588e2b5bcbac268f3c00775d83ef56e0c",
+          "entries": 5
+        },
+        "usfx": {
+          "url": "https://ebible.org/Scriptures/fra_fob_usfx.zip",
+          "bytes": 2975638,
+          "sha256": "fa63b35d8728c89cf506648b92e961a5845e840c8eb3aff32d414a1c2ab3ebed",
+          "entries": 8
+        }
+      }
     }
   },
-  "syncedAt": "2026-09-11"
+  "syncedAt": "2026-09-13"
 }

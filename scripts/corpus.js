@@ -120,23 +120,36 @@ const EDITIONS = {
 
      Rights, canon and numbering all pass: Public Domain, Redistributable,
      Certified, 66 books, numbering identical to ours in 1187 of 1189
-     chapters. The problem is its name. The archive's `abbreviationLocal` is
-     "DO885" and its rights page carries the line "The Diodati Bible was
-     published in 1885" — both of which belong to ita1885, a DIFFERENT
-     Italian edition that eBible publishes separately.
+     chapters, no duplicated verses. The problem is its name. The archive's
+     `abbreviationLocal` is "DO885", and its DBL `promoVersionInfo` — the field
+     that describes which version this is — reads "The Diodati Bible was
+     published in 1885". The rights page carries the same line.
 
-     Four other publisher identifiers agree the text itself is the Riveduta:
-     title "Riveduta Bibbia 1927", dateCompleted 1927, swordName ita1927eb,
-     FCBHID ITARIV. So the words are almost certainly right. But the only
-     authoritative abbreviation this pipeline has for it names another
-     translation, and the two honest options are to print "DO885" beside
-     "Riveduta Bibbia 1927" — which tells a reader the wrong thing — or to
-     type an abbreviation by hand, which is the one thing rule 52 forbids.
+     Everything else says Riveduta 1927: title, nameLocal, description,
+     dateCompleted, swordName ita1927eb, FCBHID ITARIV. The text itself is not
+     the Diodati's — eBible's separate Diodati archive (ita1885) prints
+     different words at Genesis 1:1.
 
-     It holds until the archive names it correctly. Nothing else about it
-     needs to change. */
+     CORRECTION, Gate 4. Gate 3 recorded here that DO885 belongs to ita1885.
+     It does not: ita1885 declares its own abbreviation as DB1885. So DO885 is
+     not a verified abbreviation of EITHER Italian edition — it is a label with
+     nothing behind it, sitting beside a version note that describes the other
+     one. That makes the hold stronger, not weaker.
+
+     Re-checked in Gate 4 against every place the publisher states identity:
+     the archives are byte-identical to the Gate 3 pin (all 13 files);
+     eBible's own details page still shows "Abbreviation: DO885";
+     VernacularAdditional.xml carries no title or abbreviation at all;
+     VernacularParms.xml carries only book names; the USFX and VPL headers
+     carry no edition identity. Nothing corrects it and nothing else supplies
+     one. The honest options are still to print "DO885" beside "Riveduta
+     Bibbia 1927", which tells a reader something unverifiable, or to type an
+     abbreviation by hand, which rule 52 forbids.
+
+     It holds until the archive names it. Nothing else about it needs to
+     change. */
   'ita1927':   { id: 'ita1927',   language: 'Italiano',   lang: 'it',
-                 held: 'the archive’s abbreviation belongs to a different Italian edition' },
+                 held: 'its only abbreviation, DO885, is unverified and sits beside a version note describing a different edition' },
 
   /* HELD — eBible marks it Certified: False.
 
@@ -151,6 +164,47 @@ const EDITIONS = {
      available. */
   'nld':       { id: 'nld',       language: 'Nederlands', lang: 'nl',
                  held: 'the publisher has not certified this edition' },
+
+  /* HELD — Gate 4. Clean rights, clean metadata, and a text that cannot be
+     trusted at our addresses.
+
+     Rights and identity pass, and agree everywhere they are stated: Public
+     Domain, Redistributable and Certified in eBible's catalogue;
+     abbreviationLocal FOB, which eBible's details page repeats; nameLocal
+     "La Sainte Bible", English name "French Ostervald Bible"; dateCompleted
+     1744, which the swordName fraFOB1744eb repeats; "Translation by:
+     Ostervald". It was the first French candidate whose verse totals came
+     within four of ours, which is why it was audited.
+
+     Its numbering and its text are the problem, and every item below was
+     confirmed by putting the verses side by side, not only by the counts:
+
+       PSA 51, 52, 54, 60  the psalm's title is numbered as verse 1, so every
+                           address in the psalm holds the verse before ours
+       PSA 66              no address holds our 66:1; its 66:1-19 are our
+                           66:2-20
+       2CO 13              our 13:12 and 13:13 are merged into its 13:12 with
+                           no bridge markup, so its 13:13 — the address our id
+                           means as "All the saints greet you" — is "La grâce
+                           du Seigneur Jésus-Christ", our 13:14
+       LUK 10:41-42        both addresses hold the same 187 characters, both
+                           verses' words, twice. Luke 10:41-42 is a daily
+                           reading here and the anchor of a devotional.
+       ACT 19:40-41        the same duplication
+
+     All 415 curated passages "resolve" in it, including the one that would
+     print twice. That is the whole argument for checking the entire corpus.
+
+     PSA 30 was also flagged as a title shift and is not one: its title is
+     simply absent and it splits our last verse into two, so no address holds
+     a different sentence. The rule over-reports in that case, which is the
+     direction a trust tool should err in.
+
+     Numbering alone passed PSA 66 and 2 Corinthians 13 as harmless missing
+     verses, and nothing numeric could see the duplicates. Both gaps are
+     closed in scripts/versify.js. */
+  'fra_fob':   { id: 'fra_fob',   language: 'Français',   lang: 'fr',
+                 held: 'shifted psalm and epistle numbering, and duplicated verses in the source text' },
 
   /* SHIPPED, both scripts. Public Domain, Redistributable and Certified.
      Two separate publications, not one text transformed: eBible builds each
