@@ -229,6 +229,20 @@ before calling a release done.
     added and are not known to repaint after an update, and removing and
     re-adding a home-screen web app can lose its stored data, so never tell
     readers to reinstall without a backup first.
+55. **Back unwinds exactly one level, and never falls back to Today.** A tab
+    is a ROOT; a surface on the overlay stack is a LEVEL. Switching tabs
+    never touches history. Every surface owns one history entry — open with
+    `pushOverlayHistory('<id>')` inside the tap, close with
+    `releaseOverlayHistory()` — and popstate settles the stack to the depth
+    the entry records, through each surface's own close path. The Back
+    button, swipe-back and device back must land in the same place. Opening
+    Scripture from another feature opens the reader OVER the surface that
+    asked, so Back returns there; a drill-down keeps its parent open beneath
+    it. Swap one surface for another with `replaceSurface`, never a close and
+    an open. Device back used to close a page and spend its parent's entry
+    too, so the next Back left the app and reopened it on Today — Contract 47
+    runs every journey three ways to keep that from coming back. See
+    ARCHITECTURE.md, "Back".
 
 ## Translations and the words they use
 

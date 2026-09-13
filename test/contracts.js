@@ -4246,7 +4246,7 @@ function testPrimaryNavigation(){
 
   sub('device back closes Settings before it leaves the app');
   T('it takes a history entry on the way in and gives it back on the way out',
-    /function openSettings\(\)\{[\s\S]{0,200}pushOverlayHistory\(\);/.test(src.replace(/\n\s*/g, ' ')) &&
+    /function openSettings\(\)\{[\s\S]{0,200}pushOverlayHistory\('settingsOverlay'\);/.test(src.replace(/\n\s*/g, ' ')) &&
     /function closeSettings\(\)\{[\s\S]{0,160}releaseOverlayHistory\(\);/.test(src.replace(/\n\s*/g, ' ')));
   /* Focus restoration is the overlay engine's, not a second implementation. */
   T('and focus returns through the engine that already does it',
@@ -4600,8 +4600,11 @@ function testReaderQuality(){
     bare.indexOf('if(host.parentNode && host.parentNode.scrollTop) host.parentNode.scrollTop = 0;') !== -1);
   T('the top bar still pays the safe-area inset it owns',
     style.indexOf('padding: calc(var(--space-sm) + var(--inset-top)) var(--space-sm) var(--space-sm);') !== -1);
-  T('the way back names where it goes, and the edition names itself',
-    src.indexOf('aria-label="Back to the Bible"') !== -1 &&
+  /* It once said "Back to the Bible". The reader opens over whatever asked
+     for it - a book's chapters, Today, Saved, a lesson, a devotional - and
+     Back returns there, so a named destination was wrong on most paths. */
+  T('the way back promises no place it may not go, and the edition names itself',
+    src.indexOf('onclick="closeBibleReader()" aria-label="Back"') !== -1 &&
     src.indexOf("'Translation: ' + activeTranslation().title") !== -1);
 
   sub('the sheet that had no gutter has one');
@@ -6085,8 +6088,11 @@ function testBrandIdentity(){
       a.every(r => b.some(s => JSON.stringify(s) === JSON.stringify(r)));
   });
   T('no record the phone held was rewritten or dropped', untouched);
+  /* Held to what a v1.12.0 phone last saw rather than to the newest id, so
+     the next release does not have to edit this line to stay true. */
   T('and the rename shows as unread in What’s new',
-    u.Store.get(u.KEYS.lastSeenUpdate) === 'v1-12-0' && u.APP_UPDATES[0].id === 'v1-13-0');
+    u.Store.get(u.KEYS.lastSeenUpdate) === 'v1-12-0' && u.APP_UPDATES[0].id !== 'v1-12-0' &&
+    u.APP_UPDATES.some(x => x.id === 'v1-13-0'));
 
   sub('a backup written by v1.12.0 still restores, and a new one matches it');
   const backupText = fsx.readFileSync(pathx.join(H.ROOT, 'test', 'fixtures', 'v1.12.0-backup.json'), 'utf8');
@@ -6167,6 +6173,371 @@ function testBrandIdentity(){
   T('and the light rising from the spine is amber', light[0] > 150 && light[0] > light[1] + 40 && light[1] > light[2], JSON.stringify(light));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 47 — BACK UNWINDS EXACTLY ONE LEVEL, HOWEVER IT IS ASKED FOR
+
+   Reported as: leaving a reading, a lesson, a Settings page or the Bible by
+   Back or by swiping sometimes landed on Today.
+
+   The Back buttons were right. Device back — which is what a swipe from the
+   edge and the Android back button are — closed the top surface and then
+   gave back a SECOND history entry through that surface's own close path.
+   The page beneath stayed on screen with no entry of its own, so the next
+   back left the app, and opening it again started cold, on Today. A
+   confirmation owned no entry and spent its parent's. A devotional's
+   Scripture link pushed its entry from a promise callback, which Safari and
+   Chrome skip on Back. And "Read in context" on a verse highlighted or saved
+   from the Bible did nothing at all.
+
+   Every journey runs three ways — the page's own Back button, device back,
+   and device back in a browser that skips entries pushed outside a tap —
+   through a session history that behaves like a browser's (makeHistory in
+   the harness). After every Back the stack must be exactly the level above,
+   the tab must be the one the journey started on, history must be exactly
+   as deep as the stack, and nothing may leave the app until there is
+   nothing left to unwind.
+   --------------------------------------------------------- */
+async function testBackNavigation(){
+  section('CONTRACT 47 — Back unwinds exactly one level, however it is asked for');
+  const fsx = require('fs'), pathx = require('path');
+  const CLOSER = /^(close|exit|cancel)[A-Z][A-Za-z0-9_]*\(\s*\)\s*;?\s*$/;
+
+  function start(mode, extra, cold){
+    const app = H.loadApp(Object.assign({ sharedStorage: new Map(), history: { skipUngestured: !!(mode && mode.skip) } }, extra || {}));
+    const c = app.ctx, h = c.__history, d = app.dom.document;
+    /* The reader works from the shipped files, as CONTRACT 38 does — unless a
+       journey is about what happens before the edition's index has arrived. */
+    if(!cold) c.bibleCache.index['eng-web'] = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible', 'eng-web', 'index.json'), 'utf8'));
+    ['GEN', 'JHN', 'ROM', 'PSA'].forEach(code => {
+      c.bibleCache.books['eng-web/' + code] =
+        JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible', 'eng-web', code + '.json'), 'utf8'));
+    });
+    const s = {
+      app, c, h, d,
+      stack: () => c.openSurfaceIds().join(' > ') || 'root',
+      inStep: () => !h.exited && h.index === c.openSurfaceIds().length,
+      async tap(fn){ h.inGesture = true; try{ fn(); }finally{ h.inGesture = false; } await c.__settleHistory(); },
+      async buttonBack(){
+        const ids = c.openSurfaceIds();
+        if(!ids.length) return;
+        const btn = d.getElementById(ids[ids.length - 1]).querySelectorAll('button')
+          .find(b => CLOSER.test(b.getAttribute('onclick') || ''));
+        h.inGesture = true; try{ btn.click(); }finally{ h.inGesture = false; }
+        await c.__settleHistory();
+      },
+      async deviceBack(){ h.userBack(); await c.__settleHistory(); }
+    };
+    return s;
+  }
+  const MODES = [
+    { label: 'Back button', back: s => s.buttonBack() },
+    { label: 'device back', back: s => s.deviceBack() },
+    { label: 'swipe-back where gestureless entries are skipped', back: s => s.deviceBack(), skip: true }
+  ];
+
+  const probe = start();
+  const daily = probe.c.SCRIPTURE.find(p => p.daily).id;
+  const series = probe.c.DEVOTIONS.find(x => x.entries.some(e => (e.related || []).length));
+  const entry = series.entries.find(x => (x.related || []).length);
+  const study = probe.c.STUDIES.find(x => x.lessons.some(l => (l.passages || []).length));
+  const lesson = study.lessons.find(l => (l.passages || []).length);
+
+  const JOURNEYS = [
+    { name: 'Today → Read in context → Back = Today', tab: 'today',
+      open: s => [() => s.c.openPassageInBible(daily)],
+      after: ['root'] },
+    { name: 'Bible → book → chapter → Back = the book, Back = the Bible', tab: 'bible',
+      open: s => [() => s.c.goToTab('bible'), () => s.c.goToBibleBook('GEN'), () => s.c.goToBibleChapter('GEN', 3)],
+      after: ['bibleChaptersOverlay', 'root'] },
+    { name: 'Bible → Go to passage → reader → Back = the Bible', tab: 'bible',
+      open: s => [() => s.c.goToTab('bible'), () => s.c.openBibleJump(),
+                  () => { s.d.getElementById('bibleJumpInput').value = 'John 3:16'; s.c.submitBibleJump(); }],
+      top: 'bibleReaderOverlay', after: ['root'],
+      /* The form's entry became the passage's: no dead entry left behind for
+         a later Back to spend doing nothing. */
+      opened: s => s.h.entries.length === 2 && s.h.index === 1 },
+    { name: 'Bible → translation picker → Back = the Bible', tab: 'bible',
+      open: s => [() => s.c.goToTab('bible'), () => s.c.openTranslationPicker()],
+      after: ['root'] },
+    { name: 'Bible reader → translation picker → Back = the reader', tab: 'bible',
+      open: s => [() => s.c.goToTab('bible'), () => s.c.openBibleAt('JHN', 3), () => s.c.openTranslationPicker()],
+      after: ['bibleReaderOverlay', 'root'] },
+    { name: 'Devotions → series → entry → Back = series, Back = Devotions', tab: 'devotions',
+      open: s => [() => s.c.goToTab('devotions'), () => s.c.openDevotionSeries(series.id), () => s.c.openDevotionEntry(series.id, entry.id)],
+      after: ['devotionSeriesOverlay', 'root'],
+      check: (s, i) => i !== 0 || s.c.openDevotionSeriesId === series.id },
+    { name: 'devotional entry → Related Scripture → Back = the same entry', tab: 'devotions',
+      open: s => [() => s.c.goToTab('devotions'), () => s.c.openDevotionSeries(series.id), () => s.c.openDevotionEntry(series.id, entry.id),
+                  () => s.c.openDevotionRelated(entry.related[0].c, entry.related[0].ch, entry.related[0].from, entry.related[0].to)],
+      after: ['devotionSeriesOverlay > devotionReaderOverlay', 'devotionSeriesOverlay', 'root'],
+      check: (s, i) => i !== 0 || s.c.openDevotionEntryId === entry.id },
+    /* Before the edition's index has arrived. The link used to wait for it and
+       open the reader from a promise callback — an entry the browser did not
+       see a tap ask for, which Safari and Chrome skip. Back from anything
+       opened over that reader then jumped past the reader too. */
+    { name: 'Related Scripture before the Bible has loaded → translation → Back = the reader', tab: 'devotions', cold: true,
+      open: s => [() => s.c.goToTab('devotions'), () => s.c.openDevotionSeries(series.id), () => s.c.openDevotionEntry(series.id, entry.id),
+                  () => s.c.openDevotionRelated(entry.related[0].c, entry.related[0].ch, entry.related[0].from, entry.related[0].to),
+                  () => s.c.openTranslationPicker()],
+      after: ['devotionSeriesOverlay > devotionReaderOverlay > bibleReaderOverlay', 'devotionSeriesOverlay > devotionReaderOverlay'] },
+    { name: 'Learn → study → lesson → Back = study, Back = Learn', tab: 'learn',
+      open: s => [() => s.c.goToTab('learn'), () => s.c.openStudy(study.id), () => s.c.openLesson(study.id, lesson.id)],
+      after: ['studyOverlay', 'root'],
+      check: (s, i) => i !== 0 || s.c.openStudyId === study.id },
+    { name: 'lesson → Open in Bible → Back = the same lesson', tab: 'learn',
+      open: s => [() => s.c.goToTab('learn'), () => s.c.openStudy(study.id), () => s.c.openLesson(study.id, lesson.id),
+                  () => s.c.openPassageInBible(lesson.passages[0])],
+      after: ['studyOverlay > lessonOverlay', 'studyOverlay', 'root'],
+      check: (s, i) => i !== 0 || s.c.openLessonId === lesson.id },
+    { name: 'Saved → a verse saved from the Bible → Read in context → Back = Saved', tab: 'saved',
+      open: s => [() => s.c.toggleSavedLocation('GEN.5.3', 'Genesis 5:3'), () => s.c.goToTab('saved'), () => s.c.openPassageInBible('GEN.5.3')],
+      top: 'bibleReaderOverlay', after: ['root'] },
+    { name: 'Saved → Highlights → Read in context → Back = the highlights', tab: 'saved',
+      open: s => [() => s.c.setHighlight('GEN.5.3', 'amber'), () => s.c.goToTab('saved'), () => s.c.setSavedView('highlights'),
+                  () => s.c.openPassageInBible('GEN.5.3')],
+      top: 'bibleReaderOverlay', after: ['root'],
+      check: s => s.c.savedView === 'highlights' },
+    { name: 'Settings → Backup & data → Reset → Back = Backup & data, and nothing is erased', tab: 'saved',
+      open: s => [() => s.c.goToTab('saved'), () => s.c.openSettings(), () => s.c.openDataSettings(), () => { s.c.resetAllData(); }],
+      after: ['settingsOverlay > dataOverlay', 'settingsOverlay', 'root'],
+      check: (s, i) => i !== 0 || (s.c._confirmResolve === null && s.c.Store.listKeys().length > 0) },
+    { name: 'Today → a reflection → Back = Today', tab: 'today',
+      open: s => [() => s.c.openNote(s.c.todayKey())],
+      after: ['root'] },
+    /* Continue cards skip a screen on the way in, never on the way out: the
+       parent opens beneath in the same tap, so it is one level of its own. */
+    { name: 'Learn → Continue → lesson → Back = its study, Back = Learn', tab: 'learn',
+      open: s => [() => s.c.goToTab('learn'), () => s.c.openLesson(study.id, lesson.id)],
+      top: 'lessonOverlay', after: ['studyOverlay', 'root'] },
+    { name: 'Devotions → Continue reading → entry → Back = its series, Back = Devotions', tab: 'devotions',
+      open: s => [() => s.c.goToTab('devotions'), () => s.c.openDevotionEntry(series.id, entry.id)],
+      top: 'devotionReaderOverlay', after: ['devotionSeriesOverlay', 'root'] }
+  ];
+  ['today', 'bible', 'devotions', 'learn', 'saved'].forEach(tab => JOURNEYS.push({
+    name: tab + ' → Settings → Back = ' + tab, tab: tab,
+    open: s => [() => s.c.goToTab(tab), () => s.c.openSettings()],
+    after: ['root']
+  }));
+  [['Scripture & sources', 'openSource'], ['What’s new', 'openUpdates'], ['Backup & data', 'openDataSettings'],
+   ['Reading focus', 'openFocusSettings'], ['Translation', 'openTranslationPicker']].forEach(([label, fn]) => JOURNEYS.push({
+    name: 'Learn → Settings → ' + label + ' → Back = Settings, Back = Learn', tab: 'learn',
+    open: s => [() => s.c.goToTab('learn'), () => s.c.openSettings(), () => s.c[fn]()],
+    after: ['settingsOverlay', 'root']
+  }));
+
+  for(const mode of MODES){
+    sub(mode.label);
+    for(const j of JOURNEYS){
+      const s = start(mode, null, j.cold);
+      const problems = [];
+      for(const step of j.open(s)) await s.tap(step);
+      const top = s.c.openSurfaceIds();
+      if(j.top && top[top.length - 1] !== j.top) problems.push('opened ' + s.stack());
+      if(j.opened && !j.opened(s)) problems.push('history after opening: ' + s.h.index + ' of ' + (s.h.entries.length - 1));
+      if(!s.inStep()) problems.push('history out of step after opening: ' + s.h.index + ' for ' + s.stack());
+      for(let i = 0; i < j.after.length; i++){
+        await mode.back(s);
+        if(s.stack() !== j.after[i]) problems.push('back ' + (i + 1) + ' gave ' + s.stack() + ', wanted ' + j.after[i]);
+        if(s.c.currentTab !== j.tab) problems.push('back ' + (i + 1) + ' changed the tab to ' + s.c.currentTab);
+        if(!s.inStep()) problems.push('back ' + (i + 1) + ' left history ' + (s.h.exited ? 'exited' : 'at ' + s.h.index));
+        if(j.check && !j.check(s, i)) problems.push('back ' + (i + 1) + ' lost the place it returned to');
+      }
+      if(s.h.errors.length) problems.push(s.h.errors[0].split('\n')[0]);
+      T(j.name, problems.length === 0, problems.join('; '));
+    }
+  }
+
+  sub('at a root there is nothing of this app’s left to unwind');
+  const r = start(MODES[1]);
+  await r.tap(() => r.c.goToTab('learn'));
+  await r.tap(() => r.c.openStudy(study.id));
+  await r.deviceBack();
+  T('the last level closes onto the root it was opened from', r.stack() === 'root' && r.c.currentTab === 'learn' && !r.h.exited);
+  await r.deviceBack();
+  T('one more Back leaves the app, rather than inventing a place to go', r.h.exited && r.c.currentTab === 'learn');
+
+  /* The first-run question opens at boot, over Today. It is a level: Back
+     answers it the way Skip does, and the app is still there afterwards. */
+  for(const mode of MODES){
+    const o = start(mode, { firstRun: true });
+    const asked = o.stack() === 'onboardOverlay' && o.h.index === 1;
+    await mode.back(o);
+    T('first run → the question → ' + mode.label + ' = Today, answered as Skip',
+      asked && o.stack() === 'root' && o.inStep() && o.c.currentTab === 'today' && o.c.onboarded === true,
+      o.stack() + ' / index ' + o.h.index + (o.h.exited ? ' / exited' : ''));
+  }
+
+  sub('switching tabs is choosing a root, not adding a level');
+  const t = start(MODES[1]);
+  const lengthBefore = t.h.entries.length;
+  for(const tab of ['bible', 'learn', 'devotions', 'saved', 'bible', 'today']) await t.tap(() => t.c.goToTab(tab));
+  T('no tab switch touched history', t.h.entries.length === lengthBefore && t.h.index === 0 && t.h.queue.length === 0);
+  await t.tap(() => t.c.goToTab('learn'));
+  await t.tap(() => t.c.openStudy(study.id));
+  await t.tap(() => t.c.openLesson(study.id, lesson.id));
+  await t.deviceBack();
+  await t.deviceBack();
+  await t.tap(() => t.c.goToTab('bible'));
+  await t.tap(() => t.c.goToTab('learn'));
+  await t.tap(() => t.c.openStudy(study.id));
+  await t.tap(() => t.c.openLesson(study.id, lesson.id));
+  await t.deviceBack();
+  T('and a stack unwound, left and re-entered unwinds one level again', t.stack() === 'studyOverlay' && t.inStep());
+
+  sub('rapid, repeated and mixed');
+  const q = start(MODES[1]);
+  let steady = true;
+  for(let i = 0; i < 25 && steady; i++){
+    await q.tap(() => q.c.openSettings());
+    await q.tap(() => q.c.openSource());
+    if(i % 2){ await q.buttonBack(); await q.deviceBack(); } else { await q.deviceBack(); await q.buttonBack(); }
+    await q.tap(() => q.c.openStudy(study.id));
+    await q.tap(() => q.c.openLesson(study.id, lesson.id));
+    await q.tap(() => q.c.openPassageInBible(lesson.passages[0]));
+    q.h.userBack(); q.h.userBack(); q.h.userBack();       // three presses before any lands
+    await q.c.__settleHistory();
+    steady = q.stack() === 'root' && q.inStep();
+  }
+  T('25 rounds of opening three levels and leaving by every mix of Back end at the root, in step', steady,
+    q.stack() + ' at ' + q.h.index + (q.h.exited ? ' (exited)' : ''));
+  const twice = start(MODES[1]);
+  await twice.tap(() => { twice.c.openSettings(); twice.c.openSettings(); });
+  T('opening a page that is already open adds no second entry', twice.h.index === 1 && twice.inStep(), String(twice.h.index));
+  const button = start(MODES[1]);
+  await button.tap(() => button.c.openSettings());
+  await button.tap(() => button.c.openSource());
+  button.h.inGesture = true;
+  button.c.closeSource();
+  button.c.closeSettings();
+  button.h.inGesture = false;
+  await button.c.__settleHistory();
+  T('two Back taps faster than history can move still unwind exactly two levels', button.stack() === 'root' && button.inStep() && !button.h.exited);
+
+  sub('history that moved without the app');
+  const fwd = start(MODES[1]);
+  await fwd.tap(() => fwd.c.openSettings());
+  await fwd.buttonBack();
+  fwd.h.userForward();
+  await fwd.c.__settleHistory();
+  T('going forward onto a page that has closed steps back to where the app is', fwd.stack() === 'root' && fwd.inStep());
+  const skip = start(MODES[2]);
+  await skip.tap(() => skip.c.openSettings());
+  skip.h.inGesture = false;
+  skip.c.openSource();                                         // an entry pushed outside a tap
+  await skip.c.__settleHistory();
+  await skip.tap(() => skip.c.openUpdates());
+  await skip.deviceBack();                                     // the browser skips Sources' entry
+  T('a Back the browser stretches over a skipped entry closes every level it crossed',
+    skip.stack() === 'settingsOverlay' && skip.inStep(), skip.stack() + ' at ' + skip.h.index);
+  const reload = start(MODES[1], { history: { priorStates: [null, { nav: 1 }], initialState: { nav: 2 } } });
+  await reload.tap(() => reload.c.openSettings());
+  await reload.deviceBack();
+  T('after a reload in the middle of a stack, Back still closes what is open, and only that',
+    reload.stack() === 'root' && reload.h.index === 2 && !reload.h.exited, reload.stack() + ' at ' + reload.h.index);
+
+  sub('Back is navigation only');
+  const n = start(MODES[1]);
+  await n.tap(() => n.c.goToTab('learn'));
+  await n.tap(() => n.c.openStudy(study.id));
+  await n.tap(() => n.c.openLesson(study.id, lesson.id));
+  await n.tap(() => n.c.openPassageInBible(lesson.passages[0]));
+  const before = JSON.stringify([...n.c.__storage._map.entries()].sort());
+  /* The pages beneath are watched while the reader closes. Removing and
+     re-adding one — even within a single step — is the frame in which the
+     root would show through. */
+  let parentFlickered = false;
+  const restore = ['studyOverlay', 'lessonOverlay'].map(id => {
+    const list = n.d.getElementById(id).classList, rm = list.remove;
+    list.remove = function(...names){ if(names.indexOf('open') !== -1) parentFlickered = true; return rm.apply(this, names); };
+    return () => { list.remove = rm; };
+  });
+  await n.deviceBack();                                         // the reader closes; the lesson and study must not
+  restore.forEach(fn => fn());
+  T('closing a child never closes, even for a moment, the page it returns to',
+    !parentFlickered && n.stack() === 'studyOverlay > lessonOverlay', n.stack());
+  await n.deviceBack();
+  await n.deviceBack();
+  T('and unwinding all of it changes nothing a reader stored', JSON.stringify([...n.c.__storage._map.entries()].sort()) === before);
+
+  const f = start(MODES[1]);
+  const gear = f.d.getElementById('settingsBtn');
+  gear.focus();
+  await f.tap(() => f.c.openSettings());
+  await f.deviceBack();
+  T('focus returns to the control that opened the page', f.d.activeElement === gear);
+
+  /* Go to passage moves focus into its field before the overlay engine
+     notices the sheet, so what was tapped is remembered when the page is
+     asked for. Read later, the "opener" was the form's own field, and Back
+     left focus on nothing a reader could see. */
+  const jf = start(MODES[1]);
+  await jf.tap(() => jf.c.goToTab('bible'));
+  const asker = jf.d.createElement('button');
+  asker.setAttribute('onclick', 'openBibleJump()');
+  asker.focus();
+  let askedField = false;
+  await jf.tap(() => {
+    jf.c.openBibleJump();
+    askedField = jf.d.activeElement === jf.d.getElementById('bibleJumpInput');   // before the engine looks
+  });
+  await jf.deviceBack();
+  T('and to the control that was tapped, when the page moved focus on opening', askedField && jf.d.activeElement === asker);
+
+  /* Closing a page repaints the one beneath, so the row that was tapped is
+     usually a new element by the time focus comes back. The stub has no
+     layout: offsetParent null is how it says "no longer on screen". */
+  const rf = start(MODES[1]);
+  await rf.tap(() => rf.c.goToTab('learn'));
+  await rf.tap(() => rf.c.openStudy(study.id));
+  const row = rf.d.createElement('button');
+  row.setAttribute('onclick', 'openLesson(' + JSON.stringify(lesson.id) + ')');
+  row.focus();
+  await rf.tap(() => rf.c.openLesson(study.id, lesson.id));
+  row.offsetParent = null;
+  const repainted = rf.d.createElement('button');
+  repainted.setAttribute('onclick', row.getAttribute('onclick'));
+  await rf.deviceBack();
+  T('and to the same control after the page beneath was repainted', rf.d.activeElement === repainted);
+
+  const gone = start(MODES[1]);
+  await gone.tap(() => gone.c.goToTab('learn'));
+  await gone.tap(() => gone.c.openStudy(study.id));
+  const lost = gone.d.createElement('button');
+  lost.focus();
+  await gone.tap(() => gone.c.openLesson(study.id, lesson.id));
+  lost.offsetParent = null;
+  const lessonSheet = gone.d.getElementById('lessonOverlay').querySelector('.sheet') || gone.d.getElementById('lessonOverlay');
+  lessonSheet.offsetParent = null;
+  await gone.deviceBack();
+  const studyOv = gone.d.getElementById('studyOverlay');
+  const landed = gone.d.activeElement;
+  T('and, when that control is gone, into the page Back returned to - never the body',
+    landed !== gone.d.body && (landed === studyOv || landed === studyOv.querySelector('.sheet')));
+
+  sub('Back never falls back to Today');
+  const src = stripComments(js());
+  /* The script cut into one piece per top-level function, so a one-line
+     function cannot run on into its neighbour. */
+  const pieces = src.split(/\n(?=(?:async )?function [A-Za-z_$][\w$]*\()/);
+  const named = re => pieces.filter(p => re.test((p.match(/^(?:async )?function ([A-Za-z_$][\w$]*)\(/) || [])[1] || ''));
+  const backPaths = named(/^(releaseOverlayHistory|settleSurfacesTo|replaceSurface|pushOverlayHistory)$/).join('\n') +
+    (src.match(/window\.addEventListener\('popstate'[\s\S]*?\n\}\);/) || [''])[0];
+  T('the history and popstate paths never choose a tab', backPaths.length > 400 && !/goToTab|switchTab|currentTab\s*=/.test(backPaths));
+  const closers = named(/^(close|finish|settle|cancel)[A-Z]/).map(p => p.split('\n}')[0]).join('\n');
+  T('no close path chooses a tab either', closers.length > 500 && !/goToTab|switchTab|currentTab\s*=/.test(closers));
+  T('the only code that sends anyone to Today is something they tapped on purpose',
+    (src.match(/goToTab\('today'\)/g) || []).length === 2 && !/switchTab\('today'\)/.test(src));
+  /* A page returns to whatever it was opened over, so its Back control
+     cannot know a destination to announce. The reader's said "Back to the
+     Bible" while taking a reader back to Saved, a lesson, or the chapters. */
+  const backControls = H.readApp().match(/<button[^>]*onclick="close[A-Za-z]*\(\)"[^>]*aria-label="[^"]*"/g) || [];
+  T('no Back control announces a place it may not return to',
+    backControls.length >= 13 && backControls.every(b => /aria-label="Back"/.test(b)),
+    backControls.filter(b => !/aria-label="Back"/.test(b)).join(' | '));
+  const cold = H.loadApp({ sharedStorage: new Map() });
+  T('a cold start still opens on Today', cold.ctx.currentTab === 'today');
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -6176,5 +6547,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit, testSourceRevision, testBrandIdentity
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit, testSourceRevision, testBrandIdentity, testBackNavigation
 };

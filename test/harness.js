@@ -234,6 +234,10 @@ function buildDom(src){
       return sel.split('.').filter(Boolean).every(c => el._classes.has(c));
     }
     if(/^[a-z]+$/i.test(sel)) return el.tagName === sel.toUpperCase();
+    /* Presence only, `[onclick]`: how focus finds the control that replaced
+       a repainted one. Anything more specific still returns nothing. */
+    const has = sel.match(/^\[([\w-]+)\]$/);
+    if(has) return el._attrs.has(has[1]);
     if(sel.includes('[')) return false;
     return false;
   }
@@ -356,6 +360,67 @@ const BRIDGE = [
   '_historyDepth', '_pendingSelfPops', '_confirmResolve'
 ];
 
+/* =========================================================
+   SESSION HISTORY
+   ---------------------------------------------------------
+   A browser's, not a stub's, because the defect this exists for
+   lived entirely in the difference. pushState and replaceState
+   take effect at once. back(), forward() and go() are traversals
+   that run LATER, each resolved against whichever entry is current
+   when it runs, each firing popstate. A traversal below the first
+   entry leaves the document: for an installed app, the app is gone
+   and opening it again starts cold, on Today.
+
+   Nothing runs until a test calls settle(), so contracts that never
+   think about history are unaffected by it.
+
+   `skipUngestured` is the rule browsers apply to the back gesture and
+   button so a page cannot trap people. This is WebKit's form of it: an
+   entry added outside a user gesture is skipped. Chrome's form skips the
+   entry that was LEFT without one, until the page is next tapped. A push
+   made inside the tap satisfies both. Taps a test makes are gestures;
+   anything that runs after them — a promise callback, a popstate
+   handler — is not.
+   ========================================================= */
+function makeHistory(options){
+  const opt = options || {};
+  const h = {
+    entries: [{ state: opt.initialState == null ? null : clone(opt.initialState), gesture: true }],
+    index: 0, queue: [], exited: false, inGesture: false, skipUngestured: !!opt.skipUngestured, errors: []
+  };
+  (opt.priorStates || []).forEach(s => { h.entries.splice(h.entries.length - 1, 0, { state: clone(s), gesture: true }); h.index++; });
+  function clone(s){ return s == null ? null : JSON.parse(JSON.stringify(s)); }
+  h.api = {
+    get state(){ return h.entries[h.index].state; },
+    get length(){ return h.entries.length; },
+    pushState(state){
+      h.entries = h.entries.slice(0, h.index + 1);
+      h.entries.push({ state: clone(state), gesture: h.inGesture });
+      h.index++;
+    },
+    replaceState(state){ h.entries[h.index] = { state: clone(state), gesture: h.entries[h.index].gesture }; },
+    back(){ h.queue.push({ delta: -1, user: false }); },
+    forward(){ h.queue.push({ delta: 1, user: false }); },
+    go(n){ h.queue.push({ delta: Number(n) || 0, user: false }); }
+  };
+  h.userBack = () => h.queue.push({ delta: -1, user: true });
+  h.userForward = () => h.queue.push({ delta: 1, user: true });
+  /* One traversal. Returns the popstate event it should fire, or null. */
+  h.step = () => {
+    const t = h.queue.shift();
+    if(!t || h.exited) return null;
+    let target = h.index + t.delta;
+    if(t.user && h.skipUngestured && t.delta < 0){
+      while(target > 0 && !h.entries[target].gesture) target--;
+    }
+    if(target < 0){ h.exited = true; return null; }
+    if(target >= h.entries.length || target === h.index) return null;
+    h.index = target;
+    return { state: h.entries[h.index].state };
+  };
+  return h;
+}
+
 function loadApp(opts){
   const o = opts || {};
   const src = readApp();
@@ -393,6 +458,7 @@ function loadApp(opts){
   const errors = [];
   const logs = [];
   const timers = { count: 0, live: 0 };
+  const hist = makeHistory(o.history);
 
   const sandbox = {
     console: {
@@ -403,7 +469,7 @@ function loadApp(opts){
     document: dom.document,
     navigator: { serviceWorker: { register: () => Promise.resolve() }, vibrate: () => true },
     location: { protocol: 'https:', origin: 'https://example.github.io', href: '', reload(){} },
-    history: { pushState(){}, replaceState(){}, back(){} },
+    history: hist.api,
     setTimeout: (fn, ms) => { timers.count++; timers.live++; const t = setTimeout(() => { timers.live--; fn(); }, ms); return t; },
     clearTimeout: (t) => { clearTimeout(t); },
     setInterval, clearInterval,
@@ -462,6 +528,26 @@ function loadApp(opts){
   sandbox.__observers = observers;
   sandbox.__flush = () => observers.forEach(o => { try{ o.cb([]); }catch(e){} });
   sandbox.__storage = storage;
+  sandbox.__history = hist;
+  /* Let queued traversals run the way a browser runs them: microtasks and the
+     overlay observer first, then one traversal and its popstate, repeated
+     until nothing is queued. A popstate handler that throws is recorded, not
+     swallowed. */
+  sandbox.__settleHistory = async function(){
+    for(let i = 0; i < 100; i++){
+      sandbox.__flush();
+      for(let k = 0; k < 10; k++) await Promise.resolve();
+      sandbox.__flush();
+      if(!hist.queue.length) break;
+      hist.inGesture = false;
+      const ev = hist.step();
+      if(!ev) continue;
+      (sandbox.window._listeners.popstate || []).forEach(f => {
+        try{ f(ev); }catch(e){ hist.errors.push(String(e && e.stack || e)); }
+      });
+    }
+    sandbox.__flush();
+  };
 
   /* Clicking a stub element runs its onclick in the app's own context. */
   dom.setOnclickEvaluator(expr => vm.runInContext(expr, sandbox));
@@ -475,5 +561,5 @@ module.exports = {
   ROOT, APP_PATH, SW_PATH, MANIFEST_PATH, PKG_PATH,
   readApp, readSW, readManifest, readPkg,
   scriptBlocks, mainScript, styleBlock, bodyBlock,
-  loadApp, settle, mulberry32, makeLocalStorage, BRIDGE
+  loadApp, settle, mulberry32, makeLocalStorage, makeHistory, BRIDGE
 };

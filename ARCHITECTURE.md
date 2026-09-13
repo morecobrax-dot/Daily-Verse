@@ -121,7 +121,55 @@ contract asserts there is only one observer.
 
 **To add a surface:** declare a `.overlay` div with an id and a `.sheet` inside
 it, give it a `close*()` function, and toggle `.open`. Everything above happens
-for free. Do not add a lock/unlock pair.
+for free. Do not add a lock/unlock pair. Its open function calls
+`pushOverlayHistory('<id>')` just before `openOverlay`, and its close function
+calls `releaseOverlayHistory()` — see "Back" below.
+
+### Back
+
+Navigation has two kinds of place, and they are not interchangeable:
+
+| | What it is | How you get there | What Back does |
+|---|---|---|---|
+| **Root** | a tab: Today, Bible, Devotions, Learn, Saved | the tab bar | nothing of this app's; history is untouched by switching tabs |
+| **Level** | a surface on the overlay stack | opened from a root or from another level | closes that one surface, revealing the one it was opened over |
+
+**Back unwinds exactly one level.** The page's own Back control, a swipe from
+the edge and the device back button are three ways of asking for that, and they
+share one model:
+
+- Every surface on the stack owns exactly one history entry, pushed as it opens
+  (`pushOverlayHistory(id)`, which ignores a surface already open) and given back
+  as it closes (`releaseOverlayHistory()`). That includes bottom sheets, the
+  confirmation and the first-run question.
+- An entry records the depth it stands for, `{ nav: n }`. `popstate` settles the
+  stack **to** that depth, top down, through each surface's own declared close
+  path. It never assumes one pop is one level: a browser that skips an entry, or
+  a long press on Back that jumps several, leaves the stack where history is.
+- A surface closed because history already moved does not move history again.
+  Until 1.13.1 it did, and that was the "Back sometimes lands on Today" bug: the
+  page beneath lost its entry, the next Back left the app, and reopening it
+  started cold.
+- A surface that takes another's place at the same depth goes through
+  `replaceSurface(fn)`, which relabels the entry instead of going back and
+  pushing — that pair races in every browser. Go to passage giving way to the
+  reader is the one case today.
+- Push inside the tap. An entry pushed from a promise callback is one the
+  browser did not see a person ask for, and Safari and Chrome skip those on Back.
+
+**Contextual navigation opens over its origin.** "Read in context" from Today or
+Saved, "Open in Bible" from a lesson, Related Scripture from a devotional: each
+opens the reader as a level above the surface that asked, so Back returns there.
+Tapping the Bible tab is a different intent and changes the root. A drill-down
+keeps its parent open beneath it: a lesson opened from the Learn screen opens its
+study first; a devotional entry, its series; a chapter, its book's grid.
+
+**Never use "go to Today" as a way back.** A cold start opens on Today. Nothing
+else chooses a tab except a tap on the tab bar or on an explicit, labelled
+action. Contract 47 runs every journey through a session history that behaves
+like a browser's, three ways (Back button, device back, device back with
+skipped entries), and checks the stack, the tab and the history depth after
+every step.
 
 ## Storage
 

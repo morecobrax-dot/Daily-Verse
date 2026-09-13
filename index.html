@@ -2065,7 +2065,7 @@ body.scroll-locked{
 <div class="overlay overlay-page" id="bibleReaderOverlay">
   <div class="sheet">
     <div class="page-topbar">
-      <button class="icon-btn" onclick="closeBibleReader()" aria-label="Back to the Bible"></button>
+      <button class="icon-btn" onclick="closeBibleReader()" aria-label="Back"></button>
       <h2 class="page-topbar-title bible-reader-ref" id="bibleReaderRef"></h2>
       <button class="bible-edition" onclick="openTranslationPicker()"
               id="bibleReaderEdition"><span id="bibleReaderAbbr"></span></button>
@@ -2271,6 +2271,19 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-13-1',
+    version: '1.13.1',
+    title: 'Back takes you back',
+    date: '2026-09-13',
+    summary: 'Back, and swiping back, now return you one step to the page you came from — ' +
+             'never out of the app, and never to Today.',
+    fixes: [
+      'Swiping back or using the back button on your phone from a lesson, a devotional reading, a Settings page or the Bible closed that page, but the next back left the app and reopened it on Today. Every page now returns to the one it was opened from, exactly as its own Back button does',
+      'Back from a Bible chapter returns to that book’s chapters, and then to the books',
+      '“Read in context” in Saved now opens every highlight and every verse saved from the Bible. For most of them it did nothing'
+    ]
+  },
   {
     id: 'v1-13-0',
     version: '1.13.0',
@@ -3052,32 +3065,64 @@ function paintSheetStackOrder(){
 function syncSheetAccessibility(){
   const openNow = [...document.querySelectorAll('.overlay.open')].map(o => o.id);
 
-  openNow.forEach(id => {
-    if(_openSheetStack.indexOf(id) !== -1) return;
-    const ov = document.getElementById(id);
-    if(!ov) return;
-    const opener = document.activeElement;
-    _sheetOpeners.set(id, (opener && opener !== document.body) ? opener : null);
-    ov.setAttribute('role', ov.getAttribute('role') || 'dialog');
-    ov.setAttribute('aria-modal', 'true');
-    _openSheetStack.push(id);
-    focusIntoSheet(ov);
-  });
-
+  /* Closes are settled before opens. When one surface replaces another in a
+     single step — Go to passage giving way to the reader — the other order
+     put focus into the new page and then pulled it back out, onto the
+     control behind it that had opened the surface just closed. The new
+     page inherits that control as its own way back instead. */
+  let handedBack = null, closedAny = false;
   _openSheetStack.slice().forEach(id => {
     if(openNow.indexOf(id) !== -1) return;
+    closedAny = true;
     _openSheetStack = _openSheetStack.filter(x => x !== id);
     const ov = document.getElementById(id);
     if(ov) ov.removeAttribute('aria-modal');
-    const opener = _sheetOpeners.get(id);
+    let opener = _sheetOpeners.get(id);
     _sheetOpeners.delete(id);
+    /* A list repainted while one of its rows' pages was open no longer holds
+       the row that opened it — Learn, a study and a series all repaint on the
+       way back, to show progress. The row that replaced it carries the same
+       action, and to anyone using the page it is the same control. */
+    if(opener && !(document.contains(opener) && opener.offsetParent !== null) && opener.getAttribute){
+      const action = opener.getAttribute('onclick');
+      opener = action ? [...document.querySelectorAll('[onclick]')]
+        .find(el => el.getAttribute('onclick') === action && el.offsetParent !== null) || null : null;
+    }
     /* Only return focus if the control that opened this is still on screen —
        after saving, the button that started it may no longer exist. */
     if(opener && document.contains(opener) && opener.offsetParent !== null){
       try{ opener.focus({ preventScroll: true }); }catch(e){}
+      handedBack = opener;
     }
     const ov2 = document.getElementById(id);
     if(ov2) ov2.style.zIndex = '';          // back to the stylesheet's value
+  });
+  /* Nothing to hand focus back to, but a page is still open beneath: focus
+     goes to that page, never left on a control that has just been hidden. */
+  if(closedAny && !handedBack){
+    const active = document.activeElement;
+    const beneath = _openSheetStack.length ? document.getElementById(_openSheetStack[_openSheetStack.length - 1]) : null;
+    if(beneath && openNow.indexOf(beneath.id) !== -1 &&
+       (!active || active === document.body || active.offsetParent === null)) focusIntoSheet(beneath);
+  }
+
+  openNow.forEach(id => {
+    if(_openSheetStack.indexOf(id) !== -1) return;
+    const ov = document.getElementById(id);
+    if(!ov) return;
+    const usable = el => !!el && el !== document.body && el.offsetParent !== null &&
+      !(typeof ov.contains === 'function' && ov.contains(el));
+    /* The control noted when the surface was asked for, then whatever holds
+       focus now, then the control a surface closed in this same step had. */
+    let opener = _openedFrom.get(id);
+    _openedFrom.delete(id);
+    if(!usable(opener)) opener = document.activeElement;
+    if(!usable(opener)) opener = handedBack;
+    _sheetOpeners.set(id, opener || null);
+    ov.setAttribute('role', ov.getAttribute('role') || 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    _openSheetStack.push(id);
+    focusIntoSheet(ov);
   });
 
   paintSheetStackOrder();
@@ -3245,12 +3290,17 @@ function confirmAction(opts){
      should not be the one that destroys something. */
   accept.className = o.destructive ? 'btn-secondary btn-danger' : 'btn-primary';
 
+  /* A confirmation is a level like any other. Without an entry of its own,
+     device back cancelled it by spending the entry of the page beneath —
+     which was then left on screen with no way back to it. */
+  pushOverlayHistory('confirmOverlay');
   openOverlay('confirmOverlay');
   return new Promise(resolve => { _confirmResolve = resolve; });
 }
 
 function settleConfirm(result){
   closeOverlay('confirmOverlay');
+  releaseOverlayHistory();
   const r = _confirmResolve;
   _confirmResolve = null;
   if(r) r(result);
@@ -3329,30 +3379,146 @@ function switchTab(tab){
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-/* Device back closes the top overlay rather than leaving the app. A counter,
-   not a boolean, because releasing our own history entry fires a popstate
-   that must not be read as a back press. */
-let _pendingSelfPops = 0;
-let _historyDepth = 0;
+/* =========================================================
+   BACK — ONE LEVEL, HOWEVER IT IS ASKED FOR
+   ---------------------------------------------------------
+   Two kinds of place. A ROOT is a tab. A LEVEL is a surface on the
+   overlay stack, opened from a root or from another surface. Switching
+   tabs changes the root and never touches history; Back only ever
+   unwinds levels, and at a root there is nothing of this app's left to
+   unwind.
 
-function pushOverlayHistory(){
-  try{ history.pushState({ appOverlay: true }, ''); _historyDepth++; }catch(e){}
+   Every surface on the stack owns exactly one history entry, pushed as it
+   opens and given back as it closes. The surface's own Back control, a
+   swipe from the edge and the device back button are three ways of asking
+   for the same thing, and they share this one model so they cannot land
+   in three different places.
+
+   THE FAILURE THIS REPLACES. Device back closed the top surface through
+   its own close path, and that close path gave back a second history
+   entry. The page underneath stayed on screen with no entry of its own,
+   so the NEXT back left the app entirely, and reopening it started cold,
+   on Today. Every nested path did it: a lesson, a devotional reading, a
+   Settings page, the Bible opened from any of them. The Back buttons were
+   right the whole time, which is why it only ever happened "sometimes".
+
+   So:
+   - An entry records the depth it stands for: { nav: n }. A popstate
+     settles the stack TO that depth, top down, through each surface's own
+     declared close path. It never assumes one pop is one level: a browser
+     that skips an entry, or a long press on Back that jumps three, leaves
+     the stack exactly where history now is.
+   - A surface closed because history already moved does not move history
+     again.
+   - A surface that takes another's place at the same depth replaces the
+     entry. Going back and pushing in the same tap races in every browser.
+   ========================================================= */
+let _historyDepth = 0;        // entries this app holds above the one it booted on
+let _pendingSelfPops = [];    // levels each back this app issued will move, oldest first
+let _navSettling = 0;         // > 0 while closing surfaces because history already moved
+let _navReplacing = 0;        // > 0 while one surface takes another's place
+/* The entry the app booted on may itself be a level of a page that was
+   reloaded mid-stack. Its depth is the floor everything is counted from. */
+const _navFloor = (function(){
+  try{ return navDepthOf(history.state); }catch(e){ return 0; }
+})();
+
+function navDepthOf(state){
+  return state && typeof state.nav === 'number' && state.nav > 0 ? state.nav : 0;
 }
+
+/* The surfaces open right now, bottom to top. The stack records the order;
+   the class records the truth, and a surface closed a moment ago has lost
+   its class before the observer has caught up. */
+function openSurfaceIds(){
+  const open = [...document.querySelectorAll('.overlay.open')].map(o => o.id);
+  const ordered = _openSheetStack.filter(id => open.indexOf(id) !== -1);
+  open.forEach(id => { if(ordered.indexOf(id) === -1) ordered.push(id); });
+  return ordered;
+}
+
+/* The control that asked for each surface, noted at the moment it asked.
+   The overlay engine only looks after the surface has opened, by which time
+   a surface that puts the cursor straight into its own field — Go to passage
+   — has already moved focus, and "the opener" would be that field. */
+const _openedFrom = new Map();
+
+/* `id` is the surface about to open. Opening what is already open is not a
+   new level, and a second entry for it is a Back press that does nothing. */
+function pushOverlayHistory(id){
+  if(id){
+    const asking = document.activeElement;
+    if(asking && asking !== document.body) _openedFrom.set(id, asking);
+  }
+  if(_navReplacing > 0) return;
+  const ov = id ? document.getElementById(id) : null;
+  if(ov && ov.classList.contains('open')) return;
+  try{ history.pushState({ nav: _navFloor + _historyDepth + 1 }, ''); _historyDepth++; }catch(e){}
+}
+
 function releaseOverlayHistory(){
+  if(_navSettling > 0 || _navReplacing > 0) return;
   if(_historyDepth <= 0) return;
   _historyDepth--;
-  _pendingSelfPops++;
-  try{ history.back(); }catch(e){ _pendingSelfPops--; }
+  _pendingSelfPops.push(1);
+  try{ history.back(); }catch(e){ _pendingSelfPops.pop(); }
 }
 
-window.addEventListener('popstate', () => {
-  if(_pendingSelfPops > 0){ _pendingSelfPops--; return; }
-  const ov = topOpenSheet();
-  if(!ov) return;
-  if(_historyDepth > 0) _historyDepth--;   // this pop consumed our entry
-  const close = sheetCloser(ov);
-  if(close){ try{ close(); }catch(e){} }
-  else { ov.classList.remove('open'); }
+/* One surface in place of another, at the same depth. The swap closes and
+   opens as usual; history keeps its entry and only relabels it. */
+function replaceSurface(swap){
+  const before = _historyDepth;
+  _navReplacing++;
+  try{ swap(); }finally{ _navReplacing--; }
+  const now = openSurfaceIds().length;
+  if(now === before){
+    try{ history.replaceState({ nav: _navFloor + before }, ''); }catch(e){}
+    return;
+  }
+  /* The swap did not end one-for-one. Bring history to what is actually on
+     screen rather than leave the two disagreeing. */
+  while(_historyDepth < now){
+    try{ history.pushState({ nav: _navFloor + _historyDepth + 1 }, ''); _historyDepth++; }catch(e){ break; }
+  }
+  for(let extra = _historyDepth - now; extra > 0; extra--) releaseOverlayHistory();
+}
+
+/* Close surfaces, top down, until only `depth` remain. */
+function settleSurfacesTo(depth){
+  _navSettling++;
+  try{
+    let open = openSurfaceIds();
+    let guard = open.length;
+    while(open.length > depth && guard-- > 0){
+      const ov = document.getElementById(open[open.length - 1]);
+      const close = sheetCloser(ov);
+      if(close){ try{ close(); }catch(e){} }
+      /* History has already moved. A surface that did not close itself is
+         closed anyway, rather than left on screen with no way back to it. */
+      if(ov.classList.contains('open')) ov.classList.remove('open');
+      open = openSurfaceIds();
+    }
+  }finally{ _navSettling--; }
+}
+
+window.addEventListener('popstate', ev => {
+  /* A back this app issued lands here too. Whichever one this is, every
+     back still pending will move history further, so the stack is settled
+     to where history is heading, not merely to where it is. */
+  if(_pendingSelfPops.length) _pendingSelfPops.shift();
+  const ahead = _pendingSelfPops.reduce((sum, n) => sum + n, 0);
+  const want = Math.max(0, navDepthOf(ev && ev.state) - _navFloor - ahead);
+
+  settleSurfacesTo(want);
+
+  const open = openSurfaceIds().length;
+  if(open < want){
+    /* History moved forward onto a surface that is no longer open. There is
+       nothing to show there, so step back to where the app really is. */
+    _pendingSelfPops.push(want - open);
+    try{ history.go(open - want); }catch(e){ _pendingSelfPops.pop(); }
+  }
+  _historyDepth = open;
 });
 
 /* =========================================================
@@ -9009,7 +9175,7 @@ function openNote(key){
 
   if(usable) toast('Restored your unsaved draft', 'neutral');
 
-  pushOverlayHistory();
+  pushOverlayHistory('noteOverlay');
   openOverlay('noteOverlay');
 }
 
@@ -9507,6 +9673,10 @@ function maybeOpenOnboarding(){
   if(onboarded) return;
   if(!eligiblePassages().length) return;
   renderFocusChips();
+  /* The first-run question is on the stack like everything else, so Back
+     answers it the way Skip does rather than being counted as a level it
+     never pushed. */
+  pushOverlayHistory('onboardOverlay');
   openOverlay('onboardOverlay');
 }
 function finishOnboarding(){
@@ -9515,6 +9685,7 @@ function finishOnboarding(){
   Store.setJSON(KEYS.focusThemes, focusThemes);
   Store.set(KEYS.focusStrength, focusStrength);
   closeOverlay('onboardOverlay');
+  releaseOverlayHistory();
   renderAll();
 }
 /* Named cancel* so the overlay engine recognises it as this sheet's own
@@ -9530,7 +9701,7 @@ function cancelOnboarding(){
 
 function openFocusSettings(){
   renderFocusChips();
-  pushOverlayHistory();
+  pushOverlayHistory('focusOverlay');
   openOverlay('focusOverlay');
 }
 function closeFocusSettings(){
@@ -9549,7 +9720,7 @@ function closeFocusSettings(){
 /* One page, grouped by language. Language is a property of an edition, so a
    second English translation appears under English without this changing,
    and a reader never meets two controls that write the same preference. */
-function openTranslationPicker(){ renderTranslationPicker(); pushOverlayHistory(); openOverlay('translationOverlay'); }
+function openTranslationPicker(){ renderTranslationPicker(); pushOverlayHistory('translationOverlay'); openOverlay('translationOverlay'); }
 function closeTranslationPicker(){ closeOverlay('translationOverlay'); releaseOverlayHistory(); }
 
 /* A chosen row is marked with a word and a tick, never with colour alone. */
@@ -9609,7 +9780,7 @@ function chooseTranslation(id){
 
 function openSource(){
   renderSource();
-  pushOverlayHistory();
+  pushOverlayHistory('sourceOverlay');
   openOverlay('sourceOverlay');
 }
 function closeSource(){ closeOverlay('sourceOverlay'); releaseOverlayHistory(); }
@@ -10040,7 +10211,7 @@ function openStudy(studyId){
   if(!study) return;
   openStudyId = studyId;
   renderStudy();
-  pushOverlayHistory();
+  pushOverlayHistory('studyOverlay');
   openOverlay('studyOverlay');
 }
 function closeStudy(){
@@ -10144,7 +10315,7 @@ function openLesson(studyId, lessonId){
   openLessonId = lessonId;
   ensureStudyStarted(studyId);
   renderLesson();
-  pushOverlayHistory();
+  pushOverlayHistory('lessonOverlay');
   openOverlay('lessonOverlay');
 }
 
@@ -10704,7 +10875,7 @@ function openDevotionSeries(seriesId){
   if(!series) return;
   openDevotionSeriesId = seriesId;
   renderDevotionSeries();
-  pushOverlayHistory();
+  pushOverlayHistory('devotionSeriesOverlay');
   openOverlay('devotionSeriesOverlay');
 }
 function closeDevotionSeries(){
@@ -10795,7 +10966,7 @@ function openDevotionEntry(seriesId, entryId){
   openDevotionEntryId = entryId;
   ensureDevotionStarted(seriesId);
   renderDevotionEntry();
-  pushOverlayHistory();
+  pushOverlayHistory('devotionReaderOverlay');
   openOverlay('devotionReaderOverlay');
 }
 
@@ -10880,13 +11051,12 @@ function devotionRelatedRowHtml(ref){
   '</button>';
 }
 
+/* Opened in the tap, not after a download. A history entry pushed from a
+   promise callback is one the browser did not see the reader ask for, and
+   Safari and Chrome both skip such entries on Back — so Back from the
+   reader could jump straight past the reading it was opened from. The
+   reader says "Loading…" on its own until the edition's index arrives. */
 function openDevotionRelated(code, chapter, from, to){
-  if(!bibleHasBook(translation, code)){
-    loadBibleIndex(translation)
-      .then(function(){ openBibleAt(code, chapter, from, to); })
-      .catch(function(){ openBibleAt(code, chapter, from, to); });
-    return;
-  }
   openBibleAt(code, chapter, from, to);
 }
 
@@ -11256,7 +11426,15 @@ function enterBible(){
   loadBibleIndex(translation).then(renderBibleHome).catch(function(){ renderBibleHome(); });
 }
 function closeBibleChapters(){ closeOverlay('bibleChaptersOverlay'); releaseOverlayHistory(); }
-function closeBibleReader(){ closeOverlay('bibleReaderOverlay'); releaseOverlayHistory(); }
+function closeBibleReader(){
+  closeOverlay('bibleReaderOverlay');
+  releaseOverlayHistory();
+  /* When the reader was opened from a book's chapter grid, that grid is the
+     level Back lands on. The reader may have stepped on into the next book,
+     or a chapter may have been marked read, so the grid is repainted to where
+     the reading actually ended. Only the grid is rebuilt, never the reading. */
+  if(isOverlayOpen('bibleChaptersOverlay')) renderBibleChapters();
+}
 
 /* The deep link every other surface uses. A canonical location in, the
    reader out, in whatever edition is currently selected. */
@@ -11270,7 +11448,7 @@ function openBibleAt(code, chapter, from, to){
   bibleChapter = chapter || 1;
   bibleFocus = (typeof from === 'number' && from > 0) ? { from: from, to: to || from } : null;
   renderBibleReader();
-  pushOverlayHistory();
+  pushOverlayHistory('bibleReaderOverlay');
   openOverlay('bibleReaderOverlay');
   loadBibleIndex(translation)
     .then(function(){
@@ -11289,12 +11467,15 @@ function openBibleAt(code, chapter, from, to){
     .catch(function(){ bibleLoadFailed = true; renderBibleReader(); });
 }
 
-/* Open a curated passage where it actually sits. The id already IS the
-   location, so nothing is looked up, guessed or duplicated. */
+/* Open a location where it actually sits. The id already IS the location,
+   so nothing is looked up, guessed or duplicated.
+
+   It used to be looked up anyway, in the curated catalogue, and returned
+   quietly when the id was not one of the 415 passages there. Every verse
+   highlighted in the Bible and every verse saved from it is exactly such an
+   id, so "Read in context" on most of Saved did nothing at all. */
 function openPassageInBible(id){
-  const p = passageById(id);
-  if(!p) return;
-  const m = String(p.id).match(/^([A-Z0-9]{3})\.(\d+)(?:\.(\d+)(?:-(\d+))?)?$/);
+  const m = String(id || '').match(/^([A-Z0-9]{3})\.(\d+)(?:\.(\d+)(?:-(\d+))?)?$/);
   if(!m) return;
   openBibleAt(m[1], Number(m[2]), m[3] ? Number(m[3]) : null, m[4] ? Number(m[4]) : null);
 }
@@ -11302,13 +11483,16 @@ function openPassageInBible(id){
 function goToBibleBook(code){
   bibleBookCode = code;
   renderBibleChapters();
-  pushOverlayHistory();
+  pushOverlayHistory('bibleChaptersOverlay');
   openOverlay('bibleChaptersOverlay');
   loadBibleBook(translation, code).then(renderBibleChapters).catch(function(){});
 }
 
+/* The grid stays open beneath the chapter. It is the level the chapter was
+   chosen on, so Back from a chapter returns to its book's grid and Back
+   again to the books: one level each time. Closing the grid first made Back
+   from any chapter skip straight past it. */
 function goToBibleChapter(code, chapter){
-  closeBibleChapters();
   openBibleAt(code, chapter, null, null);
 }
 
@@ -11438,7 +11622,7 @@ function renderBibleReader(){
           'editions and not others, and nothing here will stand in for it.</p>' +
         '<div class="bible-unavailable-actions">' +
           '<button class="btn-secondary" onclick="openTranslationPicker()">Change translation</button>' +
-          '<button class="btn-secondary" onclick="closeBibleReader()">Back to books</button>' +
+          '<button class="btn-secondary" onclick="closeBibleReader()">Back</button>' +
         '</div>' +
       '</div>';
     return;
@@ -11457,7 +11641,7 @@ function renderBibleReader(){
             'read them, so this one will be here after you open it with a connection.</p>' +
           '<div class="bible-unavailable-actions">' +
             '<button class="btn-secondary" onclick="retryBibleBook()">Try again</button>' +
-            '<button class="btn-secondary" onclick="closeBibleReader()">Back to books</button>' +
+            '<button class="btn-secondary" onclick="closeBibleReader()">Back</button>' +
           '</div>' +
         '</div>'
       : '<div class="field-hint bible-loading">Loading…</div>';
@@ -11956,7 +12140,7 @@ function shareSelectedVerses(){
    where you came from. The overlay engine restores focus to the gear. */
 function openSettings(){
   paintPrefControls();
-  pushOverlayHistory();
+  pushOverlayHistory('settingsOverlay');
   openOverlay('settingsOverlay');
 }
 function closeSettings(){ closeOverlay('settingsOverlay'); releaseOverlayHistory(); }
@@ -11966,7 +12150,7 @@ function openBibleJump(){
   const input = document.getElementById('bibleJumpInput');
   if(input) input.value = '';
   setBibleJumpError('');
-  pushOverlayHistory();
+  pushOverlayHistory('bibleJumpOverlay');
   openOverlay('bibleJumpOverlay');
   if(input && typeof input.focus === 'function') input.focus();
 }
@@ -11982,8 +12166,13 @@ function submitBibleJump(){
     setBibleJumpError('That reference does not match a book in ' + activeTranslation().title + '.');
     return;
   }
-  closeBibleJump();
-  openBibleAt(parsed.c, parsed.ch, parsed.from, parsed.to);
+  /* The passage takes the form's place. The form was a question, not a
+     place to come back to, so Back from the passage returns to the Bible
+     it was asked from. */
+  replaceSurface(function(){
+    closeBibleJump();
+    openBibleAt(parsed.c, parsed.ch, parsed.from, parsed.to);
+  });
 }
 
 /* ---------- the reader, and the rest of the app ----------
@@ -12079,7 +12268,7 @@ function bibleShareText(a){
    ========================================================= */
 function openDataSettings(){
   renderDataStats();
-  pushOverlayHistory();
+  pushOverlayHistory('dataOverlay');
   openOverlay('dataOverlay');
 }
 function closeDataSettings(){ closeOverlay('dataOverlay'); releaseOverlayHistory(); }
@@ -12243,7 +12432,7 @@ function openUpdates(){
   renderUpdates();
   Store.set(KEYS.lastSeenUpdate, APP_UPDATES[0].id);
   renderUpdatesDot();
-  pushOverlayHistory();
+  pushOverlayHistory('updatesOverlay');
   openOverlay('updatesOverlay');
 }
 function closeUpdates(){ closeOverlay('updatesOverlay'); releaseOverlayHistory(); }
