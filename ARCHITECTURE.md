@@ -260,6 +260,37 @@ World English Bible, and both print "the LORD" where Classic prints "Yahweh".
 Repointing the id in `corpus.js` would silently rewrite Scripture for every
 existing reader. It is a decision to be announced, never a side effect.
 
+The same pipeline now pins every shipped edition, and the audited-but-held ones,
+the same way; `EDITIONS` in `corpus.js` says which is which and why.
+
+### When a publisher revises a pinned edition
+
+eBible does not version its URLs. `https://ebible.org/Scriptures/<id>_vpl.zip`
+is always the latest release, so a pin is also the only record of the bytes it
+names — and "re-download and prove it" stops being possible the moment the
+publisher revises the edition. That happened to WEB Classic on 2026-09-12.
+
+So the download step can observe a revision but never adopt one:
+
+| Step | Command | What it may change |
+|---|---|---|
+| Detect | `npm run corpus:sync` | Nothing pinned. A changed archive is staged in `.corpus-cache/<id>.candidate`; sync prints both digests and exits `2`. |
+| Audit | the candidate cache, `npm run versify`, a full corpus diff | Nothing. See CLAUDE.md rule 53 for what the audit must cover. |
+| Adopt | `npm run corpus:adopt -- <id> <vpl-sha256> <usfx-sha256>` | The pin and the cache — only if the publisher is still serving exactly the named bytes. |
+| Rebuild | `npm run scripture:build`, `npm run bible:build` | The derived region and generated corpus, from the adopted pin. |
+
+A sync that finds nothing changed leaves `data/corpus.lock.json` byte-identical.
+
+The lock pins archives, not the files extracted from them, so `scripture:verify`
+and `bible:verify` prove the shipped bytes match the *cache* — not that the
+cache matches the pin. With the revised WEB copied over the pinned cache by
+hand, both builds and both verify commands pass, and `builtFrom` in
+`data/bible.lock.json` still names the old pin, because it is copied from the
+lock. Contract 45 is what fails: it holds every shipped edition's pinned
+archives, generated corpus and curated passages to digests written in the
+contract itself, so any change to what a reader sees, by any route, fails the
+suite until those digests are edited as part of a release.
+
 ### Normalisation — the only two changes made to the source text
 
 1. **Whitespace.** Runs collapse to a single space, then trim. The corpus keeps

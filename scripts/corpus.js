@@ -5,7 +5,10 @@
    translation this app quotes, and records exactly which bytes
    were used.
 
-     node scripts/corpus.js sync     download + cache + write the lock
+     node scripts/corpus.js sync     download, and pin what was never pinned;
+                                     a revised edition is staged, not adopted
+     node scripts/corpus.js adopt <id> <vpl-sha256> <usfx-sha256>
+                                     adopt a revision a source gate reviewed
      node scripts/corpus.js status   report what is cached, offline
 
    WHICH EDITION, AND WHY IT MATTERS
@@ -29,7 +32,9 @@
    the whole Bible in a repository whose product is 365 passages.
    Instead `data/corpus.lock.json` records the SHA-256 of every
    archive, so any machine can re-download and prove it received
-   the same bytes this dataset was built from.
+   the same bytes this dataset was built from — for as long as the
+   publisher still serves them. See "A PINNED SOURCE DOES NOT CHANGE
+   UNDERNEATH THIS APP" below for what happens when it stops.
    ========================================================= */
 'use strict';
 const fs = require('fs');
@@ -322,59 +327,190 @@ function download(url, attempt){
   });
 }
 
-/* One edition. Its archives land in .corpus-cache/<id>/ and its hashes in
-   the lock under that id, so editions cannot overwrite one another and each
-   carries its own provenance. */
-async function syncEdition(id, previous){
-  const dir = cacheDir(id);
-  fs.mkdirSync(dir, { recursive: true });
-  const before = previous && previous.editions && previous.editions[id];
-  const archives = {};
+/* ---------------------------------------------------------
+   A PINNED SOURCE DOES NOT CHANGE UNDERNEATH THIS APP
+   ---------------------------------------------------------
+   eBible serves ONE archive per edition, at a fixed URL, and replaces it
+   whenever the publisher revises the text. It did exactly that to WEB Classic
+   on 2026-09-12: one verse reworded, 1,562 Strong's-number tags re-annotated.
 
-  for(const a of archivesFor(id)){
-    process.stdout.write('  ' + id + ' ' + a.name + ' … ');
-    const buf = await download(a.url);
-    const digest = sha256(buf);
-    const priorArchive = before && before.archives && before.archives[a.name];
-    const changed = priorArchive && priorArchive.sha256 !== digest;
+   This file used to download that, print "** CHANGED since the last sync **",
+   and then overwrite the pinned cache and the lock anyway. Running
+   `npm run corpus:sync` was enough to put new wording in front of every
+   reader, with a warning that scrolled past. That is the silent Scripture
+   update this app exists never to make.
 
-    const files = unzip(buf);
-    Object.keys(files).forEach(name => {
-      fs.writeFileSync(path.join(dir, path.basename(name)), files[name]);
-    });
+   So a download is now a DECISION, not a write:
 
-    archives[a.name] = { url: a.url, bytes: buf.length, sha256: digest, entries: Object.keys(files).length };
-    console.log(buf.length + ' bytes, sha256 ' + digest.slice(0, 16) + '…' +
-                (changed ? '  ** CHANGED since the last sync **' : ''));
-    if(changed){
-      console.log('     was ' + priorArchive.sha256.slice(0, 16) + '… — the publisher has revised this edition.');
-      console.log('     Re-run `npm run scripture:build` and read the diff before committing.');
-    }
-  }
+     pin            the edition has never been pinned — this is how a new
+                    candidate enters the registry (held, until audited)
+     unchanged      the publisher still serves exactly the pinned bytes
+     adopt          the bytes differ AND the caller named those exact bytes,
+                    which only `corpus.js adopt` does, after an audit
+     hold-revision  the bytes differ and nobody has decided anything. The
+                    pinned cache and the lock are left alone; the new release
+                    is staged in .corpus-cache/<id>.candidate for audit.
 
-  /* Read back out of the bytes just written, never asserted here. */
-  const meta = derivedMeta(id);
-  return Object.assign({}, EDITIONS[id], meta, { archives: archives });
+   `adopt` names BOTH archive digests in full. If the publisher revises the
+   edition again between the audit and the adoption, the bytes will not match
+   the names and adoption refuses: what ships is always what was reviewed.
+
+   The procedure a revision goes through is written down in CLAUDE.md
+   (rule 53) and ARCHITECTURE.md ("When a publisher revises a pinned
+   edition"). */
+function revisionDecision(pinned, downloaded, adoption){
+  const names = Object.keys(downloaded);
+  if(!pinned) return 'pin';
+  if(names.every(n => pinned[n] && pinned[n].sha256 === downloaded[n].sha256)) return 'unchanged';
+  if(adoption && names.every(n => adoption[n] === downloaded[n].sha256)) return 'adopt';
+  return 'hold-revision';
 }
 
-async function sync(only){
-  fs.mkdirSync(CACHE, { recursive: true });
-  fs.mkdirSync(path.dirname(LOCK), { recursive: true });
-  const previous = readLock();
-  const ids = only ? [only] : Object.keys(EDITIONS);
-  const editions = Object.assign({}, (previous && previous.editions) || {});
+function readLockAt(lockPath){
+  try{ return JSON.parse(fs.readFileSync(lockPath, 'utf8')); }
+  catch(e){ return null; }
+}
 
-  console.log('corpus:sync  ' + ids.length + ' edition(s) from eBible.org');
-  for(const id of ids){
-    editions[id] = await syncEdition(id, previous);
-    console.log('     ' + editions[id].title + '  [' + editions[id].iso + ']');
+function archiveSummary(downloaded){
+  const out = {};
+  Object.keys(downloaded).forEach(n => {
+    const d = downloaded[n];
+    out[n] = { url: d.url, bytes: d.bytes, sha256: d.sha256, entries: Object.keys(d.files).length };
+  });
+  return out;
+}
+
+/* One edition. Its archives land in .corpus-cache/<id>/ and its hashes in
+   the lock under that id, so editions cannot overwrite one another and each
+   carries its own provenance.
+
+   Everything is downloaded and unzipped in memory FIRST. Writing each archive
+   into the cache as it arrived meant a failure on the second left a cache that
+   was half one release and half another. */
+async function syncEdition(id, previous, options){
+  const opts = options || {};
+  const fetchArchive = opts.fetch || download;
+  const log = opts.log || (s => console.log(s));
+  const before = previous && previous.editions && previous.editions[id];
+
+  const downloaded = {};
+  for(const a of archivesFor(id)){
+    const buf = await fetchArchive(a.url);
+    downloaded[a.name] = { url: a.url, bytes: buf.length, sha256: sha256(buf), files: unzip(buf) };
   }
 
-  fs.writeFileSync(LOCK, JSON.stringify({
+  const decision = revisionDecision(before && before.archives, downloaded, opts.adopt);
+  Object.keys(downloaded).forEach(n => {
+    const d = downloaded[n], p = before && before.archives && before.archives[n];
+    log('  ' + id + ' ' + n + ' … ' + d.bytes + ' bytes, sha256 ' + d.sha256.slice(0, 16) + '…' +
+        (p && p.sha256 !== d.sha256 ? '   differs from the pin (' + p.sha256.slice(0, 16) + '…)' : ''));
+  });
+
+  const writeInto = dir => {
+    fs.rmSync(dir, { recursive: true, force: true });
+    fs.mkdirSync(dir, { recursive: true });
+    Object.keys(downloaded).forEach(n => Object.keys(downloaded[n].files).forEach(f => {
+      fs.writeFileSync(path.join(dir, path.basename(f)), downloaded[n].files[f]);
+    }));
+  };
+
+  if(decision === 'hold-revision'){
+    const dir = cacheDir(id + '.candidate');
+    writeInto(dir);
+    return { decision: decision, entry: before, candidate: { dir: dir, archives: archiveSummary(downloaded) } };
+  }
+
+  writeInto(cacheDir(id));
+  /* Read back out of the bytes just written, never asserted here. */
+  const meta = derivedMeta(id);
+  return { decision: decision, entry: Object.assign({}, EDITIONS[id], meta, { archives: archiveSummary(downloaded) }) };
+}
+
+function writeLock(lockPath, editions){
+  fs.mkdirSync(path.dirname(lockPath), { recursive: true });
+  fs.writeFileSync(lockPath, JSON.stringify({
     editions: editions,
     syncedAt: new Date().toISOString().slice(0, 10)
   }, null, 2) + '\n');
-  console.log('  lock written to data/corpus.lock.json');
+}
+
+/* `options` exists so a contract can run the real code against a fake
+   publisher and a throwaway lock. Everyday use passes nothing. */
+async function sync(only, options){
+  const opts = options || {};
+  const log = opts.log || (s => console.log(s));
+  const lockPath = opts.lockPath || LOCK;
+  fs.mkdirSync(CACHE, { recursive: true });
+  const previous = readLockAt(lockPath);
+  const ids = opts.ids || (only ? [only] : Object.keys(EDITIONS));
+  const before = (previous && previous.editions) || {};
+  const editions = Object.assign({}, before);
+  const held = [];
+
+  log('corpus:sync  ' + ids.length + ' edition(s) from eBible.org');
+  for(const id of ids){
+    const r = await syncEdition(id, previous, { fetch: opts.fetch, log: log });
+    if(r.decision === 'hold-revision'){ held.push({ id: id, r: r }); continue; }
+    editions[id] = r.entry;
+    log('     ' + r.entry.title + '  [' + r.entry.iso + ']  ' + r.decision);
+  }
+
+  /* A sync that changed nothing leaves the lock byte-identical. Rewriting it
+     just to move a date would make "the pin changed" and "someone ran a
+     sync" look the same in a diff. */
+  if(!previous || JSON.stringify(editions) !== JSON.stringify(before)){
+    writeLock(lockPath, editions);
+    log('  lock written to ' + path.relative(ROOT, lockPath));
+  } else {
+    log(held.length
+      ? '  lock unchanged — nothing pinned was moved'
+      : '  lock unchanged — every pinned edition still matches its publisher archive');
+  }
+
+  held.forEach(h => {
+    const c = h.r.candidate.archives;
+    log('');
+    log('  ' + h.id + ': THE PUBLISHER HAS REVISED THIS EDITION. NOTHING PINNED WAS CHANGED.');
+    log('     pinned    vpl ' + h.r.entry.archives.vpl.sha256 + '   usfx ' + h.r.entry.archives.usfx.sha256);
+    log('     published vpl ' + c.vpl.sha256 + '   usfx ' + c.usfx.sha256);
+    log('     staged for audit in ' + path.relative(ROOT, h.r.candidate.dir));
+    log('     The new text ships only after a source-revision gate (CLAUDE.md rule 53), and then with:');
+    log('       node scripts/corpus.js adopt ' + h.id + ' ' + c.vpl.sha256 + ' ' + c.usfx.sha256);
+  });
+  return held.length ? 2 : 0;
+}
+
+/* Explicit adoption of a reviewed revision. Both digests in full, so there is
+   no shorthand that could adopt something other than what was audited. */
+async function adopt(id, hashes, options){
+  const opts = options || {};
+  const log = opts.log || (s => console.log(s));
+  const lockPath = opts.lockPath || LOCK;
+  const full = /^[0-9a-f]{64}$/;
+  if(!hashes || !full.test(String(hashes.vpl)) || !full.test(String(hashes.usfx))){
+    log('corpus:adopt  REFUSED — name both archive digests in full: adopt <id> <vpl-sha256> <usfx-sha256>');
+    return 1;
+  }
+  const previous = readLockAt(lockPath);
+  if(!previous || !previous.editions || !previous.editions[id]){
+    log('corpus:adopt  REFUSED — ' + id + ' is not pinned, so there is nothing to revise. Use sync.');
+    return 1;
+  }
+  const r = await syncEdition(id, previous, { fetch: opts.fetch, log: log, adopt: hashes });
+  if(r.decision === 'unchanged'){
+    log('corpus:adopt  ' + id + ' already pins those bytes; nothing changed.');
+    return 0;
+  }
+  if(r.decision !== 'adopt'){
+    log('corpus:adopt  REFUSED — the publisher is not serving the bytes you named. It may have revised ' + id +
+        ' again since your audit. Nothing pinned was changed; re-audit ' + path.relative(ROOT, r.candidate.dir) + '.');
+    return 1;
+  }
+  const editions = Object.assign({}, previous.editions);
+  editions[id] = r.entry;
+  writeLock(lockPath, editions);
+  log('corpus:adopt  ' + id + ' now pins vpl ' + hashes.vpl.slice(0, 16) + '… usfx ' + hashes.usfx.slice(0, 16) + '…');
+  log('  Next: npm run scripture:build && npm run bible:build, then read the whole diff.');
   return 0;
 }
 
@@ -396,8 +532,8 @@ function status(){
   });
   const cached = { length: cachedTotal };
   if(!cached.length){
-    console.log('\n  The cache is empty. `npm run corpus:sync` restores it; the lock above');
-    console.log('  says which bytes it must produce.');
+    console.log('\n  The cache is empty. `npm run corpus:sync` restores it while the publisher');
+    console.log('  still serves the bytes the lock above names.');
     return 1;
   }
   return 0;
@@ -412,7 +548,16 @@ function cacheDir(id){ return path.join(CACHE, id); }
    would have three editions silently overwriting one another. */
 function cachedFile(id, suffix){
   const dir = cacheDir(id);
-  if(!fs.existsSync(dir)) throw new Error('no cached corpus for ' + id + ' — run `npm run corpus:sync`');
+  if(!fs.existsSync(dir)){
+    /* On a fresh machine, sync cannot restore a pin the publisher has since
+       replaced. Say so, rather than send someone round the same loop until
+       they copy the candidate over the pin to get past it. */
+    if(fs.existsSync(cacheDir(id + '.candidate'))){
+      throw new Error('no cached corpus for ' + id + ' at its pinned bytes — the publisher has revised it and ' +
+                      'the new release is held in .corpus-cache/' + id + '.candidate. See CLAUDE.md rule 53.');
+    }
+    throw new Error('no cached corpus for ' + id + ' — run `npm run corpus:sync`');
+  }
   const f = fs.readdirSync(dir).find(n => n.endsWith(suffix));
   if(!f) throw new Error(id + ' cache is missing a *' + suffix + ' file — run `npm run corpus:sync`');
   return fs.readFileSync(path.join(dir, f), 'utf8');
@@ -535,10 +680,14 @@ if(require.main === module){
   const mode = (process.argv[2] || 'status').toLowerCase();
   if(mode === 'sync'){
     sync(process.argv[3]).then(c => process.exit(c)).catch(e => { console.error('corpus:sync  ERROR — ' + e.message); process.exit(1); });
+  } else if(mode === 'adopt'){
+    adopt(process.argv[3], { vpl: process.argv[4], usfx: process.argv[5] })
+      .then(c => process.exit(c)).catch(e => { console.error('corpus:adopt  ERROR — ' + e.message); process.exit(1); });
   } else {
     process.exit(status());
   }
 }
 
 module.exports = { EDITIONS, DEFAULT_EDITION, shippedEditions, archivesFor, bookNames, bridgedSpans, CACHE, cacheDir, LOCK, readLock,
-                   sha256, verses, superscriptions, unzip, cachedFile, derivedMeta };
+                   sha256, verses, superscriptions, unzip, cachedFile, derivedMeta,
+                   revisionDecision, syncEdition, sync, adopt };

@@ -97,7 +97,8 @@ npm test                   # contracts only
 npm run config:verify      # identity drift only
 npm run contamination      # residue scan only
 npm run config:sync        # write derived values into the static files
-npm run corpus:sync        # download the publisher corpus and write the lock
+npm run corpus:sync        # download the publisher corpus; never moves a pin
+npm run corpus:adopt       # adopt a reviewed revision (ARCHITECTURE.md)
 npm run scripture:build    # derive the dataset from the cached corpus
 npm run scripture:verify   # re-derive and diff what is shipped
 npm run scripture:audit    # report on the catalogue, offline
@@ -106,7 +107,7 @@ npm run icons              # redraw the app icons
 
 `npm run verify` is offline and deterministic, and so are `scripture:build`,
 `scripture:verify` and `scripture:audit` once the corpus is cached. Only
-`corpus:sync` touches the network.
+`corpus:sync` and `corpus:adopt` touch the network.
 
 ## Shape of the code
 

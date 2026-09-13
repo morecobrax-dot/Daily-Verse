@@ -5711,6 +5711,232 @@ function testNumberingAudit(){
     /DO885/.test(corpus.EDITIONS.ita1927.held));
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 45 — A PINNED SCRIPTURE SOURCE DOES NOT CHANGE BY ITSELF
+
+   eBible serves one archive per edition at a fixed URL and replaces it when
+   the publisher revises the text. On 2026-09-12 it replaced WEB Classic, and
+   `npm run corpus:sync` would have overwritten the pin, printed a warning,
+   and put the new wording in front of every reader on the next build.
+
+   CLAUDE.md rule 53 says a revision ships only through a source-revision
+   gate. This is what makes that true rather than merely written down:
+
+     - a download cannot move a pin; only an adoption naming the exact bytes can
+     - adoption refuses if the publisher has revised again since the audit
+     - no other script can reach the publisher, so nothing follows "latest"
+     - every shipped edition's archives, reader corpus and curated text are
+       held to digests written here, so changing any of them is a line in a
+       diff that a person wrote, not a side effect of a sync or a build
+
+   The first half runs the REAL sync and adopt code against a fake publisher
+   and a throwaway lock. It touches no network, no real lock and no shipped
+   edition's cache.
+   --------------------------------------------------------- */
+async function testSourceRevision(){
+  section('CONTRACT 45 — a pinned Scripture source does not change by itself');
+  const fsx = require('fs'), pathx = require('path'), osx = require('os'), cryptox = require('crypto');
+  const corpus = require('../scripts/corpus.js');
+  const S = require('../scripts/scripture.js');
+  const sha = b => cryptox.createHash('sha256').update(b).digest('hex');
+
+  sub('what a download is allowed to mean');
+  const pinned = { vpl: { sha256: 'a1' }, usfx: { sha256: 'b1' } };
+  const newer = { vpl: { sha256: 'a2' }, usfx: { sha256: 'b2' } };
+  T('an edition never pinned is pinned', corpus.revisionDecision(null, newer) === 'pin');
+  T('the pinned bytes, served again, change nothing',
+    corpus.revisionDecision(pinned, { vpl: { sha256: 'a1' }, usfx: { sha256: 'b1' } }) === 'unchanged');
+  T('different bytes are held for audit', corpus.revisionDecision(pinned, newer) === 'hold-revision');
+  T('one archive revised is still a revision',
+    corpus.revisionDecision(pinned, { vpl: { sha256: 'a1' }, usfx: { sha256: 'b2' } }) === 'hold-revision');
+  T('naming other bytes does not adopt', corpus.revisionDecision(pinned, newer, { vpl: 'a2', usfx: 'b3' }) === 'hold-revision');
+  T('naming one archive of two does not adopt', corpus.revisionDecision(pinned, newer, { vpl: 'a2' }) === 'hold-revision');
+  T('only naming exactly the published bytes adopts', corpus.revisionDecision(pinned, newer, { vpl: 'a2', usfx: 'b2' }) === 'adopt');
+
+  sub('the real sync and adopt, against a publisher that keeps revising');
+  /* A stored zip, in the shape corpus.unzip() reads. unzip() does not check
+     CRCs, so none are written. */
+  function zipOf(files){
+    const parts = [], central = [];
+    let offset = 0;
+    Object.keys(files).forEach(name => {
+      const data = Buffer.from(files[name]), nameBuf = Buffer.from(name);
+      const local = Buffer.alloc(30);
+      local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4);
+      local.writeUInt32LE(data.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(nameBuf.length, 26);
+      const cen = Buffer.alloc(46);
+      cen.writeUInt32LE(0x02014b50, 0); cen.writeUInt16LE(20, 4); cen.writeUInt16LE(20, 6);
+      cen.writeUInt32LE(data.length, 20); cen.writeUInt32LE(data.length, 24);
+      cen.writeUInt16LE(nameBuf.length, 28); cen.writeUInt32LE(offset, 42);
+      parts.push(local, nameBuf, data); central.push(cen, nameBuf);
+      offset += 30 + nameBuf.length + data.length;
+    });
+    const dir = Buffer.concat(central), end = Buffer.alloc(22);
+    end.writeUInt32LE(0x06054b50, 0);
+    end.writeUInt16LE(Object.keys(files).length, 8); end.writeUInt16LE(Object.keys(files).length, 10);
+    end.writeUInt32LE(dir.length, 12); end.writeUInt32LE(offset, 16);
+    return Buffer.concat(parts.concat([dir, end]));
+  }
+  /* Per process, so two runs on one checkout cannot share a probe. */
+  const PROBE = 'zz-revision-probe-' + process.pid, NEVER = PROBE + '-never-pinned';
+  const metadata = '<DBLMetadata><identification><name>Revision Probe</name><abbreviationLocal>RP</abbreviationLocal>' +
+    '</identification><language><iso>eng</iso><name>English</name></language>' +
+    '<copyright><statement>Public Domain</statement></copyright></DBLMetadata>';
+  /* A release changes both archives, as WEB's did, unless told otherwise. */
+  const release = (words, markup) => ({
+    vpl: zipOf({ [PROBE + 'metadata.xml']: metadata,
+                 [PROBE + '_vpl.xml']: '<vpl><v b="GEN" c="1" v="1">' + words + '</v></vpl>' }),
+    usfx: zipOf({ [PROBE + 'metadata.xml']: metadata,
+                  [PROBE + '_usfx.xml']: '<usfx><book id="GEN"><c id="1" /><v id="1" />' + (markup || words) + '</book></usfx>' })
+  });
+  const digests = r => ({ vpl: sha(r.vpl), usfx: sha(r.usfx) });
+  const A = release('In the beginning'), B = release('In the very beginning'), C = release('At the very beginning');
+  let serving = A;
+  const lockPath = pathx.join(osx.tmpdir(), 'daily-verse-revision-probe-' + process.pid + '.json');
+  const opts = { ids: [PROBE], lockPath: lockPath, log: () => {},
+                 fetch: url => Promise.resolve(/_vpl\.zip$/.test(url) ? serving.vpl : serving.usfx) };
+  const pinDir = corpus.cacheDir(PROBE), candDir = corpus.cacheDir(PROBE + '.candidate'), neverDir = corpus.cacheDir(NEVER);
+  const read = p => fsx.existsSync(p) ? fsx.readFileSync(p, 'utf8') : '';
+  const pinnedFile = suffix => read(pathx.join(pinDir, PROBE + suffix));
+  const stagedFile = suffix => read(pathx.join(candDir, PROBE + suffix));
+  const lockText = () => read(lockPath);
+  const pinOf = () => { try{ return JSON.parse(lockText()).editions[PROBE].archives; }catch(e){ return {}; } };
+  /* A broken guard that throws has still failed, and must not take the rest
+     of the suite down with it. */
+  const attempt = async fn => { try{ return await fn(); }catch(e){ return 'threw: ' + e.message; } };
+  const sync = () => attempt(() => corpus.sync(null, opts));
+  const adopt = (id, names) => attempt(() => corpus.adopt(id, names, opts));
+  const cleanup = () => {
+    [pinDir, candDir, neverDir].forEach(d => fsx.rmSync(d, { recursive: true, force: true }));
+    fsx.rmSync(lockPath, { force: true });
+  };
+  cleanup();
+  try{
+    T('a first download pins the edition', await sync() === 0 && (pinOf().vpl || {}).sha256 === digests(A).vpl);
+    /* Dated in the past, so a lock rewritten today cannot pass for one left alone. */
+    fsx.writeFileSync(lockPath, lockText().replace(/"syncedAt": "[^"]*"/, '"syncedAt": "2000-01-01"'));
+    const lockA = lockText();
+    T('the same release again leaves the lock byte-identical', await sync() === 0 && lockText() === lockA);
+
+    /* The failure this contract exists for. */
+    serving = B;
+    const code = await sync();
+    T('a revision makes sync fail rather than succeed quietly', code === 2, 'exit ' + code);
+    T('it does not touch the lock', lockText() === lockA);
+    T('it does not touch the pinned text', /In the beginning/.test(pinnedFile('_vpl.xml')), pinnedFile('_vpl.xml'));
+    T('the revision is staged apart from the pin, for audit', /In the very beginning/.test(stagedFile('_vpl.xml')));
+
+    T('adoption refuses when one named archive is not what is published',
+      await adopt(PROBE, { vpl: digests(B).vpl, usfx: digests(A).usfx }) === 1 &&
+      lockText() === lockA && /In the beginning/.test(pinnedFile('_vpl.xml')));
+    T('adoption refuses a shortened digest',
+      await adopt(PROBE, { vpl: digests(B).vpl.slice(0, 16), usfx: digests(B).usfx }) === 1 && lockText() === lockA);
+    T('adoption refuses an edition that was never pinned',
+      await adopt(NEVER, digests(B)) === 1 && lockText() === lockA && !fsx.existsSync(neverDir));
+
+    /* B was audited — and then the publisher revised again before anyone
+       adopted it. What ships must be what was reviewed. */
+    serving = C;
+    T('a release audited but superseded is refused, even named in full',
+      await adopt(PROBE, digests(B)) === 1 && lockText() === lockA && /In the beginning/.test(pinnedFile('_vpl.xml')));
+    T('and the newer release is what is now staged for audit', /At the very beginning/.test(stagedFile('_vpl.xml')));
+
+    T('naming the reviewed bytes in full adopts them',
+      await adopt(PROBE, digests(C)) === 0 && /At the very beginning/.test(pinnedFile('_vpl.xml')) &&
+      (pinOf().usfx || {}).sha256 === digests(C).usfx);
+    const lockC = lockText();
+    T('adopting what is already pinned changes nothing', await adopt(PROBE, digests(C)) === 0 && lockText() === lockC);
+    T('and a sync after adoption is quiet again', await sync() === 0 && lockText() === lockC);
+
+    /* Most of WEB's revision was markup in the USFX alone, and the USFX is
+       where psalm titles come from. A revision of one archive is a revision. */
+    serving = { vpl: C.vpl, usfx: release('At the very beginning', '<w s="H7225">At the very beginning</w>').usfx };
+    T('a revision of the USFX alone is held too',
+      await sync() === 2 && lockText() === lockC && /<w s=/.test(stagedFile('_usfx.xml')) && !/<w s=/.test(pinnedFile('_usfx.xml')));
+  } finally {
+    cleanup();
+  }
+  T('the probe left nothing behind', [pinDir, candDir, neverDir, lockPath].every(p => !fsx.existsSync(p)));
+
+  sub('nothing else can reach the publisher');
+  /* Every other script reads the pinned cache and nothing more. If one could
+     download, or call sync, "latest" would be one command from every reader.
+     Comments are stripped: they are allowed to name the commands. */
+  fsx.readdirSync(pathx.join(H.ROOT, 'scripts')).filter(f => /\.js$/.test(f) && f !== 'corpus.js').forEach(f => {
+    const src = stripComments(fsx.readFileSync(pathx.join(H.ROOT, 'scripts', f), 'utf8'));
+    T(f + ' opens no connection and cannot sync or adopt',
+      !/require\(\s*['"](?:node:)?(?:https?|net|tls|http2|child_process)['"]\s*\)/.test(src) && !/\bfetch\s*\(/.test(src) &&
+      !/\.\s*(?:sync|syncEdition|adopt|download)\s*\(/.test(src) && !/\{[^}]*\b(?:sync|syncEdition|adopt)\b[^}]*\}\s*=\s*require/.test(src));
+  });
+  const pkg = JSON.parse(fsx.readFileSync(H.PKG_PATH, 'utf8'));
+  T('only corpus:sync and corpus:adopt run the download',
+    Object.keys(pkg.scripts).filter(k => /corpus\.js (sync|adopt)|corpus:(sync|adopt)/.test(pkg.scripts[k])).sort().join() ===
+    'corpus:adopt,corpus:sync', JSON.stringify(pkg.scripts));
+
+  sub('every shipped edition is held to bytes named here');
+  /* Changing a value below is how a source revision is released. The corpus
+     digest covers every file of the edition in data/bible.lock.json, whose
+     entries CONTRACT 38 holds to the files on disk; the curated digest covers
+     the passages shipped in index.html. */
+  const PROTECTED = {
+    'eng-web': {
+      vpl: '2dee3ce71cd1e459bbad81c0195f0121690f5364c4b391c64282018106d60f53',
+      usfx: 'd1de86950c40da97ccf10f17809a0b8ed99e3062617b739e21ee6d9b4aa8d2cd',
+      corpus: 'c1f7b8407d19c01ca5e0e8d13a8cfcab4dbe63e70251f41e25d31397e81a7599',
+      curated: 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916' },
+    'spaRV1909': {
+      vpl: 'e5c553f8044e676375e5f13719493f7f47c54b5f145cc33cb65f12eb6f4dc8e5',
+      usfx: '2ca64656e7c06773480049201816b408ef3d937bd372db28ab7b05b543da66ac',
+      corpus: '4388c097011f2af7cb1926b0b0e1a7bac0ddc0499e590b8311054da382efce6e',
+      curated: 'effd30e42821bcb19cad18a652ae93b05ce280e06683a9fc5068335c40c15237' },
+    'engbsb': {
+      vpl: '51d4d53b37d3ba2147b8eeb0697eb36d339d08acdda97baec8c4ed606faf2361',
+      usfx: '7ec2e485d4127fa6b6f49a02dc1f1ab8faf7aca94294a0501cd338a66258577e',
+      corpus: '6f8ace9ca7469db91aeb5841b43d5961f4359120a3172d41cb8b742f5ea439ce',
+      curated: '2af8fa91e4154ac6dd6407e579f7141d5e8277aee1bc7be5d88c56187caaec69' },
+    'eng-asv': {
+      vpl: '78936cfa0d2909d7c6979ba270e676855d94d44586ba567ee51b30cf30fd5130',
+      usfx: '365da92d6d9b09260f63b4d86e867cc06a54dc67a5a6a1342de7ab8fffa57961',
+      corpus: 'ea61197736c549d3795cffdf82851d8e4d2652a63b7346355a2a69c7872c83b6',
+      curated: '91e532b32157d44e6d369f7f2d256c32555042cd0e55b7ff7cb1b8cf0b2b3cc8' },
+    'deu1912': {
+      vpl: '62977ec165164def0f4815b846ca4af20fcd141fcc6c347ce791b59c2eca6678',
+      usfx: 'c289e07aa5ca717d2071509c3617b96a5ab37cbd5823cc61e4e09fc4da8315c4',
+      corpus: '0ea55cdb1042415a700f57f6e8c3979c83cff29c7811766d7e5d07ce8ef1595f',
+      curated: '8fcc195d41d52ed5110bc5355f7bc8c2e3a2bd6dd19db9731a5b513a4bc2a62e' },
+    'cmn-cu89s': {
+      vpl: '8c9969ea5659835c132f9ce93101b948cd04edf298ca507ae50bbe77858d5027',
+      usfx: '60d711b9914178e4f7492a2ee66a2a3601ecf31d5f402979d29161b479575833',
+      corpus: '984df1c6840b8fc325bd21230c9177efb3ef109015a4642fde663de1c74b1e0c',
+      curated: '7724ae8a183903f476623d715435624b1b62dab27df9db29428018db1ca81673' },
+    'cmn-cu89t': {
+      vpl: '49aca5dffaeeb27c24f05ec30a7e64080f36c0e132095b83f2773b2c9b4455b7',
+      usfx: '26568f1a3b8d877f9cb58614d855756b5751556599ff2c0efb933d12336eb3bb',
+      corpus: '5e2baf5ca01e29974f68d8a3c6570c6f89de1a46f5c9f1f173392f72e707f0d1',
+      curated: '8add266f86b8d6226631c31397be5f1a9c5b19c3bc732dd8544f7d9212b03448' }
+  };
+  const lock = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'corpus.lock.json'), 'utf8'));
+  const bibleLock = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible.lock.json'), 'utf8'));
+  const c = H.loadApp({ sharedStorage: new Map() }).ctx;
+  const shipped = corpus.shippedEditions();
+  T('the protected set is exactly the shipped set',
+    Object.keys(PROTECTED).sort().join() === shipped.slice().sort().join(), shipped.join(', '));
+  shipped.forEach(id => {
+    const p = PROTECTED[id] || {}, a = (lock.editions[id] || {}).archives || {};
+    const files = bibleLock.editions[id] || {};
+    const corpusDigest = sha(Object.keys(files).sort().map(f => f + ':' + files[f].sha256).join('\n'));
+    const curatedDigest = id === c.DEFAULT_TRANSLATION ? S.datasetHash(c.SCRIPTURE)
+      : S.datasetHash(c.SCRIPTURE.map(q => Object.assign({ id: q.id }, (c.TRANSLATION_TEXT[id] || {})[q.id])));
+    T(id + ' pins exactly the protected archives', !!a.vpl && a.vpl.sha256 === p.vpl && a.usfx.sha256 === p.usfx,
+      a.vpl && ('vpl ' + a.vpl.sha256 + ' usfx ' + a.usfx.sha256));
+    /* Built from anything other than the pin — a staged candidate, a cache
+       replaced by hand — and the record of what it was built from is a lie. */
+    T(id + ' was built from exactly its pin', JSON.stringify(bibleLock.builtFrom[id]) === JSON.stringify(a));
+    T(id + ' ships exactly the protected Bible', corpusDigest === p.corpus, corpusDigest);
+    T(id + ' ships exactly the protected passages', curatedDigest === p.curated, curatedDigest);
+  });
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -5720,5 +5946,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit, testSourceRevision
 };

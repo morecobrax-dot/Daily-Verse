@@ -253,6 +253,27 @@ before calling a release done.
     are pinned in `data/corpus.lock.json` beside the SHA-256 of the files they
     came from. A licence string written by hand in source is a claim; one read
     from the publisher and hashed is evidence.
+53. **A pinned source is immutable until a source-revision gate adopts a
+    successor.** Publishers revise editions in place: eBible serves one
+    archive per edition at a fixed URL, and on 2026-09-12 it replaced WEB
+    Classic with a release that rewords John 3:2. Newer is not a reason to
+    ship. `corpus:sync` refuses to move a pin and stages the new release in
+    `.corpus-cache/<id>.candidate`; nothing reaches a reader until a gate:
+    1. detects the change — sync reports it and exits non-zero
+    2. keeps the candidate separate from the pin
+    3. diffs the whole corpus, not the curated passages: every verse, every
+       address, spans, superscriptions, book names, metadata, and every
+       archive entry, until each difference is explained
+    4. runs `npm run versify` with the candidate as an edition AND as the
+       canon every other edition is measured against
+    5. checks the impact on curated passages, reflections, Learn and
+       Devotions, and on user records
+    6. records the decision, ADOPT or HOLD, with that evidence
+    7. adopts only with `npm run corpus:adopt -- <id> <vpl-sha256>
+       <usfx-sha256>`, naming the reviewed bytes in full, and updates the
+       protected digests in Contract 45 as a deliberate part of that release
+    A release that changes Scripture wording is announced in What's New. A
+    build script never follows "latest".
 
 ## Guided study (Learn)
 

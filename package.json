@@ -18,7 +18,8 @@
     "bible:verify": "node scripts/bible.js verify",
     "scripture:audit": "node scripts/scripture.js audit",
     "devotions:verify": "node scripts/devotions.js",
-    "versify": "node scripts/versify.js"
+    "versify": "node scripts/versify.js",
+    "corpus:adopt": "node scripts/corpus.js adopt"
   },
   "engines": {
     "node": ">=18"
