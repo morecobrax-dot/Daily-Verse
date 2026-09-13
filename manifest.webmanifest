@@ -1,7 +1,7 @@
 {
-  "name": "Daily Verse",
-  "short_name": "Daily Verse",
-  "description": "A verse, a reflection, and a quiet moment each day.",
+  "name": "New Covenant",
+  "short_name": "New Covenant",
+  "description": "Read the whole Bible, from Genesis onward, understand what you read, and grow into deeper study.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",

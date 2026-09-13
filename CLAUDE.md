@@ -6,10 +6,13 @@ behaviour.
 Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing architecture, and
 [PRODUCT-DESIGN.md](PRODUCT-DESIGN.md) before changing anything a user sees.
 
-**This app is Daily Verse: one passage of Scripture per day, a short reflection
-beside it, and a private place to keep both.** It was built on a general mobile
-app foundation, and the two halves of `index.html` are still distinct — the
-foundation above the `FOUNDATION → DOMAIN SEAM` banner, this product below it.
+**This app is New Covenant — formerly Daily Verse — a Bible app for reading
+Scripture, understanding it and keeping what matters: a passage and reflection
+each day, the whole Bible in verified editions, devotions, guided study, and a
+private place to keep all of it.** Its internal id is still `daily-verse`; see
+rule 54. It was built on a general mobile app foundation, and the two halves of
+`index.html` are still distinct — the foundation above the
+`FOUNDATION → DOMAIN SEAM` banner, this product below it.
 
 ---
 
@@ -176,7 +179,7 @@ before calling a release done.
     Do not start the next phase, do not "while I'm here", do not polish a
     demo into a product.
 
-## Daily Verse specifics
+## New Covenant specifics
 
 29. **The day key is a local calendar date**, never derived from
     `toISOString()`. A UTC-derived "today" gives half the world the wrong
@@ -212,6 +215,20 @@ before calling a release done.
 38. **The assignment ledger is the only exposure history.** How often something
     has been seen is derived from it. A second counter would be a parallel
     source of truth that can disagree.
+54. **The name is not the id.** `APP_CONFIG.name` is what a reader sees;
+    `APP_CONFIG.id` (`daily-verse`) is where their data lives — the storage
+    prefix, the cache name and the `app` field every backup is checked
+    against. The product was renamed New Covenant in 1.13.0 and the id did
+    not move, because changing it strands every saved verse, note,
+    highlight, progress record and backup on every phone that has the app,
+    in an app that otherwise works perfectly. Rename through `APP_CONFIG`
+    and `config:sync`. Never "finish" a rename by changing the id, the
+    storage keys, the cache prefix or the backup identity without a
+    migration. Contract 46 loads a real v1.12.0 phone and backup to hold
+    this. On iOS a home-screen icon and label are captured when the app is
+    added and are not known to repaint after an update, and removing and
+    re-adding a home-screen web app can lose its stored data, so never tell
+    readers to reinstall without a backup first.
 
 ## Translations and the words they use
 

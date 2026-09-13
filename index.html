@@ -5,16 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <!-- APP-META-BEGIN
  — derived from APP_CONFIG by `npm run config:sync`. Do not hand-edit. -->
-<title>Daily Verse</title>
-<meta name="description" content="A verse, a reflection, and a quiet moment each day.">
-<meta name="apple-mobile-web-app-title" content="Daily Verse">
+<title>New Covenant</title>
+<meta name="description" content="Read the whole Bible, from Genesis onward, understand what you read, and grow into deeper study.">
+<meta name="apple-mobile-web-app-title" content="New Covenant">
 <meta name="theme-color" content="#0D0B09">
 <!-- APP-META-END -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 /* =========================================================
    DESIGN TOKENS
@@ -697,7 +699,7 @@ input.field-error, textarea.field-error{ border-color: var(--danger); box-shadow
 .notice strong{ color: var(--text); display: block; margin-bottom: 2px; }
 
 /* =========================================================
-   DAILY VERSE — the product's own surfaces
+   NEW COVENANT — the product's own surfaces
    ---------------------------------------------------------
    Everything above this point is the foundation and knows
    nothing about Scripture. Everything here is this product.
@@ -1770,7 +1772,7 @@ body.scroll-locked{
 
   <header class="app-header">
     <div class="header-row">
-      <h1 class="app-title" id="appTitle">Daily Verse</h1>
+      <h1 class="app-title" id="appTitle">New Covenant</h1>
       <div class="header-actions">
         <button class="icon-btn" id="updatesBtn" aria-label="What's new" onclick="openUpdates()"></button>
         <button class="icon-btn" id="settingsBtn" aria-label="Settings" onclick="openSettings()"></button>
@@ -2211,12 +2213,22 @@ body.scroll-locked{
 
    Changing a product's identity is: edit APP_CONFIG, run
    `npm run config:sync`. Nothing else.
+
+   NAME AND ID ARE DIFFERENT THINGS. The name is what a reader sees:
+   the header, the home-screen label, the version line, the backup
+   file. The id is where their data lives: the storage prefix, the
+   cache name and the `app` field every backup is checked against.
+   This app shipped as Daily Verse and was renamed New Covenant in
+   1.13.0; the id stayed `daily-verse`, because changing it would
+   strand every saved verse, note, highlight and backup on every
+   phone that already has the app. Rename freely. Never re-id
+   without a migration.
    ========================================================= */
 const APP_CONFIG = {
   id: 'daily-verse',
-  name: 'Daily Verse',
-  shortName: 'Daily Verse',
-  description: 'A verse, a reflection, and a quiet moment each day.',
+  name: 'New Covenant',
+  shortName: 'New Covenant',
+  description: 'Read the whole Bible, from Genesis onward, understand what you read, and grow into deeper study.',
   themeColor: '#0D0B09',
   backgroundColor: '#0D0B09'
 };
@@ -2259,6 +2271,19 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-13-0',
+    version: '1.13.0',
+    title: 'Now called New Covenant',
+    date: '2026-09-13',
+    summary: 'Daily Verse is now New Covenant — a new name and identity for the same Bible, ' +
+             'Devotions and Learn experience.',
+    improvements: [
+      'A new name and a new app icon: an open Bible, with light rising from its spine',
+      'Everything you have saved, highlighted and written, your reading and study progress, your translation and your settings are exactly where you left them',
+      'A backup you export is now named after New Covenant. Backups made before the new name still import'
+    ]
+  },
   {
     id: 'v1-12-0',
     version: '1.12.0',
@@ -8101,7 +8126,7 @@ const REFLECTIONS = {
 };
 
 /* =========================================================
-   DAILY VERSE — the domain
+   NEW COVENANT — the domain
    ---------------------------------------------------------
    Nothing above the FOUNDATION → DOMAIN SEAM banner reads
    anything in this section.
@@ -9654,7 +9679,7 @@ function renderSource(){
       'differently &mdash; this English edition prints &ldquo;' + escapeHtml(s.divineName) +
       '&rdquo; where many print &ldquo;the LORD&rdquo;, and the Spanish prints ' +
       '&ldquo;Jehov&aacute;&rdquo;. Wording, punctuation and even verse numbering can vary. ' +
-      'None of that is corrected here: Daily Verse shows each translation exactly as its ' +
+      'None of that is corrected here: ' + escapeHtml(APP_CONFIG.name) + ' shows each translation exactly as its ' +
       'publisher released it, and never swaps a rendering for a more familiar one.</div>';
 }
 
@@ -12079,6 +12104,16 @@ function renderDataStats(){
                  statHtml(bytes < 1024 ? bytes + ' B' : (bytes / 1024).toFixed(1) + ' KB', 'Size');
 }
 
+/* The file lands in someone's Downloads, so it carries the name they know
+   the app by. It was `<id>-backup-…` until 1.13.0, which printed the
+   internal id, and after the rename would have printed the old product's
+   name. What makes a backup importable is `app` inside it, never the file
+   name, so every file ever exported still imports. */
+function backupFileName(when){
+  const stem = String(APP_CONFIG.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return (stem || APP_CONFIG.id) + '-backup-' + when.toISOString().slice(0, 10) + '.json';
+}
+
 function exportData(){
   const payload = {
     app: APP_CONFIG.id,
@@ -12096,7 +12131,7 @@ function exportData(){
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = APP_CONFIG.id + '-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = backupFileName(new Date());
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast('Backup exported', 'success');

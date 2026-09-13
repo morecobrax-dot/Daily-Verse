@@ -989,10 +989,11 @@ function testRelease(){
      rules out an inherited list is the check below: every version here must
      be one this app itself released. The count stays bounded only so that a
      wholesale foreign list cannot arrive unnoticed. */
-  /* Raised 3 -> 8 -> 20 as the app kept shipping. The bound is not a limit on
-     releasing; it exists so a wholesale foreign history cannot arrive
-     unnoticed, and the check below is the one doing that work. */
-  T('the history stays short enough to read', c.APP_UPDATES.length <= 20,
+  /* Raised 3 -> 8 -> 20 -> 40 as the app kept shipping; 1.13.0 was the 21st
+     release. The bound is not a limit on releasing; it exists so a wholesale
+     foreign history cannot arrive unnoticed, and the check below is the one
+     doing that work. */
+  T('the history stays short enough to read', c.APP_UPDATES.length <= 40,
     String(c.APP_UPDATES.length));
   T('and every entry is a release this app actually made',
     c.APP_UPDATES.every(u => /^1.[0-9]+.[0-9]+$/.test(u.version)),
@@ -1464,8 +1465,11 @@ function testScripture(){
   }));
   T('no screen in Settings shows a reader an internal identifier',
     leaks.length === 0, leaks.join('; '));
+  /* Follows the configured name rather than repeating it: CONTRACT 46 is
+     where the name itself is held. */
   T('the version line names the app and its version, and stops there',
-    /^Daily Verse . Version [0-9]+[.][0-9]+[.][0-9]+$/.test(surfaces['the version line']),
+    new RegExp('^' + c.APP_CONFIG.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' . Version [0-9]+[.][0-9]+[.][0-9]+$')
+      .test(surfaces['the version line']),
     surfaces['the version line']);
   T('the settings screen carries no identity panel at all',
     !/identityPanel|Storage backend|Edition id|Corpus synced|Dataset built/.test(src));
@@ -5937,6 +5941,232 @@ async function testSourceRevision(){
   });
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 46 — A NEW NAME MOVES NOTHING A READER KEPT
+
+   1.13.0 renamed Daily Verse to New Covenant. A rename is the easiest
+   release to get catastrophically wrong: the obvious search-and-replace also
+   rewrites `daily-verse` in APP_CONFIG.id, which is the prefix every saved
+   verse, note, highlight and progress record lives under, and the identity
+   every backup is checked against. That edit ships an app that works
+   perfectly and greets every existing reader as a stranger.
+
+   So this holds four things:
+     - the product a reader sees is New Covenant, wherever they look
+     - the name is not the address: renaming moves no key, cache or backup
+     - a phone as v1.12.0 left it, and a backup v1.12.0 wrote, open here with
+       every record intact and none rewritten
+     - the icons the platforms ask for exist at the sizes they declare, are
+       exactly what scripts/icons.js draws, and keep the mark inside the
+       crop a maskable icon may suffer
+
+   test/fixtures was produced by RUNNING v1.12.0 and using it, not written
+   from memory of what it stores. Never edit those files by hand.
+   --------------------------------------------------------- */
+function testBrandIdentity(){
+  section('CONTRACT 46 — a new name moves nothing a reader kept');
+  const fsx = require('fs'), pathx = require('path');
+  const BRAND = 'New Covenant';
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx;
+  const byId = id => app.dom.document.getElementById(id);
+
+  sub('the product a reader sees is New Covenant');
+  T('the app is called New Covenant', c.APP_CONFIG.name === BRAND, c.APP_CONFIG.name);
+  /* "Covenant" alone is another Bible product's name. */
+  T('and the home-screen label is the whole name, not a shortening',
+    c.APP_CONFIG.shortName === BRAND, c.APP_CONFIG.shortName);
+  const man = H.readManifest();
+  T('the install manifest carries it', man.name === BRAND && man.short_name === BRAND, man.name + ' / ' + man.short_name);
+  T('the header shows it once the app has started', byId('appTitle').textContent === BRAND, byId('appTitle').textContent);
+  c.renderAppVersion();
+  T('Settings names it beside the version', byId('appVersionLine').textContent === BRAND + ' · Version ' + c.APP_VERSION,
+    byId('appVersionLine').textContent);
+  T('the description no longer sells a verse a day',
+    !/a verse, a reflection|quiet moment/i.test(c.APP_CONFIG.description) && /Bible/.test(c.APP_CONFIG.description),
+    c.APP_CONFIG.description);
+  /* "New Covenant" must not read as the New Testament alone. */
+  T('and it says the Bible starts at Genesis', /Genesis/.test(c.APP_CONFIG.description));
+
+  sub('the old name is gone from everything a reader can see');
+  const src = H.readApp();
+  const head = src.slice(0, src.indexOf('<style>'));
+  T('not in the page head', !/daily verse/i.test(head));
+  T('not in the page markup', !/daily verse/i.test(H.bodyBlock(src)
+    .replace(/<script>[\s\S]*?<\/script>/g, '').replace(/<style>[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '')));
+  T('not in the manifest', !/daily verse/i.test(JSON.stringify(man)));
+  /* Every string the app can put on screen — toasts, dialogs, share text,
+     Sources — lives in the script. Comments may tell the history; code may
+     not show it. The release notes are the one record allowed to. */
+  const code = stripComments(js());
+  const notesStart = code.indexOf('const APP_UPDATES = [');
+  const notesEnd = code.indexOf('\n];', notesStart);
+  const outsideNotes = code.slice(0, notesStart) + code.slice(notesEnd);
+  T('not in any string the app can show', notesStart > -1 && notesEnd > notesStart && !/daily verse/i.test(outsideNotes),
+    (outsideNotes.match(/.{0,40}daily verse.{0,40}/i) || [''])[0]);
+  const [maj, min] = [1, 13];
+  const later = u => { const v = u.version.split('.').map(Number); return v[0] > maj || (v[0] === maj && v[1] > min); };
+  T('and release notes after the rename never use it',
+    c.APP_UPDATES.filter(later).every(u => !/daily verse/i.test(JSON.stringify(u))));
+  const rename = c.APP_UPDATES.find(u => u.version === '1.13.0');
+  T('the rename itself is announced, in plain words', !!rename && /Daily Verse is now New Covenant/.test(rename.summary),
+    rename && rename.summary);
+  /* Old entries stay as they were written. Rewriting them would falsify
+     what earlier versions actually said. */
+  T('earlier release notes are left as history, not rewritten', c.APP_UPDATES.some(u => u.version === '1.12.0' &&
+    u.title === 'Four more Bibles, in three more languages'));
+
+  sub('the name is not the address');
+  const phone = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'test', 'fixtures', 'v1.12.0-phone.json'), 'utf8'));
+  const fromPhone = () => new Map(Object.keys(phone.storage).map(k => [k, phone.storage[k]]));
+  const renamed = H.loadApp({ sharedStorage: fromPhone() }).ctx;
+  const original = H.loadApp({ sharedStorage: fromPhone(), appName: 'Daily Verse' }).ctx;
+  T('the same data opens under either name',
+    original.APP_CONFIG.name === 'Daily Verse' && renamed.APP_CONFIG.name === BRAND);
+  T('renaming changes no storage prefix', original.STORAGE_NAMESPACE === renamed.STORAGE_NAMESPACE, renamed.STORAGE_NAMESPACE);
+  T('no cache name', original.CACHE_NAMESPACE === renamed.CACHE_NAMESPACE);
+  T('no storage key', JSON.stringify(original.KEYS) === JSON.stringify(renamed.KEYS));
+  T('and no part of the prefix is the display name',
+    renamed.STORAGE_NAMESPACE.indexOf('new-covenant') === -1 && renamed.CACHE_NAMESPACE.indexOf('new-covenant') === -1);
+  const state = x => JSON.stringify([x.savedVerses, x.notes, x.bibleHighlights, x.bibleRead, x.studyProgress, x.studyNotes,
+    x.checkAnswers, x.devotionProgress, x.translation, x.appearance, x.textSize, x.focusThemes, x.focusStrength,
+    x.readBibleLast()]);
+  T('every record reads back identically under the new name', state(original) === state(renamed));
+  const exportOf = x => {
+    let text = null;
+    x.Blob = class { constructor(parts){ text = parts.join(''); } };
+    x.exportData();
+    return text ? JSON.parse(text) : null;
+  };
+  const oldExport = exportOf(original), newExport = exportOf(renamed);
+  T('a backup identifies itself by the id, under either name',
+    !!oldExport && !!newExport && oldExport.app === newExport.app && newExport.app === renamed.APP_CONFIG.id);
+  const when = new Date(2026, 8, 13, 12);
+  T('while the file a reader downloads carries the name they know',
+    renamed.backupFileName(when) === 'new-covenant-backup-2026-09-13.json', renamed.backupFileName(when));
+  T('and would have followed any other name the same way',
+    original.backupFileName(when) === 'daily-verse-backup-2026-09-13.json', original.backupFileName(when));
+
+  sub('a phone as v1.12.0 left it opens with everything intact');
+  /* Every key on a real v1.12.0 phone sits under this build's prefix. If
+     that fails, the id changed, and every installed reader just lost
+     everything. Rename the product; never re-id it without a migration. */
+  const keys = Object.keys(phone.storage);
+  T('the fixture really is a v1.12.0 phone', phone.version === '1.12.0' && keys.length >= 15, keys.length + ' keys');
+  T('every key it wrote is under this build’s storage prefix',
+    keys.every(k => k.indexOf(renamed.STORAGE_NAMESPACE) === 0), keys.filter(k => k.indexOf(renamed.STORAGE_NAMESPACE) !== 0).join(', '));
+  const u = renamed;
+  const rec = k => JSON.parse(phone.storage[u.STORAGE_NAMESPACE + k]);
+  T('the saved passage is there', u.savedVerses.length === 1 && u.savedVerses[0].id === rec('data.saved')[0].id);
+  T('the written reflection, word for word', u.notes.length === 1 && u.notes[0].text === rec('data.notes')[0].text);
+  T('the highlight, in its colour', u.bibleHighlights.length === 1 && u.bibleHighlights[0].color === 'amber');
+  T('the chapter marked read', u.bibleRead.length === 1 && u.bibleRead[0].id === 'JHN.3');
+  T('where the reader was in the Bible', JSON.stringify(u.readBibleLast()) === JSON.stringify({ c: 'ROM', ch: 8 }));
+  T('the translation they chose', u.translation === 'deu1912', u.translation);
+  T('their appearance, text size and reading focus',
+    u.appearance === 'light' && u.textSize === 'large' && JSON.stringify(u.focusThemes) === '["hope"]' && u.focusStrength === 'focused');
+  T('their Learn progress, answers and lesson note',
+    u.studyProgress.length === 1 && u.checkAnswers.length === 1 && u.studyNotes.length === 1 &&
+    u.studyNotes[0].text === rec('data.studyNotes')[0].text);
+  T('and their Devotions progress', u.devotionProgress.length === 1 &&
+    JSON.stringify(u.devotionProgress[0].done) === JSON.stringify(rec('data.devotionProgress')[0].done));
+  T('no migration ran: the schema is still 2', u.DATA_SCHEMA_VERSION === 2 &&
+    u.Store.get(u.KEYS.schemaVersion) === '2' &&
+    !u.Store.listKeys().some(k => k.indexOf(u.KEYS.backupPrefix) === 0));
+  /* Opening the app may add today's ledger entry. It may not change or
+     drop anything that was already there. */
+  const after = u.__storage;
+  const untouched = keys.every(k => {
+    const was = phone.storage[k], now = after.getItem(k);
+    if(now === was) return true;
+    let a, b;
+    try{ a = JSON.parse(was); b = JSON.parse(now); }catch(e){ return false; }
+    return Array.isArray(a) && Array.isArray(b) &&
+      a.every(r => b.some(s => JSON.stringify(s) === JSON.stringify(r)));
+  });
+  T('no record the phone held was rewritten or dropped', untouched);
+  T('and the rename shows as unread in What’s new',
+    u.Store.get(u.KEYS.lastSeenUpdate) === 'v1-12-0' && u.APP_UPDATES[0].id === 'v1-13-0');
+
+  sub('a backup written by v1.12.0 still restores, and a new one matches it');
+  const backupText = fsx.readFileSync(pathx.join(H.ROOT, 'test', 'fixtures', 'v1.12.0-backup.json'), 'utf8');
+  const backup = JSON.parse(backupText);
+  T('the fixture really is a v1.12.0 backup', backup.version === '1.12.0' && backup.schema === 2 && !!backup.data);
+  const fresh = H.loadApp({ sharedStorage: new Map() }).ctx;
+  fresh.importData({ files: [{ _text: backupText }], value: 'backup.json' });
+  const collections = ['saved', 'notes', 'bibleHighlights', 'bibleRead', 'studyProgress', 'studyNotes', 'checkAnswers', 'devotionProgress'];
+  const restoredAll = collections.every(k => {
+    const want = JSON.parse(backup.data[fresh.KEYS[k]]), got = fresh.Store.getJSON(fresh.KEYS[k], []);
+    return want.length > 0 && want.every(r => got.some(s => JSON.stringify(s) === JSON.stringify(r)));
+  });
+  T('it is accepted as this app’s backup, and every record comes back unchanged', restoredAll,
+    collections.map(k => k + '=' + fresh.Store.getJSON(fresh.KEYS[k], []).length).join(' '));
+  const again = exportOf(fresh);
+  T('a backup written after the rename names the same app as one written before it', !!again && again.app === backup.app);
+  const roundTrip = H.loadApp({ sharedStorage: new Map() }).ctx;
+  roundTrip.importData({ files: [{ _text: JSON.stringify(again) }], value: 'x' });
+  T('and restores just as completely', collections.every(k =>
+    roundTrip.Store.getJSON(roundTrip.KEYS[k], []).length === JSON.parse(backup.data[roundTrip.KEYS[k]]).length));
+  const stranger = H.loadApp({ sharedStorage: new Map() }).ctx;
+  stranger.importData({ files: [{ _text: JSON.stringify(Object.assign({}, backup, { app: 'some-other-app' })) }], value: 'x' });
+  T('while another app’s backup is still refused', stranger.savedVerses.length === 0 && stranger.notes.length === 0);
+
+  sub('the icons platforms ask for are real, and are this mark');
+  const icons = require('../scripts/icons.js');
+  const read = f => fsx.readFileSync(pathx.join(H.ROOT, f));
+  const exists = f => fsx.existsSync(pathx.join(H.ROOT, f));
+  man.icons.forEach(i => {
+    const ok = exists(i.src);
+    const png = ok ? icons.decodePng(read(i.src)) : null;
+    T('manifest ' + i.src + ' exists at the size it declares', !!png && (png.width + 'x' + png.height) === i.sizes,
+      png ? png.width + 'x' + png.height : 'missing');
+    T('manifest ' + i.src + ' is opaque, so no mask can show through it', !!png && png.channels === 3);
+    T('manifest ' + i.src + ' may be masked', /maskable/.test(i.purpose || ''));
+  });
+  const links = [...head.matchAll(/<link rel="(icon|apple-touch-icon)" href="([^"]+)"[^>]*>/g)].map(m => ({ rel: m[1], href: m[2], tag: m[0] }));
+  T('the page declares a tab icon and a home-screen icon',
+    links.some(l => l.rel === 'icon') && links.some(l => l.rel === 'apple-touch-icon'), links.map(l => l.href).join(', '));
+  T('every icon the page links to exists', links.every(l => exists(l.href)), links.filter(l => !exists(l.href)).map(l => l.href).join(', '));
+  const touch = links.find(l => l.rel === 'apple-touch-icon');
+  const touchPng = touch && exists(touch.href) ? icons.decodePng(read(touch.href)) : null;
+  T('the home-screen icon is 180px and opaque, as iOS wants it', !!touchPng && touchPng.width === 180 && touchPng.channels === 3);
+  links.filter(l => /\.png$/.test(l.href)).forEach(l => {
+    const m = l.tag.match(/sizes="(\d+)x(\d+)"/);
+    if(!m) return;
+    const p = icons.decodePng(read(l.href));
+    T(l.href + ' is the size it declares', p.width === Number(m[1]) && p.height === Number(m[2]));
+  });
+  T('the scalable tab icon is an SVG', links.some(l => /\.svg$/.test(l.href) && /^<svg /.test(read(l.href).toString('utf8'))));
+  const master = exists('brand/app-icon-1024.png') ? icons.decodePng(read('brand/app-icon-1024.png')) : null;
+  T('the App Store master is 1024px with no alpha channel', !!master && master.width === 1024 && master.channels === 3);
+  T('the vector masters exist', exists('brand/new-covenant-icon.svg') && exists('brand/new-covenant-mark.svg'));
+  const drift = icons.ASSETS.filter(a => !exists(a.file) || !icons.matches(a, read(a.file))).map(a => a.file);
+  T('every asset is exactly what scripts/icons.js draws, pixel for pixel', drift.length === 0, drift.join(', '));
+
+  /* Measured on the shipped pixels rather than trusted from the drawing:
+     the maskable safe zone is a circle of 40% of the width. */
+  const big = icons.decodePng(read('icon-512.png'));
+  const px = (x, y) => { const i = (y * big.width + x) * big.channels; return [big.pixels[i], big.pixels[i + 1], big.pixels[i + 2]]; };
+  let far = 0;
+  for(let y = 0; y < big.height; y++){
+    const ground = px(0, y);
+    for(let x = 0; x < big.width; x++){
+      const p = px(x, y);
+      if(Math.abs(p[0] - ground[0]) + Math.abs(p[1] - ground[1]) + Math.abs(p[2] - ground[2]) > 36){
+        far = Math.max(far, Math.sqrt((x + 0.5 - 256) * (x + 0.5 - 256) + (y + 0.5 - 256) * (y + 0.5 - 256)) / 512);
+      }
+    }
+  }
+  T('everything visible sits inside the maskable safe circle, with room to spare', far > 0.2 && far <= 0.37, far.toFixed(3));
+  const corners = [px(0, 0), px(511, 0), px(0, 511), px(511, 511)];
+  T('the field bleeds to every corner: nothing is rounded or cut out by the icon itself',
+    corners.every(p => p[0] < 48 && p[1] < 48 && p[2] < 48), JSON.stringify(corners));
+  /* the light is sampled low on the column, where it is near full strength */
+  const page = px(160, 290), light = px(256, 272);
+  T('the pages are ivory', page[0] > 215 && page[1] > 200 && page[2] > 180, JSON.stringify(page));
+  T('and the light rising from the spine is amber', light[0] > 150 && light[0] > light[1] + 40 && light[1] > light[2], JSON.stringify(light));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -5946,5 +6176,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit, testSourceRevision
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit, testSourceRevision, testBrandIdentity
 };

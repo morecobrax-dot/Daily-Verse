@@ -1,8 +1,8 @@
 {
   "name": "daily-verse",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "private": true,
-  "description": "A verse, a reflection, and a quiet moment each day.",
+  "description": "Read the whole Bible, from Genesis onward, understand what you read, and grow into deeper study.",
   "scripts": {
     "verify": "node test/run.js verify",
     "test": "node test/run.js contracts",
@@ -11,6 +11,7 @@
     "contamination": "node scripts/contamination.js",
     "scripture:verify": "node scripts/scripture.js verify",
     "icons": "node scripts/icons.js",
+    "icons:verify": "node scripts/icons.js verify",
     "corpus:sync": "node scripts/corpus.js sync",
     "corpus:status": "node scripts/corpus.js status",
     "scripture:build": "node scripts/scripture.js build",

@@ -327,6 +327,10 @@ function buildDom(src){
    `overrides.appId` rewrites APP_CONFIG.id before evaluation, which
    is how the cross-app collision contracts run two identities
    against one shared localStorage.
+
+   `overrides.appName` rewrites APP_CONFIG.name and shortName, which is
+   how the brand contract proves that renaming the product moves no
+   stored record, cache or backup identity.
    ========================================================= */
 const BRIDGE = [
   'APP_CONFIG', 'APP_UPDATES', 'APP_VERSION', 'APP_ID_PATTERN',
@@ -361,6 +365,12 @@ function loadApp(opts){
     const before = code;
     code = code.replace(/(\bid:\s*)'[^']*'/, "$1'" + o.appId + "'");
     if(code === before) throw new Error('could not override APP_CONFIG.id');
+  }
+  if(o.appName){
+    const before = code;
+    code = code.replace(/(const APP_CONFIG = \{[\s\S]*?\bname:\s*)'[^']*'(,\s*shortName:\s*)'[^']*'/,
+      "$1'" + o.appName + "'$2'" + o.appName + "'");
+    if(code === before) throw new Error('could not override APP_CONFIG.name');
   }
 
   const dom = buildDom(src);

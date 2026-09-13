@@ -4,7 +4,7 @@ How the pieces fit, and where the two halves meet.
 
 The app was built on a general mobile foundation. Everything above the
 `FOUNDATION → DOMAIN SEAM` banner in `index.html` is that foundation and knows
-nothing about Scripture; everything below it is Daily Verse.
+nothing about Scripture; everything below it is New Covenant.
 
 ---
 
@@ -17,7 +17,7 @@ The whole application is one file with four blocks, in this order:
 | `<head>` | Meta, viewport, manifest link. The block between `APP-META-BEGIN/END` is **derived** — written by `config:sync`. |
 | One `<style>` | Design tokens, then base, shell, controls, surfaces, overlay presentation, toast, responsive. |
 | `<body>` markup | The shell, the tab views, and every overlay declared statically. All other DOM is generated. |
-| One `<script>` | Config, release notes, storage, migration, overlay engine, toast, confirmation, icons, navigation, the Daily Verse domain, boot. |
+| One `<script>` | Config, release notes, storage, migration, overlay engine, toast, confirmation, icons, navigation, the New Covenant domain, boot. |
 
 **Keep it to one substantial `<script>` block.** The test harness evaluates
 only the largest one. Code in a second block, or in a linked `.js` file, is
@@ -35,14 +35,30 @@ derives from it:
 ```
 APP_CONFIG.id ──┬── STORAGE_NAMESPACE   `<id>.`
                 ├── CACHE_NAMESPACE     `<id>-v<version>`
+                ├── backup `app` field  what import accepts
                 └── package.json name
 
 APP_UPDATES[0].version ── APP_VERSION ──┬── CACHE_NAMESPACE
                                         └── package.json version
 
 APP_CONFIG.name/shortName/description/themeColor
-                └── <head> meta, manifest.webmanifest
+                ├── <head> meta, manifest.webmanifest, header markup
+                └── version line, backup file name, Sources copy
 ```
+
+### The name is not the id
+
+The id is an address; the name is a label. This product shipped as Daily Verse
+and was renamed **New Covenant** in 1.13.0 by changing `name`, `shortName` and
+`description` and running `config:sync`. The id stayed `daily-verse`, so every
+phone kept its storage, its cache lineage and its backups, and no migration
+ran. A search-and-replace that also changed the id would have shipped a working
+app that treats every existing reader as new.
+
+Contract 46 holds this with evidence rather than a literal: it loads a phone's
+storage and a backup file, both produced by running v1.12.0 itself
+(`test/fixtures`), under the current build and under the old name, and asserts
+that every record comes back identically and none is rewritten.
 
 Static files cannot read a JavaScript object at runtime, so
 `npm run config:sync` writes the derived values into them, and
@@ -158,6 +174,25 @@ anything looser is how one deployment wipes another's cache on a shared origin.
 The worker caches application code only. Everything a person creates lives in
 `localStorage` and is never touched, so clearing caches cannot lose a record.
 
+### Icons
+
+Every icon is drawn by `scripts/icons.js` from one description of the mark (an
+open Bible whose spine rises into light), with no dependency and no design tool.
+It writes the manifest icons (`icon-192.png`, `icon-512.png`, full bleed,
+`any maskable`), `apple-touch-icon.png` (180px, opaque), the tab icon
+(`favicon.svg`, `favicon-32.png`) and, under `brand/`, the 1024px App Store
+master and the vector masters. `npm run icons` redraws them;
+`npm run icons:verify` and Contract 46 fail if a shipped file's pixels drift
+from the description, if a declared size is wrong, or if anything visible
+leaves the maskable safe circle.
+
+The icon never rounds its own corners: iOS and Android draw their own shape.
+iOS captures a home-screen icon and label when the app is added and is not
+known to refresh them afterwards, so expect an existing install to keep the old
+icon and name until it is removed and added again — this was not verified on a
+device when the rename shipped. Removing a home-screen web app can remove its
+data, so that is never advice to give without a backup first.
+
 ## Testing
 
 `test/harness.js` reads `index.html` as text, extracts the largest `<script>`
@@ -223,7 +258,7 @@ Nothing above the seam depends on anything below it, which is what makes the
 domain replaceable and the foundation auditable on its own.
 
 
-## The Daily Verse domain
+## The New Covenant domain
 
 What sits below the seam, and the reasoning that is easy to undo by accident.
 

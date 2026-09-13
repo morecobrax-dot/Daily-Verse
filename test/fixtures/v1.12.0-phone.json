@@ -1,0 +1,24 @@
+{
+  "about": "Produced by running Daily Verse v1.12.0 (commit bf25a2a) in the contract harness and using it: a saved passage, a reflection, a highlight, a chapter read, a reader position, a translation, appearance, text size, reading focus, a knowledge check, a lesson note and completed lesson, a completed devotional reading, and the release notes opened. Never edit by hand: it is evidence of what real phones hold.",
+  "version": "1.12.0",
+  "storage": {
+    "daily-verse.data.assignments": "[{\"id\":\"2026-09-13\",\"passage\":\"PRO.12.1\",\"updatedAt\":\"2026-09-13T19:13:18.059Z\"}]",
+    "daily-verse.data.bibleHighlights": "[{\"id\":\"JHN.3.16\",\"color\":\"amber\",\"createdAt\":\"2026-09-13T19:13:18.065Z\",\"updatedAt\":\"2026-09-13T19:13:18.065Z\"}]",
+    "daily-verse.data.bibleRead": "[{\"id\":\"JHN.3\",\"readAt\":\"2026-09-13T19:13:18.065Z\",\"updatedAt\":\"2026-09-13T19:13:18.065Z\"}]",
+    "daily-verse.data.checkAnswers": "[{\"id\":\"skills-foundations:sf-c1\",\"study\":\"skills-foundations\",\"check\":\"sf-c1\",\"correct\":1,\"chose\":0,\"updatedAt\":\"2026-09-13T19:13:18.070Z\"}]",
+    "daily-verse.data.devotionProgress": "[{\"id\":\"the-weight-you-carry\",\"done\":[\"wyc-1\"],\"startedAt\":\"2026-09-13T19:13:18.071Z\",\"updatedAt\":\"2026-09-13T19:13:18.071Z\"}]",
+    "daily-verse.data.notes": "[{\"id\":\"n_2026-09-13\",\"date\":\"2026-09-13\",\"passage\":\"PRO.12.1\",\"ref\":\"Proverbs 12:1\",\"text\":\"Written before the app had a new name.\",\"createdAt\":\"2026-09-13T19:13:18.064Z\",\"updatedAt\":\"2026-09-13T19:13:18.064Z\"}]",
+    "daily-verse.data.saved": "[{\"id\":\"s_pro-12-1\",\"passage\":\"PRO.12.1\",\"ref\":\"Proverbs 12:1\",\"savedAt\":\"2026-09-13T19:13:18.062Z\",\"updatedAt\":\"2026-09-13T19:13:18.062Z\"}]",
+    "daily-verse.data.studyNotes": "[{\"id\":\"new-to-the-bible:ntb-1\",\"study\":\"new-to-the-bible\",\"lesson\":\"ntb-1\",\"text\":\"A note kept in Learn.\",\"createdAt\":\"2026-09-13T19:13:18.071Z\",\"updatedAt\":\"2026-09-13T19:13:18.071Z\"}]",
+    "daily-verse.data.studyProgress": "[{\"id\":\"new-to-the-bible\",\"done\":[\"ntb-1\"],\"startedAt\":\"2026-09-13T19:13:18.070Z\",\"updatedAt\":\"2026-09-13T19:13:18.070Z\"}]",
+    "daily-verse.sys.schemaVersion": "2",
+    "daily-verse.ui.appearance": "light",
+    "daily-verse.ui.bibleLast": "{\"c\":\"ROM\",\"ch\":8}",
+    "daily-verse.ui.focusStrength": "focused",
+    "daily-verse.ui.focusThemes": "[\"hope\"]",
+    "daily-verse.ui.lastSeenUpdate": "v1-12-0",
+    "daily-verse.ui.onboarded": "1",
+    "daily-verse.ui.textSize": "large",
+    "daily-verse.ui.translation": "deu1912"
+  }
+}

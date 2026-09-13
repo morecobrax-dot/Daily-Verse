@@ -4,7 +4,7 @@
 
 The wanted behaviour is: turn on a daily reminder, pick a local time, and have
 the installed iPhone web app notify you then — tapping it opening that day's
-reading. This is a note on whether that can be built the way Daily Verse is
+reading. This is a note on whether that can be built the way New Covenant is
 currently built, which is a static site on GitHub Pages with no backend.
 
 Short answer: **not without adding a server.** The web platform removed the
@@ -33,7 +33,7 @@ consistent and reliable experiences across platforms."* It reached an origin
 trial in 2020 and went no further. No browser implements it in a stable
 release, and no other engine picked it up.
 
-This is the crux. Had it shipped, Daily Verse could have scheduled reminders
+This is the crux. Had it shipped, New Covenant could have scheduled reminders
 entirely on the device with no server and no data leaving it.
 
 ### 3. Push API on iOS — works, and is the only route left
@@ -116,7 +116,7 @@ The notification is a doorbell, not a delivery.
 
 ### Privacy consequences worth being honest about
 
-Daily Verse is currently a local-first app with **no backend and no way to
+New Covenant is currently a local-first app with **no backend and no way to
 learn anything about anyone**. Adding this changes that category. Even at its
 most restrained the server would hold a persistent identifier and an
 approximate timezone for every user who turns reminders on. That is a small
@@ -137,7 +137,7 @@ them silently invalidates every existing subscription), an uptime obligation on
 a service whose entire job is punctuality, expired-subscription cleanup, and a
 second thing to deploy. GitHub Pages needs no attention at all; this would.
 
-### Is it worth it for Daily Verse?
+### Is it worth it for New Covenant?
 
 **Probably not yet, and the honest reason is the exchange rate.** The app's
 strongest current claim is that it keeps nothing and sends nothing, and that

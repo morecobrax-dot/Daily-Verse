@@ -58,6 +58,7 @@ const SUITES = [
   C.testTranslationLibrary,
   C.testNumberingAudit,
   C.testSourceRevision,
+  C.testBrandIdentity,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,
@@ -72,7 +73,7 @@ const SUITES = [
 async function main(){
   const started = Date.now();
   console.log('\n' + '='.repeat(64));
-  console.log('  DAILY VERSE CONTRACTS — tier: ' + TIER);
+  console.log('  NEW COVENANT CONTRACTS — tier: ' + TIER);
   console.log('='.repeat(64));
 
   for(const suite of SUITES){
