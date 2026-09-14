@@ -60,6 +60,7 @@ const SUITES = [
   C.testSourceRevision,
   C.testBrandIdentity,
   C.testBackNavigation,
+  C.testInteractionQuality,
   C.testMobile,
   C.testDesignSystem,
   C.testPWA,

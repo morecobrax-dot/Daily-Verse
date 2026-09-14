@@ -1,6 +1,6 @@
 {
   "name": "daily-verse",
-  "version": "1.13.1",
+  "version": "1.13.2",
   "private": true,
   "description": "Read the whole Bible, from Genesis onward, understand what you read, and grow into deeper study.",
   "scripts": {

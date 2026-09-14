@@ -80,6 +80,26 @@ status shows a word and a shape as well as a hue. *(enforced)*
   wherever it was left. *(enforced)*
 - Motion respects `prefers-reduced-motion`, everywhere, not on the animations
   someone remembered. *(enforced)*
+- **A tap is answered the moment a finger lands.** Every control has a pressed
+  state, and it must show on an iPhone, which paints `:active` only when a
+  touch listener exists. Hover is for pointers only (`@media (hover: hover)`):
+  on a touch screen a hover style is applied by the tap and then stays, so every
+  control someone touched looked still selected. The browser's grey tap flash
+  is replaced everywhere rather than on a few controls. *(enforced)*
+- **No action needs a second tap because the first one only focused.** A
+  surface that opens to type into keeps its keyboard; a tap that lands on a
+  message keeps going to the control underneath. Go to passage, and the verse
+  dock under a toast, both used to need a second tap. *(enforced)*
+- **A double tap is two taps.** The second must not act on a screen the first
+  just revealed and nobody has seen: two quick taps on a book opened a chapter
+  from its grid. A way back is exempt, so Back twice still climbs twice.
+  *(enforced)*
+- **Nothing someone is reading moves unless they moved it.** Saving,
+  highlighting or finishing something changes that one control, never the
+  text around it. A new chapter starts at its beginning, never scrolled to
+  wherever the last one ended. *(enforced)*
+- **Opening a page never blinks.** A page and its backdrop arrive together;
+  dimming the screen before the page appears reads as a flicker. *(enforced)*
 
 ## Truth over impressive fiction
 
@@ -93,6 +113,14 @@ status shows a word and a shape as well as a hue. *(enforced)*
   data cannot support.
 - Empty states say what the area is and offer one action. They do not pretend
   to be full.
+- **Loading never looks like an empty or broken page, and never lasts for
+  ever.** Show that something is coming. A request that gets no answer fails
+  after a fixed wait; then say what did not load, in plain words that differ
+  when the device is offline, and offer Try again. Never leave the last
+  screen's content standing in for what failed to load. *(enforced)*
+- State on screen is current. A card that names where someone got to — Continue
+  reading — is repainted when that changes, not the next time its tab is
+  entered. *(enforced)*
 
 ## No parallel sources of truth
 

@@ -105,11 +105,16 @@ drives everything that must happen when any surface opens or closes:
   captured and restored instantly, depth-counted so nested layers do not
   unlock early.
 - **Focus** — the surface takes focus, not its first field, so a keyboard does
-  not cover the screen. Tab is trapped. Focus returns to the opening control if
-  that control still exists.
+  not cover the screen — unless the surface has already focused a field of its
+  own, as Go to passage does, in which case that focus and its keyboard stay.
+  Tab is trapped. Focus returns to the opening control, or to the control that
+  replaced it when the page beneath was repainted (`controlDoing(action)`).
 - **Stacking** — z-index is painted from open order, not document order, so a
   surface opened from another is always on top.
-- **ARIA** — `role="dialog"` and `aria-modal` applied and removed with the stack.
+- **ARIA** — `role="dialog"` and `aria-modal` applied and removed with the
+  stack, and the dialog named by its own title through `aria-labelledby`.
+- **Screen changes** — every open or close calls `screenChanged()`, which the
+  tap guard below reads.
 - **Escape** — closes the top surface through *that surface's own* declared
   close path, found from its `backdropDismiss(event, fn)` handler or its
   `close*()` button. Nothing is invented; a surface with no declared exit is
@@ -171,6 +176,43 @@ like a browser's, three ways (Back button, device back, device back with
 skipped entries), and checks the stack, the tab and the history depth after
 every step.
 
+### Taps, repaints and reopening
+
+Four rules, each paid for by a defect found in a real browser. Contract 48
+holds them.
+
+**A second tap does not land on a screen nobody has seen.** When the screen
+changes under a finger, the next tap arrives on whatever that revealed: two
+quick taps on Genesis opened Genesis 23. For `GHOST_TAP_MS` after
+`screenChanged()`, one capture listener drops pointer taps. It exempts a way
+back (a `close*()`, `exit*()` or `cancel*()` action, so Back twice still climbs
+twice) and key presses (`event.detail === 0`). The engine calls
+`screenChanged()` on every open and close. Anything that replaces a page in
+place calls it itself: Next and Previous chapter, and Continue in a lesson or
+a devotional. Choosing a verse does not, so verses can be tapped quickly.
+
+**A state change never rebuilds what someone is reading.** Saving, highlighting,
+marking read, answering a check and completing a series paint the one thing
+that changed — `paintVerseStates()`, `paintChapterReadState()`,
+`paintDevotionFoot()`, `paintCheck()`. Only navigation to new content, or new
+words for the same content (a change of edition), may rebuild a reading
+surface. When a list or a card must be repainted, `repaintKeepingFocus(fn)`
+keeps keyboard and screen-reader focus on the control that was being used.
+`renderAll()` always repaints that way.
+
+**A late answer cannot repaint the present.** A load started for a chapter
+the reader has since left checks `bibleRequest` before it paints or remembers
+anything. Otherwise a slow book could throw someone out of the chapter they
+had moved on to.
+
+**Reopening a screen leaves nothing behind.** A listener is attached at boot
+(`initOverlayEngine()`, `initTapHandling()`, `Domain.wire()`), or once per
+element behind a guard (the chapter's scroll watch), or once and removed by
+itself (a field error) — never on every open or render. There is one
+observer. A timer is cleared by whatever replaces it. Contract 48 opens and
+closes every surface thirty times and counts listeners, observers and live
+timers before and after.
+
 ## Storage
 
 One adapter. Every key is prefixed with `APP_ID` inside the module, so no call
@@ -202,7 +244,13 @@ changes.
 
 - `toast(message, variant)` — non-blocking, one `aria-live` region, capped at
   three, auto-dismissing, reduced-motion aware. Use it after something
-  succeeded.
+  succeeded. Only its Undo takes a tap; a tap anywhere else on it reaches what
+  is underneath. It is placed above the footer of the surface on top (a verse
+  dock, a sheet's buttons), or above the tab bar when nothing is open.
+- **Loading** — a fetch that gets no response within `FETCH_TIMEOUT_MS` fails.
+  A download that has started is left to finish. Every screen that waits on
+  one has a failure state that says what did not load and offers Try again.
+  `loadFailedHtml()` words it differently offline.
 - `confirmAction({ title, message, confirmLabel, destructive })` — returns
   `Promise<boolean>`, runs on the overlay engine. Use it *before* something
   consequential and destructive.

@@ -159,6 +159,13 @@ function buildDom(src){
       dispatch(type, ev){ (this._listeners[type] || []).forEach(f => { try{ f(ev || {}); }catch(e){} }); },
       querySelector(sel){ return query(sel, this)[0] || null; },
       querySelectorAll(sel){ return query(sel, this); },
+      /* Inside, by what the stub knows: an appended child, or an element the
+         markup declared within this one's scope. The engine asks this before
+         moving focus into a surface that may already hold it. */
+      contains(node){
+        for(let n = node; n; n = n.parentNode) if(n === this) return true;
+        return !!(node && this.id && node._scope === this.id);
+      },
       closest(){ return null; },
       scrollIntoView(){},
       get firstElementChild(){ return this.children[0] || null; },
@@ -318,6 +325,9 @@ function buildDom(src){
     if(dataStatus) el.dataset.status = dataStatus[1];
     const onclick = attrAll.match(/onclick="([^"]+)"/);
     if(onclick) el.setAttribute('onclick', onclick[1]);
+    /* A sheet may name itself; the engine reads that name for the dialog. */
+    const labelledBy = attrAll.match(/aria-labelledby="([^"]+)"/);
+    if(labelledBy) el.setAttribute('aria-labelledby', labelledBy[1]);
     const owner = containers.filter(c => c.at < m.index).pop();
     el._scope = owner ? owner.id : null;
   }
@@ -357,7 +367,8 @@ const BRIDGE = [
   'bibleSelection', 'bibleReadSession', 'bibleScrollWatch', 'bibleChapter', 'bibleFocus', 'bibleActionVerse',
   'TOAST_MS', 'MAX_TOASTS', 'TOAST_VARIANTS',
   'OVERLAY_Z_BASE', '_openSheetStack', '_sheetOpeners', '_lockDepth', '_lockedScrollY',
-  '_historyDepth', '_pendingSelfPops', '_confirmResolve'
+  '_historyDepth', '_pendingSelfPops', '_confirmResolve',
+  'CLOSE_ACTION', 'GHOST_TAP_MS', '_screenChangedAt', 'FETCH_TIMEOUT_MS', 'bibleIndexFailed', 'bibleRequest'
 ];
 
 /* =========================================================

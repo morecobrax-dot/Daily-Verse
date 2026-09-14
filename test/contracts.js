@@ -436,7 +436,11 @@ function testToast(){
   T('it is a live region', /id="toastHost"[^>]*aria-live="polite"/.test(src));
   T('it has a status role', /id="toastHost"[^>]*role="status"/.test(src));
   T('it never intercepts a tap', /\.toast-host\{[\s\S]{0,300}pointer-events: none/.test(css()));
-  T('the toast itself does accept one', /\.toast\{[\s\S]{0,400}pointer-events: auto/.test(css()));
+  /* Only its Undo is a target. The body used to take every tap that landed on
+     it, and over the Bible reader it covered all five highlight colours for as
+     long as it was shown. */
+  T('the toast itself lets a tap through to what is underneath', /\.toast\{[\s\S]{0,700}pointer-events: none/.test(css()));
+  T('and only its action accepts one', /\.toast \.toast-action\{ pointer-events: auto; \}/.test(css()));
   T('it clears the tab bar and the home indicator',
     /\.toast-host\{[\s\S]{0,200}bottom: calc\(var\(--tabbar-h\)[\s\S]{0,60}var\(--inset-bottom\)\)/.test(css()));
 
@@ -6522,9 +6526,12 @@ async function testBackNavigation(){
   const named = re => pieces.filter(p => re.test((p.match(/^(?:async )?function ([A-Za-z_$][\w$]*)\(/) || [])[1] || ''));
   const backPaths = named(/^(releaseOverlayHistory|settleSurfacesTo|replaceSurface|pushOverlayHistory)$/).join('\n') +
     (src.match(/window\.addEventListener\('popstate'[\s\S]*?\n\}\);/) || [''])[0];
-  T('the history and popstate paths never choose a tab', backPaths.length > 400 && !/goToTab|switchTab|currentTab\s*=/.test(backPaths));
+  /* Choosing is assigning. Reading which tab is current, to repaint what is
+     on it, is not a choice. */
+  const CHOOSES_TAB = /goToTab|switchTab|currentTab\s*=(?!=)/;
+  T('the history and popstate paths never choose a tab', backPaths.length > 400 && !CHOOSES_TAB.test(backPaths));
   const closers = named(/^(close|finish|settle|cancel)[A-Z]/).map(p => p.split('\n}')[0]).join('\n');
-  T('no close path chooses a tab either', closers.length > 500 && !/goToTab|switchTab|currentTab\s*=/.test(closers));
+  T('no close path chooses a tab either', closers.length > 500 && !CHOOSES_TAB.test(closers));
   T('the only code that sends anyone to Today is something they tapped on purpose',
     (src.match(/goToTab\('today'\)/g) || []).length === 2 && !/switchTab\('today'\)/.test(src));
   /* A page returns to whatever it was opened over, so its Back control
@@ -6538,6 +6545,390 @@ async function testBackNavigation(){
   T('a cold start still opens on Today', cold.ctx.currentTab === 'today');
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 48 — EVERY TAP DOES ONE PREDICTABLE THING, AND SHOWS IT
+
+   From a usability pass over the whole app, each defect measured in a real
+   browser before it was fixed:
+   - two quick taps on Genesis opened Genesis 23, because the second tap
+     landed on the chapter grid the first had just opened
+   - Next and Previous opened the new chapter scrolled to its END: the reset
+     went to the sheet, which never scrolls, instead of the chapter
+   - a toast took every tap that landed on it, and over the reader it sat on
+     all five highlight colours for 3.2 seconds
+   - every hover style stuck after a tap on a phone, and no pressed state was
+     ever painted on iOS
+   - every page opened under a full-strength scrim, a dark blink before the
+     page itself appeared
+   - Go to passage lost its keyboard as it opened
+   - an edition whose index never arrived left the Bible on "Loading" for
+     ever, still listing the previous edition's books
+   - Continue reading named a chapter read long before
+   - three verses saved at once gave three toasts and three repaints
+   - a repaint dropped keyboard focus to the page body
+   - every surface opened as an unnamed dialog, and chapter buttons were
+     announced as list items
+   - reopening any surface must never leave a listener, observer or timer
+     behind
+   --------------------------------------------------------- */
+async function testInteractionQuality(){
+  section('CONTRACT 48 — every tap does one predictable thing, and shows it');
+  const fsx = require('fs'), pathx = require('path');
+  const style = css();
+  const bare = stripComments(js());
+  const readJson = (ed, file) => JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible', ed, file), 'utf8'));
+  const tick = () => new Promise(r => setTimeout(r, 0));
+  function boot(){
+    const app = H.loadApp({ sharedStorage: new Map() });
+    const c = app.ctx, d = app.dom.document;
+    c.bibleCache.index['eng-web'] = readJson('eng-web', 'index.json');
+    ['GEN', 'RUT', 'PSA'].forEach(code => { c.bibleCache.books['eng-web/' + code] = readJson('eng-web', code + '.json'); });
+    c.bibleCache.order = ['eng-web/GEN', 'eng-web/RUT', 'eng-web/PSA'];
+    return { app, c, d };
+  }
+
+  /* The stylesheet as nested blocks, so a rule can be asked where it lives. */
+  const blocks = [];
+  (function parse(text){
+    const stack = [];
+    let buf = '';
+    for(let i = 0; i < text.length; i++){
+      const ch = text[i];
+      if(ch === '{'){ stack.push({ prelude: buf.trim(), body: '', within: stack.map(b => b.prelude) }); buf = ''; }
+      else if(ch === '}'){ const b = stack.pop(); if(b){ b.body += buf; blocks.push(b); } buf = ''; }
+      else if(ch === ';'){ if(stack.length) stack[stack.length - 1].body += buf + ';'; buf = ''; }
+      else buf += ch;
+    }
+  })(style.replace(/\/\*[\s\S]*?\*\//g, ''));
+
+  sub('a second tap does not land on a screen nobody has seen');
+  {
+    const { c, d } = boot();
+    const guards = () => d._listeners.click || [];
+    const fire = (target, detail) => {
+      const ev = { target: target, detail: detail, dropped: false, stopped: false,
+                   preventDefault(){ this.dropped = true; }, stopPropagation(){ this.stopped = true; } };
+      guards().forEach(fn => fn(ev));
+      return ev;
+    };
+    const chapter = d.createElement('button');
+    chapter.setAttribute('onclick', "goToBibleChapter('GEN', 23)");
+    T('one listener guards every tap in the app', guards().length === 1);
+    c.goToTab('bible');
+    c._screenChangedAt = -Infinity;
+    T('an ordinary tap goes through', !fire(chapter, 1).dropped);
+    c.goToBibleBook('GEN'); c.__flush();
+    const ghost = fire(chapter, 1);
+    T('Genesis twice: the second tap does not open a chapter in the grid it revealed', ghost.dropped && ghost.stopped);
+    const back = d.createElement('button');
+    back.setAttribute('onclick', 'closeBibleChapters()');
+    T('a way back is never dropped, so tapping Back twice still climbs twice', !fire(back, 1).dropped);
+    const label = d.createElement('span');
+    back.appendChild(label);
+    T('nor is a tap on the label inside it', !fire(label, 1).dropped);
+    T('a key press is never dropped - it acts on focus, not on a finger', !fire(chapter, 0).dropped);
+    c._screenChangedAt = Date.now() - c.GHOST_TAP_MS - 1;
+    T('once the new screen has had time to be seen, taps go through', !fire(chapter, 1).dropped);
+    c.closeBibleChapters(); c.__flush();
+    T('closing a surface guards the screen it revealed, too', fire(chapter, 1).dropped);
+
+    c.openBibleAt('GEN', 1); c.__flush();
+    c._screenChangedAt = -Infinity;
+    c.toggleVerseSelection(3);
+    T('choosing a verse is not a new screen, so verses can be tapped quickly', !fire(chapter, 1).dropped);
+    c.clearVerseSelection();
+    c.bibleStepTo(1);
+    T('a chapter turned in place guards the page that replaced it', fire(chapter, 1).dropped);
+    c.closeBibleReader(); c.__flush();
+
+    const study = c.STUDIES.find(s => s.lessons.length > 1);
+    c.goToTab('learn');
+    c.openStudy(study.id); c.openLesson(study.id, study.lessons[0].id); c.__flush();
+    c._screenChangedAt = -Infinity;
+    c.completeLesson();
+    T('Continue in a lesson guards the lesson that replaced it', c.openLessonId === study.lessons[1].id && fire(chapter, 1).dropped);
+    const series = c.DEVOTIONS.find(s => s.entries.length > 1);
+    c.goToTab('devotions');
+    c.openDevotionSeries(series.id); c.openDevotionEntry(series.id, series.entries[0].id); c.__flush();
+    c._screenChangedAt = -Infinity;
+    c.completeDevotionEntry();
+    T('and so does Continue in a devotional', c.openDevotionEntryId === series.entries[1].id && fire(chapter, 1).dropped);
+  }
+
+  sub('pressed, hovered and flashed the same way everywhere');
+  const loose = blocks.filter(b => b.prelude.indexOf(':hover') !== -1 &&
+    !b.within.some(p => /^@media[^{]*\(hover:\s*hover\)/.test(p))).map(b => b.prelude);
+  T('no hover style can stick after a tap on a touch screen', loose.length === 0, loose.join(' | '));
+  const controls = [];
+  blocks.forEach(b => {
+    if(b.within.length || !/cursor:\s*pointer/.test(b.body)) return;
+    b.prelude.split(',').map(x => x.trim()).filter(x => x && x.indexOf(':') === -1).forEach(x => controls.push(x));
+  });
+  const unpressed = controls.filter(sel => !blocks.some(b =>
+    b.prelude.split(',').some(p => p.trim().indexOf(sel + ':active') === 0)));
+  T('every control shows that it is being pressed', controls.length >= 20 && unpressed.length === 0,
+    controls.length + ' controls; unpressed: ' + unpressed.join(', '));
+  T('the browser’s own tap flash is replaced everywhere, not on a few controls',
+    blocks.some(b => b.prelude === 'html' && /-webkit-tap-highlight-color:\s*transparent/.test(b.body)));
+  T('a long press on a control does not start selecting its label',
+    blocks.some(b => b.prelude === 'button' && /user-select:\s*none/.test(b.body) && /-webkit-touch-callout:\s*none/.test(b.body)));
+  {
+    const { d } = boot();
+    T('the pressed states are allowed to show on iOS: one passive touch listener',
+      (d._listeners.touchstart || []).length === 1 &&
+      /addEventListener\('touchstart', \(\) => \{\}, \{ passive: true \}\)/.test(bare));
+  }
+  T('a page’s backdrop fades in with the page, instead of dimming the screen first', (() => {
+    const page = blocks.find(b => b.prelude === '.overlay-page' && !b.within.length);
+    const frames = blocks.find(b => b.prelude === 'from' && b.within[b.within.length - 1] === '@keyframes page-scrim-in');
+    return !!page && /animation:\s*page-scrim-in var\(--dur\) var\(--ease\) backwards/.test(page.body) &&
+      !!frames && /background-color:\s*transparent/.test(frames.body);
+  })());
+
+  sub('a message never sits on the controls it is about');
+  {
+    const { c, d } = boot();
+    const host = d.getElementById('toastHost');
+    c.toast('Saved', 'success');
+    T('with nothing open, the stylesheet keeps it above the tab bar', host.style.bottom === '');
+    c.openBibleAt('GEN', 1); c.__flush();
+    const sheet = d.getElementById('bibleReaderOverlay').querySelector('.sheet');
+    const part = (cls, top, hidden) => ({ hidden: !!hidden, offsetParent: {},
+      classList: { contains: x => x === cls }, getBoundingClientRect: () => ({ top: top }) });
+    c.window.innerHeight = 844;
+    sheet.children = [part('sheet-scroll', 60), part('verse-dock', 700)];
+    c.toast('Saved', 'success');
+    T('over the reader with the dock open, it sits above the dock', host.style.bottom === 'calc(144px + var(--space-md))', host.style.bottom);
+    sheet.children = [part('sheet-scroll', 60), part('verse-dock', 700, true)];
+    c.toast('Copied', 'success');
+    T('and with the dock closed, just above the bottom edge', host.style.bottom === 'calc(var(--inset-bottom) + var(--space-md))', host.style.bottom);
+    sheet.children = [];
+  }
+
+  sub('the reader keeps its reader’s place');
+  {
+    const { app, c, d } = boot();
+    const body = d.getElementById('bibleReaderBody');
+    c.goToTab('bible');
+    c.openBibleAt('GEN', 1); c.__flush();
+    body.scrollTop = 3208;
+    c.bibleStepTo(1);
+    T('Next opens the next chapter at its beginning, not scrolled to its end', c.bibleChapter === 2 && body.scrollTop === 0, 'scrollTop ' + body.scrollTop);
+    body.scrollTop = 2390;
+    c.bibleStepTo(-1);
+    T('and so does Previous', c.bibleChapter === 1 && body.scrollTop === 0, 'scrollTop ' + body.scrollTop);
+
+    const real = c.renderBibleReader;
+    let builds = 0;
+    c.renderBibleReader = function(){ builds++; return real.apply(this, arguments); };
+    c.closeBibleReader(); c.__flush();
+    builds = 0;
+    c.openBibleAt('PSA', 119); await tick(); await tick();
+    T('a chapter already on the device is built once as it opens, not twice', builds === 1, builds + ' builds');
+    builds = 0;
+    c.bibleStepTo(1); await tick(); await tick();
+    T('and once as the page is turned', builds === 1, builds + ' builds');
+    c.renderBibleReader = real;
+
+    c.closeBibleReader(); c.__flush();
+    c.openBibleAt('RUT', 2); c.__flush(); await tick();
+    c.closeBibleReader(); c.__flush();
+    T('Continue reading names the chapter just read as soon as the reader closes',
+      d.getElementById('bibleBody').innerHTML.indexOf('Ruth 2') !== -1);
+
+    const pending = {};
+    const realLoad = c.loadBibleBook;
+    c.loadBibleBook = (ed, code) => code === 'JHN' ? new Promise(r => { pending.resolve = r; }) : realLoad(ed, code);
+    c.openBibleAt('JHN', 3); c.__flush();
+    await tick(); await tick();                        // John is on its way
+    c.closeBibleReader(); c.__flush();
+    c.openBibleAt('GEN', 2); c.__flush();
+    body.scrollTop = 500;
+    pending.resolve(readJson('eng-web', 'JHN.json'));
+    await tick(); await tick(); await tick();
+    c.loadBibleBook = realLoad;
+    T('a slow answer for a chapter already left does not repaint the one open now',
+      c.bibleBookCode === 'GEN' && body.scrollTop === 500, c.bibleBookCode + ' at ' + body.scrollTop);
+    T('nor is it remembered as where the reading got to', (c.readBibleLast() || {}).c === 'GEN');
+    T('the stale answer raised nothing', app.errors.length === 0, app.errors.join(' | '));
+  }
+
+  sub('loading that cannot finish says so, and offers to try again');
+  {
+    const { c, d } = boot();
+    c.goToTab('bible');
+    T('the Bible home lists the books of the edition it is in', d.getElementById('bibleBody').innerHTML.indexOf("goToBibleBook('GEN')") !== -1);
+    c.setTranslation('engbsb');                        // never fetched, and nothing will answer
+    await tick(); await tick();
+    const home = d.getElementById('bibleBody').innerHTML;
+    T('after changing edition it stops listing the previous edition’s books', home.indexOf("goToBibleBook('GEN')") === -1);
+    T('and says the books could not load, instead of "Loading" for ever',
+      /Could not load|Not available offline/.test(home) && home.indexOf('Loading the books') === -1);
+    T('with a way to try again', home.indexOf('retryBibleIndex()') !== -1);
+    c.openBibleAt('JHN', 3); c.__flush(); await tick(); await tick();
+    const title = d.getElementById('bibleReaderRef').textContent;
+    T('a chapter opened without its edition’s index is never titled blank', title.trim().length > 0, JSON.stringify(title));
+    T('and says it could not load, with Try again and Back',
+      /retryBibleBook\(\)/.test(d.getElementById('bibleReaderBody').innerHTML) &&
+      /closeBibleReader\(\)/.test(d.getElementById('bibleReaderBody').innerHTML));
+    c.closeBibleReader(); c.__flush();
+  }
+  {
+    const { c } = boot();
+    const realSet = c.setTimeout, realClear = c.clearTimeout;
+    let armed = null, cleared = 0, failed = null;
+    c.setTimeout = (fn, ms) => { armed = { fn: fn, ms: ms }; return 7; };
+    c.clearTimeout = () => { cleared++; };
+    c.fetch = () => new Promise(() => {});             // nothing ever answers
+    c.fetchJson('data/bible/engbsb/index.json').catch(e => { failed = e; });
+    if(armed) armed.fn();
+    await tick();
+    T('a request nobody answers is given up on, so Loading cannot last for ever',
+      !!failed && !!armed && armed.ms === c.FETCH_TIMEOUT_MS);
+    armed = null; cleared = 0;
+    c.fetch = () => Promise.resolve({ ok: true, json: () => new Promise(() => {}) });   // it answered; the book is still arriving
+    c.fetchJson('data/bible/eng-web/PSA.json');
+    await tick(); await tick();
+    T('but a slow download that has started is left to finish', !!armed && cleared === 1);
+    c.setTimeout = realSet; c.clearTimeout = realClear;
+    delete c.fetch;
+  }
+  {
+    const { app, c, d } = boot();
+    const series = c.DEVOTIONS[0], entry = series.entries.find(e => e.anchor.length);
+    c.openDevotionSeries(series.id); c.openDevotionEntry(series.id, entry.id); c.__flush();
+    const anchor = d.createElement('div');
+    app.dom.byId.set('devotionAnchor', anchor);           // painted by innerHTML, which the stub does not parse
+    c.loadDevotionAnchor(entry.anchor[0]);                // its book is not here, and nothing will answer
+    await tick(); await tick();
+    T('a devotional passage that could not load says so and offers to try again',
+      /could not be loaded/.test(anchor.innerHTML) && /onclick="retryDevotionAnchor\(\)"/.test(anchor.innerHTML));
+  }
+
+  sub('one action, one message');
+  {
+    const { c, d } = boot();
+    const host = d.getElementById('toastHost');
+    c.openBibleAt('GEN', 1); c.__flush();
+    const realRender = c.renderAll;
+    let repaints = 0;
+    c.renderAll = function(){ repaints++; return realRender.apply(this, arguments); };
+    [1, 2, 3].forEach(n => c.toggleVerseSelection(n));
+    const before = host.children.length;
+    c.saveSelectedVerses();
+    const last = () => host.children[host.children.length - 1];
+    T('three verses saved at once: one message', host.children.length - before === 1 &&
+      last().innerHTML.indexOf('Saved 3 verses') !== -1, last() && last().innerHTML);
+    T('one repaint', repaints === 1, repaints + ' repaints');
+    T('and all three kept', ['GEN.1.1', 'GEN.1.2', 'GEN.1.3'].every(id => c.isSaved(id)));
+    c.renderAll = realRender;
+    const stored = c.Store.get(c.KEYS.saved);
+    [2, 3].forEach(n => c.toggleVerseSelection(n));
+    c.saveSelectedVerses();
+    T('saving what is already saved says so and writes nothing',
+      c.Store.get(c.KEYS.saved) === stored && last().innerHTML.indexOf('already saved') !== -1);
+  }
+
+  sub('focus stays with the person using the app');
+  {
+    const { app, c, d } = boot();
+    const used = d.createElement('button');
+    used.setAttribute('onclick', "toggleSaved('PSA.23.1')");
+    used.focus();
+    let twin = null;
+    c.repaintKeepingFocus(() => {
+      used.offsetParent = null;
+      twin = d.createElement('button');
+      twin.setAttribute('onclick', "toggleSaved('PSA.23.1')");
+    });
+    T('a control replaced by a repaint keeps focus on its replacement', !!twin && d.activeElement === twin);
+    T('saving, choosing a day and picking a colour all repaint that way',
+      /function renderAll\(\)\{\s*repaintKeepingFocus\(/.test(bare) &&
+      /function selectDay\([\s\S]{0,400}repaintKeepingFocus\(renderToday\)/.test(bare) &&
+      /function applyHighlight\([\s\S]{0,300}repaintKeepingFocus\(/.test(bare));
+    T('answering a question moves focus to what comes next in it, not out of the lesson',
+      /function paintCheck\([\s\S]{0,500}querySelector\('\.check-retry'\) \|\| host\.querySelector\('\.check-opt'\)/.test(bare));
+
+    c.goToTab('bible');
+    c.openBibleJump(); c.__flush();
+    T('Go to passage keeps its field focused as it opens, so the keyboard stays up',
+      d.activeElement === d.getElementById('bibleJumpInput'));
+    c.closeBibleJump(); c.__flush();
+
+    c.openBibleAt('GEN', 1); c.__flush();
+    const verse = d.createElement('span');
+    app.dom.byId.set('bv4', verse);
+    c.toggleVerseSelection(4);
+    const done = d.createElement('button');
+    d.getElementById('verseDock').appendChild(done);
+    done.focus();
+    c.clearVerseSelection();
+    T('closing the verse dock returns focus to the verse it acted on', d.activeElement === verse);
+    c.clearVerseSelection(); c.closeBibleReader(); c.__flush();
+
+    /* A screen reader announces a surface by its name; unnamed, it said
+       "dialog" and nothing else as Settings or a lesson opened. */
+    const surfaces = [...app.dom.all].filter(el => el.id && el._classes && el._classes.has('overlay'));
+    const unnamed = surfaces.filter(ov => {
+      c.openOverlay(ov.id); c.__flush();
+      const ref = ov.getAttribute('aria-labelledby');
+      const named = !!ref && app.dom.all.some(el => el.id === ref);    // ids the engine assigns are not indexed by the stub
+      c.closeOverlay(ov.id); c.__flush();
+      return !named && ov.id !== 'bibleJumpOverlay';      // its heading carries no id the stub can see
+    }).map(ov => ov.id);
+    T('every surface opens as a dialog named by its own title', surfaces.length >= 15 && unnamed.length === 0,
+      surfaces.length + ' surfaces; unnamed: ' + unnamed.join(', '));
+    c.goToTab('bible'); c.goToBibleBook('GEN'); c.__flush();
+    const grid = d.getElementById('bibleChaptersBody').innerHTML;
+    T('a chapter is announced as a button, not a list item', grid.indexOf('goToBibleChapter') !== -1 && !/role="listitem"/.test(grid));
+    c.closeBibleChapters(); c.__flush();
+  }
+
+  sub('reopening a screen leaves nothing behind');
+  {
+    const { app, c, d } = boot();
+    const listening = () => {
+      let n = 0;
+      [c.window, d].concat(app.dom.all).forEach(t => Object.keys(t._listeners || {}).forEach(k => { n += t._listeners[k].length; }));
+      return n;
+    };
+    const series = c.DEVOTIONS[0], study = c.STUDIES[0];
+    const round = () => {
+      c.openSettings(); c.openTranslationPicker(); c.closeTranslationPicker();
+      c.openSource(); c.closeSource(); c.openUpdates(); c.closeUpdates();
+      c.openDataSettings(); c.closeDataSettings(); c.openFocusSettings(); c.closeFocusSettings(); c.closeSettings();
+      c.goToTab('learn'); c.openStudy(study.id); c.openLesson(study.id, study.lessons[0].id); c.closeLesson(); c.closeStudy();
+      c.goToTab('devotions'); c.openDevotionSeries(series.id); c.openDevotionEntry(series.id, series.entries[0].id);
+      c.closeDevotionEntry(); c.closeDevotionSeries();
+      c.goToTab('bible'); c.goToBibleBook('GEN'); c.goToBibleChapter('GEN', 1);
+      c.toggleVerseSelection(1); c.clearVerseSelection(); c.closeBibleReader(); c.closeBibleChapters();
+      c.openBibleJump(); c.closeBibleJump();
+      c.goToTab('today'); c.openNote(c.todayKey()); c.closeNote();
+      c.__flush();
+    };
+    round();
+    const listeners = listening(), observers = c.__observers.length, timers = app.timers.live;
+    for(let i = 0; i < 30; i++) round();
+    T('thirty rounds of opening and closing every surface add no event listener', listening() === listeners, listeners + ' -> ' + listening());
+    T('and no observer: still exactly one', c.__observers.length === observers && observers === 1);
+    T('and leave no more timers running than the first round did', app.timers.live <= timers, timers + ' -> ' + app.timers.live);
+    T('and raised nothing', app.errors.length === 0, app.errors.slice(0, 2).join(' | '));
+  }
+
+  sub('old release notes read as words');
+  {
+    const { c } = boot();
+    const strings = [];
+    c.APP_UPDATES.forEach(u => {
+      ['title', 'summary'].forEach(k => { if(u[k]) strings.push(u[k]); });
+      ['newFeatures', 'improvements', 'fixes'].forEach(k => (u[k] || []).forEach(x => strings.push(x)));
+    });
+    const coded = strings.filter(x => /&(#\d+|[a-z]+);/i.test(x));
+    T('no release note carries an HTML entity, which an escaped list shows as code',
+      strings.length > 50 && coded.length === 0, coded.slice(0, 2).join(' | '));
+  }
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability,
   testBoot, testConfig, testStorage, testCollision, testMigration,
@@ -6547,5 +6938,5 @@ module.exports = {
   testScripture, testDays, testPersonalisation, testUpgrade,
   testStudies, testCatalogueSplit, testStudyStorage,
   testLearnNavigation, testLessonRendering, testLearnProgress, testLearnNotes, testTodayUnharmed,
-  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit, testSourceRevision, testBrandIdentity, testBackNavigation
+  testStudyCatalogue, testAppearance, testSmallTextContrast, testKnowledgeChecks, testFaithfulCopy, testTranslations, testBibleReader, testPrimaryNavigation, testReaderQuality, testDevotions, testDevotionsExperience, testTranslationLibrary, testNumberingAudit, testSourceRevision, testBrandIdentity, testBackNavigation, testInteractionQuality
 };
