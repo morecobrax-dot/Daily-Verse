@@ -4,7 +4,7 @@
   "private": true,
   "description": "Read the whole Bible, from Genesis onward, understand what you read, and grow into deeper study.",
   "scripts": {
-    "verify": "node test/run.js verify",
+    "verify": "node scripts/project-status.js verify && node test/run.js verify",
     "test": "node test/run.js contracts",
     "config:sync": "node scripts/config.js sync",
     "config:verify": "node scripts/config.js verify",
@@ -20,9 +20,18 @@
     "scripture:audit": "node scripts/scripture.js audit",
     "devotions:verify": "node scripts/devotions.js",
     "versify": "node scripts/versify.js",
-    "corpus:adopt": "node scripts/corpus.js adopt"
+    "corpus:adopt": "node scripts/corpus.js adopt",
+    "status": "node scripts/project-status.js verify"
   },
   "engines": {
     "node": ">=18"
+  },
+  "projectStatus": {
+    "appId": "daily-verse",
+    "version": {
+      "file": "index.html",
+      "list": "const APP_UPDATES = [",
+      "pick": "first"
+    }
   }
 }
