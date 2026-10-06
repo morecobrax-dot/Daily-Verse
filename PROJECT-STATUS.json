@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.13.2",
-  "phase": "Help Me - Phase A (content foundation)",
+  "phase": "Help Me - Phase A.1 (pilot adjudication)",
   "status": "building",
   "needsQa": false,
   "needsDecision": true,
-  "currentTask": "Help Me Phase A: content, trust and safety foundation. Two pilot paths authored and verified, crisis resources read from their publishers, contracts and a review packet added. Nothing user-visible: no tab, no reader, no stored progress.",
-  "nextAction": "Human theological and editorial review of HELP-ME-REVIEW.md before the remaining five paths are authored.",
+  "currentTask": "Help Me pilot adjudication complete. Five of six flagged editorial risks resolved in the text; the pilots are approved as the template for the remaining five paths. Still not user-visible: no tab, no reader, no stored progress.",
+  "nextAction": "Decide whether crisis resources stay United States only for a first release, then author the remaining five Help Me paths.",
   "blocker": null,
-  "updatedAt": "2026-10-06T21:31:56Z"
+  "updatedAt": "2026-10-06T22:48:49Z"
 }

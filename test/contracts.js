@@ -7095,6 +7095,22 @@ function testHelpMe(){
   T('the lint actually carries the claims this genre fails by',
     HELP.HELP_CLAIMS.length > 15 && HELP.DIAGNOSIS_CLAIMS.length > 5 &&
     HELP.GENERIC_COPY.length > 15 && HELP.UNSAFE_RECONCILIATION.length > 5);
+  /* Added by the pilot adjudication. Reassurance about somebody's standing
+     with God is as much of an overreach as condemnation, and the Hebrews 10
+     step is where that temptation lives. */
+  T('and it refuses to pronounce on where a reader stands with God, in either direction',
+    HELP.SALVATION_STATUS.length > 10 &&
+    HELP.SALVATION_STATUS.some(p => /not saved|never really|lost your salvation/.test(p)) &&
+    HELP.SALVATION_STATUS.some(p => /you are saved|you are right with god/.test(p)));
+  /* There is no citation field in this content type and building one to
+     keep a sentence would be the wrong trade, so background claims have to
+     come out of the text. */
+  T('and it refuses historical background that nothing in the repo can source',
+    HELP.HISTORICAL_CLAIMS.length > 10 &&
+    ['teachers of his day', 'in that world', 'scholars believe'].every(p => HELP.HISTORICAL_CLAIMS.indexOf(p) !== -1));
+  T('no field in the catalogue encodes one tradition\'s confession practice',
+    HELP.FORBIDDEN_KEYS.test('confessionMode') && HELP.FORBIDDEN_KEYS.test('sacrament') &&
+    HELP.FORBIDDEN_KEYS.test('absolution'));
   /* Diagnosis is the line between acknowledging what somebody says about
      themselves and telling them what they have. */
   const diag = [];
@@ -7165,6 +7181,18 @@ function testHelpMe(){
     (crisis.outsideListedTerritories || {}).guidance);
   T('emergency wording says where it came from',
     !!(crisis.emergency && crisis.emergency.text && crisis.emergency.sourceNote));
+  /* 988 is a United States service. Shown without its territory it becomes a
+     number somebody dials in the wrong country. */
+  T('no resource may be shown without the territory it belongs to',
+    !!crisis.displayRule && /united states/i.test(crisis.displayRule));
+  /* The edition somebody reads says nothing about where they are: a reader
+     in Shanghai may well be reading the Berean. */
+  T('territory is never inferred from the edition, the language or a stored preference',
+    Array.isArray(crisis.neverInferTerritoryFrom) && crisis.neverInferTerritoryFrom.length >= 3 &&
+    ['edition', 'language', 'preference'].every(k =>
+      crisis.neverInferTerritoryFrom.some(x => x.toLowerCase().indexOf(k) !== -1)));
+  T('and no crisis resource is keyed to a translation id',
+    !corpus.shippedEditions().some(ed => JSON.stringify(crisis).indexOf(ed) !== -1));
   T('the rule against counselling anybody to stay in danger is written down, and binds paths that exist',
     !!(safety.unsafeRelationship && safety.unsafeRelationship.rule) &&
     safety.unsafeRelationship.appliesTo.every(id => paths.some(p => p.id === id)),

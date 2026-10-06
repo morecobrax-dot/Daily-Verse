@@ -640,12 +640,20 @@ uses, plus the ones only this content needs:
   diagnosis, guaranteed feelings, distress-as-weak-faith, counsel that keeps
   somebody within reach of harm, and the canned register that makes writing
   sound generated
+- no pronouncement on where a reader stands with God, in either direction.
+  Reassurance is as much of an overreach as condemnation, and the Hebrews 10
+  step is where that temptation lives
+- no historical or cultural background claim. There is no citation field in
+  this content type and building one to keep a sentence would be the wrong
+  trade, so the point has to come out of the text
 - no field in the catalogue may be the start of a record about a person
 - crisis resources carry their source and a review date, and the command fails
-  once that date passes
+  once that date passes; every resource names its territory, and territory is
+  never inferred from the edition, the language or a stored preference
 
 CONTRACT 49 drives the same functions over the shipped file, and re-derives
-the reference check independently. 43 deliberate mutations fail by name.
+the reference check independently: 56 assertions, and 50 deliberate mutations
+fail by name.
 
 ### Storage, when progress is built
 

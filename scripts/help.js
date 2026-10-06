@@ -80,6 +80,30 @@ const HELP_CLAIMS = [
   { pattern: 'instead of a doctor', why: 'presents Scripture as a replacement for care' }
 ];
 
+/* Pronouncing on where somebody stands with God. Help Me may teach what a
+   passage says about forgiveness, faith or judgement; it may not tell the
+   person holding the phone which side of it they are on, in either
+   direction. Added after the Hebrews 10 adjudication, where reassurance was
+   as much of a risk as condemnation. */
+const SALVATION_STATUS = [
+  'you are saved', 'you are not saved', 'you\'re not saved', 'you are still saved',
+  'if you were truly saved', 'if you were really saved', 'if you were a real christian',
+  'this proves you are', 'that proves you are', 'you have lost your salvation',
+  'you are not a real christian', 'you were never really', 'you are going to hell',
+  'you are right with god', 'you are not right with god'
+];
+
+/* Historical and cultural background, asserted with nothing behind it. Help
+   Me has no way to source such a claim — there is no citation field and
+   building one to save a sentence is the wrong trade — so the point has to
+   come out of the text instead. */
+const HISTORICAL_CLAIMS = [
+  'teachers of his day', 'rabbis taught', 'the rabbis', 'in that world',
+  'in the ancient world', 'scholars believe', 'scholars think', 'scholars say',
+  'historians', 'in the first century', 'first century readers', 'custom of the time',
+  'groups around a teacher', 'in those days people', 'archaeologists'
+];
+
 /* Telling a reader what they have. Help Me may use the words people use
    about themselves; it never decides that somebody HAS a condition. */
 const DIAGNOSIS_CLAIMS = [
@@ -347,6 +371,14 @@ function scanProse(items, errors, notes){
       DIAGNOSIS_CLAIMS.forEach(p => {
         if(norm.indexOf(p) !== -1) hit(item.where, field, p, 'tells a reader what they have; Help Me does not diagnose');
       });
+      SALVATION_STATUS.forEach(p => {
+        if(norm.indexOf(p) !== -1) hit(item.where, field, p,
+          'pronounces on where this reader stands with God, which the app cannot know and must not assert');
+      });
+      HISTORICAL_CLAIMS.forEach(p => {
+        if(norm.indexOf(p) !== -1) hit(item.where, field, p,
+          'a historical claim with nothing behind it. Let the text make the point instead');
+      });
       UNSAFE_RECONCILIATION.forEach(p => {
         if(norm.indexOf(p) !== -1) hit(item.where, field, p, 'keeps somebody within reach of harm for a spiritual reason');
       });
@@ -372,7 +404,11 @@ function checkNumbersInProse(items, errors){
 
 /* ---------- the catalogue must not become a record about a person ---------- */
 
-const FORBIDDEN_KEYS = /diagnos|severity|symptom|risk[-_]?level|mood|sentiment|profile|analytic|telemetry|streak|score/i;
+/* `confession[-_]?mode` and the rest: Help Me teaches that confession is
+   asked for, and never encodes WHICH tradition's practice counts. A field
+   for it would be this app adjudicating a difference it has no business
+   settling. */
+const FORBIDDEN_KEYS = /diagnos|severity|symptom|risk[-_]?level|mood|sentiment|profile|analytic|telemetry|streak|score|confession[-_]?mode|sacrament|absolution|denomination/i;
 
 function checkNoProfileFields(node, errors, trail){
   if(!node || typeof node !== 'object') return;
@@ -442,6 +478,17 @@ function checkSafety(doc, errors, notes){
   }
   if(!c.outsideListedTerritories || !c.outsideListedTerritories.guidance){
     errors.push('safety.crisis — say what a reader outside the listed territories is told, rather than inventing a number for them');
+  }
+  /* A number shown without its territory is a number somebody will dial in
+     the wrong country. */
+  if(!c.displayRule){
+    errors.push('safety.crisis — state the rule that a resource is never shown without the territory it belongs to');
+  }
+  /* The edition of the Bible somebody reads says nothing about where they
+     are. Guessing a country from it would put a US number in front of a
+     reader in Shanghai. */
+  if(!Array.isArray(c.neverInferTerritoryFrom) || !c.neverInferTerritoryFrom.length){
+    errors.push('safety.crisis — name what territory must never be inferred from (edition, language, stored preference)');
   }
   notes.push('crisis resources verified ' + c.verifiedOn + ', review by ' + c.reviewBy + ', ' +
              (c.sources || []).length + ' sources, ' + (c.territories || []).length + ' territory');
@@ -562,4 +609,5 @@ module.exports = { readCatalogue, stepFields, pathFields, stepWordCount, run,
                    checkCadence, checkNoUI, checkCrossReferences,
                    STATUS, NEXT_KINDS, COMPLETION_KINDS,
                    HELP_CLAIMS, DIAGNOSIS_CLAIMS, UNSAFE_RECONCILIATION, GENERIC_COPY,
+                   SALVATION_STATUS, HISTORICAL_CLAIMS,
                    FORBIDDEN_KEYS, CATALOGUE };
