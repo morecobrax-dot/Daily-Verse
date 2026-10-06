@@ -22,7 +22,8 @@
       "Never make shame the mechanism of repentance, and never suggest that distress, doubt or illness is evidence of weak faith.",
       "Never tell a reader to stay in danger, or to restore access to someone who has harmed them, for the sake of forgiveness, reconciliation or duty.",
       "Prayer and prose are this app's words. Scripture is set apart, in its own card, under its own reference and edition.",
-      "Write like a person who has read the passage, not like a product. No slogans, no therapy register, no filler cadence."
+      "Write like a person who has read the passage, not like a product. No slogans, no therapy register, no filler cadence.",
+      "Read every anchor in all three shipped English editions before writing about it. Daniel 3:17 is rendered \"If it happens\", \"If it be so\" and \"If the God whom we serve exists\" — three different arguments — so a reading that leans on one edition's wording is wrong beside another. No lint can judge this: word it so no shipped edition contradicts the reading."
     ]
   },
 
@@ -129,18 +130,220 @@
       "title": "Heavy Heart",
       "entry": "My heart feels heavy",
       "summary": "For grief, sadness, loneliness, discouragement and plain exhaustion — when the weight is the thing, whatever its name.",
-      "covers": ["grief", "sadness", "loneliness", "discouragement", "suffering", "exhaustion"],
+      "covers": [
+        "grief",
+        "sadness",
+        "loneliness",
+        "discouragement",
+        "suffering",
+        "exhaustion"
+      ],
       "plannedSteps": 4,
-      "status": "outline"
+      "status": "authored",
+      "safetyNotes": [
+        "Sorrow is never treated as evidence of weak faith, and no step asks a reader to cheer up before approaching God.",
+        "No step explains why a particular loss happened, or claims God arranged it for a reason the app can name.",
+        "Where the prose touches hopelessness, it points toward a person — a doctor, a crisis service, someone who can actually help — and never substitutes a reading for care."
+      ],
+      "completion": {
+        "kind": "bible",
+        "text": "Keep reading the Psalms. They carry more grief than any other part of the Bible, and they were given to people to pray out loud."
+      },
+      "steps": [
+        {
+          "id": "hh-1",
+          "title": "Say the whole thing",
+          "passages": [
+            "Psalm 88:1-5"
+          ],
+          "basis": [
+            "Psalm 88:6-12",
+            "Psalm 88:13-18"
+          ],
+          "arrive": "Nothing here asks you to settle down first. This is the bleakest prayer in the Bible, and it was kept.",
+          "notice": "Most laments turn somewhere near the end. The writer runs out of complaint, remembers something true, and finishes on firmer ground. This one does not. It goes down, and then it stops, and the last word in it is darkness.\n\nAnd it is a prayer the whole way. He is crying out day and night; he asks for his prayer to reach God; he spreads out his hands. Whatever else is happening, the man is praying hard and has not stopped.\n\nHe is also blunt about who he holds responsible. The pit is God's doing, he says. So is the anger on him, and so is the silence where his friends used to be. He does not sort out his theology before he speaks, and nobody edits him afterwards.\n\nThe part that should change how you read it is what happened to this psalm next. It was given a tune. It was handed to the choir director and sung by the congregation. Sorrow this total was not treated as a lapse to be corrected in private; it was given words, a melody, and a place in the book God's people pray from.\n\nTwo cautions. Nothing here licenses the conclusion that your suffering is God's anger — that is this man reading his own life, and the book of Job spends forty chapters on how badly that kind of reading can go. And no promise is made that the dark lifts by morning. Here it does not lift at all.\n\nWhat it insists on is the direction. Every bitter line of it is said to God rather than about him.",
+          "consider": [
+            "What have you not said to God because it seemed too bitter to say?"
+          ],
+          "prayer": "God, I am not going to make this sound better than it is. It has gone on a long time and I am tired in a way sleep does not touch. I do not have anything to add about why. I am saying it to you, because this psalm says I am allowed to, and because I would rather be in the dark talking to you than in the dark on my own. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is about someone else who prayed like this, the night before he died."
+          }
+        },
+        {
+          "id": "hh-2",
+          "title": "He asked to be spared",
+          "passages": [
+            "Mark 14:32-36"
+          ],
+          "basis": [
+            "Mark 14:26-31",
+            "Mark 14:37-42"
+          ],
+          "arrive": "Permission is one thing. Here is a model, and it comes from an unexpected direction.",
+          "notice": "Hours before the cross, Jesus takes three friends further into the garden than the rest, and tells them his soul is crushed to the point of death. Then he goes a little further, falls on the ground, and prays.\n\nWatch the order of what he says. First he asks for the thing he wants: that the hour might pass, that the cup be taken away. He does not open with acceptance and he does not pretend to want it. The request is plain, and it is for rescue.\n\nOnly then comes the handing over — not what I want, but what you want. It arrives after the asking, not instead of it. Both sentences are in the same prayer, in that order, and the second does not cancel the first.\n\nNotice as well what he asked of his friends. Stay here. Keep watch. He wanted company within earshot while he prayed, and when he came back and found them asleep, he said so. Even here, especially here, he did not want to be alone with it.\n\nSo the one person in Scripture with no shortage of faith is face down in the dirt, asking to be let off, grieved to the edge of death. Whatever heaviness is, it is not proof that something has gone wrong in you spiritually.\n\nAnd the cup did not pass. The prayer was heard, answered with a no, and he went on. This passage does not promise that asking changes the outcome. It shows you what to do with the wanting.",
+          "consider": [
+            "Is there something you have stopped asking God for, because you decided in advance that the answer was no?"
+          ],
+          "prayer": "Father, I want this lifted. I am going to say that plainly before I say anything else, because he did. Take it away if you will take it away. And if you do not, hold on to me while it stays, because I do not have another plan. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is about hope that does not require the grief to be over."
+          }
+        },
+        {
+          "id": "hh-3",
+          "title": "Hope you have to call to mind",
+          "passages": [
+            "Lamentations 3:19-26"
+          ],
+          "basis": [
+            "Lamentations 3:1-18",
+            "Lamentations 3:27-33"
+          ],
+          "arrive": "Familiar line, unfamiliar setting: the sentence everybody knows about God's mercies sits in the middle of a funeral for a city.",
+          "notice": "Eighteen verses come first, and they are nothing like the lines people put on calendars. The chapter is a catalogue of injuries: teeth broken on gravel, a man walled in, prayer apparently shut out. It ends with him saying his strength is gone and so is what he expected from God.\n\nThen comes the turn, and how it works deserves a slow read. He does not report a change of mood. He says he calls something back to mind, and that this is why he has hope. The hope is produced by an act of deliberate memory, performed by a man who feels nothing of the kind.\n\nWhat he makes himself remember is not his circumstances improving. It is the character of God: mercy that has not run out, faithfulness that arrives again with the morning whether or not he is glad to see it.\n\nAnd the grief does not leave the paragraph when the hope arrives. One verse earlier he says his soul still remembers the bitterness and is bowed down inside him. That sentence and the hope sentence are neighbours. Scripture puts them next to each other without apology, which means you are not failing when both are true at once.\n\nThe last line asks for waiting, quietly, for a rescue that has not yet come. Waiting is only necessary while something is still unfinished.\n\nNothing here sets a date. Nothing here says the remembering will feel like relief when you do it.",
+          "consider": [
+            "What do you know about God that you have stopped repeating to yourself?"
+          ],
+          "prayer": "God, I cannot feel much of this at the moment. I am saying it anyway: your mercy has not run out, your faithfulness is not dependent on my condition, and the morning is yours. I will wait. Help me to wait without deciding that nothing is coming. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "One more step, and it is about not doing this on your own."
+          }
+        },
+        {
+          "id": "hh-4",
+          "title": "Not carried alone",
+          "passages": [
+            "2 Corinthians 1:3-7"
+          ],
+          "basis": [
+            "2 Corinthians 1:8-11"
+          ],
+          "arrive": "Grief shrinks a life down to one person. The last step pushes back on that, gently.",
+          "notice": "Before anything else in this letter there is a blessing, and it names God as the Father of mercies — the one every comfort comes from. Comfort is his before it belongs to anybody, which is worth holding on to if you cannot currently produce any.\n\nThen he describes how it travels. Comfort is received in affliction, and it becomes the thing you are able to give to somebody else later, with the same comfort you were given. He is not saying the suffering was sent to make you useful. He is saying what you receive does not stop with you.\n\nThe next paragraph is why he can write this without sounding glib. He describes trouble in Asia that crushed him beyond his strength, until he despaired of life itself. The man writing about comfort is not writing from above the problem; he is writing from the other side of a stretch where he did not expect to survive. What it taught him, he says, was to stop relying on himself and rely on God who raises the dead.\n\nSo the chain runs: he is comforted, so that he can comfort them, so that they can endure. It only works if people are actually near each other and telling each other the truth.\n\nWhat this does not say is that your loss has a purpose you are now obliged to identify, or that you owe anybody your story. You can accept help long before you have anything to give.",
+          "consider": [
+            "Who is one person who could be told the actual state of things this week?"
+          ],
+          "prayer": "Father of mercies, my way of handling this has been to not mention it. Send me someone to tell the truth to, and make me willing to tell it. Give me enough comfort to pass some on eventually. For now I am asking for the kind I can receive. Amen.",
+          "nextStep": {
+            "kind": "support",
+            "text": "Give one person the real answer this week when they ask how you are. And if you are not safe, or you are not sure you can keep yourself safe, that is the point to contact a doctor or a crisis service where you are, today, rather than reading anything else."
+          }
+        }
+      ]
     },
     {
       "id": "fear-uncertainty",
       "title": "Fear & Uncertainty",
       "entry": "I'm afraid or uncertain",
       "summary": "For fear, worry, waiting and not knowing — including the waiting that has no end date.",
-      "covers": ["anxiety", "worry", "fear", "waiting", "uncertainty"],
+      "covers": [
+        "anxiety",
+        "worry",
+        "fear",
+        "waiting",
+        "uncertainty"
+      ],
       "plannedSteps": 4,
-      "status": "outline"
+      "status": "authored",
+      "safetyNotes": [
+        "No step promises that faith removes anxious feelings, or that circumstances will resolve the way a reader hopes.",
+        "Trust is distinguished from prediction throughout: the path never claims to know what God will do in a particular situation.",
+        "Fear is never framed as evidence of weak faith, and no step offers Scripture as a substitute for treatment."
+      ],
+      "completion": {
+        "kind": "today",
+        "text": "Today's reading is one passage and a short reflection, with another tomorrow. A small daily place to keep putting this is worth more than one long session."
+      },
+      "steps": [
+        {
+          "id": "fu-1",
+          "title": "Afraid, and saying so",
+          "passages": [
+            "Psalm 56:3-4"
+          ],
+          "basis": [
+            "Psalm 56:1-2",
+            "Psalm 56:8-13"
+          ],
+          "arrive": "Two short lines, written by a man in custody. They are not as tidy as they are usually quoted.",
+          "notice": "One word carries this, and it is when. Not if I am afraid, and not when I was afraid — when, the way you speak about something that keeps coming back. Fear is treated as recurring weather rather than as a one-off failure.\n\nThe heading on the psalm places it somewhere specific: David seized by the Philistines in Gath, in enemy hands, a long way from help. The opening lines are about men who want to swallow him up and do not let up all day. This is not calm reflection about fear. It is written from inside one.\n\nThen the second line says he will not be afraid, and the two sentences sit side by side without being reconciled. He is afraid; he trusts; he says he will not fear; he says when I am afraid. A psalm is allowed to hold both because people do.\n\nFurther down he asks God to keep count of his tossing and turning, and to collect his tears in a bottle. Whatever that image is doing, it assumes the sleepless nights are noticed and kept rather than waved off.\n\nSo trust here is not the absence of fear. It is what he does with the fear once it has arrived — something he hands over, repeatedly, in the middle of the night, to someone he believes is counting.\n\nNothing in this says the threat was imaginary, or that the feeling stopped once he prayed.",
+          "consider": [
+            "What are you afraid of, stated plainly, in one sentence?"
+          ],
+          "prayer": "God, here is what I am afraid of, and I am not going to dress it up. I keep handing it over and then taking it back. Count the nights. Keep hold of me while this goes on, and when it comes back tomorrow let me bring it to you again rather than carry it round all day. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is what Jesus said to people who could not stop calculating."
+          }
+        },
+        {
+          "id": "fu-2",
+          "title": "What your Father already knows",
+          "passages": [
+            "Matthew 6:25-34"
+          ],
+          "basis": [
+            "Matthew 6:19-24"
+          ],
+          "arrive": "People quote this at anxious friends, usually too fast. Read slowly, it does something other than scold.",
+          "notice": "What follows is an argument rather than a telling-off. He builds a case, and he asks them to look at things: birds that do not farm and are fed anyway, wild flowers better dressed than a king, the plain fact that no amount of turning a problem over has ever added an hour to anyone's life.\n\nThe argument runs from the lesser to the greater. If God sees to the birds and the grass, the question is whether you are worth less than they are. The ground of the whole thing is in one sentence near the end: your Father knows what you need. Not that the outcome will be what you want — that your need is already known.\n\nHe does say \"you of little faith\", and what he does next with that matters. The remedy he prescribes is not to try harder at believing. It is to go and look at something — birds, flowers — until the comparison does its work.\n\nAnd this is not optimism. His last line grants that tomorrow will have trouble in it, and that today's is enough to be getting on with. The instruction is not that nothing bad is coming. It is to stop carrying tomorrow's share before tomorrow arrives.\n\nIn place of the carrying he gives something to do with the attention: seek the kingdom first. Anxiety is not idle, and he does not ask you to be idle either.",
+          "consider": [
+            "What are you carrying today that actually belongs to tomorrow?"
+          ],
+          "prayer": "Father, you know what I need, which is more than I can say for me. I have been rehearsing tomorrow all day and it has not moved anything an inch. Take today's share. Keep me from spending tonight on something that has not happened, and give me the next thing to do instead. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step turns it into something specific you can actually do."
+          }
+        },
+        {
+          "id": "fu-3",
+          "title": "Something to do with it",
+          "passages": [
+            "Philippians 4:4-7"
+          ],
+          "basis": [
+            "Philippians 4:1-3",
+            "Philippians 4:8-9"
+          ],
+          "arrive": "Four lines, written from prison into a church having an argument. The setting keeps them honest.",
+          "notice": "Immediately before this, Paul names two women in the congregation who cannot get along and asks someone to help them sort it out. That is the room into which he says rejoice. He is not writing from a quiet study to people whose lives are going well.\n\nThen comes the sentence that holds the rest up: the Lord is near. Everything after it depends on that being true rather than on circumstances improving.\n\nThe instruction itself is unusually practical. Not \"be less anxious\", which nobody can do on command, but a swap: take the whole of it to God as a request, with thanks attached. The word he uses for request means asking for particular things. You are not being told to hand God a mood. You are being told to name what you actually want, item by item, out loud.\n\nAnd the promise is precise, which is why it repays a second reading. The peace of God will guard your heart and mind. Guarding is what a garrison does at a gate; it is protection, not a sedative. It does not say the siege lifts, or that you will feel peaceful on a schedule. It says something will be posted between you and the worst of it, and that this peace is beyond working out — so you need not wait until you can explain it.\n\nWhat follows in the next verse is equally ordinary: think about what is true, and do what you have been taught.",
+          "consider": [
+            "If you asked for one specific thing in one sentence, what would it be?"
+          ],
+          "prayerPrompt": "Make it specific. Not \"be with me\" but the actual request — the appointment, the money, the person, the result you want. Say it as a request rather than a worry, add one thing you are thankful for even if it is unrelated, and leave it with him. You are allowed to bring the same request back tomorrow.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The last step is for when you still do not know how it ends."
+          }
+        },
+        {
+          "id": "fu-4",
+          "title": "But if not",
+          "passages": [
+            "Daniel 3:16-18"
+          ],
+          "basis": [
+            "Daniel 3:8-15",
+            "Daniel 3:19-27"
+          ],
+          "arrive": "An ultimatum, a furnace, and an answer in two halves. Most of us want only the first half.",
+          "notice": "Nebuchadnezzar has made the terms clear: bow when the music plays, or go into the fire within the hour. He finishes by asking which god could possibly get them out of his hands.\n\nTheir reply comes in two movements. The first says their God is able to rescue them. The clause introducing it is famously hard to translate — the editions in this app word it three different ways — so nothing here rests on its exact shape. The claim underneath is plain enough, and it is made to a king standing next to the furnace he is threatening them with.\n\nThen the second movement, three words that change the shape of the whole thing: but if not. If he does not, we still will not worship your statue. Their refusal is not a wager on being rescued. It does not depend on the outcome at all.\n\nThis is the difference between trusting God and predicting him. They make no claim to know what will happen in the next hour. They claim to know who he is, and they have already settled what they will do either way. Notice they are not promised anything before they answer, and they do not ask for a sign first.\n\nThey were thrown in. The rescue, when it came, came inside the fire rather than instead of it — the king looks into the furnace and sees four figures walking about, unbound.\n\nThe passage does not teach that faith produces rescue. Faithful people have gone into fires and not come out, and this book knows it. What it offers is somewhere to stand while you do not know: not certainty about the outcome, but a decision about allegiance that the outcome does not control.",
+          "consider": [
+            "What would faithfulness look like this week, even if you never find out how this turns out?"
+          ],
+          "prayer": "God, you are able. I believe that, and I am not going to pretend I know what you are going to do. If this goes the way I am asking, thank you. If it does not, I am not going anywhere else — I have nowhere else to go, and nobody else worth serving. Hold me to that when the answer comes. Amen.",
+          "nextStep": {
+            "kind": "openPassage",
+            "ref": "Daniel 3:19-27",
+            "text": "Read what happened next, with your eyes open: they went into the fire. The rescue met them inside it rather than sparing them from it."
+          }
+        }
+      ]
     },
     {
       "id": "coming-back",
@@ -233,12 +436,112 @@
       "title": "Guilt & Repeated Sin",
       "entry": "I'm carrying guilt or stuck in sin",
       "summary": "For guilt, shame and the sin you keep going back to — confession, forgiveness, and what repentance actually is.",
-      "covers": ["guilt", "shame", "repeated sin", "confession", "repentance", "forgiveness"],
+      "covers": [
+        "guilt",
+        "shame",
+        "repeated sin",
+        "confession",
+        "repentance",
+        "forgiveness"
+      ],
       "plannedSteps": 4,
-      "status": "outline",
+      "status": "authored",
       "safetyNotes": [
-        "Shame is never the engine of repentance here.",
-        "Where sin involves harm to another person, the path must not counsel secrecy, and must not counsel contact that puts anyone in danger."
+        "Shame is never the engine of repentance here, and no step suggests that feeling worse for longer earns anything.",
+        "Repeated failure is never treated as evidence about whether a reader is saved, in either direction.",
+        "Where sin involves harm to another person, the path does not counsel secrecy, and does not counsel contact that puts anyone in danger.",
+        "The last step names that shame which has reached self-harm is a matter for a person today, without turning ordinary conviction into a crisis."
+      ],
+      "completion": {
+        "kind": "learn",
+        "study": "understanding-the-gospel",
+        "text": "Understanding the Gospel is six short lessons, and the last one is about grace and the life that follows it."
+      },
+      "steps": [
+        {
+          "id": "gs-1",
+          "title": "What the silence costs",
+          "passages": [
+            "Psalm 32:1-5"
+          ],
+          "basis": [
+            "Psalm 32:6-7",
+            "Psalm 32:8-11"
+          ],
+          "arrive": "Hiding is work. The psalm starts by pricing it.",
+          "notice": "Silence is the subject before confession is. The psalm opens by calling a forgiven person happy — the result is announced before anything is described — and then doubles back to tell you what the months before it were like.\n\nWhat he describes is physical. While he said nothing, his bones wore out. He groaned all day. He felt a weight on him he attributes to God's hand, and his strength dried up the way ground does in high summer. Whatever else the hiding was protecting, it was expensive, and the psalm bills it in detail.\n\nThen the turn, and it moves faster than you expect. He acknowledged it. He stopped covering it. He said: I will confess — and in the same sentence, before any account of what he actually said, the forgiveness has already happened. There is no interval. Nothing is required in between.\n\nLook at the tense there. Forgiveness lands on the decision to stop hiding, honestly made. Not on the quality of the apology, not on a probationary period, not on proof that it will not happen again.\n\nTwo things to keep hold of. This is one man reading his own life, and the heaviness he describes is not a formula you can run backwards — illness and exhaustion have many causes, and the book of Job exists to stop people deducing guilt from suffering. And nothing here asks you to work up more feeling first. He is not forgiven because he suffered enough. He is forgiven because he spoke.",
+          "consider": [
+            "What are you keeping quiet about, and what has the quiet been costing you?"
+          ],
+          "prayer": "God, the silence has cost me more than the thing itself ever did, and I have been calling it privacy. I am not going to explain it or grade it. Here it is. I am saying it to you, out loud, and I am taking you at your word about what you do with it. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is about the record you believe is still standing against you."
+          }
+        },
+        {
+          "id": "gs-2",
+          "title": "The record, and what happened to it",
+          "passages": [
+            "Colossians 2:13-14"
+          ],
+          "basis": [
+            "Colossians 2:6-12",
+            "Colossians 2:15"
+          ],
+          "arrive": "A debt you cannot pay is one problem. A record of it that still stands is another.",
+          "notice": "Two words carry the first half: dead, then alive. Paul does not describe the problem as underperformance. He calls it death — which is bleak, and also oddly freeing, because nobody expects a dead man to improve his way out of it.\n\nThen the image changes to paperwork. There was a handwritten document with charges on it, and it stood against us. Three things are said about what became of it: it was wiped out, it was taken out of the way, and it was nailed to the cross. Not reduced. Not renegotiated into instalments. Removed, publicly, and attached to an execution.\n\nThe forgiveness in that sentence is stated as something already done rather than something pending your performance. And the paragraph just before puts the person somewhere new as well — buried with him, raised with him — so this is not only a cancelled bill, it is a change of address.\n\nFor repeated sin, this is the sentence that does the work. Shame keeps re-reading a document that has been taken out of the room. Going back over it feels like seriousness, and often it is only the old habit of self-accounting wearing a better coat.\n\nWhat the passage does not say is that the harm never happened, or that consequences in this world evaporate. A cancelled record is not a rewritten past. It is the end of the charge against you.",
+          "consider": [
+            "What do you keep re-reading that God has already taken out of the way?"
+          ],
+          "prayer": "Jesus, the list against me is real and I am not going to pretend it is short. You took it. I have been keeping my own copy and consulting it at night, and I would like to stop. Teach me to believe what you did with it. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is the difference between being sorry and actually turning."
+          }
+        },
+        {
+          "id": "gs-3",
+          "title": "Sorry is not the same as turning",
+          "passages": [
+            "2 Corinthians 7:8-11"
+          ],
+          "basis": [
+            "2 Corinthians 7:5-7",
+            "2 Corinthians 7:12-13"
+          ],
+          "arrive": "Feeling terrible and changing are not the same event. Paul separates them here with unusual precision.",
+          "notice": "Grief gets sorted into two kinds in this paragraph, and the sorting is done by results rather than by intensity.\n\nPaul starts by admitting he regretted sending a hard letter, and then stopped regretting it. He is careful to say he is not pleased that they were upset. He is pleased about where the upset went: it moved them.\n\nThen the distinction. One kind of sorrow produces a turn, and leads somewhere, and leaves nothing to regret afterwards. The other kind produces death. Note that both are sorrow. Both feel bad. The difference is not how sharp the feeling is but whether anything happens as a result.\n\nAnd he lists what happened, which keeps it from being an abstraction: urgency, a readiness to put things right, indignation, alarm, longing, and justice actually done in a matter they had been avoiding. Every item is an action. None of them is feeling worse for longer.\n\nThat is the test to carry out of this. Not am I sorry enough, which has no answer and no end, but has this sorrow produced any movement at all — a conversation, a confession, a changed arrangement, a thing returned.\n\nThe second kind of sorrow is the one that circles. It reviews the failure, feels the shame, resolves vaguely, and arrives back where it started a week later, slightly more tired. Scripture does not call that repentance. It calls it deadly, and it is not asking you for more of it.",
+          "consider": [
+            "Has your sorrow about this produced anything yet, or has it only gone round again?"
+          ],
+          "prayer": "Lord, sorrow has been easier than turning, and I have been offering you the sorrow. I am tired of visiting this and leaving it where it is. Show me the one thing that would count as a turn this week, and make me willing to do it rather than feel it. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "One more step, and it is about where the strength to change is supposed to come from."
+          }
+        },
+        {
+          "id": "gs-4",
+          "title": "Grace is the teacher",
+          "passages": [
+            "Titus 2:11-14"
+          ],
+          "basis": [
+            "Titus 2:1-10",
+            "Titus 3:3-7"
+          ],
+          "arrive": "Change is the part most people expect to be told to produce on their own. This sentence puts it somewhere else.",
+          "notice": "Grace is the subject of the verb, and that is the surprise. Grace appeared, and grace trains. Not grace excuses, not grace waits politely while you sort yourself out — the same grace that saves is the thing conducting the training.\n\nSo effort and grace are not rivals in this sentence. The effort is grace's curriculum. If you have been trying to generate change first in order to qualify for mercy afterwards, the order here is the other way round and always has been.\n\nWhat it trains is specific: saying no to what you know is destroying you, and living sensibly, rightly and in a way that takes God seriously — in this present age, which means now, in the ordinary week, not after you have been repaired.\n\nThe end of it is not self-improvement either. He gave himself to make a people his own, keen on good work. People, plural. This is not a private project, and the next chapter says plainly that none of it was earned: we were foolish ourselves, and he saved us by mercy rather than by anything we had managed.\n\nTwo things it does not say. Failure is not evidence that grace never appeared to you — this is described as training, and training assumes you are not there yet. And progress is not a payment. The purpose clause belongs to him: to redeem and to purify a people for himself.",
+          "consider": [
+            "What is the next obedient thing you already know to do?"
+          ],
+          "prayer": "Father, teach me what grace is actually for. I have been treating it as the thing that covers the mess and nothing more, and then wondering why nothing changes. Train me. Start with the one thing I have been refusing to put down. Amen.",
+          "nextStep": {
+            "kind": "support",
+            "text": "If this is a pattern rather than a single failure, tell one Christian you trust — not for absolution, but because patterns survive on privacy. And if shame has reached the point where you are thinking of harming yourself, that is for a doctor or a crisis service today, not for another reading."
+          }
+        }
       ]
     },
     {
@@ -246,12 +549,111 @@
       "title": "Hurt, Anger & Forgiveness",
       "entry": "I'm hurt, angry, or struggling to forgive",
       "summary": "For anger, betrayal and conflict — what forgiveness is, what it is not, and where reconciliation does and does not belong.",
-      "covers": ["anger", "betrayal", "conflict", "forgiveness", "reconciliation where appropriate"],
+      "covers": [
+        "anger",
+        "betrayal",
+        "conflict",
+        "forgiveness",
+        "reconciliation where appropriate"
+      ],
       "plannedSteps": 4,
-      "status": "outline",
+      "status": "authored",
       "safetyNotes": [
-        "Forgiveness is never framed as requiring a reader to remain in danger, resume contact, or restore an abuser's access to them.",
-        "Forgiveness and reconciliation are distinguished explicitly, in the prose, not only in a note."
+        "Forgiveness is never framed as requiring a reader to stay in danger, resume contact, or restore an abuser's access to them.",
+        "Forgiveness, trust, reconciliation, access, consequences and safety are distinguished in the prose, not only in a note.",
+        "Seeking lawful protection or justice is never presented as a failure to forgive: Romans 13 is read as Scripture's own route for it.",
+        "Reconciliation is never presented as achievable by one person alone, or as possible without change in the one who caused the harm.",
+        "No step assesses a relationship, scores danger, or asks a reader to describe what happened."
+      ],
+      "completion": {
+        "kind": "bible",
+        "text": "Read Matthew's Gospel from chapter 5. Much of what Jesus says about anger, enemies and what to do with a grievance is there, in his own words, at length."
+      },
+      "steps": [
+        {
+          "id": "ha-1",
+          "title": "It was not a stranger",
+          "passages": [
+            "Psalm 55:12-14"
+          ],
+          "basis": [
+            "Psalm 55:1-8",
+            "Psalm 55:15-19"
+          ],
+          "arrive": "Say it to God before you say it to anyone else. This psalm shows how blunt you are allowed to be.",
+          "notice": "Betrayal has a particular sting, and these three lines isolate it. If an enemy had done this, he says, I could have taken it. If someone who already hated me had come for me, I would have seen it and kept out of the way.\n\nBut it was not a stranger. It was an equal, somebody he kept company with, the friend he used to walk to worship beside. He does not generalise the injury or round it down; he presses on the closeness deliberately, because the closeness is what makes it unbearable.\n\nEarlier in the psalm he wishes he had wings so he could get away and stay away. That impulse is in Scripture, written down, and nobody corrects it.\n\nAnd a few lines after our passage he asks God to bring death on them. Look closely at what that is, because it is not an instruction for you. It is a man handing the worst thing he wants to God rather than carrying it out himself. The wish goes somewhere. It goes to the one person who can be trusted with it.\n\nThat is the move this step is asking for. Not a measured summary of the situation, and not the version you would say in front of people. The real thing, addressed to God, including the parts you would not defend.\n\nWatch where his own next sentence goes. He turns from the curse to say that he, for his part, intends to keep calling on God. The unspeakable thing gets said, and then he goes on praying.",
+          "consider": [
+            "What would you say about this if you did not have to be careful who heard it?"
+          ],
+          "prayer": "God, this was not a stranger, which is why it will not stop aching. You know what I would say if I let myself. I am saying it to you instead of to anyone else, and instead of doing anything with it. Hold on to it, and hold on to me, because I cannot put it down yet. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is about what you are tempted to do with it."
+          }
+        },
+        {
+          "id": "ha-2",
+          "title": "Not yours to repay",
+          "passages": [
+            "Romans 12:17-21"
+          ],
+          "basis": [
+            "Romans 12:9-16",
+            "Romans 13:1-4"
+          ],
+          "arrive": "Giving up revenge is not the same as pretending nothing happened, and Paul never asks for the second one.",
+          "notice": "Three instructions arrive together, and the middle one carries two limits most people never quote. Do not repay evil with evil. Then: be at peace with everyone — if it is possible, and as far as it depends on you. Paul assumes in writing that some peace is not possible, and that some of it is not yours to produce.\n\nThe reason given for not avenging yourself is not that the wrong was small. It is that repayment has an owner. Vengeance is not abolished in this paragraph; it is reassigned, and the quotation makes the claim in God's own voice. Stepping back is not letting it go unanswered. It is declining to be the one who answers.\n\nAnd the very next paragraph matters for anyone reading this with a real injury. Paul says the governing authority does not carry a sword for nothing, and calls it God's servant to carry out justice. Scripture's own route for wrongdoing runs through lawful authority. Reporting what happened, making a statement, letting a court decide — none of that is private revenge, and none of it is a failure to forgive.\n\nThen the strange command about feeding a hungry enemy. Notice it is concrete and small. He does not ask you to feel warmly about anyone. He asks for bread, if bread is what is needed.\n\nNothing in this paragraph requires you to stay where you are being harmed in order to overcome evil with good.",
+          "consider": [
+            "What would you be doing about this if you were not trying to settle the score yourself?"
+          ],
+          "prayer": "God, I want them to feel some of this. That is the truth, and you have heard worse. I am handing the account to you because it is yours, not because the debt is small. Keep me from repaying it myself while I wait for you to do whatever you are going to do. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is what forgiveness actually is, which is narrower than the word usually suggests."
+          }
+        },
+        {
+          "id": "ha-3",
+          "title": "What forgiveness actually is",
+          "passages": [
+            "Matthew 18:21-27"
+          ],
+          "basis": [
+            "Matthew 18:15-20",
+            "Matthew 18:28-35"
+          ],
+          "arrive": "Forgiveness is a word people use for about five different things. This story narrows it to one.",
+          "notice": "Peter wants a number. Seven times is already generous — he is not being mean — and the answer he gets removes the ledger rather than raising the limit.\n\nThen comes the story, and it is an accounting story from beginning to end. A servant owes an amount nobody could pay in several lifetimes. He begs for time and promises to repay it, which is the one thing he certainly cannot do. The king does not give him time. He cancels the debt and takes the loss himself.\n\nSo here is the definition this path will use, because it is the one Jesus illustrates: forgiveness is releasing a debt. It is the injured party giving up the right to collect. It is not saying the amount was small — the amount is enormous and the story names it. It is not saying nothing happened. It is deciding to stop pursuing payment for something that is genuinely owed.\n\nNotice what the king does not do. He does not say the servant is now trustworthy, and nothing suggests he hands him the accounts again. Releasing a debt and restoring a position are two different acts, and only one of them happens here.\n\nNotice also what sits immediately before this: instructions for confronting someone who has wronged you, privately first, then with others. Forgiving is not a synonym for saying nothing, and Jesus gives a procedure for saying something.\n\nWhat this does not promise is that the feeling follows the decision, or follows it quickly.",
+          "consider": [
+            "What are you still trying to collect, and what would it mean to stop?"
+          ],
+          "prayerPrompt": "Name the debt out loud — what it cost you, in detail, without rounding it down. Then say whether you are willing to stop collecting it. If you are, say so. If you are not there yet, say that instead; pretending in front of God is not forgiveness, and he is not confused about where you are.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The last step is about what forgiving does not automatically come with."
+          }
+        },
+        {
+          "id": "ha-4",
+          "title": "Living next to it",
+          "passages": [
+            "Ephesians 4:29-32"
+          ],
+          "basis": [
+            "Ephesians 4:17-28",
+            "Romans 12:18"
+          ],
+          "arrive": "What forgiveness does not automatically carry with it is the part most likely to be used against you.",
+          "notice": "Four instructions about how a community talks and keeps itself: nothing rotten out of your mouth, only what builds; do not grieve the Spirit; put bitterness, rage, shouting and slander away; be kind and tender-hearted, forgiving as God in Christ forgave you.\n\nThe ground given is not the other person's worth or their apology. It is what was done for you. That is why bitterness is addressed as something to put down rather than something to justify — it is being asked for on the basis of what you have received, not on the basis of what they deserve.\n\nNow the distinctions, because this is where people get hurt a second time by advice.\n\nForgiveness is releasing the debt, and you can do it alone. Trust is an estimate of what somebody is likely to do next; it is rebuilt by evidence, over time, or not at all. Reconciliation takes two people and real change in the one who did the harm. Access is a decision about proximity, and it is yours to make. Consequences belong to justice, and the earlier step put those in God's hands and the authorities'. Safety outranks every item on this list.\n\nScripture puts the qualifiers in itself: be at peace if it is possible, and as far as it depends on you. Both halves assume that sometimes it is not and does not.\n\nSo you can forgive somebody you will never be alone with again. You can forgive and still give a statement. You can forgive and still change the locks.",
+          "consider": [
+            "Which of these have you been treating as one thing — forgiving, trusting, or being near?"
+          ],
+          "prayer": "Father, bitterness has been good company and I am tired of it. I want to put it down without pretending I am safe when I am not. Give me the honesty to forgive and the sense to be careful, and do not let me confuse the two. Amen.",
+          "nextStep": {
+            "kind": "support",
+            "text": "If someone is still hurting you, or you are not safe, that is the next thing to deal with and it is not a question about forgiveness — tell a person who can actually help, today. If the danger is immediate, contact emergency services where you are. Forgiveness can wait; safety cannot."
+          }
+        }
       ]
     },
     {
@@ -259,12 +661,109 @@
       "title": "Direction & Decisions",
       "entry": "I need direction",
       "summary": "For decisions, waiting and wanting to do the right thing — wisdom, obedience and what guidance is actually promised.",
-      "covers": ["decisions", "waiting", "wisdom", "obedience", "purpose"],
+      "covers": [
+        "decisions",
+        "waiting",
+        "wisdom",
+        "obedience",
+        "purpose"
+      ],
       "plannedSteps": 4,
-      "status": "outline",
+      "status": "authored",
       "safetyNotes": [
-        "Never claims God is telling the reader to choose a particular option.",
-        "Never presents the app, a passage or an outcome as a sign."
+        "No step claims God is telling this reader to choose a particular option, or that an event, a feeling or a verse is a sign about their decision.",
+        "The app never presents itself, or a passage it served, as guidance about a specific choice.",
+        "Peace, circumstances and open doors are never offered as a method for identifying God's private will."
+      ],
+      "completion": {
+        "kind": "bible",
+        "text": "Read a chapter of Proverbs a day for a month. It is the part of Scripture written for exactly this: people deciding things without knowing how they turn out."
+      },
+      "steps": [
+        {
+          "id": "dd-1",
+          "title": "Wisdom is looked for",
+          "passages": [
+            "Proverbs 2:1-6"
+          ],
+          "basis": [
+            "Proverbs 2:7-15"
+          ],
+          "arrive": "Nobody is handed wisdom. These verses describe the work, and then say who supplies it anyway.",
+          "notice": "Wisdom here is buried rather than broadcast. The whole passage is one long sentence of conditions — if you take the words in, if you store them up, if you turn your ear, if you call out, if you go after it the way people go after silver, digging for it like treasure — and only then does the consequence arrive.\n\nThe verbs are the point. Calling out. Searching. Digging. None of this describes waiting for an impression to arrive while you keep your options open.\n\nAnd then the line that stops it becoming a self-improvement scheme: the LORD gives wisdom. Both halves sit in the same paragraph without embarrassment. You dig, and it is still a gift. If that sounds like a contradiction, it is the same shape as most of the Christian life.\n\nNotice what is found at the end of the digging. Not a decision, and not a plan. What turns up is reverence for God himself, and knowing him. The search terminates in a person rather than an answer, which quietly reframes what you are looking for.\n\nFor a decision, this changes the first move. The opening question is not which option should I take. It is what is God like, what does he value, and what sort of person does he want making this — and that question has material you can go and work through this week.\n\nWhat the passage does not offer is a method for extracting a private instruction. It promises wisdom to the one who digs, which is a different thing and a better one.",
+          "consider": [
+            "What would digging actually look like this week, before you decide anything?"
+          ],
+          "prayer": "God, give me wisdom, and make me willing to go and look for it rather than wait for it to land. I have been asking which door. Teach me what you are like first, and let the decision come out of that. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is about how much of this is not actually hidden."
+          }
+        },
+        {
+          "id": "dd-2",
+          "title": "Most of it is not secret",
+          "passages": [
+            "Micah 6:8"
+          ],
+          "basis": [
+            "Micah 6:1-7",
+            "Micah 6:9-16"
+          ],
+          "arrive": "Much of what God wants from you is already on record. The hidden part is smaller than it feels at two in the morning.",
+          "notice": "By the time this verse arrives, a case is being heard. God has a complaint against his people and the mountains are called as witnesses — the setting is a courtroom, and the question in the air is what would put this right.\n\nThe answer comes back as an auction. Calves? Thousands of rams? Rivers of oil? Then, appallingly, a firstborn child. Each offer is larger than the last and each misses by the same distance, which is the point: they are bidding, and the problem was never the price.\n\nThen the reply, and the first thing in it is a past tense. He has already told you what is good. Act justly. Love mercy. Walk humbly with your God. Three things, none of them a secret, all of them available to start on before breakfast tomorrow.\n\nFor a decision, stay with that a moment: it describes the kind of person who decides rather than the decision itself. Scripture gives enormous attention to character and conduct and comparatively little to which post to take or which town to live in. The part that is published is the larger part.\n\nSo the question changes shape. Not only what should I do, but: is there anything in those three I am currently avoiding while I wait for direction about something else?\n\nNothing here suggests that doing the three produces a sign about the fourth. They are not a mechanism. They are what is being asked of you anyway.",
+          "consider": [
+            "Is there something in acting justly, loving mercy or walking humbly that you are avoiding while you wait for guidance?"
+          ],
+          "prayer": "Lord, you have already said a great deal and I have been waiting for something else. Make me just, make me love mercy, keep me walking close rather than running ahead. If that is most of your will for me this year, let me get on with it. Amen.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The next step is the part people skip."
+          }
+        },
+        {
+          "id": "dd-3",
+          "title": "Counsel, and the plan that stands",
+          "passages": [
+            "Proverbs 19:20-21"
+          ],
+          "basis": [
+            "Proverbs 19:16-19",
+            "Proverbs 15:22"
+          ],
+          "arrive": "Counsel is the part people skip, usually because they already know which answer they are shopping for.",
+          "notice": "Both halves of this pair are needed, and they are placed next to each other on purpose.\n\nThe first is an instruction with a long horizon: listen to advice, take correction, so that you may be wise later on. Not so that you will be right this week. Wisdom is treated as something you end up with, accumulated from a hundred times you were told something you did not want to hear.\n\nThe second is about the gap between planning and outcome. Many plans in a person's heart; the LORD's purpose is the one that stands. Read carelessly that sounds like a warning against planning, but the book it sits in is full of planning and praises it. It is not cancelling your plans. It is putting them inside something larger than themselves.\n\nHeld together, the two lines produce a particular posture: plan seriously, take counsel honestly, and hold the result loosely, because the outcome was never yours to guarantee.\n\nOne thing the passage assumes and this app will say plainly. Counsel means people who will tell you the unwelcome thing. Proverbs elsewhere says plans fail where there is no counsel and succeed where there are many advisers — and an adviser who only confirms you is not one of them.\n\nCounsel is also not a vote. Nobody here is going to carry the decision for you, and no counsellor can tell you God's hidden plan, because they do not have it either.",
+          "consider": [
+            "Who would tell you the unwelcome thing, and have you asked them yet?"
+          ],
+          "prayerPrompt": "Name the two or three people whose counsel you would still take if it went against you. If there is nobody, ask God for one and say so plainly. Then say out loud what you are hoping they will tell you — that is usually the decision you have already made, and it is worth knowing that before you ask.",
+          "nextStep": {
+            "kind": "continue",
+            "text": "The last step is about deciding without the certainty you were hoping for."
+          }
+        },
+        {
+          "id": "dd-4",
+          "title": "Decide, and hold it loosely",
+          "passages": [
+            "James 4:13-17"
+          ],
+          "basis": [
+            "James 4:6-12",
+            "James 5:7-8"
+          ],
+          "arrive": "Decide. Then add the sentence James gives you, and mean it.",
+          "notice": "James quotes a confident planner — a city picked, a year set aside, business done, a profit expected. Read it twice, because the plan itself is never criticised. It is an ordinary commercial decision and the letter does not call it greedy or faithless.\n\nWhat he objects to is the assumption underneath, that tomorrow is yours to schedule. Nobody has that information. A life, he says, is a mist: it shows up and burns off.\n\nThe correction is not stop planning. It is a clause to add in front of the plan — should the Lord will it, and should we still be alive. The plan survives. The certainty does not. And this is a world away from waiting for a sign: he expects them to choose a city, name a year and go.\n\nThen the ending, which is sharper than most people remember. Anyone who knows the good they ought to do, and does not do it, for him it is sin. A paragraph about not knowing the future closes by pointing at the thing you already know you should do.\n\nSo you are not required to have certainty before you act. You are required to hold the plan under God, and to do the good that is already in front of you while the rest is unclear.\n\nWhat the passage does not supply is the city, the year or the trade. He leaves the decision with the person making it, which is where Scripture usually leaves it.",
+          "consider": [
+            "What decision have you been delaying while you wait for certainty that was never promised?"
+          ],
+          "prayer": "Father, here is the plan as it stands, and I am holding it with an open hand: if you will it, I will do this. If you close it, close it clearly enough for me to see. While I wait, keep me doing the good I already know about, so that the waiting is not an excuse. Amen.",
+          "nextStep": {
+            "kind": "openPassage",
+            "ref": "James 1:2-8",
+            "text": "Open James 1 and read from verse 2. The letter's first instruction about wisdom is to ask for it, and to ask without hedging."
+          }
+        }
       ]
     },
     {

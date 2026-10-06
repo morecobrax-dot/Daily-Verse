@@ -643,6 +643,11 @@ uses, plus the ones only this content needs:
 - no pronouncement on where a reader stands with God, in either direction.
   Reassurance is as much of an overreach as condemnation, and the Hebrews 10
   step is where that temptation lives
+- a claim these paths must not MAKE may still be NAMED in order to deny it.
+  The lints clear a match whose own sentence is a denial, because
+  "forgiveness does not require you to restore contact" is a sentence the
+  catalogue has to be able to write. Register and unsourced-history patterns
+  are not cleared that way
 - no historical or cultural background claim. There is no citation field in
   this content type and building one to keep a sentence would be the wrong
   trade, so the point has to come out of the text
@@ -652,7 +657,7 @@ uses, plus the ones only this content needs:
   never inferred from the edition, the language or a stored preference
 
 CONTRACT 49 drives the same functions over the shipped file, and re-derives
-the reference check independently: 56 assertions, and 50 deliberate mutations
+the reference check independently: 62 assertions, and 56 deliberate mutations
 fail by name.
 
 ### Storage, when progress is built
@@ -668,9 +673,15 @@ An array of records with an `id`, so `exportData` and `mergeBackup` handle it
 without being taught about it, and `DATA_SCHEMA_VERSION` does not move. Nothing
 else is stored: no mood, no history of which situations were chosen, no scores.
 
-### Phase A ships no feature
+### The content exists; the feature does not
 
-`index.html` carries no Help Me tab, reader, catalogue or storage key, and
+Seven paths and twenty-eight steps are authored and verified. `index.html`
+still carries no Help Me tab, reader, catalogue or storage key, and
 `scripture.js` does not read `data/help.json`. The content is proven first,
 because a destination that looks finished before anyone has read what is in it
 is how bad content ships.
+
+Two things gate the feature becoming visible, in this order: the two release
+blockers from the September readiness audit, which are separate work, and then
+a UI phase that has to build the reader, the quiet urgent-help route and the
+progress record described above.

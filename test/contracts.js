@@ -6950,6 +6950,7 @@ function testHelpMe(){
   const fsx = require('fs');
   const pathx = require('path');
   const HELP = require('../scripts/help.js');
+  const D = require('../scripts/devotions.js');
   const S = require('../scripts/scripture.js');
   const corpus = require('../scripts/corpus.js');
   const doc = HELP.readCatalogue();
@@ -6960,24 +6961,31 @@ function testHelpMe(){
   const steps = [];
   authored.forEach(p => (p.steps || []).forEach((s, i) => steps.push({ p: p, s: s, n: i + 1, where: p.id + '/' + s.id })));
 
-  sub('the approved V1 shape, and nothing more');
+  sub('the approved V1 catalogue, and nothing more');
   /* The taxonomy is deliberately restrained: seven broad human situations,
      not one path per diagnosis. */
   T('all seven approved paths exist, in the approved order',
     paths.map(p => p.id).join() ===
       'heavy-heart,fear-uncertainty,coming-back,guilt-and-sin,hurt-and-forgiveness,direction-decisions,start-here',
     paths.map(p => p.id).join(', '));
-  T('exactly two are authored in this phase', authored.length === 2,
-    authored.map(p => p.id).join(', '));
-  T('the two pilots are Start Here and Coming Back to God',
-    authored.map(p => p.id).sort().join() === 'coming-back,start-here');
-  T('Start Here has exactly three ordered steps',
-    paths.find(p => p.id === 'start-here').steps.map(s => s.id).join() === 'sh-1,sh-2,sh-3');
-  T('Coming Back to God has exactly five ordered steps',
-    paths.find(p => p.id === 'coming-back').steps.map(s => s.id).join() === 'cb-1,cb-2,cb-3,cb-4,cb-5');
-  T('the other five are outlined, and carry no steps',
-    paths.filter(p => p.status === 'outline').every(p => !p.steps && p.plannedSteps > 0),
-    paths.filter(p => p.status === 'outline').map(p => p.id + '=' + p.plannedSteps).join(', '));
+  T('every path is authored — none is still an outline', authored.length === 7,
+    paths.filter(p => p.status !== 'authored').map(p => p.id).join(', ') || 'all authored');
+  T('twenty-eight steps in total', steps.length === 28, String(steps.length));
+  /* The approved lengths. A path that quietly grows or shrinks changes what
+     the reader was promised on the home screen. */
+  T('each path is exactly the length it was approved at',
+    paths.map(p => p.id + ':' + p.steps.length).join() ===
+      'heavy-heart:4,fear-uncertainty:4,coming-back:5,guilt-and-sin:4,hurt-and-forgiveness:4,direction-decisions:4,start-here:3',
+    paths.map(p => p.id + ':' + p.steps.length).join(', '));
+  T('and its step count matches what it plans',
+    paths.every(p => p.steps.length === p.plannedSteps));
+  T('every step id is stable, ordered and namespaced to its path',
+    paths.every(p => {
+      const tag = { 'heavy-heart': 'hh', 'fear-uncertainty': 'fu', 'coming-back': 'cb',
+                    'guilt-and-sin': 'gs', 'hurt-and-forgiveness': 'ha',
+                    'direction-decisions': 'dd', 'start-here': 'sh' }[p.id];
+      return p.steps.every((s, i) => s.id === tag + '-' + (i + 1));
+    }), steps.map(x => x.s.id).join(','));
   T('every path id is unique', new Set(paths.map(p => p.id)).size === paths.length);
   T('every step id is unique across the catalogue',
     new Set(steps.map(x => x.s.id)).size === steps.length);
@@ -7108,6 +7116,13 @@ function testHelpMe(){
   T('and it refuses historical background that nothing in the repo can source',
     HELP.HISTORICAL_CLAIMS.length > 10 &&
     ['teachers of his day', 'in that world', 'scholars believe'].every(p => HELP.HISTORICAL_CLAIMS.indexOf(p) !== -1));
+  /* The three failures these paths would produce if the lint were thinned:
+     anxiety read as a verdict on faith, forgiveness collapsed into renewed
+     access, and a decision presented as a private instruction from God. */
+  T('and it names the specific failures these paths are most likely to produce',
+    HELP.HELP_CLAIMS.some(c => /trust god enough/.test(c.pattern)) &&
+    HELP.UNSAFE_RECONCILIATION.indexOf('restore contact') !== -1 &&
+    D.FORBIDDEN_CLAIMS.some(c => c.pattern === 'god is telling you'));
   T('no field in the catalogue encodes one tradition\'s confession practice',
     HELP.FORBIDDEN_KEYS.test('confessionMode') && HELP.FORBIDDEN_KEYS.test('sacrament') &&
     HELP.FORBIDDEN_KEYS.test('absolution'));
@@ -7197,6 +7212,32 @@ function testHelpMe(){
     !!(safety.unsafeRelationship && safety.unsafeRelationship.rule) &&
     safety.unsafeRelationship.appliesTo.every(id => paths.some(p => p.id === id)),
     (safety.unsafeRelationship || {}).appliesTo + '');
+  /* The two bindings the catalogue's own content depends on. Heavy Heart and
+     Guilt are where hopelessness and shame live; forgiveness is where an
+     unsafe reconciliation would be counselled if anywhere. */
+  T('Heavy Heart and Guilt are the paths that carry a contextual offer of urgent help',
+    safety.escalation.contextualPaths.slice().sort().join() === 'guilt-and-sin,heavy-heart',
+    safety.escalation.contextualPaths.join(', '));
+  T('and the unsafe-relationship rule binds the forgiveness path',
+    safety.unsafeRelationship.appliesTo.indexOf('hurt-and-forgiveness') !== -1);
+  T('every path that carries a safety rule says so in its own notes',
+    ['heavy-heart', 'guilt-and-sin', 'hurt-and-forgiveness', 'direction-decisions']
+      .every(id => (paths.find(p => p.id === id).safetyNotes || []).length >= 3),
+    paths.map(p => p.id + ':' + (p.safetyNotes || []).length).join(', '));
+  /* The forgiveness path has to be able to SAY "forgiveness does not require
+     you to restore contact". The lint that forbids the claim must clear the
+     denial, or the most important sentence in the catalogue is unwriteable.
+     This is a regression test for the lint, not for the prose. */
+  const denial = [];
+  HELP.scanProse([{ where: 'probe', fields: { notice: 'Forgiving does not mean you must restore contact.' } }], denial, []);
+  const assertion = [];
+  HELP.scanProse([{ where: 'probe', fields: { notice: 'Once you forgive him, restore contact.' } }], assertion, []);
+  T('a step may deny an unsafe claim, and may not make one',
+    denial.length === 0 && assertion.length > 0,
+    'denial ' + denial.length + ', assertion ' + assertion.length);
+  const twoSentences = [];
+  HELP.scanProse([{ where: 'probe', fields: { notice: 'It does not promise relief. Your breakthrough is coming.' } }], twoSentences, []);
+  T('and the clearing is scoped to its own sentence', twoSentences.length > 0);
 
   sub('this does not become a record about a person');
   const profile = [];

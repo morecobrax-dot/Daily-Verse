@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.13.2",
-  "phase": "Help Me - Phase A.1 (pilot adjudication)",
+  "phase": "Help Me - Phase B (catalogue complete)",
   "status": "building",
   "needsQa": false,
   "needsDecision": true,
-  "currentTask": "Help Me pilot adjudication complete. Five of six flagged editorial risks resolved in the text; the pilots are approved as the template for the remaining five paths. Still not user-visible: no tab, no reader, no stored progress.",
-  "nextAction": "Decide whether crisis resources stay United States only for a first release, then author the remaining five Help Me paths.",
+  "currentTask": "Help Me V1 catalogue complete: seven paths, twenty-eight steps, all verified against the pinned corpus in every shipped edition. Crisis geography resolved as United States only. Still not user-visible: no tab, no reader, no stored progress.",
+  "nextAction": "Human review of the five flagged items in HELP-ME-REVIEW.md, then the two release blockers from the September audit before any Help Me UI phase.",
   "blocker": null,
-  "updatedAt": "2026-10-06T22:48:49Z"
+  "updatedAt": "2026-10-06T23:32:23Z"
 }

@@ -1,221 +1,318 @@
 # Help Me — review packet
 
-Two pilot paths, eight steps, written to establish the voice before the
-remaining five paths are authored. **Nothing here is user-visible.** There is
-no Help Me tab, no reader and no stored progress.
+Seven paths, twenty-eight steps, complete. **Nothing is user-visible.** There
+is no Help Me tab, no reader and no stored progress.
 
 Source: [data/help.json](data/help.json). Checks: `npm run help:verify`, and
 CONTRACT 49 in the suite.
 
-**Status: adjudicated.** The six items the first draft flagged have been
-worked through. Five are resolved in the text; one product decision is left,
-and it is below. You do not need to reread all eight steps.
+- **Phase A** authored Start Here and Coming Back to God.
+- **Phase A.1** adjudicated six editorial risks in them; all resolved.
+- **Phase B** added the remaining five paths: Heavy Heart, Fear & Uncertainty,
+  Guilt & Repeated Sin, Hurt/Anger/Forgiveness, Direction & Decisions.
 
-## The six flags, and what happened to them
-
-| # | Item | Outcome |
-|---|---|---|
-| 1 | cb-5 — Hebrews 10:26–31 | **Resolved by edit.** Rewritten. |
-| 2 | cb-4 — whose groaning, Romans 8:26 | **Resolved by edit.** The question is gone. |
-| 3 | cb-3 — confession without a named mode | **Resolved by edit.** Sharpened, repentance strengthened. |
-| 4 | cb-1 — Hosea's covenant setting | **Resolved by edit.** Over-identification removed. |
-| 5 | sh-2 — rabbi's yoke, "only place he describes his own heart" | **Resolved by edit.** Both claims removed. |
-| 6 | Crisis architecture | **Resolved by edit, except geography — one decision below.** |
-
-### 1. cb-5 — the warning in Hebrews 10
-
-The old paragraph told the reader the warning pointed "the opposite direction
-from the one you are walking in by reading this at all". That reassured on the
-basis of an app interaction, which is a diagnostic move in friendly clothes,
-and it blunted a warning the writer means seriously.
-
-It now does three things instead: says what the warning actually describes
-(repudiating the sacrifice — v26, v29), then what the writer does next with the
-same readers (vv32–39: reminds them what they endured, tells them not to throw
-away their confidence, and places himself with them among those who do not
-shrink back), then names that Christians read it differently and that a pastor
-is the place for it if it keeps troubling you. Hebrews 10:32–39 was added to
-the step's `basis`, because it is now the context the explanation rests on.
-
-Nothing decides perseverance. Nothing tells the reader where they stand.
-
-### 2. cb-4 — Romans 8:26
-
-"the Spirit's own intercession is made in groans too deep for words" did two
-unnecessary things: it took a side in a commentators' question, and it sat a
-word away from the Berean's rendering.
-
-It now reads that the Spirit "intercedes for us at a depth that never reaches
-speech", and the following paragraph was completed with the half of v27 the
-draft had dropped — that what the Spirit asks for is what God wants. The step
-now says exactly what the passage safely supports: we are weak, we do not know
-how to pray as we ought, the Spirit helps, and the Spirit asks according to
-God's will.
-
-### 3. cb-3 — confession
-
-Mode is still deliberately unspecified; that was the approved direction. Two
-corrections: the draft said the passage "does not say where, or to whom", which
-is not quite true — the one who forgives is God, and that is now stated. And
-repentance was thin, so one line was added: agreeing with God about something
-is not the same as intending to keep it, which is what makes confession more
-than a form of words. "the just thing for God to do rather than the generous
-thing" became "just, and not only kind", which drops a false either/or.
-
-### 4. cb-1 — Hosea 14
-
-"he writes the apology for you" transferred a national covenant promise onto
-one modern reader. The closing paragraph now says Hosea is speaking to a nation
-under that covenant, and then names what carries across: God does not wait for
-a polished return, he supplies words to people who have none, and he treats the
-wandering itself as the thing he means to heal. One sentence shorter, and no
-academic detour.
-
-### 5. sh-2 — Matthew 11
-
-Both claims are gone. The rabbinic-discipleship framing is replaced by what the
-verse itself says — take it, and learn from me. The "only place in the Gospels"
-claim is replaced by the plain point: the reason he gives for coming is his own
-character, as he describes it. The physical sense of a yoke stays, because
-without it the image is opaque to a modern reader, and a farm implement is a
-dictionary fact rather than a historical reconstruction.
-
-**Also found and fixed:** two more unsourced background claims of the same
-kind — "which was not what dignity looked like in that world" (cb-2) and
-"Groups around a teacher often had a form they prayed" (sh-3). The first is cut;
-the second is replaced by what Luke 11:1 itself says about John. A lint now
-rejects this class of claim, because the content type has no citation field and
-building one to keep a sentence would be the wrong trade.
-
-### 6. Crisis architecture
-
-Kept: the quiet "Need urgent help?" label, the home-level route, contextual
-offers on two paths only, the verified 988 data, the review date that makes
-`help:verify` fail once it passes, and separate emergency guidance.
-
-Added: a display rule — no resource is ever shown without the territory it
-belongs to, and 988 is never presented as though it worked anywhere else; an
-explicit list of what territory must **never** be inferred from (the reader's
-edition, the app's language, any stored preference); and a line in the policy
-saying urgent help is an escape hatch rather than a Help Me path. Contracts
-hold all three, and assert that no crisis resource is keyed to a translation id.
-
----
-
-## The one decision still required
-
-**Crisis coverage is United States only, in an app that ships Spanish, German
-and Chinese Scripture.**
-
-- **Where:** `safety.crisis` in data/help.json.
-- **Current wording, verbatim:** "Outside the United States, New Covenant does
-  not print a number it has not verified. Contact your local emergency number,
-  or a crisis line in your own country." With the reason recorded beside it: "A
-  wrong number given to someone in crisis is worse than no number. A global
-  directory assembled from memory would be exactly that."
-- **The question:** is honest generic guidance acceptable for a first release,
-  or must at least one more territory be verified before any Help Me surface
-  ships?
-
-**Option A — ship US-only, with the generic guidance above.**
-Nothing is invented, the limitation is explicit, and no reader is handed a
-number that does not work. A reader in Berlin or Shanghai in real distress gets
-a sentence telling them to find local services themselves, at the worst moment
-to be researching anything.
-
-**Option B — verify one or two more territories before any Help Me release.**
-Each territory is real work: finding the authoritative publisher, confirming
-call/text/chat capability and hours, and committing to re-verify it on a date.
-Spain, Germany and mainland China have different providers, different
-languages, and in some cases no single national line. It delays the UI phase
-and it adds a standing maintenance obligation for every territory added.
-
-**My recommendation: Option A for the first release, with the limitation stated
-in the interface, not only in the data.** Adding one country at a time, badly
-researched, is how a crisis directory becomes wrong. Option B is the right
-*second* move, chosen deliberately with the time to do it properly — and the
-configuration is already shaped to take more territories without redesign.
-
-**Consequence of A:** a non-US reader in crisis gets honest generic guidance and
-nothing more. **Consequence of B:** the Help Me UI phase waits on research that
-has nothing to do with the content, and the maintenance burden grows with each
-territory.
-
-This decision gates a **user-visible Help Me release**. It does not block Phase B
-authoring.
-
----
-
-## What the automated checks prove
+## What the checks already prove
 
 So review time goes where a machine cannot help:
 
-- Every reference — now 26 — resolves with real text in **all seven shipped
-  editions**.
-- **No Scripture text is stored**, and no prose reproduces six consecutive words
-  of any anchor or context passage in **any of the three shipped English
-  editions** (78 passage renderings indexed).
+- **85 references** resolve with real text in **all seven shipped editions**.
+- **No Scripture text is stored**, and no prose reproduces six consecutive
+  words of any anchor or context passage in **any of the three shipped English
+  editions** (252 renderings indexed). This caught 22 real retypings during
+  authoring, including four in Wave 1 and eighteen in Wave 2.
 - No prose claims private revelation, arranged circumstances, a promised
   outcome or a guaranteed feeling; none diagnoses anybody; none pronounces on
-  where a reader stands with God **in either direction**; none makes a
-  historical claim with nothing behind it; none counsels staying within reach
-  of harm.
+  where a reader stands with God in either direction; none makes a historical
+  claim with nothing behind it; none counsels staying within reach of harm.
 - No number to dial appears outside the verified crisis block.
-- No two readings, arrivals or prayers open the same way.
-- Nothing is near its ceiling. The longest step is cb-5 at 427 words of 520 —
-  it is the longest because it carries the warning, not because it is padded.
+- No two readings, arrivals or prayers open the same way, across all 28.
+- Nothing is near its ceiling: 313–427 words against a limit of 520.
 
-CONTRACT 49 is 56 assertions. 50 deliberate mutations fail by name.
+CONTRACT 49 is **62 assertions**; **56 mutations** fail by name.
 
 **None of that says the writing is true, wise or pastorally right.**
 
-## Reference — the two paths
+---
 
-### Start Here — "I don't know where to start"
+## HUMAN ATTENTION REQUIRED
 
-Ends at **Learn → Learning to Pray**, whose second lesson is the prayer sh-3
-introduces.
+Five items. Everything else in Phase B is reported below for reference only.
 
-| Step | Passage | Basis | Thesis |
-|---|---|---|---|
-| sh-1 Begin where you actually are | Psalm 62:5–8 | 62:1–4, 62:9–12 | A psalm written under pressure tells everyone to bring God what they actually have. |
-| sh-2 An invitation, not a summons | Matthew 11:28–30 | 11:20–24, 11:25–27 | The welcome comes from someone who has just spoken severely, and offers a shared load rather than none. |
-| sh-3 Something ordinary to do next | Luke 11:1–4 | 11:5–10, 11:11–13 | Not knowing how to pray was ordinary among his own disciples, and the answer was short words. |
+### 1. Psalm 88 as the opening of Heavy Heart (hh-1)
 
-### Coming Back to God — "I feel far from God"
+- **Prose:** *"Most laments turn somewhere near the end… This one does not. It
+  goes down, and then it stops, and the last word in it is darkness."*
+- **Scripture:** Psalm 88:1–5, basis 88:6–12 and 88:13–18.
+- **Concern:** the first thing a grieving reader meets is the one psalm that
+  never resolves. The step frames it as prayer and as something the
+  congregation was given to sing, and the path moves on to Gethsemane, hope and
+  company. But the placement is a pastoral judgement, not a verification
+  result.
+- **Option A:** keep it first — it is the strongest possible refusal of "cheer
+  up", and it earns the reader's trust before anything consoling is said.
+- **Option B:** open with a lament that turns (Psalm 13) and move Psalm 88
+  later, or drop it.
+- **Recommendation: keep it.** A reader whose heart is heavy has usually
+  already been handed consolation too early by somebody, and Psalm 88 is the
+  reason Scripture cannot be accused of that.
 
-Ends at **Today**.
+### 2. "Worldly sorrow produces death" (gs-3)
 
-| Step | Passage | Basis | Thesis |
-|---|---|---|---|
-| cb-1 Come back with words | Hosea 14:1–4 | 14:1–9, 11:1–4 | A book of accusation ends with directions home, and God supplies the words. |
-| cb-2 Met before you arrive | Luke 15:17–24 | 15:1–3, 15:25–32 | The father moves first and restores a son rather than hiring a servant. |
-| cb-3 Say it, and let it be said | 1 John 1:8–10 | 1:5–10, 2:1–2 | Confession is agreement, and forgiveness rests on a cost met elsewhere. |
-| cb-4 When you cannot pray | Romans 8:26–27 | 8:18–25, 8:28–30 | Inability to pray is the ordinary condition, and the Spirit carries it. |
-| cb-5 Keep going, and not alone | Hebrews 10:19–25 | 10:11–18, 10:26–31, 10:32–39 | Confidence rests on a finished sacrifice; hold on, and do not do it alone. |
+- **Prose:** *"The second kind of sorrow is the one that circles… Scripture
+  does not call that repentance. It calls it deadly, and it is not asking you
+  for more of it."*
+- **Scripture:** 2 Corinthians 7:10.
+- **Concern:** a reader whose shame is already dangerous reads their own
+  sorrow described as deadly. The sentence is Paul's claim, and the clause
+  after it refuses to ask for more of that sorrow; the path's last step points
+  to a doctor or a crisis service if shame has reached self-harm.
+- **Recommendation: keep, and check the final clause is doing enough work.**
+  Softening Paul here would cost the distinction the whole step exists to make.
 
-Both paths progress rather than repeating: bring what you have → who you are
-bringing it to → something ordinary to keep doing; and return → grace →
-confession → prayer when words fail → continuing with others.
+### 3. Lawful justice is not unforgiveness (ha-2)
 
-## Crisis configuration
+- **Prose:** *"Scripture's own route for wrongdoing runs through lawful
+  authority. Reporting what happened, making a statement, letting a court
+  decide — none of that is private revenge, and none of it is a failure to
+  forgive."*
+- **Scripture:** Romans 12:17–21 with Romans 13:1–4 as basis.
+- **Concern:** this is the safety-critical claim of the path, and it reads
+  Romans 13 as licensing recourse to courts and police. Traditions with a
+  strong non-resistance position would frame it differently.
+- **Recommendation: keep.** Without it, a reader who has been assaulted can
+  read "do not avenge yourself" as "do not report it", which is the exact harm
+  the brief forbids. The claim stays inside what Romans 13 says about the
+  magistrate.
 
-Verified **2026-10-06**, review due **2027-04-06**; `help:verify` fails once that
-date passes.
+### 4. The six distinctions (ha-4)
 
-United States only. 988 Suicide & Crisis Lifeline, administered by Vibrant
-Emotional Health with SAMHSA: call 988, text 988, chat at chat.988lifeline.org,
-Spanish by calling 988 and pressing 2 or texting AYUDA, TTY via relay or 711
-then 988, ASL by dialling 988 from a videophone. Read from four pages on
-988lifeline.org and samhsa.gov, each recording what it confirmed. Emergency
-guidance is separate and marked as the app's own wording.
+- **Prose:** *"Forgiveness is releasing the debt, and you can do it alone.
+  Trust is an estimate of what somebody is likely to do next… Reconciliation
+  takes two people and real change in the one who did the harm. Access is a
+  decision about proximity… Safety outranks every item on this list."*
+- **Scripture:** Ephesians 4:29–32, with Romans 12:18 for the qualifiers.
+- **Concern:** this is the most load-bearing paragraph in the catalogue, and
+  the six-way framework is assembled by this app. Scripture supplies the
+  qualifiers ("if possible, as far as it depends on you") and the definition of
+  forgiveness (Matthew 18), but not the list.
+- **Recommendation: keep, and read it word by word.** If one sentence in the
+  catalogue is worth a pastor's eye, it is this one.
 
-## The rest of V1
+### 5. One wording check (hh-2)
 
-Five paths are outlined and unauthored: Heavy Heart (4 steps), Fear &
-Uncertainty (4), Guilt & Repeated Sin (4), Hurt, Anger & Forgiveness (4),
-Direction & Decisions (4). Each records what it covers and the safety rules that
-bind it — forgiveness never requiring a reader to stay in danger, and direction
-never claiming God is telling them which option to pick.
+- **Prose:** *"the one person in Scripture with no shortage of faith is face
+  down in the dirt, asking to be let off."*
+- **Concern:** describing Jesus in terms of his faith is defensible but will
+  catch some readers' attention.
+- **Recommendation:** keep, or change to "the one person in Scripture who
+  never fell short" if you would rather not raise the question.
 
-Deliberately **not** created: a separate path per feeling.
+---
+
+## Crisis geography — RESOLVED
+
+Decision taken: **Option A**.
+
+- **United States:** the verified 988 Suicide & Crisis Lifeline, always shown
+  with its territory named. Call 988, text 988, chat at chat.988lifeline.org;
+  Spanish by calling 988 and pressing 2 or texting AYUDA; TTY via relay or 711
+  then 988; ASL by dialling 988 from a videophone. Administered by Vibrant
+  Emotional Health with SAMHSA.
+- **Outside the United States:** restrained general guidance only — local
+  emergency or crisis services, and a trusted person. No invented numbers.
+- **Never inferred** from Bible edition, Scripture language, app language, or
+  any stored preference. No geolocation in Help Me V1.
+- **Expiry preserved:** verified 2026-10-06, review due 2027-04-06, and
+  `help:verify` fails once that date passes.
+- **Later:** more territories may be added only as independently verified,
+  maintained records. The configuration takes them without redesign.
+
+This is no longer an open question. Contracts hold the territory labelling, the
+no-inference rule, and that no crisis resource is keyed to a translation id.
+
+---
+
+## Phase B steps, for reference
+
+Each line: thesis · interpretive move · application · prayer · next step.
+Flags only where there is one.
+
+### Heavy Heart — "My heart feels heavy" → ends at the Psalms (Bible)
+
+**hh-1 Say the whole thing** — Psalm 88:1–5 (basis 88:6–12, 88:13–18)
+Thesis: the bleakest prayer in Scripture never resolves, and it was given a
+tune and kept. · Move: reads the psalm's refusal to turn as the point, and its
+address to God as the thing that makes it faith. · Application: say the part
+you have not said. · Prayer: lament without tidying it. · Next: Gethsemane.
+*Safety:* names that suffering is not evidence of God's anger (Job cited), and
+promises no lifting. *Flagged above.*
+
+**hh-2 He asked to be spared** — Mark 14:32–36 (basis 14:26–31, 14:37–42)
+Thesis: Jesus asks for rescue plainly, then hands it over — in that order. ·
+Move: the sequence of the two sentences, and the fact that he wanted company. ·
+Application: ask for what you want. · Prayer: asks for the thing, then yields. ·
+Next: hope that does not require grief to end.
+*Theological:* see wording check 5 above. *Safety:* "not proof that something
+has gone wrong in you spiritually"; the cup did not pass.
+
+**hh-3 Hope you have to call to mind** — Lamentations 3:19–26 (basis 3:1–18, 3:27–33)
+Thesis: hope here is produced by deliberate recollection, not by a change of
+mood, and the grief stays in the paragraph. · Move: v21's "I call this to mind"
+read against v18 and v20. · Application: repeat what you know. · Prayer: says it
+without feeling it. · Next: not doing this alone.
+
+**hh-4 Not carried alone** — 2 Corinthians 1:3–7 (basis 1:8–11)
+Thesis: comfort is God's first, and it travels between people. · Move: the
+chain in v4 read against Paul's own despair in v8. · Application: let one
+person know. · Prayer: asks for the receivable kind. · Next: tell someone the
+real answer — and if you are not safe, a doctor or crisis service today.
+*Safety:* the crisis pointer lives here, without a number and without
+diagnosis.
+
+### Fear & Uncertainty — "I'm afraid or uncertain" → ends at Today
+
+**fu-1 Afraid, and saying so** — Psalm 56:3–4 (basis 56:1–2, 56:8–13)
+Thesis: "when I am afraid" assumes recurrence, and trust is what he does with
+fear rather than instead of it. · Move: holds v3 and v4 together unreconciled. ·
+Application: name the fear in one sentence. · Prayer: hands it over knowing it
+will return. · Next: what Jesus said to people who could not stop calculating.
+
+**fu-2 What your Father already knows** — Matthew 6:25–34 (basis 6:19–24)
+Thesis: Jesus argues from the Father's knowledge of need, not from good
+outcomes. · Move: "you of little faith" read as an instruction to look at
+something, not to try harder at believing; v34 grants that tomorrow has
+trouble. · Application: put down tomorrow's share. · Prayer: today only. ·
+Next: something specific to do.
+
+**fu-3 Something to do with it** — Philippians 4:4–7 (basis 4:1–3, 4:8–9)
+Thesis: a swap — specific requests for anxiety — with a promise of guarding
+rather than of feeling. · Move: written into a named church quarrel; "the Lord
+is near" as the hinge; peace as a garrison. · Application: ask for one specific
+thing. · Prompt: make the request particular. · Next: when you still do not know
+how it ends.
+
+**fu-4 But if not** — Daniel 3:16–18 (basis 3:8–15, 3:19–27)
+Thesis: their refusal does not depend on being rescued. · Move: v18 carries the
+step; the step says explicitly that the clause introducing v17 is rendered three
+different ways in the shipped editions, so nothing rests on it. · Application:
+decide what faithfulness is regardless of outcome. · Prayer: refuses to predict
+God. · Next: read what happened, with eyes open — the rescue came inside the
+fire.
+*Editorial:* the edition divergence is named in the prose by design (rule 49).
+
+### Guilt & Repeated Sin — "I'm carrying guilt or stuck in sin" → ends at Learn / Understanding the Gospel
+
+**gs-1 What the silence costs** — Psalm 32:1–5 (basis 32:6–7, 32:8–11)
+Thesis: forgiveness lands on the decision to stop hiding, with no interval. ·
+Move: the physical cost of silence, then the speed of v5; explicitly refuses the
+reverse inference from suffering to guilt. · Application: name what you have
+kept quiet. · Prayer: says it without grading it. · Next: the record.
+
+**gs-2 The record, and what happened to it** — Colossians 2:13–14 (basis 2:6–12, 2:15)
+Thesis: the charge against you was removed, not reduced. · Move: dead/alive,
+then the three verbs about the document; shame re-reads a cancelled file. ·
+Application: stop consulting your own copy. · Prayer: addressed to Jesus. ·
+Next: sorry versus turning.
+*Theological:* says plainly that a cancelled record is not a rewritten past and
+consequences do not evaporate.
+
+**gs-3 Sorry is not the same as turning** — 2 Corinthians 7:8–11 (basis 7:5–7, 7:12–13)
+Thesis: the two sorrows are told apart by what they produce, not by how bad
+they feel. · Move: Paul's list of outcomes in v11 as the test. · Application: has
+this produced any movement? · Prayer: offers the turn instead of the feeling. ·
+Next: where the strength comes from. *Flagged above.*
+
+**gs-4 Grace is the teacher** — Titus 2:11–14 (basis 2:1–10, 3:3–7)
+Thesis: grace is the subject of the verb — it trains; effort is its curriculum,
+not its price. · Move: the single sentence read as one movement, with 3:3–7
+keeping it from becoming a wage. · Application: the next obedient thing you
+already know. · Prayer: asks to be trained. · Next: tell one trusted Christian
+if this is a pattern; and if shame has reached self-harm, a doctor today.
+*Safety:* the second clause is deliberately short and does not turn conviction
+into a crisis screen.
+
+### Hurt, Anger & Forgiveness — "I'm hurt, angry, or struggling to forgive" → ends at Matthew (Bible)
+
+**ha-1 It was not a stranger** — Psalm 55:12–14 (basis 55:1–8, 55:15–19)
+Thesis: betrayal by an intimate is its own injury, and the psalm says so
+without rounding it down. · Move: the wish to flee and the curse in v15 read as
+things handed to God rather than acted on. · Application: say the uncareful
+version to God. · Prayer: holds the wish without acting. · Next: what you are
+tempted to do with it.
+*Safety:* the imprecation is explicitly not offered as an instruction.
+
+**ha-2 Not yours to repay** — Romans 12:17–21 (basis 12:9–16, 13:1–4)
+Thesis: vengeance is reassigned, not abolished; and lawful justice is its
+route. · Move: the two qualifiers in v18; Romans 13 read as the channel for
+wrongdoing. · Application: stop settling the score yourself. · Prayer: admits
+wanting them to suffer. · Next: what forgiveness is. *Flagged above.*
+
+**ha-3 What forgiveness actually is** — Matthew 18:21–27 (basis 18:15–20, 18:28–35)
+Thesis: forgiveness is releasing a debt — giving up the right to collect. ·
+Move: the king cancels but does not reinstate; 18:15–20 shows forgiving is not
+the same as saying nothing. · Application: name what you are still collecting. ·
+Prompt: say whether you are willing to stop, or that you are not there yet. ·
+Next: what forgiving does not carry with it.
+
+**ha-4 Living next to it** — Ephesians 4:29–32 (basis 4:17–28, Romans 12:18)
+Thesis: forgiveness, trust, reconciliation, access, consequences and safety are
+six different things. · Move: bitterness addressed on the basis of what you
+received; Scripture's own qualifiers limit peace-making. · Application: stop
+treating them as one. · Prayer: forgive without pretending to be safe. · Next:
+if you are not safe, that is the next thing — emergency services if immediate.
+*Flagged above. Safety:* highest-risk step in the catalogue.
+
+### Direction & Decisions — "I need direction" → ends at Proverbs (Bible)
+
+**dd-1 Wisdom is looked for** — Proverbs 2:1–6 (basis 2:7–15)
+Thesis: wisdom is dug for and given, and what is found is God rather than an
+answer. · Move: the long conditional, then v6 refusing to let it become
+self-help. · Application: what digging looks like this week. · Prayer: asks for
+wisdom rather than a door. · Next: how little of this is hidden.
+*Safety:* refuses any method for extracting a private instruction.
+
+**dd-2 Most of it is not secret** — Micah 6:8 (basis 6:1–7, 6:9–16)
+Thesis: the largest part of God's will is published, and it shapes the person
+rather than the decision. · Move: the courtroom and the escalating offers, then
+the past tense of "he has told you". · Application: are you avoiding one of the
+three while waiting for guidance? · Prayer: asks to get on with what is known. ·
+Next: counsel.
+*Safety:* says the three are not a mechanism for producing a sign.
+
+**dd-3 Counsel, and the plan that stands** — Proverbs 19:20–21 (basis 19:16–19, 15:22)
+Thesis: plan seriously, take counsel honestly, hold the outcome loosely. ·
+Move: the two lines read together rather than as a warning against planning. ·
+Application: ask the person who will disagree. · Prompt: name them, and name
+what you hope they will say. · Next: deciding without certainty.
+*Safety:* no counsellor is presented as having God's hidden plan.
+
+**dd-4 Decide, and hold it loosely** — James 4:13–17 (basis 4:6–12, 5:7–8)
+Thesis: the plan survives; the certainty does not; and the good you already
+know is still owed. · Move: the business plan is not criticised, only the
+assumption under it; v17 closes the paragraph on known duty. · Application: the
+decision you have been delaying. · Prayer: holds the plan openly. · Next: James
+1 on asking for wisdom.
+
+---
+
+## The pilots (already adjudicated in Phase A.1)
+
+**Start Here** — sh-1 Psalm 62:5–8, sh-2 Matthew 11:28–30, sh-3 Luke 11:1–4.
+Ends at Learn / Learning to Pray.
+
+**Coming Back to God** — cb-1 Hosea 14:1–4, cb-2 Luke 15:17–24, cb-3 1 John
+1:8–10, cb-4 Romans 8:26–27, cb-5 Hebrews 10:19–25. Ends at Today.
+
+All six Phase A.1 flags were resolved by edit; none has been reopened by Phase
+B, and the pilots were not rewritten.
+
+## Catalogue shape
+
+- **Anchors:** 18 different books. 11 Old Testament, 17 New Testament. Psalms
+  carries 5 of 28 — the largest share, and not a dependency.
+- **Christ:** present through the Gospels (Mark 14, Matthew 6, 11, 18, Luke 11,
+  15) and through Colossians 2, Titus 2, Ephesians 4 and Hebrews 10, rather
+  than inserted mechanically into every step.
+- **Form:** 23 steps carry a written prayer, 5 a prompt. Next steps use
+  continue, openPassage, support and today; completions use Today twice, the
+  Bible three times and Learn twice.

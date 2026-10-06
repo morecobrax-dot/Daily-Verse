@@ -61,6 +61,10 @@ const COMPLETION_KINDS = ['today', 'learn', 'bible', 'devotions'];
 const HELP_CLAIMS = [
   { pattern: 'if you really trusted god', why: 'makes distress evidence of weak faith' },
   { pattern: 'if you had more faith', why: 'makes distress evidence of weak faith' },
+  { pattern: 'you don\'t trust god enough', why: 'makes distress evidence of weak faith' },
+  { pattern: 'you do not trust god enough', why: 'makes distress evidence of weak faith' },
+  { pattern: 'means you don\'t trust god', why: 'reads a feeling as a verdict on someone\'s faith' },
+  { pattern: 'means you do not trust god', why: 'reads a feeling as a verdict on someone\'s faith' },
   { pattern: 'anxiety is a sin', why: 'treats an experience as guilt' },
   { pattern: 'depression is a sin', why: 'treats an illness as guilt' },
   { pattern: 'pray harder', why: 'makes prayer a performance that earns an outcome' },
@@ -119,7 +123,13 @@ const UNSAFE_RECONCILIATION = [
   'you must stay', 'you have to stay', 'forgiveness means staying',
   'forgiveness requires you to stay', 'reconcile no matter', 'go back to him no matter',
   'give them another chance to hurt', 'stay in the marriage no matter',
-  'god wants you to stay with'
+  'god wants you to stay with',
+  /* Forgiveness collapsed into renewed access, which is the specific way
+     this path gets somebody hurt a second time. A step may still NAME these
+     in order to deny them: the denial clearing above is what makes that
+     possible, and the forgiveness path depends on it. */
+  'restore contact', 'must restore the relationship', 'let them back in',
+  'give them access again', 'forgiving means letting'
 ];
 
 /* The register that makes writing sound generated. Not forbidden English in
@@ -356,6 +366,35 @@ function passagesForOverlap(refs){
 
 /* ---------- claims, diagnosis, safety, register ---------- */
 
+/* Normalised the way the lints match, but with sentence punctuation left in,
+   so a match can be read in the sentence it belongs to. */
+function scanText(t){
+  return String(t).toLowerCase()
+    .replace(/[‘’']/g, "'")
+    .replace(/[^a-z'.!?;:—-]+/g, ' ')
+    .replace(/ +/g, ' ').trim();
+}
+
+const NEGATORS = /\b(not|never|nothing|nobody|cannot|can't|won't|doesn't|don't|isn't|aren't|refuses?|rather than|instead of|no promise|says nothing)\b/;
+
+/* A claim this app must not MAKE is one a step may still NAME in order to
+   deny it — and saying what a passage does not promise is most of the work
+   these readings do. The forgiveness path cannot say "forgiveness does not
+   require you to stay" if the lint fires on the words it has to use.
+
+   So for the classes where a denial is legitimate, a match is cleared when
+   the sentence it sits in is a denial. Sentence, not a window of characters:
+   "It does not promise the pressure lifts. Your breakthrough is coming."
+   must still fail on the second sentence. Register and unsourced-history
+   patterns are NOT cleared this way: naming them is a style problem whether
+   or not they are negated. */
+function deniedInSentence(text, at){
+  const start = Math.max(
+    text.lastIndexOf('.', at), text.lastIndexOf('!', at),
+    text.lastIndexOf('?', at), text.lastIndexOf(';', at), text.lastIndexOf(':', at));
+  return NEGATORS.test(text.slice(start + 1, at));
+}
+
 function scanProse(items, errors, notes){
   let scanned = 0;
   const hit = (where, field, pattern, why) =>
@@ -364,23 +403,30 @@ function scanProse(items, errors, notes){
   items.forEach(item => {
     Object.keys(item.fields).forEach(field => {
       const norm = S.normForOverlap(item.fields[field]);
+      const sentenced = scanText(item.fields[field]);
+      const asserted = pattern => {
+        const at = sentenced.indexOf(pattern);
+        return at !== -1 && !deniedInSentence(sentenced, at);
+      };
       if(!norm) return;
       scanned++;
-      D.FORBIDDEN_CLAIMS.forEach(c => { if(norm.indexOf(c.pattern) !== -1) hit(item.where, field, c.pattern, c.why); });
-      HELP_CLAIMS.forEach(c => { if(norm.indexOf(c.pattern) !== -1) hit(item.where, field, c.pattern, c.why); });
+      D.FORBIDDEN_CLAIMS.forEach(c => { if(asserted(c.pattern)) hit(item.where, field, c.pattern, c.why); });
+      HELP_CLAIMS.forEach(c => { if(asserted(c.pattern)) hit(item.where, field, c.pattern, c.why); });
       DIAGNOSIS_CLAIMS.forEach(p => {
-        if(norm.indexOf(p) !== -1) hit(item.where, field, p, 'tells a reader what they have; Help Me does not diagnose');
+        if(asserted(p)) hit(item.where, field, p, 'tells a reader what they have; Help Me does not diagnose');
       });
       SALVATION_STATUS.forEach(p => {
-        if(norm.indexOf(p) !== -1) hit(item.where, field, p,
+        if(asserted(p)) hit(item.where, field, p,
           'pronounces on where this reader stands with God, which the app cannot know and must not assert');
       });
+      /* Not cleared by a denial: an unsourced period claim is unsourced
+         either way, and the register is a style problem in any sentence. */
       HISTORICAL_CLAIMS.forEach(p => {
         if(norm.indexOf(p) !== -1) hit(item.where, field, p,
           'a historical claim with nothing behind it. Let the text make the point instead');
       });
       UNSAFE_RECONCILIATION.forEach(p => {
-        if(norm.indexOf(p) !== -1) hit(item.where, field, p, 'keeps somebody within reach of harm for a spiritual reason');
+        if(asserted(p)) hit(item.where, field, p, 'keeps somebody within reach of harm for a spiritual reason');
       });
       GENERIC_COPY.forEach(p => {
         if(norm.indexOf(p) !== -1) hit(item.where, field, p, 'reads as generated rather than written');
@@ -490,6 +536,14 @@ function checkSafety(doc, errors, notes){
   if(!Array.isArray(c.neverInferTerritoryFrom) || !c.neverInferTerritoryFrom.length){
     errors.push('safety.crisis — name what territory must never be inferred from (edition, language, stored preference)');
   }
+  /* Keying a resource to an edition is how the inference gets built by
+     accident: a Spanish reader is not a reader in Spain, and a reader in
+     Shanghai may well be reading the Berean. */
+  corpus.shippedEditions().forEach(ed => {
+    if(JSON.stringify(c).indexOf('"' + ed + '"') !== -1 || JSON.stringify(c).indexOf(ed + ':') !== -1){
+      errors.push('safety.crisis — a resource is keyed to the edition "' + ed + '". Territory is never inferred from what somebody is reading.');
+    }
+  });
   notes.push('crisis resources verified ' + c.verifiedOn + ', review by ' + c.reviewBy + ', ' +
              (c.sources || []).length + ' sources, ' + (c.territories || []).length + ' territory');
 }
