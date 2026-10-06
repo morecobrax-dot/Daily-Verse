@@ -183,3 +183,45 @@ Install to the home screen. Test offline. Rotate it. Turn on reduced motion.
 Open the keyboard on every form. Six viewports minimum, portrait and landscape.
 
 A change that looks right in a desktop browser has not been tested.
+
+## Help Me — what it is for, and what it must never become
+
+Help Me exists for the reader who needs Scripture and does not know where to
+open it. The movement is: what I am going through → Scripture → understanding
+→ reflection → prayer → one small next step → continuing in God's Word. A topic
+and five verses is not that, and neither is a support flow with no exit.
+
+**It is not therapy, counselling, diagnosis or spiritual direction from a
+machine.** It does not decide that somebody has a condition, score anyone,
+read what anyone writes, or tell a reader that God has spoken to them
+privately. Where a person needs a pastor, a doctor or emergency help, saying
+so is the honest answer, and the only one this app is qualified to give.
+
+Seven broad human situations, not one path per feeling. Depression, anxiety,
+loneliness, grief, doubt and shame belong inside the language of the broad
+paths; as a menu they become a list of diagnoses, which is a different product
+and a worse one.
+
+### Continuity, when it is built
+
+- Opening a path completes nothing. Only a deliberate Continue marks a step.
+- No schedule, no missed days, no streaks, no completion celebration.
+- More than one path may hold progress; the home resumes the most recently
+  updated incomplete one.
+- A reader may leave at any point, and finishing hands them to Today, Learn,
+  Devotions or ordinary Bible reading — never back into Help Me.
+
+A record of which problems somebody chose, over time, is a psychological
+dossier. It is technically trivial and it will not be built.
+
+### Urgent help
+
+One quiet route from the Help Me home, always there, never a banner on every
+path. Contextual offers only where a path genuinely warrants one. Crisis
+resources are read from the publisher, carry the date they were checked, and
+expire: no number is ever printed for a territory nobody verified, because a
+wrong number given to someone in crisis is worse than none.
+
+Forgiveness is never framed as requiring a reader to stay in danger, resume
+contact, or restore an abuser's access to them. Forgiveness is not
+reconciliation, and neither requires proximity.

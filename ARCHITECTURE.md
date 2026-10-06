@@ -591,3 +591,78 @@ screen may list them together.
 
 The active study and completion counts are **derived** from
 `data.studyProgress`. There is no second field that can disagree.
+
+## Help Me — the content layer
+
+A third content type beside Learn and Devotions, and a separate one: a lesson
+teaches, a devotional applies a passage to a life pattern, and a Help Me step
+takes somebody who does not know where to begin into one passage and hands
+them onward. The schemas look similar because the trust model is identical —
+canonical references, editorial prose, no Scripture text — but conflating them
+would make one set of fields answer to two product purposes.
+
+```
+data/help.json       paths, steps, and the safety configuration
+scripts/help.js      npm run help:verify
+HELP-ME-REVIEW.md    the packet a human reviewer reads
+```
+
+**No Scripture text lives in the file.** A step carries `passages` and `basis`
+as references; the words come from the shipped editions at render time, through
+the same path Devotions uses — `loadBibleBook()` into the reader's own book
+cache, rendered in the shared verse card. Changing edition changes the words
+and nothing else.
+
+### What it reuses, and what it may not duplicate
+
+| Need | Existing system |
+|---|---|
+| Scripture for a step | the Bible reader's book cache and `verse-card` |
+| Full context | the Bible reader, opened over the asking surface |
+| Keeping a verse | `data.saved` / `data.bibleHighlights`, by canonical id |
+| Writing something down | `data.studyNotes`-shaped records, never `data.notes` |
+| Deeper teaching | Learn, by study id |
+| Daily rhythm after a path | Today |
+
+A second save, highlight, note or Bible system would be a parallel source of
+truth, which is a defect rather than an addition.
+
+### Verification
+
+`help:verify` runs the same content-trust primitives the rest of the repo
+uses, plus the ones only this content needs:
+
+- every reference resolves, with real text, in **all seven shipped editions**
+- the six-word overlap guard runs against **every shipped English edition**,
+  not only the default: the prose is English, and a run of the Berean is a
+  retyped verse too
+- the devotional claim lint, imported rather than copied, plus Help Me's own:
+  diagnosis, guaranteed feelings, distress-as-weak-faith, counsel that keeps
+  somebody within reach of harm, and the canned register that makes writing
+  sound generated
+- no field in the catalogue may be the start of a record about a person
+- crisis resources carry their source and a review date, and the command fails
+  once that date passes
+
+CONTRACT 49 drives the same functions over the shipped file, and re-derives
+the reference check independently. 43 deliberate mutations fail by name.
+
+### Storage, when progress is built
+
+Nothing is stored today. When it is, the shape is the one Devotions already
+uses, for the same reasons:
+
+| Key | Shape |
+|---|---|
+| `data.helpProgress` | `{ id: pathId, done: [stepId], startedAt, updatedAt }` |
+
+An array of records with an `id`, so `exportData` and `mergeBackup` handle it
+without being taught about it, and `DATA_SCHEMA_VERSION` does not move. Nothing
+else is stored: no mood, no history of which situations were chosen, no scores.
+
+### Phase A ships no feature
+
+`index.html` carries no Help Me tab, reader, catalogue or storage key, and
+`scripture.js` does not read `data/help.json`. The content is proven first,
+because a destination that looks finished before anyone has read what is in it
+is how bad content ships.

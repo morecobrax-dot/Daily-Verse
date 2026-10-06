@@ -6929,8 +6929,277 @@ async function testInteractionQuality(){
   }
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 49 — Help Me, before it has a reader
+
+   Help Me walks somebody who does not know where to begin into a passage.
+   The reader may be exhausted, ashamed or frightened, which makes a careless
+   sentence here cost more than the same sentence would on Today.
+
+   Phase A ships CONTENT and CHECKS and no feature. Several assertions below
+   exist to keep it that way, because a destination that looks finished
+   before its content is proven is how bad content ships — the same reason
+   the Devotions phase held the line in CONTRACT 41.
+
+   These run the catalogue's own verifier where that is the honest thing to
+   do (one implementation, driven twice) and re-derive the facts that matter
+   most — every reference, in every shipped edition — independently.
+   --------------------------------------------------------- */
+function testHelpMe(){
+  section('CONTRACT 49 — Help Me: content, trust and safety');
+  const fsx = require('fs');
+  const pathx = require('path');
+  const HELP = require('../scripts/help.js');
+  const S = require('../scripts/scripture.js');
+  const corpus = require('../scripts/corpus.js');
+  const doc = HELP.readCatalogue();
+  const src = H.readApp();
+
+  const paths = doc.paths || [];
+  const authored = paths.filter(p => p.status === 'authored');
+  const steps = [];
+  authored.forEach(p => (p.steps || []).forEach((s, i) => steps.push({ p: p, s: s, n: i + 1, where: p.id + '/' + s.id })));
+
+  sub('the approved V1 shape, and nothing more');
+  /* The taxonomy is deliberately restrained: seven broad human situations,
+     not one path per diagnosis. */
+  T('all seven approved paths exist, in the approved order',
+    paths.map(p => p.id).join() ===
+      'heavy-heart,fear-uncertainty,coming-back,guilt-and-sin,hurt-and-forgiveness,direction-decisions,start-here',
+    paths.map(p => p.id).join(', '));
+  T('exactly two are authored in this phase', authored.length === 2,
+    authored.map(p => p.id).join(', '));
+  T('the two pilots are Start Here and Coming Back to God',
+    authored.map(p => p.id).sort().join() === 'coming-back,start-here');
+  T('Start Here has exactly three ordered steps',
+    paths.find(p => p.id === 'start-here').steps.map(s => s.id).join() === 'sh-1,sh-2,sh-3');
+  T('Coming Back to God has exactly five ordered steps',
+    paths.find(p => p.id === 'coming-back').steps.map(s => s.id).join() === 'cb-1,cb-2,cb-3,cb-4,cb-5');
+  T('the other five are outlined, and carry no steps',
+    paths.filter(p => p.status === 'outline').every(p => !p.steps && p.plannedSteps > 0),
+    paths.filter(p => p.status === 'outline').map(p => p.id + '=' + p.plannedSteps).join(', '));
+  T('every path id is unique', new Set(paths.map(p => p.id)).size === paths.length);
+  T('every step id is unique across the catalogue',
+    new Set(steps.map(x => x.s.id)).size === steps.length);
+  T('every path says what a reader taps to reach it, and what it covers',
+    paths.every(p => p.entry && p.summary && Array.isArray(p.covers) && p.covers.length),
+    paths.filter(p => !p.entry).map(p => p.id).join(', '));
+  /* A path that ends nowhere leaves the reader inside a support flow, which
+     is the thing this feature is not. */
+  T('each authored path hands the reader somewhere real when it ends',
+    authored.every(p => p.completion && HELP.COMPLETION_KINDS.indexOf(p.completion.kind) !== -1 && p.completion.text),
+    authored.map(p => p.id + '->' + (p.completion || {}).kind).join(', '));
+  T('a completion that points at Learn names a study that actually exists',
+    authored.filter(p => p.completion.kind === 'learn').every(p => {
+      const studies = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'studies.json'), 'utf8'));
+      return (studies.studies || studies).some(s => s.id === p.completion.study);
+    }));
+
+  sub('every step can be reviewed by a person');
+  T('every step anchors on at least one passage',
+    steps.every(x => Array.isArray(x.s.passages) && x.s.passages.length));
+  T('every step records the context actually read',
+    steps.every(x => Array.isArray(x.s.basis) && x.s.basis.length),
+    steps.filter(x => !(x.s.basis || []).length).map(x => x.where).join(', '));
+  T('basis widens the anchor rather than repeating it',
+    steps.every(x => x.s.basis.join() !== x.s.passages.join()));
+  T('every step arrives, explains, asks and hands on',
+    steps.every(x => x.s.arrive && x.s.notice && (x.s.consider || []).length && x.s.nextStep && x.s.nextStep.text));
+  /* One prayer OR one prompt. Both is a step that cannot decide what it is
+     asking for, and the check that allows both is a check with a bug in it. */
+  T('each step carries exactly one of a prayer or a prayer prompt',
+    steps.every(x => !!(x.s.prayer && x.s.prayer.trim()) !== !!(x.s.prayerPrompt && x.s.prayerPrompt.trim())),
+    steps.filter(x => !!x.s.prayer === !!x.s.prayerPrompt).map(x => x.where).join(', '));
+  T('no step asks more than two questions',
+    steps.every(x => x.s.consider.length <= doc._authoring.considerCountMax));
+  T('only the steps that are not last may continue to a next step',
+    steps.every(x => x.s.nextStep.kind !== 'continue' || x.n < x.p.steps.length));
+
+  sub('no Scripture text lives in this file');
+  /* Help Me carries LOCATIONS. The edition on screen supplies the words, so
+     a reader who changes translation changes the Scripture and nothing else. */
+  const blob = JSON.stringify(doc);
+  const web = corpus.verses('eng-web');
+  let worst = '';
+  steps.forEach(x => {
+    (x.s.passages || []).forEach(ref => {
+      const p = S.parseRef(ref);
+      if(!p) return;
+      for(let v = p.from; v <= p.to; v++){
+        const t = web.get(p.code + ' ' + p.chapter + ':' + v);
+        if(!t) continue;
+        const clean = String(t).trim();
+        for(let i = 0; i + 40 <= clean.length; i += 10){
+          const chunk = clean.slice(i, i + 40);
+          if(blob.indexOf(chunk) !== -1) worst = x.where + ': ' + chunk;
+        }
+      }
+    });
+  });
+  T('no anchor verse appears verbatim in the catalogue', worst === '', worst);
+
+  sub('every reference resolves, in every edition a reader might have');
+  /* Re-derived here rather than taken from the verifier: this is the
+     assertion a Chinese or German reader depends on. */
+  const eds = corpus.shippedEditions();
+  const verses = {}; eds.forEach(e => { verses[e] = corpus.verses(e); });
+  const bad = [];
+  let refCount = 0;
+  steps.forEach(x => {
+    const refs = [].concat(x.s.passages || [], x.s.basis || [], x.s.relatedPassages || [],
+                           (x.s.nextStep && x.s.nextStep.ref) ? [x.s.nextStep.ref] : []);
+    refs.forEach(ref => {
+      refCount++;
+      const p = S.parseRef(ref);
+      if(!p){ bad.push(x.where + ' ' + ref + ' unparseable'); return; }
+      eds.forEach(ed => {
+        for(let v = p.from; v <= p.to; v++){
+          const t = verses[ed].get(p.code + ' ' + p.chapter + ':' + v);
+          if(t === undefined) bad.push(x.where + ' ' + ref + ' missing in ' + ed);
+          else if(!String(t).trim()) bad.push(x.where + ' ' + ref + ' empty in ' + ed);
+        }
+      });
+    });
+  });
+  T('every reference resolves with real text in all seven shipped editions',
+    bad.length === 0 && refCount > 20, bad.slice(0, 3).join('; ') || (refCount + ' references'));
+  /* The held editions are held for reasons that have not changed. A pilot
+     passage proved safe against a translation nobody ships would prove
+     nothing at all. */
+  T('and the editions checked are the shipped ones, not the held ones',
+    eds.length === 7 && ['fraLSG', 'fra_fob', 'ita1927', 'nld'].every(h => eds.indexOf(h) === -1),
+    eds.join(', '));
+
+  sub('prose does not reproduce Scripture — in any English edition');
+  /* The prose is English, and a reader can be in any of three English
+     editions. A six-word run of the Berean is a retyped verse too. */
+  const refs = [];
+  steps.forEach(x => ['passages', 'basis'].forEach(f => (x.s[f] || []).forEach(r => refs.push({ where: x.where, ref: r }))));
+  const { byId, editions } = HELP.passagesForOverlap(refs);
+  const overlap = [];
+  S.assertNoEmbeddedScripture(
+    steps.map(x => ({ where: x.where, fields: HELP.stepFields(x.s) })), byId, overlap);
+  T('no six-word run of any anchor or context passage appears in prose',
+    overlap.length === 0, overlap.slice(0, 2).join('; '));
+  T('and the guard was given every English edition to check against',
+    editions.length === 3 && byId.length > 40,
+    editions.join(', ') + ', ' + byId.length + ' renderings');
+
+  sub('prose does not claim more than it may');
+  const claims = [];
+  const items = steps.map(x => ({ where: x.where, fields: HELP.stepFields(x.s) }))
+    .concat(paths.map(p => ({ where: 'path ' + p.id, fields: HELP.pathFields(p) })));
+  HELP.scanProse(items, claims, []);
+  T('no step claims private revelation, arranged circumstances or a promised outcome',
+    claims.length === 0, claims.slice(0, 3).join('; '));
+  T('the lint actually carries the claims this genre fails by',
+    HELP.HELP_CLAIMS.length > 15 && HELP.DIAGNOSIS_CLAIMS.length > 5 &&
+    HELP.GENERIC_COPY.length > 15 && HELP.UNSAFE_RECONCILIATION.length > 5);
+  /* Diagnosis is the line between acknowledging what somebody says about
+     themselves and telling them what they have. */
+  const diag = [];
+  HELP.scanProse(items, diag, []);
+  T('no prose tells a reader what condition they have', diag.length === 0);
+  const dialled = [];
+  HELP.checkNumbersInProse(items, dialled);
+  T('no number to dial appears in a reading — they live only in the verified crisis block',
+    dialled.length === 0, dialled.slice(0, 2).join('; '));
+
+  sub('the writing stays inside its declared limits, and nowhere near them');
+  const lim = doc._authoring;
+  T('the limits are declared in the file itself',
+    lim && lim.noticeMax > 0 && lim.prayerMax > 0 && lim.stepWordsMax > 0 && lim.considerCountMax === 2);
+  T('nothing exceeds a limit',
+    steps.every(x => x.s.notice.length <= lim.noticeMax &&
+                     x.s.arrive.length <= lim.arriveMax &&
+                     HELP.stepWordCount(x.s) <= lim.stepWordsMax));
+  /* Length is not a target. A step at the ceiling is a step with padding in
+     it, and the reader this feature is for has the least patience for that. */
+  T('and nothing is written to the ceiling',
+    steps.every(x => HELP.stepWordCount(x.s) < lim.stepWordsMax * 0.85),
+    Math.max(...steps.map(x => HELP.stepWordCount(x.s))) + ' words of ' + lim.stepWordsMax);
+  T('there is no minimum length anywhere in the authoring rules',
+    JSON.stringify(lim).indexOf('Min') === -1);
+
+  sub('the catalogue reads as written, not generated');
+  const cadence = [];
+  HELP.checkCadence(steps.map(x => ({ step: x.s })), cadence, []);
+  T('no two readings, arrivals or prayers share an opening', cadence.length === 0, cadence.join('; '));
+  const generic = [];
+  HELP.scanProse(items, generic, []);
+  T('none of the known generated-sounding phrases appear', generic.length === 0);
+
+  sub('safety: urgent help, verified resources, and no invented numbers');
+  const safety = doc.safety || {};
+  const crisis = safety.crisis || {};
+  T('a quiet urgent-help route is configured for the Help Me home',
+    !!(safety.escalation && safety.escalation.homeEntry && safety.escalation.homeEntry.label));
+  T('escalation is contextual, not a warning on every path',
+    Array.isArray(safety.escalation.contextualPaths) &&
+    safety.escalation.contextualPaths.length > 0 &&
+    safety.escalation.contextualPaths.length < paths.length,
+    (safety.escalation.contextualPaths || []).join(', '));
+  T('every contextual path is a path that exists',
+    safety.escalation.contextualPaths.every(id => paths.some(p => p.id === id)));
+  /* A crisis resource written from memory is the one kind of wrong answer
+     this feature must never give. */
+  T('crisis resources record the date they were verified and when they go stale',
+    /^\d{4}-\d{2}-\d{2}$/.test(crisis.verifiedOn || '') &&
+    /^\d{4}-\d{2}-\d{2}$/.test(crisis.reviewBy || '') &&
+    crisis.reviewBy > crisis.verifiedOn,
+    crisis.verifiedOn + ' -> ' + crisis.reviewBy);
+  T('and they are not already stale',
+    new Date().toISOString().slice(0, 10) <= crisis.reviewBy,
+    'today ' + new Date().toISOString().slice(0, 10) + ', review by ' + crisis.reviewBy);
+  T('every resource names the source it was read from, and what that source confirmed',
+    (crisis.sources || []).length >= 2 &&
+    crisis.sources.every(s => /^https:\/\//.test(s.url || '') && s.checked && s.confirms),
+    (crisis.sources || []).length + ' sources');
+  T('every configured territory says how to reach it',
+    (crisis.territories || []).length >= 1 &&
+    crisis.territories.every(t => t.code && t.name && t.line && (t.actions || []).length &&
+      t.actions.every(a => a.kind && a.label && a.value)));
+  T('a reader outside a verified territory is told the truth rather than a number',
+    !!(crisis.outsideListedTerritories && crisis.outsideListedTerritories.guidance) &&
+    !/\d{3,}/.test(crisis.outsideListedTerritories.guidance),
+    (crisis.outsideListedTerritories || {}).guidance);
+  T('emergency wording says where it came from',
+    !!(crisis.emergency && crisis.emergency.text && crisis.emergency.sourceNote));
+  T('the rule against counselling anybody to stay in danger is written down, and binds paths that exist',
+    !!(safety.unsafeRelationship && safety.unsafeRelationship.rule) &&
+    safety.unsafeRelationship.appliesTo.every(id => paths.some(p => p.id === id)),
+    (safety.unsafeRelationship || {}).appliesTo + '');
+
+  sub('this does not become a record about a person');
+  const profile = [];
+  HELP.checkNoProfileFields(doc, profile, 'help');
+  T('no field in the catalogue scores, rates or profiles a reader', profile.length === 0,
+    profile.slice(0, 2).join('; '));
+  T('what this feature must never become is written down',
+    Array.isArray(safety.neverBuild) && safety.neverBuild.length >= 8);
+  T('and it names the specific temptations: diagnosis, mood history, streaks, analytics',
+    ['diagnos', 'mood', 'streak', 'analytic'].every(k =>
+      safety.neverBuild.some(x => x.toLowerCase().indexOf(k) !== -1)));
+
+  sub('Phase A ships no feature');
+  /* The whole point of this phase: the content is proven first. A tab, a
+     reader or a stored record here would mean somebody shipped a destination
+     before anyone had read what is in it. */
+  const noUI = [];
+  HELP.checkNoUI(noUI, []);
+  T('index.html carries no Help Me reader, tab, catalogue or stored progress',
+    noUI.length === 0, noUI.join('; '));
+  T('primary navigation still has its five tabs, and Help Me is not one of them',
+    (src.match(/class="tab-btn[^"]*" data-tab="/g) || []).length === 5 &&
+    src.indexOf('data-tab="help"') === -1);
+  T('no release note announces a feature that does not exist',
+    !/Help Me/i.test((src.match(/const APP_UPDATES[\s\S]*?\n\];/) || [''])[0]));
+  T('the catalogue is not wired into the build that writes the app',
+    fsx.readFileSync(pathx.join(H.ROOT, 'scripts', 'scripture.js'), 'utf8').indexOf('help.json') === -1);
+}
+
 module.exports = {
-  T, section, sub, results, reset, testPortability,
+  T, section, sub, results, reset, testPortability, testHelpMe,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,

@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.13.2",
-  "phase": null,
-  "status": "stable",
+  "phase": "Help Me - Phase A (content foundation)",
+  "status": "building",
   "needsQa": false,
-  "needsDecision": false,
-  "currentTask": null,
-  "nextAction": null,
+  "needsDecision": true,
+  "currentTask": "Help Me Phase A: content, trust and safety foundation. Two pilot paths authored and verified, crisis resources read from their publishers, contracts and a review packet added. Nothing user-visible: no tab, no reader, no stored progress.",
+  "nextAction": "Human theological and editorial review of HELP-ME-REVIEW.md before the remaining five paths are authored.",
   "blocker": null,
-  "updatedAt": "2026-09-28T17:29:48Z"
+  "updatedAt": "2026-10-06T21:31:56Z"
 }

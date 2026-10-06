@@ -1,0 +1,565 @@
+#!/usr/bin/env node
+/* =========================================================
+   HELP ME — the catalogue, and what has to be true of it
+
+   Help Me takes someone who does not know where in Scripture to begin and
+   walks them into a passage. The reader may be exhausted, ashamed, grieving
+   or frightened, and that is a different kind of risk again from a lesson or
+   a devotional: the same sentence that would be merely clumsy on Today can
+   land on somebody at two in the morning.
+
+   This file does NOT build anything into index.html. Phase A ships no reader,
+   no tab and no stored progress, so nothing here touches the SCRIPTURE region
+   or any hash. References are resolved in memory, for validation only.
+
+   What is checked here that nothing else in this repo needs:
+
+     1. Every reference resolves, with real text, in EVERY shipped edition.
+        Help Me stores no words; the edition on screen supplies them, so a
+        passage that is missing in Chinese is a step that breaks in Chinese.
+     2. No prose reproduces six consecutive words of a passage — checked
+        against every shipped ENGLISH edition, not just the default, because
+        the prose is English and a reader can be in any of them.
+     3. No prose makes the claims this genre fails by: that God has spoken
+        privately, arranged a circumstance or promised an outcome; that
+        distress proves weak faith; that a feeling is guaranteed; that a
+        reader should stay where they are in danger.
+     4. No prose diagnoses anybody, and no field in this file is the start of
+        a psychological record.
+     5. Crisis resources carry the source they were read from and the date,
+        and go stale on a date this script enforces.
+
+   What it cannot check is whether the writing is TRUE, wise or pastorally
+   right. That needs a person, and HELP-ME-REVIEW.md exists for them.
+
+   This lint is a REJECTION FILTER. Passing it is not theological approval.
+   ========================================================= */
+
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const S = require('./scripture.js');
+const corpus = require('./corpus.js');
+const D = require('./devotions.js');
+
+const ROOT = path.join(__dirname, '..');
+const CATALOGUE = path.join(ROOT, 'data', 'help.json');
+const STUDIES = path.join(ROOT, 'data', 'studies.json');
+const APP = path.join(ROOT, 'index.html');
+
+const STATUS = ['authored', 'outline'];
+/* What a step may hand a reader next. Deliberately small: every value here
+   is used by the two authored paths, because an enum value nothing renders
+   is a feature invented early. */
+const NEXT_KINDS = ['continue', 'openPassage', 'today', 'learn', 'support'];
+const COMPLETION_KINDS = ['today', 'learn', 'bible', 'devotions'];
+
+/* Claims Help Me may not make, over and above the ones devotional writing
+   is already held to (those are imported, not retyped). Matched against
+   normalised prose, so punctuation and case do not matter. */
+const HELP_CLAIMS = [
+  { pattern: 'if you really trusted god', why: 'makes distress evidence of weak faith' },
+  { pattern: 'if you had more faith', why: 'makes distress evidence of weak faith' },
+  { pattern: 'anxiety is a sin', why: 'treats an experience as guilt' },
+  { pattern: 'depression is a sin', why: 'treats an illness as guilt' },
+  { pattern: 'pray harder', why: 'makes prayer a performance that earns an outcome' },
+  { pattern: 'faith over fear', why: 'slogan that reads fear as faithlessness' },
+  { pattern: 'god won\'t give you more than you can handle', why: 'promises what Scripture does not' },
+  { pattern: 'god will not give you more than you can handle', why: 'promises what Scripture does not' },
+  { pattern: 'everything happens for a reason', why: 'claims to know why this happened' },
+  { pattern: 'god needed another angel', why: 'false comfort, and not what Scripture says' },
+  { pattern: 'god has a plan for your', why: 'claims knowledge of this reader\'s circumstances' },
+  { pattern: 'this is god\'s plan for', why: 'claims knowledge of this reader\'s circumstances' },
+  { pattern: 'you will feel better', why: 'promises a feeling' },
+  { pattern: 'you will feel peace', why: 'promises a feeling' },
+  { pattern: 'by the end of this you will', why: 'promises an outcome of using the app' },
+  { pattern: 'stop taking your', why: 'interferes with medical treatment' },
+  { pattern: 'you don\'t need medication', why: 'interferes with medical treatment' },
+  { pattern: 'instead of therapy', why: 'presents Scripture as a replacement for care' },
+  { pattern: 'instead of a doctor', why: 'presents Scripture as a replacement for care' }
+];
+
+/* Telling a reader what they have. Help Me may use the words people use
+   about themselves; it never decides that somebody HAS a condition. */
+const DIAGNOSIS_CLAIMS = [
+  'you are depressed', 'you have depression', 'you are clinically',
+  'you have anxiety', 'you are suffering from', 'your condition',
+  'what you have is', 'this is trauma', 'you are traumatised', 'you are traumatized'
+];
+
+/* Keeping someone within reach of harm, for a spiritual reason. Blunt
+   patterns catch only the blunt failures; the rule in the catalogue and a
+   human reviewer are what actually defend this. */
+const UNSAFE_RECONCILIATION = [
+  'you must stay', 'you have to stay', 'forgiveness means staying',
+  'forgiveness requires you to stay', 'reconcile no matter', 'go back to him no matter',
+  'give them another chance to hurt', 'stay in the marriage no matter',
+  'god wants you to stay with'
+];
+
+/* The register that makes writing sound generated. Not forbidden English in
+   every conceivable context — these are the specific tells, and if one is
+   genuinely the right sentence, the reviewer says so and it comes off this
+   list deliberately rather than by accident. */
+const GENERIC_COPY = [
+  'you\'re not alone', 'you are not alone', 'take a moment to breathe',
+  'it\'s okay to not be okay', 'it is okay to not be okay',
+  'your feelings are valid', 'embrace this season', 'in this season of life',
+  'in today\'s fast paced world', 'this passage reminds us', 'this verse reminds us',
+  'at the end of the day', 'whatever you\'re going through',
+  'whatever you are going through', 'god\'s got this', 'you\'ve got this',
+  'let that sink in', 'your journey', 'this journey', 'lean into',
+  'dear friend', 'stay strong', 'self care', 'take heart friend'
+];
+
+function readCatalogue(){ return JSON.parse(fs.readFileSync(CATALOGUE, 'utf8')); }
+
+/* Every reader-visible string on a step, named. A field that renders and is
+   exempt from these scans is exactly the hole they exist to close. */
+function stepFields(st){
+  return {
+    title: st.title || '',
+    arrive: st.arrive || '',
+    notice: st.notice || '',
+    consider: (st.consider || []).join(' — '),
+    prayer: st.prayer || '',
+    prayerPrompt: st.prayerPrompt || '',
+    nextStep: (st.nextStep && st.nextStep.text) || ''
+  };
+}
+
+function pathFields(p){
+  return { title: p.title || '', entry: p.entry || '', summary: p.summary || '',
+           completion: (p.completion && p.completion.text) || '' };
+}
+
+function words(s){ return S.normForOverlap(s).split(' ').filter(Boolean).length; }
+
+function stepWordCount(st){
+  const f = stepFields(st);
+  return Object.keys(f).reduce((n, k) => n + words(f[k]), 0);
+}
+
+/* ---------- structure ---------- */
+
+function validate(doc, errors, notes){
+  const lim = doc._authoring || {};
+  if(typeof doc.version !== 'number') errors.push('catalogue — version must be a number');
+  if(!doc._about) errors.push('catalogue — no _about: say what this file is and what it never holds');
+  if(!Array.isArray(lim.rules) || !lim.rules.length) errors.push('catalogue — no authoring rules declared');
+  if(!Array.isArray(doc.paths) || !doc.paths.length){
+    errors.push('catalogue — no paths'); return { steps: [], refs: [], paths: [] };
+  }
+
+  const ids = new Set();
+  const steps = [];
+  const refs = [];
+
+  doc.paths.forEach(p => {
+    const at = 'path ' + (p.id || '?');
+    if(!p.id || !p.title || !p.entry || !p.summary){
+      errors.push(at + ' — needs id, title, entry and summary'); return;
+    }
+    if(ids.has(p.id)){ errors.push(at + ' — duplicate path id'); return; }
+    ids.add(p.id);
+    if(STATUS.indexOf(p.status) === -1){
+      errors.push(at + ' — status must be one of ' + STATUS.join(' | ') + ', got ' + JSON.stringify(p.status));
+    }
+    if(typeof p.plannedSteps !== 'number' || p.plannedSteps < 1){
+      errors.push(at + ' — plannedSteps must say how long this path is meant to be');
+    }
+    if(p.summary && p.summary.length > (lim.summaryMax || 220)){
+      errors.push(at + ' — summary is ' + p.summary.length + ' characters, over ' + lim.summaryMax);
+    }
+    if(!Array.isArray(p.covers) || !p.covers.length){
+      errors.push(at + ' — covers must name the situations this path is for');
+    }
+
+    if(p.status === 'outline'){
+      if(p.steps) errors.push(at + ' — an outline path must not carry steps');
+      return;
+    }
+
+    if(!Array.isArray(p.steps) || !p.steps.length){ errors.push(at + ' — authored path has no steps'); return; }
+    if(p.steps.length !== p.plannedSteps){
+      errors.push(at + ' — ' + p.steps.length + ' steps, but plannedSteps says ' + p.plannedSteps);
+    }
+    if(!p.completion || COMPLETION_KINDS.indexOf(p.completion.kind) === -1 || !p.completion.text){
+      errors.push(at + ' — an authored path must hand the reader somewhere: completion.kind one of ' +
+        COMPLETION_KINDS.join(' | ') + ' with text');
+    }
+
+    const stepIds = new Set();
+    p.steps.forEach((st, i) => {
+      const where = p.id + '/' + (st.id || ('#' + (i + 1)));
+      if(!st.id){ errors.push(where + ' — missing step id'); return; }
+      if(stepIds.has(st.id)){ errors.push(where + ' — duplicate step id'); return; }
+      stepIds.add(st.id);
+      if(!st.title) errors.push(where + ' — missing title');
+
+      if(!Array.isArray(st.passages) || !st.passages.length){
+        errors.push(where + ' — no passage: a step without Scripture is not a Help Me step');
+      }
+      if(!Array.isArray(st.basis) || !st.basis.length){
+        errors.push(where + ' — no basis: record the context actually read');
+      } else if(Array.isArray(st.passages) && st.basis.join() === st.passages.join()){
+        errors.push(where + ' — basis repeats the anchor instead of widening it');
+      }
+
+      const need = [['arrive', lim.arriveMax], ['notice', lim.noticeMax]];
+      need.forEach(([field, max]) => {
+        if(typeof st[field] !== 'string' || !st[field].trim()) errors.push(where + ' — no ' + field);
+        else if(st[field].length > max) errors.push(where + ' — ' + field + ' is ' + st[field].length + ' characters, over ' + max);
+      });
+
+      const consider = st.consider || [];
+      if(!Array.isArray(consider) || !consider.length) errors.push(where + ' — no consider question');
+      else {
+        if(consider.length > (lim.considerCountMax || 2)){
+          errors.push(where + ' — ' + consider.length + ' questions, over ' + lim.considerCountMax + '. This is not a worksheet.');
+        }
+        consider.forEach((q, n) => {
+          if(typeof q !== 'string' || !q.trim()) errors.push(where + ' — consider ' + (n + 1) + ' is empty');
+          else if(q.length > (lim.considerMax || 220)) errors.push(where + ' — consider ' + (n + 1) + ' is ' + q.length + ' characters, over ' + lim.considerMax);
+        });
+      }
+
+      /* Booleans, not the strings themselves: comparing the trimmed text
+         meant two different strings were "different", and a step carrying
+         BOTH a prayer and a prompt sailed through. Found by mutation. */
+      const hasPrayer = !!(typeof st.prayer === 'string' && st.prayer.trim());
+      const hasPrompt = !!(typeof st.prayerPrompt === 'string' && st.prayerPrompt.trim());
+      if(hasPrayer === hasPrompt){
+        errors.push(where + ' — a step carries exactly one of prayer or prayerPrompt');
+      }
+      [['prayer', st.prayer], ['prayerPrompt', st.prayerPrompt]].forEach(([field, v]) => {
+        if(typeof v === 'string' && v.length > (lim.prayerMax || 900)){
+          errors.push(where + ' — ' + field + ' is ' + v.length + ' characters, over ' + lim.prayerMax);
+        }
+      });
+
+      const ns = st.nextStep;
+      if(!ns || NEXT_KINDS.indexOf(ns.kind) === -1 || !ns.text){
+        errors.push(where + ' — nextStep.kind must be one of ' + NEXT_KINDS.join(' | ') + ', with text');
+      } else {
+        if(ns.text.length > (lim.nextStepMax || 360)){
+          errors.push(where + ' — nextStep is ' + ns.text.length + ' characters, over ' + lim.nextStepMax);
+        }
+        if(ns.kind === 'openPassage' && !ns.ref) errors.push(where + ' — nextStep opens a passage but names none');
+        if(ns.kind === 'continue' && i === p.steps.length - 1){
+          errors.push(where + ' — the last step cannot continue to a step that does not exist');
+        }
+      }
+
+      const total = stepWordCount(st);
+      if(total > (lim.stepWordsMax || 520)){
+        errors.push(where + ' — ' + total + ' words of editorial prose, over ' + lim.stepWordsMax);
+      }
+
+      ['passages', 'basis', 'relatedPassages'].forEach(field => {
+        (st[field] || []).forEach(ref => {
+          if(typeof ref !== 'string' || !S.parseRef(ref)){
+            errors.push(where + ' — ' + field + ' has an unparseable reference: ' + JSON.stringify(ref));
+            return;
+          }
+          refs.push({ where: where + ' ' + field, ref: ref });
+        });
+      });
+      if(ns && ns.ref){
+        if(!S.parseRef(ns.ref)) errors.push(where + ' — nextStep names an unparseable reference: ' + JSON.stringify(ns.ref));
+        else refs.push({ where: where + ' nextStep', ref: ns.ref });
+      }
+
+      steps.push({ path: p, step: st, where: where, n: i + 1 });
+    });
+  });
+
+  const authored = doc.paths.filter(p => p.status === 'authored');
+  notes.push(doc.paths.length + ' paths (' + authored.length + ' authored, ' +
+             (doc.paths.length - authored.length) + ' outlined), ' + steps.length + ' steps');
+  return { steps: steps, refs: refs, paths: doc.paths };
+}
+
+/* ---------- Scripture ---------- */
+
+function checkReferences(refs, errors, notes){
+  const eds = corpus.shippedEditions();
+  const verses = {};
+  eds.forEach(e => { verses[e] = corpus.verses(e); });
+  const seen = new Set();
+  refs.forEach(r => {
+    const p = S.parseRef(r.ref);
+    if(!p) return;
+    seen.add(r.ref);
+    eds.forEach(ed => {
+      for(let v = p.from; v <= p.to; v++){
+        const key = p.code + ' ' + p.chapter + ':' + v;
+        const text = verses[ed].get(key);
+        if(text === undefined) errors.push(r.where + ' — ' + r.ref + ' does not exist in ' + ed + ' (' + key + ')');
+        else if(!String(text).trim()) errors.push(r.where + ' — ' + r.ref + ' is published empty in ' + ed + ' (' + key + ')');
+      }
+    });
+  });
+  notes.push(refs.length + ' references (' + seen.size + ' distinct) resolve in all ' + eds.length + ' shipped editions');
+}
+
+/* The passages these steps discuss, in every shipped ENGLISH edition. The
+   prose is English; a six-word run of the Berean or the ASV is just as much
+   a retyped verse as a run of the default edition. */
+function passagesForOverlap(refs){
+  const eds = corpus.shippedEditions().filter(e => e.indexOf('eng') === 0);
+  const out = [];
+  const seen = new Set();
+  eds.forEach(ed => {
+    const verses = corpus.verses(ed);
+    refs.forEach(r => {
+      const key = ed + '|' + r.ref;
+      if(seen.has(key)) return;
+      seen.add(key);
+      const p = S.parseRef(r.ref);
+      if(!p) return;
+      const parts = [];
+      for(let v = p.from; v <= p.to; v++){
+        const t = verses.get(p.code + ' ' + p.chapter + ':' + v);
+        if(t) parts.push(t);
+      }
+      if(parts.length) out.push({ ref: r.ref + ' (' + ed + ')', text: S.collapse(parts.join(' ')) });
+    });
+  });
+  return { byId: out, editions: eds };
+}
+
+/* ---------- claims, diagnosis, safety, register ---------- */
+
+function scanProse(items, errors, notes){
+  let scanned = 0;
+  const hit = (where, field, pattern, why) =>
+    errors.push(where + ' — ' + field + ' says "' + pattern + '": ' + why);
+
+  items.forEach(item => {
+    Object.keys(item.fields).forEach(field => {
+      const norm = S.normForOverlap(item.fields[field]);
+      if(!norm) return;
+      scanned++;
+      D.FORBIDDEN_CLAIMS.forEach(c => { if(norm.indexOf(c.pattern) !== -1) hit(item.where, field, c.pattern, c.why); });
+      HELP_CLAIMS.forEach(c => { if(norm.indexOf(c.pattern) !== -1) hit(item.where, field, c.pattern, c.why); });
+      DIAGNOSIS_CLAIMS.forEach(p => {
+        if(norm.indexOf(p) !== -1) hit(item.where, field, p, 'tells a reader what they have; Help Me does not diagnose');
+      });
+      UNSAFE_RECONCILIATION.forEach(p => {
+        if(norm.indexOf(p) !== -1) hit(item.where, field, p, 'keeps somebody within reach of harm for a spiritual reason');
+      });
+      GENERIC_COPY.forEach(p => {
+        if(norm.indexOf(p) !== -1) hit(item.where, field, p, 'reads as generated rather than written');
+      });
+    });
+  });
+  notes.push(scanned + ' prose fields scanned for claims, diagnosis, unsafe counsel and canned copy');
+}
+
+/* No number a person might dial belongs anywhere except the verified crisis
+   block. A number in a reading is a number nobody checked. */
+function checkNumbersInProse(items, errors){
+  items.forEach(item => {
+    Object.keys(item.fields).forEach(field => {
+      const m = String(item.fields[field]).match(/\d{3,}/g);
+      if(m) errors.push(item.where + ' — ' + field + ' contains "' + m[0] +
+        '". Numbers to dial live only in safety.crisis, where they carry a source and a date.');
+    });
+  });
+}
+
+/* ---------- the catalogue must not become a record about a person ---------- */
+
+const FORBIDDEN_KEYS = /diagnos|severity|symptom|risk[-_]?level|mood|sentiment|profile|analytic|telemetry|streak|score/i;
+
+function checkNoProfileFields(node, errors, trail){
+  if(!node || typeof node !== 'object') return;
+  if(Array.isArray(node)){ node.forEach((v, i) => checkNoProfileFields(v, errors, trail + '[' + i + ']')); return; }
+  Object.keys(node).forEach(k => {
+    if(FORBIDDEN_KEYS.test(k)){
+      errors.push('catalogue — field "' + trail + '.' + k + '" is the start of a record about a person. Help Me does not keep one.');
+    }
+    checkNoProfileFields(node[k], errors, trail + '.' + k);
+  });
+}
+
+/* ---------- crisis resources ---------- */
+
+function checkSafety(doc, errors, notes){
+  const s = doc.safety;
+  if(!s){ errors.push('catalogue — no safety block'); return; }
+  if(!s.escalation || !s.escalation.homeEntry || !s.escalation.policy){
+    errors.push('safety — escalation must say what is always available and what is contextual');
+  }
+  if(!s.unsafeRelationship || !s.unsafeRelationship.rule || !Array.isArray(s.unsafeRelationship.appliesTo)){
+    errors.push('safety — the unsafe-relationship rule must be stated, with the paths it binds');
+  }
+  if(!Array.isArray(s.neverBuild) || s.neverBuild.length < 5){
+    errors.push('safety — neverBuild must name what this feature will not become');
+  }
+
+  const c = s.crisis;
+  if(!c){ errors.push('safety — no crisis configuration'); return; }
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  if(!iso.test(c.verifiedOn || '')) errors.push('safety.crisis — verifiedOn must be an ISO date');
+  if(!iso.test(c.reviewBy || '')) errors.push('safety.crisis — reviewBy must be an ISO date');
+  if(iso.test(c.verifiedOn || '') && iso.test(c.reviewBy || '') && c.reviewBy <= c.verifiedOn){
+    errors.push('safety.crisis — reviewBy must fall after verifiedOn');
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  if(iso.test(c.reviewBy || '') && today > c.reviewBy){
+    errors.push('safety.crisis — the resources were last verified on ' + c.verifiedOn + ' and were due for review by ' +
+      c.reviewBy + '. Re-read every source below, update verifiedOn and reviewBy, and only then ship Help Me content.');
+  }
+
+  if(!Array.isArray(c.sources) || c.sources.length < 2){
+    errors.push('safety.crisis — list the sources these resources were read from');
+  } else {
+    c.sources.forEach((src, i) => {
+      if(!/^https:\/\//.test(src.url || '')) errors.push('safety.crisis — source ' + (i + 1) + ' has no https url');
+      if(!iso.test(src.checked || '')) errors.push('safety.crisis — source ' + (i + 1) + ' does not say when it was checked');
+      if(!src.confirms) errors.push('safety.crisis — source ' + (i + 1) + ' does not say what it confirmed');
+    });
+  }
+
+  if(!Array.isArray(c.territories) || !c.territories.length){
+    errors.push('safety.crisis — no territory is configured');
+  } else {
+    c.territories.forEach(t => {
+      const at = 'safety.crisis ' + (t.code || '?');
+      if(!t.code || !t.name || !t.line) errors.push(at + ' — needs code, name and the service it names');
+      if(!Array.isArray(t.actions) || !t.actions.length) errors.push(at + ' — no way to reach it');
+      (t.actions || []).forEach(a => {
+        if(!a.kind || !a.label || !a.value) errors.push(at + ' — an action needs kind, label and value');
+        if(a.kind === 'chat' && !/^https:\/\//.test(a.value)) errors.push(at + ' — a chat action must be an https url');
+      });
+    });
+  }
+  if(!c.emergency || !c.emergency.text || !c.emergency.sourceNote){
+    errors.push('safety.crisis — emergency guidance must say where its wording comes from');
+  }
+  if(!c.outsideListedTerritories || !c.outsideListedTerritories.guidance){
+    errors.push('safety.crisis — say what a reader outside the listed territories is told, rather than inventing a number for them');
+  }
+  notes.push('crisis resources verified ' + c.verifiedOn + ', review by ' + c.reviewBy + ', ' +
+             (c.sources || []).length + ' sources, ' + (c.territories || []).length + ' territory');
+}
+
+/* ---------- the register ---------- */
+
+function checkCadence(steps, errors, notes){
+  const firsts = steps.map(x => S.normForOverlap(x.step.notice).split(' ')[0]);
+  const dupes = firsts.filter((w, i) => firsts.indexOf(w) !== i);
+  if(dupes.length) errors.push('two readings open with the same word (' + [...new Set(dupes)].join(', ') + ')');
+
+  const arriveFirsts = steps.map(x => S.normForOverlap(x.step.arrive).split(' ')[0]);
+  const aDupes = arriveFirsts.filter((w, i) => arriveFirsts.indexOf(w) !== i);
+  if(aDupes.length) errors.push('two arrivals open with the same word (' + [...new Set(aDupes)].join(', ') + ')');
+
+  const opens = steps.filter(x => x.step.prayer).map(x =>
+    S.normForOverlap(x.step.prayer.split(',').slice(1).join(',')).split(' ').slice(0, 3).join(' '));
+  const pDupes = opens.filter((w, i) => opens.indexOf(w) !== i);
+  if(pDupes.length) errors.push('prayers share an opening (' + [...new Set(pDupes)].join(' | ') + ')');
+
+  notes.push(steps.length + ' steps checked for repeated openings');
+}
+
+/* ---------- Phase A has no reader ---------- */
+
+function checkNoUI(errors, notes, text){
+  const app = typeof text === 'string' ? text : fs.readFileSync(APP, 'utf8');
+  const tells = [
+    [/const HELP\b/, 'a HELP catalogue in the app'],
+    [/help\.json/, 'a reference to data/help.json'],
+    [/data-tab="help/, 'a Help Me tab'],
+    [/goToTab\('help/, 'navigation to a Help Me tab'],
+    [/helpPathProgress|data\.helpProgress/, 'stored Help Me progress']
+  ];
+  tells.forEach(([re, what]) => {
+    if(re.test(app)) errors.push('index.html carries ' + what + '. Phase A ships content and checks, not a feature.');
+  });
+  notes.push('index.html carries no Help Me reader, tab or stored progress');
+}
+
+function checkCrossReferences(doc, errors){
+  let studies = null;
+  try{ studies = JSON.parse(fs.readFileSync(STUDIES, 'utf8')); }catch(e){ return; }
+  const ids = new Set((studies.studies || studies).map(s => s.id));
+  doc.paths.forEach(p => {
+    if(!p.completion) return;
+    if(p.completion.kind === 'learn'){
+      if(!p.completion.study) errors.push('path ' + p.id + ' — completion points at Learn but names no study');
+      else if(!ids.has(p.completion.study)){
+        errors.push('path ' + p.id + ' — completion names study "' + p.completion.study + '", which does not exist');
+      }
+    } else if(p.completion.study){
+      /* A study id on a completion that does not go to Learn is a pointer
+         nothing follows, and the next person to move the completion will
+         trust it. */
+      errors.push('path ' + p.id + ' — completion names a study but does not hand the reader to Learn');
+    }
+  });
+}
+
+/* ---------- run ---------- */
+
+function run(){
+  const errors = [];
+  const notes = [];
+  const doc = readCatalogue();
+
+  const { steps, refs } = validate(doc, errors, notes);
+  checkNoProfileFields(doc, errors, 'help');
+  checkSafety(doc, errors, notes);
+  checkCrossReferences(doc, errors);
+  checkNoUI(errors, notes);
+
+  if(refs.length) checkReferences(refs, errors, notes);
+
+  if(steps.length){
+    const { byId, editions } = passagesForOverlap(refs);
+    const items = steps.map(x => ({ where: x.where, fields: stepFields(x.step) }));
+    doc.paths.forEach(p => items.push({ where: 'path ' + p.id, fields: pathFields(p) }));
+    const before = errors.length;
+    S.assertNoEmbeddedScripture(items, byId, errors);
+    notes.push(items.length + ' prose groups scanned against ' + byId.length + ' passage renderings in ' +
+               editions.length + ' English editions for six-word Scripture runs' +
+               (errors.length === before ? '' : ' — ' + (errors.length - before) + ' found'));
+    scanProse(items, errors, notes);
+    checkNumbersInProse(items, errors);
+    checkCadence(steps, errors, notes);
+  }
+
+  notes.forEach(n => console.log('  ' + n));
+
+  if(errors.length){
+    console.error('\nhelp:verify  FAILED — ' + errors.length + ' problem(s)');
+    errors.slice(0, 40).forEach(e => console.error('    ' + e));
+    if(errors.length > 40) console.error('    ... and ' + (errors.length - 40) + ' more');
+    return 1;
+  }
+  console.log('help:verify  ok — the catalogue is structurally sound, every reference resolves in ' +
+              'every shipped edition, and no prose reproduces Scripture, diagnoses anybody or ' +
+              'claims more than it may');
+  console.log('  (this proves nothing about whether the writing is TRUE, wise or pastorally right.');
+  console.log('   That needs a person. See HELP-ME-REVIEW.md.)');
+  return 0;
+}
+
+if(require.main === module){
+  try{ process.exit(run()); }
+  catch(e){ console.error('help:verify  ERROR — ' + e.message); process.exit(1); }
+}
+
+/* Exported so the contracts and the mutation suite drive the SAME code a
+   release runs, rather than a second copy of it that can agree with itself
+   while the real one is broken. */
+module.exports = { readCatalogue, stepFields, pathFields, stepWordCount, run,
+                   validate, checkReferences, passagesForOverlap, scanProse,
+                   checkNumbersInProse, checkNoProfileFields, checkSafety,
+                   checkCadence, checkNoUI, checkCrossReferences,
+                   STATUS, NEXT_KINDS, COMPLETION_KINDS,
+                   HELP_CLAIMS, DIAGNOSIS_CLAIMS, UNSAFE_RECONCILIATION, GENERIC_COPY,
+                   FORBIDDEN_KEYS, CATALOGUE };
