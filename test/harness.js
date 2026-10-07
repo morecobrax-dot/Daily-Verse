@@ -368,7 +368,8 @@ const BRIDGE = [
   'TOAST_MS', 'MAX_TOASTS', 'TOAST_VARIANTS',
   'OVERLAY_Z_BASE', '_openSheetStack', '_sheetOpeners', '_lockDepth', '_lockedScrollY',
   '_historyDepth', '_pendingSelfPops', '_confirmResolve',
-  'CLOSE_ACTION', 'GHOST_TAP_MS', '_screenChangedAt', 'FETCH_TIMEOUT_MS', 'bibleIndexFailed', 'bibleRequest'
+  'CLOSE_ACTION', 'GHOST_TAP_MS', '_screenChangedAt', 'FETCH_TIMEOUT_MS', 'bibleIndexFailed', 'bibleRequest',
+  'bibleInFlight', 'savedLoadFailed', 'savedResolveTicket', 'SAVED_BOOKS_PER_PASS'
 ];
 
 /* =========================================================

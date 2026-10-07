@@ -2324,6 +2324,21 @@ function validateAppId(id){
    ========================================================= */
 const APP_UPDATES = [
   {
+    id: 'v1-13-3',
+    version: '1.13.3',
+    title: 'Saved reads properly again',
+    date: '2026-10-07',
+    summary: 'Verses you have kept now show their words as soon as you open Saved, ' +
+             'however long the app has been closed, and in whichever translation you read.',
+    fixes: [
+      'Open the app and go straight to Saved, and every verse you kept from the Bible now shows its words. Before, they appeared only if you had been to the Bible first in the same session, and otherwise stayed blank',
+      'Highlights do the same, and show the verse you marked rather than an empty card',
+      'A kept verse is named properly straight away — Genesis, Génesis, 1. Mose, 创世记 — instead of a short code while the Bible was still loading',
+      'A verse whose book has not been downloaded now says so and offers Try again, rather than waiting for ever',
+      'Scripture & sources no longer shows a missing detail as a word; where the publisher does not state something, the app leaves it out'
+    ]
+  },
+  {
     id: 'v1-13-2',
     version: '1.13.2',
     title: 'Steadier to use',
@@ -3774,15 +3789,12 @@ const SCRIPTURE_SOURCE = {
   title: 'World English Bible Classic',
   abbr: 'WEB',
   language: 'English',
-  license: 'undefined',
-  publisher: 'undefined',
-  divineName: 'undefined',
-  corpusSynced: '2026-09-11',
+  corpusSynced: '2026-09-13',
   datasetHash: 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916',
   dailyHash: '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41',
   dailyCount: 378,
   studyOnlyCount: 37,
-  built: '2026-09-11'
+  built: '2026-10-07'
 };
 
 /* One catalogue. `daily: 1` marks the passages the Today rotation may
@@ -5059,31 +5071,31 @@ const DEVOTIONS = [
 const TRANSLATIONS = {
   "eng-web": { id: 'eng-web', title: 'World English Bible Classic', titleLocal: 'World English Bible Classic', abbr: 'WEB', language: 'English', lang: 'en', iso: 'eng', direction: 'LTR', publisher: 'eBible.org',
     copyright: 'Public Domain The World English Bible is in the Public Domain. You may copy it freely. "World English Bible" is a trademark that may only be used to refer to faithful copies of the text of the World English Bible as distributed from https://eBible.org. This public domain Bible translation is brought to you courtesy of eBible.org. If you would like to make a donation to help keep free Bible access like this going, please visit https://eBible.org/give.php .',
-    books: { '1CH': '1 Chronicles', '1CO': '1 Corinthians', '1JN': '1 John', '1PE': '1 Peter', '1SA': '1 Samuel', '1TH': '1 Thessalonians', '1TI': '1 Timothy', '2CH': '2 Chronicles', '2CO': '2 Corinthians', '2PE': '2 Peter', '2SA': '2 Samuel', '2TH': '2 Thessalonians', '2TI': '2 Timothy', '3JN': '3 John', 'ACT': 'Acts', 'COL': 'Colossians', 'DAN': 'Daniel', 'DEU': 'Deuteronomy', 'ECC': 'Ecclesiastes', 'EPH': 'Ephesians', 'EST': 'Esther', 'EXO': 'Exodus', 'EZK': 'Ezekiel', 'GAL': 'Galatians', 'GEN': 'Genesis', 'HAB': 'Habakkuk', 'HEB': 'Hebrews', 'ISA': 'Isaiah', 'JAS': 'James', 'JER': 'Jeremiah', 'JHN': 'John', 'JOB': 'Job', 'JOL': 'Joel', 'JOS': 'Joshua', 'LAM': 'Lamentations', 'LEV': 'Leviticus', 'LUK': 'Luke', 'MAL': 'Malachi', 'MAT': 'Matthew', 'MIC': 'Micah', 'MRK': 'Mark', 'NAM': 'Nahum', 'NEH': 'Nehemiah', 'NUM': 'Numbers', 'PHP': 'Philippians', 'PRO': 'Proverbs', 'PSA': 'Psalms', 'REV': 'Revelation', 'ROM': 'Romans', 'RUT': 'Ruth', 'SNG': 'Song of Solomon', 'TIT': 'Titus', 'ZEC': 'Zechariah', 'ZEP': 'Zephaniah' },
+    books: { '1CH': '1 Chronicles', '1CO': '1 Corinthians', '1ES': '1 Esdras', '1JN': '1 John', '1KI': '1 Kings', '1MA': '1 Maccabees', '1PE': '1 Peter', '1SA': '1 Samuel', '1TH': '1 Thessalonians', '1TI': '1 Timothy', '2CH': '2 Chronicles', '2CO': '2 Corinthians', '2ES': '2 Esdras', '2JN': '2 John', '2KI': '2 Kings', '2MA': '2 Maccabees', '2PE': '2 Peter', '2SA': '2 Samuel', '2TH': '2 Thessalonians', '2TI': '2 Timothy', '3JN': '3 John', '3MA': '3 Maccabees', '4MA': '4 Maccabees', 'ACT': 'Acts', 'AMO': 'Amos', 'BAR': 'Baruch', 'COL': 'Colossians', 'DAG': 'Daniel (Greek)', 'DAN': 'Daniel', 'DEU': 'Deuteronomy', 'ECC': 'Ecclesiastes', 'EPH': 'Ephesians', 'ESG': 'Esther (Greek)', 'EST': 'Esther', 'EXO': 'Exodus', 'EZK': 'Ezekiel', 'EZR': 'Ezra', 'GAL': 'Galatians', 'GEN': 'Genesis', 'HAB': 'Habakkuk', 'HAG': 'Haggai', 'HEB': 'Hebrews', 'HOS': 'Hosea', 'ISA': 'Isaiah', 'JAS': 'James', 'JDG': 'Judges', 'JDT': 'Judith', 'JER': 'Jeremiah', 'JHN': 'John', 'JOB': 'Job', 'JOL': 'Joel', 'JON': 'Jonah', 'JOS': 'Joshua', 'JUD': 'Jude', 'LAM': 'Lamentations', 'LEV': 'Leviticus', 'LUK': 'Luke', 'MAL': 'Malachi', 'MAN': 'Prayer of Manasses', 'MAT': 'Matthew', 'MIC': 'Micah', 'MRK': 'Mark', 'NAM': 'Nahum', 'NEH': 'Nehemiah', 'NUM': 'Numbers', 'OBA': 'Obadiah', 'PHM': 'Philemon', 'PHP': 'Philippians', 'PRO': 'Proverbs', 'PS2': 'Psalm 151', 'PSA': 'Psalms', 'REV': 'Revelation', 'ROM': 'Romans', 'RUT': 'Ruth', 'SIR': 'Sirach', 'SNG': 'Song of Solomon', 'TIT': 'Titus', 'TOB': 'Tobit', 'WIS': 'Wisdom', 'ZEC': 'Zechariah', 'ZEP': 'Zephaniah' },
     datasetHash: 'f4c8380cf3d29d014044f75a8ed0b6a1b27c4d00387acdd1431a3636995d5916', dailyHash: '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41', isDefault: true },
   "spaRV1909": { id: 'spaRV1909', title: 'Reina Valera 1909', titleLocal: 'Santa Biblia — Reina Valera 1909', abbr: 'RV1909', language: 'Español', lang: 'es', iso: 'spa', direction: 'LTR', publisher: 'eBible.org',
     copyright: 'Public Domain Dominio Público',
-    books: { '1CH': '1 Crónicas', '1CO': '1 Corintios', '1JN': '1 Juan', '1PE': '1 Pedro', '1SA': '1 Samuel', '1TH': '1 Tesalonicenses', '1TI': '1 Timoteo', '2CH': '2 Crónicas', '2CO': '2 Corintios', '2PE': '2 Pedro', '2SA': '2 Samuel', '2TH': '2 Tesalonicenses', '2TI': '2 Timoteo', '3JN': '3 Juan', 'ACT': 'Hechos', 'COL': 'Colosenses', 'DAN': 'Daniel', 'DEU': 'Deuteronomio', 'ECC': 'Eclesiastés', 'EPH': 'Efesios', 'EST': 'Ester', 'EXO': 'Éxodo', 'EZK': 'Ezequiel', 'GAL': 'Gálatas', 'GEN': 'Génesis', 'HAB': 'Habacuc', 'HEB': 'Hebreos', 'ISA': 'Isaías', 'JAS': 'Santiago', 'JER': 'Jeremías', 'JHN': 'Juan', 'JOB': 'Job', 'JOL': 'Joel', 'JOS': 'Josué', 'LAM': 'Lamentaciones', 'LEV': 'Levítico', 'LUK': 'San Lucas', 'MAL': 'Malaquías', 'MAT': 'San Mateo', 'MIC': 'Miqueas', 'MRK': 'Marcos', 'NAM': 'Nahum', 'NEH': 'Nehemías', 'NUM': 'Números', 'PHP': 'Filipenses', 'PRO': 'Proverbios', 'PSA': 'Salmos', 'REV': 'Apocalipsis', 'ROM': 'Romanos', 'RUT': 'Rut', 'SNG': 'Cantar de los Cantares', 'TIT': 'Tito', 'ZEC': 'Zacarías', 'ZEP': 'Sofonías' },
+    books: { '1CH': '1 Crónicas', '1CO': '1 Corintios', '1JN': '1 Juan', '1KI': '1 Reyes', '1PE': '1 Pedro', '1SA': '1 Samuel', '1TH': '1 Tesalonicenses', '1TI': '1 Timoteo', '2CH': '2 Crónicas', '2CO': '2 Corintios', '2JN': '2 Juan', '2KI': '2 Reyes', '2PE': '2 Pedro', '2SA': '2 Samuel', '2TH': '2 Tesalonicenses', '2TI': '2 Timoteo', '3JN': '3 Juan', 'ACT': 'Hechos', 'AMO': 'Amós', 'COL': 'Colosenses', 'DAN': 'Daniel', 'DEU': 'Deuteronomio', 'ECC': 'Eclesiastés', 'EPH': 'Efesios', 'EST': 'Ester', 'EXO': 'Éxodo', 'EZK': 'Ezequiel', 'EZR': 'Esdras', 'GAL': 'Gálatas', 'GEN': 'Génesis', 'HAB': 'Habacuc', 'HAG': 'Hageo', 'HEB': 'Hebreos', 'HOS': 'Oseas', 'ISA': 'Isaías', 'JAS': 'Santiago', 'JDG': 'Jueces', 'JER': 'Jeremías', 'JHN': 'Juan', 'JOB': 'Job', 'JOL': 'Joel', 'JON': 'Jonás', 'JOS': 'Josué', 'JUD': 'Judas', 'LAM': 'Lamentaciones', 'LEV': 'Levítico', 'LUK': 'San Lucas', 'MAL': 'Malaquías', 'MAT': 'San Mateo', 'MIC': 'Miqueas', 'MRK': 'Marcos', 'NAM': 'Nahum', 'NEH': 'Nehemías', 'NUM': 'Números', 'OBA': 'Abdías', 'PHM': 'Filemón', 'PHP': 'Filipenses', 'PRO': 'Proverbios', 'PSA': 'Salmos', 'REV': 'Apocalipsis', 'ROM': 'Romanos', 'RUT': 'Rut', 'SNG': 'Cantar de los Cantares', 'TIT': 'Tito', 'ZEC': 'Zacarías', 'ZEP': 'Sofonías' },
     datasetHash: 'effd30e42821bcb19cad18a652ae93b05ce280e06683a9fc5068335c40c15237', dailyHash: 'f8dcf92c1becb1ea08b8aca3c5e93a0ef928a5fc11c06ffb9ce7235064dbc5a2', isDefault: false },
   "engbsb": { id: 'engbsb', title: 'English Berean Standard Bible', titleLocal: 'Berean Standard Bible', abbr: 'BSB', language: 'English', lang: 'en', iso: 'eng', direction: 'LTR', publisher: 'eBible.org',
     copyright: 'Public Domain',
-    books: { '1CH': '1 Chronicles', '1CO': '1 Corinthians', '1JN': '1 John', '1PE': '1 Peter', '1SA': '1 Samuel', '1TH': '1 Thessalonians', '1TI': '1 Timothy', '2CH': '2 Chronicles', '2CO': '2 Corinthians', '2PE': '2 Peter', '2SA': '2 Samuel', '2TH': '2 Thessalonians', '2TI': '2 Timothy', '3JN': '3 John', 'ACT': 'Acts', 'COL': 'Colossians', 'DAN': 'Daniel', 'DEU': 'Deuteronomy', 'ECC': 'Ecclesiastes', 'EPH': 'Ephesians', 'EST': 'Esther', 'EXO': 'Exodus', 'EZK': 'Ezekiel', 'GAL': 'Galatians', 'GEN': 'Genesis', 'HAB': 'Habakkuk', 'HEB': 'Hebrews', 'ISA': 'Isaiah', 'JAS': 'James', 'JER': 'Jeremiah', 'JHN': 'John', 'JOB': 'Job', 'JOL': 'Joel', 'JOS': 'Joshua', 'LAM': 'Lamentations', 'LEV': 'Leviticus', 'LUK': 'Luke', 'MAL': 'Malachi', 'MAT': 'Matthew', 'MIC': 'Micah', 'MRK': 'Mark', 'NAM': 'Nahum', 'NEH': 'Nehemiah', 'NUM': 'Numbers', 'PHP': 'Philippians', 'PRO': 'Proverbs', 'PSA': 'Psalms', 'REV': 'Revelation', 'ROM': 'Romans', 'RUT': 'Ruth', 'SNG': 'Song', 'TIT': 'Titus', 'ZEC': 'Zechariah', 'ZEP': 'Zephaniah' },
+    books: { '1CH': '1 Chronicles', '1CO': '1 Corinthians', '1JN': '1 John', '1KI': '1 Kings', '1PE': '1 Peter', '1SA': '1 Samuel', '1TH': '1 Thessalonians', '1TI': '1 Timothy', '2CH': '2 Chronicles', '2CO': '2 Corinthians', '2JN': '2 John', '2KI': '2 Kings', '2PE': '2 Peter', '2SA': '2 Samuel', '2TH': '2 Thessalonians', '2TI': '2 Timothy', '3JN': '3 John', 'ACT': 'Acts', 'AMO': 'Amos', 'COL': 'Colossians', 'DAN': 'Daniel', 'DEU': 'Deuteronomy', 'ECC': 'Ecclesiastes', 'EPH': 'Ephesians', 'EST': 'Esther', 'EXO': 'Exodus', 'EZK': 'Ezekiel', 'EZR': 'Ezra', 'GAL': 'Galatians', 'GEN': 'Genesis', 'HAB': 'Habakkuk', 'HAG': 'Haggai', 'HEB': 'Hebrews', 'HOS': 'Hosea', 'ISA': 'Isaiah', 'JAS': 'James', 'JDG': 'Judges', 'JER': 'Jeremiah', 'JHN': 'John', 'JOB': 'Job', 'JOL': 'Joel', 'JON': 'Jonah', 'JOS': 'Joshua', 'JUD': 'Jude', 'LAM': 'Lamentations', 'LEV': 'Leviticus', 'LUK': 'Luke', 'MAL': 'Malachi', 'MAT': 'Matthew', 'MIC': 'Micah', 'MRK': 'Mark', 'NAM': 'Nahum', 'NEH': 'Nehemiah', 'NUM': 'Numbers', 'OBA': 'Obadiah', 'PHM': 'Philemon', 'PHP': 'Philippians', 'PRO': 'Proverbs', 'PSA': 'Psalms', 'REV': 'Revelation', 'ROM': 'Romans', 'RUT': 'Ruth', 'SNG': 'Song', 'TIT': 'Titus', 'ZEC': 'Zechariah', 'ZEP': 'Zephaniah' },
     datasetHash: '2af8fa91e4154ac6dd6407e579f7141d5e8277aee1bc7be5d88c56187caaec69', dailyHash: '9f6a97c43e89e6f7f88e5c975bf66e07a24ce5d45e108b081ddccf27043df125', isDefault: false },
   "eng-asv": { id: 'eng-asv', title: 'American Standard Version (1901)', titleLocal: 'American Standard Version (1901)', abbr: 'ASV', language: 'English', lang: 'en', iso: 'eng', direction: 'LTR', publisher: 'eBible.org',
     copyright: 'Public Domain This public domain Bible translation is brought to you courtesy of eBible.org. If you would like to make a donation to help keep free Bible access like this going, please visit https://eBible.org/give.php .',
-    books: { '1CH': '1 Chronicles', '1CO': '1 Corinthians', '1JN': '1 John', '1PE': '1 Peter', '1SA': '1 Samuel', '1TH': '1 Thessalonians', '1TI': '1 Timothy', '2CH': '2 Chronicles', '2CO': '2 Corinthians', '2PE': '2 Peter', '2SA': '2 Samuel', '2TH': '2 Thessalonians', '2TI': '2 Timothy', '3JN': '3 John', 'ACT': 'Acts', 'COL': 'Colossians', 'DAN': 'Daniel', 'DEU': 'Deuteronomy', 'ECC': 'Ecclesiastes', 'EPH': 'Ephesians', 'EST': 'Esther', 'EXO': 'Exodus', 'EZK': 'Ezekiel', 'GAL': 'Galatians', 'GEN': 'Genesis', 'HAB': 'Habakkuk', 'HEB': 'Hebrews', 'ISA': 'Isaiah', 'JAS': 'James', 'JER': 'Jeremiah', 'JHN': 'John', 'JOB': 'Job', 'JOL': 'Joel', 'JOS': 'Joshua', 'LAM': 'Lamentations', 'LEV': 'Leviticus', 'LUK': 'Luke', 'MAL': 'Malachi', 'MAT': 'Matthew', 'MIC': 'Micah', 'MRK': 'Mark', 'NAM': 'Nahum', 'NEH': 'Nehemiah', 'NUM': 'Numbers', 'PHP': 'Philippians', 'PRO': 'Proverbs', 'PSA': 'Psalms', 'REV': 'Revelation', 'ROM': 'Romans', 'RUT': 'Ruth', 'SNG': 'Song of Solomon', 'TIT': 'Titus', 'ZEC': 'Zechariah', 'ZEP': 'Zephaniah' },
+    books: { '1CH': '1 Chronicles', '1CO': '1 Corinthians', '1JN': '1 John', '1KI': '1 Kings', '1PE': '1 Peter', '1SA': '1 Samuel', '1TH': '1 Thessalonians', '1TI': '1 Timothy', '2CH': '2 Chronicles', '2CO': '2 Corinthians', '2JN': '2 John', '2KI': '2 Kings', '2PE': '2 Peter', '2SA': '2 Samuel', '2TH': '2 Thessalonians', '2TI': '2 Timothy', '3JN': '3 John', 'ACT': 'Acts', 'AMO': 'Amos', 'COL': 'Colossians', 'DAN': 'Daniel', 'DEU': 'Deuteronomy', 'ECC': 'Ecclesiastes', 'EPH': 'Ephesians', 'EST': 'Esther', 'EXO': 'Exodus', 'EZK': 'Ezekiel', 'EZR': 'Ezra', 'GAL': 'Galatians', 'GEN': 'Genesis', 'HAB': 'Habakkuk', 'HAG': 'Haggai', 'HEB': 'Hebrews', 'HOS': 'Hosea', 'ISA': 'Isaiah', 'JAS': 'James', 'JDG': 'Judges', 'JER': 'Jeremiah', 'JHN': 'John', 'JOB': 'Job', 'JOL': 'Joel', 'JON': 'Jonah', 'JOS': 'Joshua', 'JUD': 'Jude', 'LAM': 'Lamentations', 'LEV': 'Leviticus', 'LUK': 'Luke', 'MAL': 'Malachi', 'MAT': 'Matthew', 'MIC': 'Micah', 'MRK': 'Mark', 'NAM': 'Nahum', 'NEH': 'Nehemiah', 'NUM': 'Numbers', 'OBA': 'Obadiah', 'PHM': 'Philemon', 'PHP': 'Philippians', 'PRO': 'Proverbs', 'PSA': 'Psalms', 'REV': 'Revelation', 'ROM': 'Romans', 'RUT': 'Ruth', 'SNG': 'Song of Solomon', 'TIT': 'Titus', 'ZEC': 'Zechariah', 'ZEP': 'Zephaniah' },
     datasetHash: '91e532b32157d44e6d369f7f2d256c32555042cd0e55b7ff7cb1b8cf0b2b3cc8', dailyHash: '31d96f8722fcb39c8ddba708a2865479b5755aeaa9373f536019d63da1526f51', isDefault: false },
   "deu1912": { id: 'deu1912', title: 'German Luther Bible 1912', titleLocal: 'Lutherbibel 1912', abbr: 'L1912', language: 'Deutsch', lang: 'de', iso: 'deu', direction: 'LTR', publisher: 'eBible.org',
     copyright: 'Public Domain',
-    books: { '1CH': '1. Chonik', '1CO': '1. Korinther', '1JN': '1. Johannes', '1PE': '1. Petrus', '1SA': '1. Samuel', '1TH': '1. Thessalonicher', '1TI': '1. Timotheus', '2CH': '2. Chronik', '2CO': '2. Korinther', '2PE': '2. Petrus', '2SA': '2. Samuel', '2TH': '2. Thessalonicher', '2TI': '2. Timotheus', '3JN': '3. Johannes', 'ACT': 'Apostelgeschichte', 'COL': 'Kolosser', 'DAN': 'Daniel', 'DEU': '5. Mose', 'ECC': 'Prediger', 'EPH': 'Epheser', 'EST': 'Esther', 'EXO': '2. Mose', 'EZK': 'Hesekiel', 'GAL': 'Galater', 'GEN': '1. Mose', 'HAB': 'Habakuk', 'HEB': 'Hebräer', 'ISA': 'Jesaja', 'JAS': 'Jakobus', 'JER': 'Jeremia', 'JHN': 'Johannes', 'JOB': 'Hiob', 'JOL': 'Joel', 'JOS': 'Josua', 'LAM': 'Klagelieder', 'LEV': '3. Mose', 'LUK': 'Lukas', 'MAL': 'Maleachi', 'MAT': 'Matthäus', 'MIC': 'Micha', 'MRK': 'Markus', 'NAM': 'Nahum', 'NEH': 'Nehemia', 'NUM': '4. Mose', 'PHP': 'Philipper', 'PRO': 'Sprüche', 'PSA': 'Psalmen', 'REV': 'Offenbarung', 'ROM': 'Römer', 'RUT': 'Ruth', 'SNG': 'Hohelied', 'TIT': 'Titus', 'ZEC': 'Sacharja', 'ZEP': 'Zephanja' },
+    books: { '1CH': '1. Chonik', '1CO': '1. Korinther', '1JN': '1. Johannes', '1KI': '1. Könige', '1PE': '1. Petrus', '1SA': '1. Samuel', '1TH': '1. Thessalonicher', '1TI': '1. Timotheus', '2CH': '2. Chronik', '2CO': '2. Korinther', '2JN': '2. Johannes', '2KI': '2. Könige', '2PE': '2. Petrus', '2SA': '2. Samuel', '2TH': '2. Thessalonicher', '2TI': '2. Timotheus', '3JN': '3. Johannes', 'ACT': 'Apostelgeschichte', 'AMO': 'Amos', 'COL': 'Kolosser', 'DAN': 'Daniel', 'DEU': '5. Mose', 'ECC': 'Prediger', 'EPH': 'Epheser', 'EST': 'Esther', 'EXO': '2. Mose', 'EZK': 'Hesekiel', 'EZR': 'Esra', 'GAL': 'Galater', 'GEN': '1. Mose', 'HAB': 'Habakuk', 'HAG': 'Haggai', 'HEB': 'Hebräer', 'HOS': 'Hosea', 'ISA': 'Jesaja', 'JAS': 'Jakobus', 'JDG': 'Richter', 'JER': 'Jeremia', 'JHN': 'Johannes', 'JOB': 'Hiob', 'JOL': 'Joel', 'JON': 'Jona', 'JOS': 'Josua', 'JUD': 'Judas', 'LAM': 'Klagelieder', 'LEV': '3. Mose', 'LUK': 'Lukas', 'MAL': 'Maleachi', 'MAT': 'Matthäus', 'MIC': 'Micha', 'MRK': 'Markus', 'NAM': 'Nahum', 'NEH': 'Nehemia', 'NUM': '4. Mose', 'OBA': 'Obadja', 'PHM': 'Philemon', 'PHP': 'Philipper', 'PRO': 'Sprüche', 'PSA': 'Psalmen', 'REV': 'Offenbarung', 'ROM': 'Römer', 'RUT': 'Ruth', 'SNG': 'Hohelied', 'TIT': 'Titus', 'ZEC': 'Sacharja', 'ZEP': 'Zephanja' },
     datasetHash: '8fcc195d41d52ed5110bc5355f7bc8c2e3a2bd6dd19db9731a5b513a4bc2a62e', dailyHash: 'bde208fe1be7b4d46104be008f9b377e759b8fc753abb7dc8da5fe268629870c', isDefault: false },
   "cmn-cu89s": { id: 'cmn-cu89s', title: 'Chinese Union Version (simplified)', titleLocal: '新标点和合本', abbr: 'CUVs', language: '中文（简体）', lang: 'zh-Hans', iso: 'cmn', direction: 'LTR', publisher: 'eBible.org',
     copyright: 'Public Domain',
-    books: { '1CH': '历代志上', '1CO': '哥林多前书', '1JN': '约翰一书', '1PE': '彼得前书', '1SA': '撒母耳记上', '1TH': '帖撒罗尼迦前书', '1TI': '提摩太前书', '2CH': '历代志下', '2CO': '哥林多后书', '2PE': '彼得后书', '2SA': '撒母耳记下', '2TH': '帖撒罗尼迦后书', '2TI': '提摩太后书', '3JN': '约翰三书', 'ACT': '使徒行传', 'COL': '歌罗西书', 'DAN': '但以理书', 'DEU': '申命记', 'ECC': '传道书', 'EPH': '以弗所书', 'EST': '以斯帖记', 'EXO': '出埃及记', 'EZK': '以西结书', 'GAL': '加拉太书', 'GEN': '创世记', 'HAB': '哈巴谷书', 'HEB': '希伯来书', 'ISA': '以赛亚书', 'JAS': '雅各书', 'JER': '耶利米书', 'JHN': '约翰福音', 'JOB': '约伯记', 'JOL': '约珥书', 'JOS': '约书亚记', 'LAM': '耶利米哀歌', 'LEV': '利未记', 'LUK': '路加福音', 'MAL': '玛拉基书', 'MAT': '马太福音', 'MIC': '弥迦书', 'MRK': '马可福音', 'NAM': '那鸿书', 'NEH': '尼希米记', 'NUM': '民数记', 'PHP': '腓立比书', 'PRO': '箴言', 'PSA': '诗篇', 'REV': '启示录', 'ROM': '罗马书', 'RUT': '路得记', 'SNG': '雅歌', 'TIT': '提多书', 'ZEC': '撒迦利亚书', 'ZEP': '西番雅书' },
+    books: { '1CH': '历代志上', '1CO': '哥林多前书', '1JN': '约翰一书', '1KI': '列王纪上', '1PE': '彼得前书', '1SA': '撒母耳记上', '1TH': '帖撒罗尼迦前书', '1TI': '提摩太前书', '2CH': '历代志下', '2CO': '哥林多后书', '2JN': '约翰二书', '2KI': '列王纪下', '2PE': '彼得后书', '2SA': '撒母耳记下', '2TH': '帖撒罗尼迦后书', '2TI': '提摩太后书', '3JN': '约翰三书', 'ACT': '使徒行传', 'AMO': '阿摩司书', 'COL': '歌罗西书', 'DAN': '但以理书', 'DEU': '申命记', 'ECC': '传道书', 'EPH': '以弗所书', 'EST': '以斯帖记', 'EXO': '出埃及记', 'EZK': '以西结书', 'EZR': '以斯拉记', 'GAL': '加拉太书', 'GEN': '创世记', 'HAB': '哈巴谷书', 'HAG': '哈该书', 'HEB': '希伯来书', 'HOS': '何西阿书', 'ISA': '以赛亚书', 'JAS': '雅各书', 'JDG': '士师记', 'JER': '耶利米书', 'JHN': '约翰福音', 'JOB': '约伯记', 'JOL': '约珥书', 'JON': '约拿书', 'JOS': '约书亚记', 'JUD': '犹大书', 'LAM': '耶利米哀歌', 'LEV': '利未记', 'LUK': '路加福音', 'MAL': '玛拉基书', 'MAT': '马太福音', 'MIC': '弥迦书', 'MRK': '马可福音', 'NAM': '那鸿书', 'NEH': '尼希米记', 'NUM': '民数记', 'OBA': '俄巴底亚书', 'PHM': '腓利门书', 'PHP': '腓立比书', 'PRO': '箴言', 'PSA': '诗篇', 'REV': '启示录', 'ROM': '罗马书', 'RUT': '路得记', 'SNG': '雅歌', 'TIT': '提多书', 'ZEC': '撒迦利亚书', 'ZEP': '西番雅书' },
     datasetHash: '7724ae8a183903f476623d715435624b1b62dab27df9db29428018db1ca81673', dailyHash: 'aade2c215a6d6a8edfc5227513bf29100a25b89d73ee51cfbbd2d63e6659fb3a', isDefault: false },
   "cmn-cu89t": { id: 'cmn-cu89t', title: 'Chinese Union Version (traditional)', titleLocal: '新標點和合本', abbr: 'CUVt', language: '中文（繁體）', lang: 'zh-Hant', iso: 'cmn', direction: 'LTR', publisher: 'eBible.org',
     copyright: 'Public Domain',
-    books: { '1CH': '歷代志上', '1CO': '哥林多前書', '1JN': '約翰一書', '1PE': '彼得前書', '1SA': '撒母耳記上', '1TH': '帖撒羅尼迦前書', '1TI': '提摩太前書', '2CH': '歷代志下', '2CO': '哥林多後書', '2PE': '彼得後書', '2SA': '撒母耳記下', '2TH': '帖撒羅尼迦後書', '2TI': '提摩太後書', '3JN': '約翰三書', 'ACT': '使徒行傳', 'COL': '歌羅西書', 'DAN': '但以理書', 'DEU': '申命記', 'ECC': '傳道書', 'EPH': '以弗所書', 'EST': '以斯帖記', 'EXO': '出埃及記', 'EZK': '以西結書', 'GAL': '加拉太書', 'GEN': '創世記', 'HAB': '哈巴谷書', 'HEB': '希伯來書', 'ISA': '以賽亞書', 'JAS': '雅各書', 'JER': '耶利米書', 'JHN': '約翰福音', 'JOB': '約伯記', 'JOL': '約珥書', 'JOS': '約書亞記', 'LAM': '耶利米哀歌', 'LEV': '利未記', 'LUK': '路加福音', 'MAL': '瑪拉基書', 'MAT': '馬太福音', 'MIC': '彌迦書', 'MRK': '馬可福音', 'NAM': '那鴻書', 'NEH': '尼希米記', 'NUM': '民數記', 'PHP': '腓立比書', 'PRO': '箴言', 'PSA': '詩篇', 'REV': '啟示錄', 'ROM': '羅馬書', 'RUT': '路得記', 'SNG': '雅歌', 'TIT': '提多書', 'ZEC': '撒迦利亞書', 'ZEP': '西番雅書' },
+    books: { '1CH': '歷代志上', '1CO': '哥林多前書', '1JN': '約翰一書', '1KI': '列王紀上', '1PE': '彼得前書', '1SA': '撒母耳記上', '1TH': '帖撒羅尼迦前書', '1TI': '提摩太前書', '2CH': '歷代志下', '2CO': '哥林多後書', '2JN': '約翰二書', '2KI': '列王紀下', '2PE': '彼得後書', '2SA': '撒母耳記下', '2TH': '帖撒羅尼迦後書', '2TI': '提摩太後書', '3JN': '約翰三書', 'ACT': '使徒行傳', 'AMO': '阿摩司書', 'COL': '歌羅西書', 'DAN': '但以理書', 'DEU': '申命記', 'ECC': '傳道書', 'EPH': '以弗所書', 'EST': '以斯帖記', 'EXO': '出埃及記', 'EZK': '以西結書', 'EZR': '以斯拉記', 'GAL': '加拉太書', 'GEN': '創世記', 'HAB': '哈巴谷書', 'HAG': '哈該書', 'HEB': '希伯來書', 'HOS': '何西阿書', 'ISA': '以賽亞書', 'JAS': '雅各書', 'JDG': '士師記', 'JER': '耶利米書', 'JHN': '約翰福音', 'JOB': '約伯記', 'JOL': '約珥書', 'JON': '約拿書', 'JOS': '約書亞記', 'JUD': '猶大書', 'LAM': '耶利米哀歌', 'LEV': '利未記', 'LUK': '路加福音', 'MAL': '瑪拉基書', 'MAT': '馬太福音', 'MIC': '彌迦書', 'MRK': '馬可福音', 'NAM': '那鴻書', 'NEH': '尼希米記', 'NUM': '民數記', 'OBA': '俄巴底亞書', 'PHM': '腓利門書', 'PHP': '腓立比書', 'PRO': '箴言', 'PSA': '詩篇', 'REV': '啟示錄', 'ROM': '羅馬書', 'RUT': '路得記', 'SNG': '雅歌', 'TIT': '提多書', 'ZEC': '撒迦利亞書', 'ZEP': '西番雅書' },
     datasetHash: '8add266f86b8d6226631c31397be5f1a9c5b19c3bc732dd8544f7d9212b03448', dailyHash: 'cbb71baf1d813b2181197d6cfd223ebc84511b993368826773a69f40a909b544', isDefault: false }
 };
 
@@ -9061,6 +9073,10 @@ function goToTab(tab){
   /* Continue reading is derived from progress, and progress can have
      moved since this tab was last painted. */
   if(tab === 'devotions'){ renderDevotions(); }
+  /* Saved was painted at boot, before anything it needs could have been
+     loaded, and entering the tab never painted it again. Opening Saved is
+     exactly when it should ask for what it is about to show. */
+  if(tab === 'saved'){ renderSaved(); }
 }
 
 /* ---------- day selection ---------- */
@@ -9490,15 +9506,12 @@ function renderSaved(){
       });
       return;
     }
-    /* One fetch, once, then a repaint. Guarded so a failure cannot loop. */
-    if(!cachedBibleIndex(translation) && !renderSaved._askedIndex){
-      renderSaved._askedIndex = true;
-      loadBibleIndex(translation).then(renderSaved).catch(function(){});
-    }
+    /* Ask for whatever these rows still need. One load per book, a few per
+       pass, and a single repaint when they land. */
+    resolveSavedScripture();
     host.innerHTML = hl.map(function(h){
       const m = String(h.id).match(/^([A-Z0-9]{3})[.]([0-9]+)[.]([0-9]+)$/);
       if(!m) return '';
-      const words = savedLocationText(h.id);
       const ref = bibleBookName(translation, m[1]) + ' ' + m[2] + ':' + m[3];
       return '<div class="panel" style="margin-bottom:var(--space-sm)">' +
         '<div class="verse-row-ref"><span>' + escapeHtml(ref) +
@@ -9507,11 +9520,7 @@ function renderSaved(){
           '<button class="icon-btn" aria-label="Remove this highlight" ' +
             'onclick="removeHighlightAt(&#39;' + escapeAttr(h.id) + '&#39;)">' + trashIcon(16) + '</button>' +
         '</div>' +
-        (words
-          ? '<blockquote class="verse-quote" data-hl="' + escapeAttr(h.color) + '" lang="' +
-              escapeAttr(activeTranslation().lang) + '">' + escapeHtml(words) + '</blockquote>'
-          : '<div class="field-hint">Open it in the Bible to read this verse in ' +
-              escapeHtml(activeTranslation().title) + '.</div>') +
+        savedScriptureHtml(h.id, h.color) +
         readInContextHtml(h.id) +
       '</div>';
     }).join('');
@@ -9543,6 +9552,7 @@ function renderSaved(){
     return;
   }
 
+  resolveSavedScripture();
   const list = savedVerses.slice().sort(function(a, b){
     return String(b.savedAt || '').localeCompare(String(a.savedAt || ''));
   });
@@ -9566,7 +9576,6 @@ function renderSaved(){
       const loc = String(s.passage || '');
       const m = loc.match(/^([A-Z0-9]{3})[.]([0-9]+)[.]([0-9]+)$/);
       const isBible = !!m;
-      const words = isBible ? savedLocationText(loc) : null;
       /* A verse saved from the Bible carries a canonical location, so its
          reference is COMPUTED in whatever edition is on screen now — the same
          way the highlights list does it.
@@ -9585,14 +9594,10 @@ function renderSaved(){
           (isBible ? ' <span class="verse-translation">' + escapeHtml(activeTranslation().abbr) +
             '</span>' : '') + '</span>' +
           savedRemoveButton(loc || s.id) + '</div>' +
-        (words
-          ? '<blockquote class="verse-quote" lang="' + escapeAttr(activeTranslation().lang) + '">' +
-              escapeHtml(words) + '</blockquote>'
-          : '<div class="field-hint">' + (isBible
-              ? 'Saved from the Bible. Open it to read the verse in ' +
-                escapeHtml(activeTranslation().title) + '.'
-              : 'This reading is not in the current Scripture set, so its text cannot be ' +
-                'shown. The reference is kept exactly as you saved it.') + '</div>') +
+        (isBible
+          ? savedScriptureHtml(loc, null)
+          : '<div class="field-hint">This reading is not in the current Scripture set, so its ' +
+            'text cannot be shown. The reference is kept exactly as you saved it.</div>') +
         (isBible ? readInContextHtml(loc) : '') +
       '</div>';
     }
@@ -10029,12 +10034,15 @@ function renderSource(){
 
     '<div class="section-label">On names, and on wording</div>' +
     '<div class="field-hint" style="margin-bottom:var(--space-xl)">' +
+      /* This used to name what each edition prints for the divine name, from
+         a metadata field the pinned sources do not carry — so it rendered the
+         word "undefined" to every reader. The point stands without it, and
+         the app does not invent publisher metadata to make a sentence. */
       'Translations differ, and not only in language. The same verse can name God ' +
-      'differently &mdash; this English edition prints &ldquo;' + escapeHtml(s.divineName) +
-      '&rdquo; where many print &ldquo;the LORD&rdquo;, and the Spanish prints ' +
-      '&ldquo;Jehov&aacute;&rdquo;. Wording, punctuation and even verse numbering can vary. ' +
-      'None of that is corrected here: ' + escapeHtml(APP_CONFIG.name) + ' shows each translation exactly as its ' +
-      'publisher released it, and never swaps a rendering for a more familiar one.</div>';
+      'differently from one edition to the next, and wording, punctuation and even verse ' +
+      'numbering can vary. None of that is corrected here: ' + escapeHtml(APP_CONFIG.name) +
+      ' shows each translation exactly as its publisher released it, and never swaps a ' +
+      'rendering for a more familiar one.</div>';
 }
 
 function detailRow(label, value){
@@ -11442,7 +11450,7 @@ const BIBLE_BASE = 'data/bible/';
 /* In memory only, and never persisted: this is publisher data, not the
    reader's. It is also what the contracts populate directly, so the suite
    exercises the same shipped bytes the browser would fetch. */
-const bibleCache = { index: {}, books: {}, order: [] };
+const bibleCache = { index: {}, books: {}, order: [], verses: {} };
 /* Three books is enough for reading forward, reading back, and the book you
    came from, without holding several megabytes for a session that wandered. */
 const BIBLE_BOOK_CACHE = 3;
@@ -11460,6 +11468,19 @@ let bibleLoadFailed = false;
 function bibleCacheKey(ed, code){ return ed + '/' + code; }
 function cachedBibleIndex(ed){ return bibleCache.index[ed] || null; }
 function cachedBibleBook(ed, code){ return bibleCache.books[bibleCacheKey(ed, code)] || null; }
+
+/* Single verses, kept after the book they came from has gone.
+
+   Saved shows one verse out of a book the reader may never have opened, and
+   only three books are held at a time. Loading five books to print five rows
+   evicted the first two before the last arrived. Harvesting the handful of
+   verses those rows actually need costs a few hundred bytes and survives
+   eviction. In memory only, like the rest of bibleCache — publisher data,
+   never the reader's — and keyed by edition, so changing translation can
+   never show the previous edition's words. */
+function verseCacheKey(ed, id){ return ed + '|' + id; }
+function cachedVerse(ed, id){ return bibleCache.verses[verseCacheKey(ed, id)] || null; }
+function rememberVerse(ed, id, text){ if(text) bibleCache.verses[verseCacheKey(ed, id)] = text; }
 
 function rememberBibleBook(ed, code, data){
   const key = bibleCacheKey(ed, code);
@@ -11523,13 +11544,27 @@ function loadFailedHtml(subject, offlineBody, retryAction, extra){
   '</div>';
 }
 
+/* One request per edition and book, however many surfaces ask at once.
+   Saved can want the same book for ten rows while the reader is already
+   fetching it; without this, each ask was its own download of the same
+   file. A failure clears the entry, so Try again really does try again. */
+const bibleInFlight = {};
+
 function loadBibleBook(ed, code){
   const hit = cachedBibleBook(ed, code);
   if(hit) return Promise.resolve(hit);
-  return fetchJson(BIBLE_BASE + ed + '/' + code + '.json').then(function(data){
+  const key = bibleCacheKey(ed, code);
+  if(bibleInFlight[key]) return bibleInFlight[key];
+  const pending = fetchJson(BIBLE_BASE + ed + '/' + code + '.json').then(function(data){
+    delete bibleInFlight[key];
     rememberBibleBook(ed, code, data);
     return data;
+  }, function(err){
+    delete bibleInFlight[key];
+    throw err;
   });
+  bibleInFlight[key] = pending;
+  return pending;
 }
 
 /* ---------- the shape of an edition ----------
@@ -11790,9 +11825,24 @@ function bibleStepTo(dir){
 }
 
 /* ---------- rendering ---------- */
-function bibleBookName(ed, code){
+/* What this edition calls a book, without having fetched anything.
+
+   The edition's index names every book it ships, but it is fetched on demand,
+   and Saved has to print a reference on a cold start before a single byte of
+   Bible data exists. So every shipped edition carries its own book names in
+   TRANSLATIONS, written by the build from the publisher's own BookNames.xml.
+   A canonical code like GEN is an implementation detail: it identifies a
+   location, it is not a word, and it must never reach a reader. */
+function bibleBookLabel(ed, code){
   const meta = bibleBookMeta(ed, code);
-  return meta ? meta.n : code;
+  if(meta && meta.n) return meta.n;
+  const t = TRANSLATIONS[ed];
+  if(t && t.books && t.books[code]) return t.books[code];
+  return null;
+}
+
+function bibleBookName(ed, code){
+  return bibleBookLabel(ed, code) || code;
 }
 /* The reference as this edition would print it: its own book name, its own
    language. Never an English name beside Spanish words. */
@@ -12034,12 +12084,14 @@ function bibleNavButton(dir, label){
   '</button>';
 }
 
-/* A code is shown only when no edition in hand can name the book. */
+/* A code is shown only when no edition in hand can name the book — which,
+   now that every edition ships its own names, means a location no shipped
+   Bible contains at all. */
 function bookNameFallback(code){
   const eds = Object.keys(TRANSLATIONS);
   for(let i = 0; i < eds.length; i++){
-    const meta = bibleBookMeta(eds[i], code);
-    if(meta) return meta.n;
+    const name = bibleBookLabel(eds[i], code);
+    if(name) return name;
   }
   return code;
 }
@@ -12603,12 +12655,143 @@ function savedLocationText(id){
   if(curated) return inTranslation(curated).text;
   const m = String(id).match(/^([A-Z0-9]{3})\.(\d+)\.(\d+)$/);
   if(!m) return null;
+  const kept = cachedVerse(translation, id);
+  if(kept) return kept;
   const book = cachedBibleBook(translation, m[1]);
   if(!book) return null;
   const ch = book.ch[Number(m[2]) - 1];
   if(!ch) return null;
   const t = ch[Number(m[3]) - 1];
+  if(t) rememberVerse(translation, id, t);
   return t || null;
+}
+
+/* ---------- Saved resolves what it shows ----------
+
+   Opening Saved first, on a cold start, used to leave every verse kept from
+   the Bible as a canonical code with no words — and it stayed that way,
+   because the only thing that ever loaded a book was the reader. "Visit the
+   Bible tab first" is not an initialisation step a reader can be expected to
+   know about. A surface that displays canonical records answers for them
+   itself.
+
+   The records are not touched. They hold a location; the edition on screen
+   supplies the words, the book name and the label, exactly as before. */
+
+/* Every canonical location the Saved screen can be asked to print, in both
+   of its Scripture views. */
+function savedScriptureIds(){
+  const ids = [];
+  savedVerses.forEach(function(s){ if(s.passage) ids.push(String(s.passage)); });
+  bibleHighlights.forEach(function(h){ ids.push(String(h.id)); });
+  return ids;
+}
+
+/* Why a row cannot show words yet, so the row can say something true:
+   the text, a wait, a failure that can be retried, or a book this edition
+   does not contain. */
+const savedLoadFailed = {};
+function savedScriptureState(id){
+  const text = savedLocationText(id);
+  if(text) return { kind: 'text', text: text };
+  const m = String(id).match(/^([A-Z0-9]{3})\.(\d+)\.(\d+)$/);
+  if(!m) return { kind: 'none' };
+  const code = m[1];
+  if(!bibleBookLabel(translation, code)) return { kind: 'absent' };
+  if(cachedBibleBook(translation, code)) return { kind: 'absent' };
+  if(savedLoadFailed[bibleCacheKey(translation, code)]) return { kind: 'failed' };
+  return { kind: 'pending' };
+}
+
+/* Books are loaded in passes rather than all at once: a reader with verses
+   kept across twenty books should not open Saved and start twenty downloads.
+   Each repaint resolves the next few, so the list fills in instead of
+   stalling, and a book that failed is not asked for again until Try again. */
+const SAVED_BOOKS_PER_PASS = 6;
+let savedResolveTicket = 0;
+
+function resolveSavedScripture(){
+  /* Only while somebody is looking at Saved. renderSaved also runs at boot,
+     as part of painting every surface, and starting a megabyte of downloads
+     on every launch for a screen nobody has opened is not what this fix is
+     for. Entering the tab paints again, and that is when the asking starts. */
+  if(currentTab !== 'saved') return 0;
+  const ed = translation;
+  const wanted = [];
+  savedScriptureIds().forEach(function(id){
+    const m = String(id).match(/^([A-Z0-9]{3})\.(\d+)\.(\d+)$/);
+    if(!m) return;
+    if(savedLocationText(id)) return;                      /* already answerable */
+    const code = m[1];
+    if(!bibleBookLabel(ed, code)) return;                  /* this edition has no such book */
+    const key = bibleCacheKey(ed, code);
+    if(cachedBibleBook(ed, code) || savedLoadFailed[key] || bibleInFlight[key]) return;
+    if(wanted.indexOf(code) === -1) wanted.push(code);     /* one load per book */
+  });
+  if(!wanted.length) return 0;
+
+  const req = ++savedResolveTicket;
+  const batch = wanted.slice(0, SAVED_BOOKS_PER_PASS);
+  batch.forEach(function(code){
+    loadBibleBook(ed, code).then(function(data){
+      harvestSavedVerses(ed, code, data);
+      if(req === savedResolveTicket && ed === translation) paintSavedSoon();
+    }, function(){
+      savedLoadFailed[bibleCacheKey(ed, code)] = true;
+      if(req === savedResolveTicket && ed === translation) paintSavedSoon();
+    });
+  });
+  return batch.length;
+}
+
+/* Keep the verses this screen needs, then let the book go. */
+function harvestSavedVerses(ed, code, data){
+  if(!data || !data.ch) return;
+  savedScriptureIds().forEach(function(id){
+    const m = String(id).match(/^([A-Z0-9]{3})\.(\d+)\.(\d+)$/);
+    if(!m || m[1] !== code) return;
+    const ch = data.ch[Number(m[2]) - 1];
+    if(ch) rememberVerse(ed, id, ch[Number(m[3]) - 1]);
+  });
+}
+
+/* Several books can arrive in the same moment. The list is painted once for
+   all of them, and only while Saved is the screen somebody is looking at. */
+let savedPaintQueued = false;
+function paintSavedSoon(){
+  if(savedPaintQueued) return;
+  savedPaintQueued = true;
+  setTimeout(function(){
+    savedPaintQueued = false;
+    if(currentTab === 'saved') repaintKeepingFocus(renderSaved);
+  }, 0);
+}
+
+function retrySavedScripture(){
+  Object.keys(savedLoadFailed).forEach(function(k){ delete savedLoadFailed[k]; });
+  renderSaved();
+}
+
+/* What a row says where the words would be. */
+function savedScriptureHtml(id, color){
+  const state = savedScriptureState(id);
+  if(state.kind === 'text'){
+    return '<blockquote class="verse-quote"' + (color ? ' data-hl="' + escapeAttr(color) + '"' : '') +
+      ' lang="' + escapeAttr(activeTranslation().lang) + '">' + escapeHtml(state.text) + '</blockquote>';
+  }
+  if(state.kind === 'pending'){
+    return '<p class="field-hint">Loading this verse…</p>';
+  }
+  if(state.kind === 'failed'){
+    const offline = !!(navigator && navigator.onLine === false);
+    return '<p class="field-hint">' + escapeHtml(offline
+      ? 'This book has not been downloaded yet, so these words are not here offline. Open it once with a connection and it will be.'
+      : 'This verse could not be loaded. Check your connection and try again.') + '</p>' +
+      '<button class="btn-secondary" style="margin-top:var(--space-sm)" onclick="retrySavedScripture()">Try again</button>';
+  }
+  return '<p class="field-hint">' +
+    escapeHtml(activeTranslation().title + ' does not include this book, so there are no words to show here.') +
+    '</p>';
 }
 
 /* ---------- one verse, tapped ----------

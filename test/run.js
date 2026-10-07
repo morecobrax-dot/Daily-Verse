@@ -56,6 +56,7 @@ const SUITES = [
   C.testDevotions,
   C.testDevotionsExperience,
   C.testHelpMe,
+  C.testColdSaved,
   C.testTranslationLibrary,
   C.testNumberingAudit,
   C.testSourceRevision,

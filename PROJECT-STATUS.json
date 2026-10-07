@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "appId": "daily-verse",
-  "version": "1.13.2",
-  "phase": "Help Me - Phase B (catalogue complete)",
-  "status": "building",
-  "needsQa": false,
-  "needsDecision": true,
-  "currentTask": "Help Me V1 catalogue complete: seven paths, twenty-eight steps, all verified against the pinned corpus in every shipped edition. Crisis geography resolved as United States only. Still not user-visible: no tab, no reader, no stored progress.",
-  "nextAction": "Human review of the five flagged items in HELP-ME-REVIEW.md, then the two release blockers from the September audit before any Help Me UI phase.",
+  "version": "1.13.3",
+  "phase": "P0 remediation",
+  "status": "release_ready",
+  "needsQa": true,
+  "needsDecision": false,
+  "currentTask": "v1.13.3 fixes both release blockers from the September readiness audit: Saved and Highlights now resolve their own Scripture on a cold start, in any translation, and Scripture & sources no longer prints a placeholder where the publisher states nothing.",
+  "nextAction": "Physical iPhone check of the two fixes after deployment, then the P1 remediation phase.",
   "blocker": null,
-  "updatedAt": "2026-10-06T23:32:23Z"
+  "updatedAt": "2026-10-07T04:17:52Z"
 }

@@ -751,7 +751,15 @@ function region(built){
       " direction: '" + esc(e.direction) + "'," +
       " publisher: 'eBible.org'," +
       "\n    copyright: '" + esc(e.copyright) + "'," +
-      "\n    books: { " + usedBooks.map(code => {
+      /* EVERY book this edition ships, not only the ones the curated
+         catalogue points at. Saved and Highlights print a reference for any
+         verse somebody kept, on a cold start, before a single byte of Bible
+         data has been fetched — and a canonical code like GEN is an
+         implementation detail that must never reach a reader. Names are read
+         from the publisher's own BookNames.xml, never translated here. The
+         whole set costs a few kilobytes and makes a reference resolvable
+         offline, in the right language, with no network at all. */
+      "\n    books: { " + Object.keys(corpus.bookNames(id)).sort().map(code => {
         const names = corpus.bookNames(id);
         return names[code] ? "'" + code + "': '" + esc(names[code]) + "'" : null;
       }).filter(Boolean).join(', ') + " }," +
@@ -771,18 +779,36 @@ function region(built){
     return '  ' + JSON.stringify(id) + ': {\n' + rows.split('\n').map(r => '  ' + r).join('\n') + '\n  }';
   }).join(',\n');
 
+  /* A field the pinned source does not carry is OMITTED, never written out.
+     `esc(undefined)` is the string "undefined", and three fields the lock
+     stopped carrying were emitted that way for a month — one of them reached
+     readers, telling them this edition prints "undefined" for God's name.
+     Absence is not a value, and the only safe place to decide that is here,
+     where the data is, rather than in the renderer where it is already too
+     late. A required field that is missing stops the build instead. */
+  const need = (name, v) => {
+    if(v === undefined || v === null || v === '') {
+      throw new Error('scripture:build — SCRIPTURE_SOURCE.' + name + ' is missing from the pinned lock. ' +
+        'Fix the source of the value; do not ship a placeholder.');
+    }
+    return '  ' + name + ": '" + esc(v) + "',";
+  };
+  const maybe = (name, v) =>
+    (v === undefined || v === null || v === '') ? null : '  ' + name + ": '" + esc(v) + "',";
+
   return [
     ' — derived by `npm run scripture:build` from the corpus in data/corpus.lock.json',
     '   and the content in data/curation.json and data/studies.json.',
     '   Do not hand-edit. */',
     'const SCRIPTURE_SOURCE = {',
-    "  edition: '" + esc(ed.id) + "',",
-    "  title: '" + esc(ed.title) + "',",
-    "  abbr: '" + esc(ed.abbr) + "',",
-    "  language: '" + esc(ed.language) + "',",
-    "  license: '" + esc(ed.license) + "',",
-    "  publisher: '" + esc(ed.publisher) + "',",
-    "  divineName: '" + esc(ed.divineName) + "',",
+    need('edition', ed.id),
+    need('title', ed.title),
+    need('abbr', ed.abbr),
+    need('language', ed.language),
+    /* Optional, and absent from the lock today. Nothing invents them. */
+    maybe('license', ed.license),
+    maybe('publisher', ed.publisher),
+    maybe('divineName', ed.divineName),
     "  corpusSynced: '" + esc(built.lock.syncedAt) + "',",
     "  datasetHash: '" + hash + "',",
     "  dailyHash: '" + dailyHash + "',",
@@ -829,7 +855,7 @@ function region(built){
     'const TRANSLATION_TEXT = {',
     textRows,
     '};'
-  ].join('\n');
+  ].filter(line => line !== null).join('\n');   /* an omitted optional field leaves no line behind */
 }
 
 function readApp(){

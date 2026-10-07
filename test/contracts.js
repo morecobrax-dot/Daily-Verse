@@ -1392,10 +1392,21 @@ function testScripture(){
   const s = c.SCRIPTURE_SOURCE;
   T('the edition is named in full', !!s.title);
   T('with a short form for the screen', !!s.abbr);
-  T('a licence is recorded', !!s.license);
-  T('a publisher is recorded', !!s.publisher);
-  T('and the divine-name rendering is stated rather than left to be discovered',
-    !!s.divineName);
+  /* These three used to assert that a licence, a publisher and a divine-name
+     rendering were "recorded" — and `!!'undefined'` is true, so the string
+     "undefined" satisfied all three while one of them was being printed to
+     readers for a month. Absence is not a value: the build omits a field the
+     pinned lock does not carry, and the assertion that matters is that a
+     placeholder can never take its place. */
+  ['license', 'publisher', 'divineName'].forEach(field => {
+    T('SCRIPTURE_SOURCE.' + field + ' is either real metadata or absent, never a placeholder',
+      !(field in s) || (typeof s[field] === 'string' && s[field] &&
+        !/^(undefined|null|NaN)$/i.test(s[field])),
+      field in s ? JSON.stringify(s[field]) : 'absent');
+  });
+  T('nothing in the shipped source record stringifies absence',
+    !Object.keys(s).some(k => /^(undefined|null|NaN)$/i.test(String(s[k]))),
+    Object.keys(s).filter(k => /^(undefined|null|NaN)$/i.test(String(s[k]))).join(', '));
   /* The one-word 'Licence' row became the publisher's actual statement,
      quoted per translation. Stronger, so the check follows it. */
   T('the reader can reach all of that without leaving the app',
@@ -1448,7 +1459,21 @@ function testScripture(){
   T('Sources still discloses that the writing this app does is English only',
     /written in English/.test(sourceHtml));
   T('and that wording, punctuation and verse numbering differ between editions',
-    /Wording, punctuation and even verse numbering/.test(sourceHtml));
+    /wording, punctuation and even verse numbering can vary/i.test(sourceHtml));
+  /* The sentence that disclosed this used to name what each edition prints
+     for the divine name, out of a field the pinned sources do not carry. It
+     says the same true thing now without claiming any edition's wording. */
+  T('and it makes no claim about what any particular edition prints for the name of God',
+    !/prints &ldquo;/.test(sourceHtml) && !/Jehov/.test(sourceHtml));
+  /* The assertion that would have caught this a month earlier. Not a grep of
+     the source for the word: the RENDERED page, which is where a reader met
+     "this English edition prints “undefined”" every time they opened it. */
+  {
+    const visible = sourceHtml.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/g, ' ');
+    const placeholders = (visible.match(/\b(undefined|null|NaN|\[object [A-Za-z]+\])\b/g) || []);
+    T('nothing on the rendered Sources page is a placeholder for missing data',
+      placeholders.length === 0, placeholders.join(', '));
+  }
   T('and explains the psalm title lines it keeps',
     /naming an author or a tune/.test(sourceHtml));
 
@@ -4305,7 +4330,11 @@ function testPrimaryNavigation(){
   T('the contextual links all still exist',
     /readInContextHtml\(passage\.id\)/.test(src) &&
     /function openPassageInBible\(/.test(src));
-  T('Saved still resolves Bible locations', /savedLocationText\(loc\)/.test(src));
+  /* Saved resolves a Bible location through one shared renderer now, for
+     verses and highlights alike, so this follows the renderer rather than
+     the old call site. */
+  T('Saved still resolves Bible locations',
+    /function savedLocationText\(/.test(src) && /savedScriptureHtml\(loc, null\)/.test(src));
   /* The one-verse action sheet became the verse dock in 1.10.0: the same
      job, done inside the reader instead of over it. Every other reader
      surface is unchanged. */
@@ -7267,8 +7296,204 @@ function testHelpMe(){
     fsx.readFileSync(pathx.join(H.ROOT, 'scripts', 'scripture.js'), 'utf8').indexOf('help.json') === -1);
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 50 — Saved, on a phone that has just been opened
+
+   The defect this exists to prevent shipped for weeks and passed every
+   journey test in the suite, because every journey test had already been to
+   the Bible tab. A reader who kills the app, reopens it and taps Saved first
+   got canonical codes — GEN 5:6 — and no words at all, for ever, because the
+   only thing that ever loaded a book was the reader.
+
+   So this contract starts where the suite never did: records already on the
+   phone, nothing in memory, the Bible tab never visited. A warm session
+   proves nothing here.
+   --------------------------------------------------------- */
+async function testColdSaved(){
+  section('CONTRACT 50 — Saved resolves itself on a cold start');
+  const fsx = require('fs');
+  const pathx = require('path');
+  const src = js();
+  const tick = () => new Promise(r => setImmediate(r));
+
+  /* A phone with two verses kept from the Bible, one highlight, and one
+     verse kept from Today — in three different books. */
+  function phone(ed){
+    const m = new Map(), p = 'daily-verse.';
+    m.set(p + 'sys.schemaVersion', '2');
+    m.set(p + 'ui.onboarded', '1');
+    if(ed) m.set(p + 'ui.translation', ed);
+    m.set(p + 'data.saved', JSON.stringify([
+      { id: 's_gen-5-6', passage: 'GEN.5.6', ref: 'Genesis 5:6', savedAt: '2026-10-01T10:00:00.000Z', updatedAt: '2026-10-01T10:00:00.000Z' },
+      { id: 's_gen-5-9', passage: 'GEN.5.9', ref: 'Genesis 5:9', savedAt: '2026-10-01T10:01:00.000Z', updatedAt: '2026-10-01T10:01:00.000Z' },
+      { id: 's_rut-2-12', passage: 'RUT.2.12', ref: 'Ruth 2:12', savedAt: '2026-10-01T10:02:00.000Z', updatedAt: '2026-10-01T10:02:00.000Z' }
+    ]));
+    m.set(p + 'data.bibleHighlights', JSON.stringify([
+      { id: 'GEN.5.7', color: 'green', createdAt: '2026-10-01T10:03:00.000Z', updatedAt: '2026-10-01T10:03:00.000Z' }
+    ]));
+    return m;
+  }
+
+  /* Cold: nothing cached, nothing fetched, and the Bible tab never entered.
+     Fetches are served from the shipped files and counted. */
+  function cold(opts){
+    opts = opts || {};
+    const store = opts.store || phone(opts.ed);
+    const app = H.loadApp({ sharedStorage: store });
+    const c = app.ctx;
+    const calls = [];
+    c.fetch = url => {
+      calls.push(url);
+      if(opts.offline && !(opts.cached || []).some(x => url.indexOf('/' + x + '.json') !== -1)){
+        return Promise.reject(new Error('offline'));
+      }
+      const file = pathx.join(H.ROOT, url);
+      if(!fsx.existsSync(file)) return Promise.resolve({ ok: false, status: 404 });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(fsx.readFileSync(file, 'utf8'))) });
+    };
+    if(opts.offline) c.navigator.onLine = false;
+    return { app, c, d: app.dom.document, calls, store };
+  }
+  const shown = d => String(d.getElementById('savedList').innerHTML || '')
+    .replace(/<[^>]+>/g, ' ').replace(/ +/g, ' ').trim();
+  async function settle(c, n){ for(let i = 0; i < (n || 16); i++){ await tick(); c.__flush && c.__flush(); } }
+  /* Any canonical code, as a reader would see it in a reference. */
+  const LEAK = /\b(?:[1-3][A-Z]{2}|[A-Z]{3})\s+\d+:\d+/;
+
+  sub('nothing is loaded before Saved is opened');
+  {
+    const { c, calls } = cold({ ed: 'eng-web' });
+    T('a cold launch fetches no Bible data at all', calls.length === 0, JSON.stringify(calls));
+    T('and holds no index or book in memory',
+      !c.cachedBibleIndex('eng-web') && !c.cachedBibleBook('eng-web', 'GEN'));
+    c.goToTab('today'); c.__flush();
+    T('and a reader who never opens Saved never downloads a book for it',
+      calls.length === 0, JSON.stringify(calls));
+  }
+
+  sub('Saved opened first, with the Bible tab never visited');
+  {
+    const { c, d, calls } = cold({ ed: 'eng-web' });
+    c.goToTab('saved'); c.__flush();
+    const first = shown(d);
+    T('every reference reads as a book name immediately, with nothing fetched yet',
+      /Genesis 5:6/.test(first) && /Ruth 2:12/.test(first) && !LEAK.test(first), first.slice(0, 90));
+    T('and a row with no words yet says so, rather than showing an empty card',
+      /Loading this verse/.test(first));
+    T('Saved asks for the books it needs by itself', calls.length > 0, JSON.stringify(calls));
+    await settle(c);
+    const done = shown(d);
+    T('and the words arrive without anybody visiting the Bible',
+      /Seth lived one hundred five years/.test(done) && /full reward be given to you/.test(done));
+    T('no canonical code is left anywhere on the screen', !LEAK.test(done), done.slice(0, 120));
+    T('and nothing is still loading', !/Loading this verse/.test(done));
+  }
+
+  sub('highlights, on the same cold start');
+  {
+    const { c, d } = cold({ ed: 'eng-web' });
+    c.goToTab('saved'); c.setSavedView('highlights'); c.__flush();
+    T('a highlight names its book before anything is fetched',
+      /Genesis 5:7/.test(shown(d)) && !LEAK.test(shown(d)));
+    await settle(c);
+    T('and shows the verse it marked, in the edition on screen',
+      /Seth lived after he became the father of Enosh/.test(shown(d)), shown(d).slice(0, 110));
+  }
+
+  sub('one load per book, however many rows want it');
+  {
+    const store = phone('eng-web');
+    const many = [];
+    for(let v = 1; v <= 8; v++){
+      many.push({ id: 's_gen-5-' + v, passage: 'GEN.5.' + v, ref: 'Genesis 5:' + v,
+                  savedAt: '2026-10-01T10:0' + v + ':00.000Z', updatedAt: '2026-10-01T10:00:00.000Z' });
+    }
+    many.push({ id: 's_rut-2-12', passage: 'RUT.2.12', ref: 'Ruth 2:12', savedAt: '2026-10-01T11:00:00.000Z', updatedAt: '2026-10-01T11:00:00.000Z' });
+    store.set('daily-verse.data.saved', JSON.stringify(many));
+    const { c, d, calls } = cold({ store: store });
+    c.goToTab('saved'); c.__flush();
+    await settle(c, 20);
+    const gen = calls.filter(u => /GEN\.json$/.test(u)).length;
+    T('nine rows across two books are two downloads, not nine',
+      gen === 1 && calls.length === 2, JSON.stringify(calls));
+    T('and every one of them has its words', !/Loading this verse/.test(shown(d)));
+    /* Only three books are held at a time, and a reader with verses kept
+       across more than that would have watched the first ones empty out
+       again. The verses are kept, not the books: throw every book away and
+       the rows still read. */
+    const before = shown(d);
+    c.bibleCache.books = {}; c.bibleCache.order = [];
+    c.renderSaved(); c.__flush();
+    T('and they survive the books being evicted from memory',
+      shown(d) === before && !/Loading this verse/.test(shown(d)));
+  }
+
+  sub('the edition on screen supplies the words, and the record never changes');
+  {
+    const { c, d, store } = cold({ ed: 'eng-web' });
+    const before = store.get('daily-verse.data.saved');
+    const beforeHl = store.get('daily-verse.data.bibleHighlights');
+    c.goToTab('saved'); c.__flush(); await settle(c);
+    const seen = {};
+    for(const ed of ['spaRV1909', 'deu1912', 'cmn-cu89s', 'cmn-cu89t', 'eng-web']){
+      c.setTranslation(ed); c.__flush(); await settle(c);
+      seen[ed] = shown(d);
+    }
+    T('Spanish shows the Spanish book name and the Spanish words',
+      /Génesis 5:6/.test(seen.spaRV1909) && !LEAK.test(seen.spaRV1909));
+    T('German shows the German book name', /1. Mose 5:6/.test(seen.deu1912));
+    T('simplified and traditional Chinese each show their own script',
+      /创世记 5:6/.test(seen['cmn-cu89s']) && /創世記 5:6/.test(seen['cmn-cu89t']));
+    T('and switching back shows English again, from the same record',
+      /Genesis 5:6/.test(seen['eng-web']) && /Seth lived/.test(seen['eng-web']));
+    T('no stored record was touched by any of it',
+      store.get('daily-verse.data.saved') === before &&
+      store.get('daily-verse.data.bibleHighlights') === beforeHl);
+    T('and no Scripture text was written into storage',
+      !/Seth lived|Génesis|创世记/.test(String(store.get('daily-verse.data.saved')) +
+                                        String(store.get('daily-verse.data.bibleHighlights'))));
+    T('the schema did not move', store.get('daily-verse.sys.schemaVersion') === '2');
+  }
+
+  sub('offline, honestly');
+  {
+    const { c, d } = cold({ ed: 'eng-web' });
+    await c.loadBibleBook('eng-web', 'GEN');          /* read once, online */
+    c.navigator.onLine = false;
+    c.fetch = () => Promise.reject(new Error('offline'));
+    c.goToTab('saved'); c.__flush(); await settle(c);
+    const out = shown(d);
+    T('a book that was read before still reads offline', /Seth lived one hundred five years/.test(out));
+    T('one that never was says so, and offers to try again',
+      /not been downloaded yet/.test(out) && /Try again/.test(out));
+    T('it does not sit on Loading for ever', !/Loading this verse/.test(out));
+    T('and the reference is still readable', /Ruth 2:12/.test(out) && !LEAK.test(out));
+  }
+  {
+    const { c, d, calls } = cold({ ed: 'eng-web', offline: true });
+    c.goToTab('saved'); c.__flush(); await settle(c);
+    T('with nothing cached at all, every row reaches a finite honest state',
+      !/Loading this verse/.test(shown(d)) && /not been downloaded yet/.test(shown(d)));
+    T('and a failed book is not asked for again and again',
+      calls.length <= 3, calls.length + ' attempts');
+  }
+
+  sub('the shape of the fix');
+  T('Saved resolves through the Bible loader rather than a second one of its own',
+    /function resolveSavedScripture\(/.test(src) && /loadBibleBook\(ed, code\)/.test(src) &&
+    !/new XMLHttpRequest|savedFetch/.test(src));
+  T('one request per edition and book, shared with every other surface',
+    /const bibleInFlight = \{\}/.test(src) && /if\(bibleInFlight\[key\]\) return bibleInFlight\[key\]/.test(src));
+  T('a verse kept in memory survives its book being evicted',
+    /function rememberVerse\(/.test(src) && /function cachedVerse\(/.test(src));
+  T('book names ship with the app, so a reference never waits on a download',
+    /function bibleBookLabel\(/.test(src) && /t\.books\[code\]/.test(src));
+  T('and repaints are batched rather than one per book',
+    /function paintSavedSoon\(/.test(src) && /savedPaintQueued/.test(src));
+}
+
 module.exports = {
-  T, section, sub, results, reset, testPortability, testHelpMe,
+  T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,
