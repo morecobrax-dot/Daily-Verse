@@ -1,7 +1,8 @@
 # Help Me — review packet
 
-Seven paths, twenty-eight steps, complete. **Nothing is user-visible.** There
-is no Help Me tab, no reader and no stored progress.
+Seven paths, twenty-eight steps, complete. Phase C built the feature on this
+catalogue and Phase C.1 closed the editorial gate. It is on the
+`feature/help-me` branch and is **not released**.
 
 Source: [data/help.json](data/help.json). Checks: `npm run help:verify`, and
 CONTRACT 49 in the suite.
@@ -34,78 +35,104 @@ CONTRACT 49 is **62 assertions**; **56 mutations** fail by name.
 
 ---
 
-## HUMAN ATTENTION REQUIRED
+## HUMAN CONTENT GATE: APPROVED — NO OPEN ITEMS
 
-Five items. Everything else in Phase B is reported below for reference only.
+Phase C.1 adjudicated the five items this packet carried. Three were edited,
+two were approved as written, and none of them now needs a decision from
+anybody. The record of what was decided and why is below, because the
+reasoning is worth keeping; the items themselves are closed.
 
-### 1. Psalm 88 as the opening of Heavy Heart (hh-1)
+**This gate covers the writing only.** The physical-device check of the Help
+Me feature is separate and is still required before release.
 
-- **Prose:** *"Most laments turn somewhere near the end… This one does not. It
-  goes down, and then it stops, and the last word in it is darkness."*
-- **Scripture:** Psalm 88:1–5, basis 88:6–12 and 88:13–18.
-- **Concern:** the first thing a grieving reader meets is the one psalm that
-  never resolves. The step frames it as prayer and as something the
-  congregation was given to sing, and the path moves on to Gethsemane, hope and
-  company. But the placement is a pastoral judgement, not a verification
-  result.
-- **Option A:** keep it first — it is the strongest possible refusal of "cheer
-  up", and it earns the reader's trust before anything consoling is said.
-- **Option B:** open with a lament that turns (Psalm 13) and move Psalm 88
-  later, or drop it.
-- **Recommendation: keep it.** A reader whose heart is heavy has usually
-  already been handed consolation too early by somebody, and Psalm 88 is the
-  reason Scripture cannot be accused of that.
+### 1. Psalm 88 opens Heavy Heart — APPROVED, unchanged
 
-### 2. "Worldly sorrow produces death" (gs-3)
+Kept, deliberately. A reader whose heart is heavy has usually been handed
+consolation too early by somebody already, and this is the psalm that refuses
+to do it. Checked against the three things that would have forced a change,
+and the prose does none of them: it promises no relief (*"no promise is made
+that the dark lifts by morning. Here it does not lift at all"*), it does not
+turn the psalm into despair without faith (*"it is a prayer the whole way…
+Every bitter line of it is said to God rather than about him"*), and it blocks
+the transfer of the psalmist's circumstances to the reader (*"Nothing here
+licenses the conclusion that your suffering is God's anger"*).
 
-- **Prose:** *"The second kind of sorrow is the one that circles… Scripture
-  does not call that repentance. It calls it deadly, and it is not asking you
-  for more of it."*
-- **Scripture:** 2 Corinthians 7:10.
-- **Concern:** a reader whose shame is already dangerous reads their own
-  sorrow described as deadly. The sentence is Paul's claim, and the clause
-  after it refuses to ask for more of that sorrow; the path's last step points
-  to a doctor or a crisis service if shame has reached self-harm.
-- **Recommendation: keep, and check the final clause is doing enough work.**
-  Softening Paul here would cost the distinction the whole step exists to make.
+### 2. gs-3, "worldly sorrow produces death" — RESOLVED BY EDIT
 
-### 3. Lawful justice is not unforgiveness (ha-2)
+Paul's distinction is kept in full, including the word *deadly*. What changed
+is the closing paragraph, which used to describe a texture — circling,
+reviewing the failure, feeling the shame, arriving back a week later more
+tired — and then attach *deadly* to it. A reader whose sorrow will not switch
+off reads that as a verdict on their own state, and the paragraph two above it
+had already said the opposite (*"The difference is not how sharp the feeling
+is but whether anything happens as a result"*).
 
-- **Prose:** *"Scripture's own route for wrongdoing runs through lawful
-  authority. Reporting what happened, making a statement, letting a court
-  decide — none of that is private revenge, and none of it is a failure to
-  forgive."*
-- **Scripture:** Romans 12:17–21 with Romans 13:1–4 as basis.
-- **Concern:** this is the safety-critical claim of the path, and it reads
-  Romans 13 as licensing recourse to courts and police. Traditions with a
-  strong non-resistance position would frame it differently.
-- **Recommendation: keep.** Without it, a reader who has been assaulted can
-  read "do not avenge yourself" as "do not report it", which is the exact harm
-  the brief forbids. The claim stays inside what Romans 13 says about the
-  magistrate.
+It now sorts sorrow by where it ends rather than by how it feels, and says so
+plainly: *"the word is about where that sorrow ends up, not about how much it
+hurts — sorrow that is heavy, or that will not lift when you want it to, is
+not what Paul is naming here."* No clinical language was introduced, and the
+path's last step still points to a doctor or a crisis service where shame has
+reached self-harm.
 
-### 4. The six distinctions (ha-4)
+### 3. ha-2, Romans 12–13 and lawful justice — RESOLVED BY EDIT
 
-- **Prose:** *"Forgiveness is releasing the debt, and you can do it alone.
-  Trust is an estimate of what somebody is likely to do next… Reconciliation
-  takes two people and real change in the one who did the harm. Access is a
-  decision about proximity… Safety outranks every item on this list."*
-- **Scripture:** Ephesians 4:29–32, with Romans 12:18 for the qualifiers.
-- **Concern:** this is the most load-bearing paragraph in the catalogue, and
-  the six-way framework is assembled by this app. Scripture supplies the
-  qualifiers ("if possible, as far as it depends on you") and the definition of
-  forgiveness (Matthew 18), but not the list.
-- **Recommendation: keep, and read it word by word.** If one sentence in the
-  catalogue is worth a pastor's eye, it is this one.
+The safety-critical conclusion is untouched and still explicit: reporting,
+making a statement and letting a court decide are not private revenge and not
+a failure to forgive. Without it, a reader who has been assaulted can read *do
+not avenge yourself* as *do not report it*.
 
-### 5. One wording check (hh-2)
+What was narrowed is the theological claim carrying it. *"Scripture's own
+route for wrongdoing runs through lawful authority"* asserted a complete
+doctrine of the state in one sentence — that this is **the** route, implicitly
+that authorities act justly, and it settled a question traditions genuinely
+dispute. The step never needed that. It now says what the text needs and no
+more: Paul moves from private revenge to public office, *"Whatever else those
+verses settle — and they have been argued over for centuries — they put that
+answering somewhere other than your own hands."*
 
-- **Prose:** *"the one person in Scripture with no shortage of faith is face
-  down in the dirt, asking to be let off."*
-- **Concern:** describing Jesus in terms of his faith is defensible but will
-  catch some readers' attention.
-- **Recommendation:** keep, or change to "the one person in Scripture who
-  never fell short" if you would rather not raise the question.
+### 4. ha-4, the six distinctions — APPROVED, unchanged
+
+Read word by word against every requirement, and it meets all of them.
+Forgiveness stays a genuine Christian category rather than self-care —
+*"releasing the debt"*, grounded in *"forgiving as God in Christ forgave you"*
+and asked for *"on the basis of what you have received"*. Bitterness is
+*"something to put down rather than something to justify"*, so resentment is
+not left without a spiritual response. Reconciliation *"takes two people and
+real change in the one who did the harm"*; trust is *"rebuilt by evidence,
+over time, or not at all"*; access *"is yours to make"*; consequences
+*"belong to justice"*; *"Safety outranks every item on this list."*
+
+Nothing in it implies that boundaries, legal protection or separation from
+danger are unforgiving, or that trust is owed on demand — the step ends
+*"you can forgive somebody you will never be alone with again. You can forgive
+and still give a statement. You can forgive and still change the locks."*
+
+### 5. hh-2, the wording check — RESOLVED BY EDIT
+
+The flagged phrase was *"the one person in Scripture with no shortage of
+faith"*, which measures Jesus on a scale of faith-quantity. The step's
+argument does not need that frame and cannot defend it in passing; what the
+argument needs is that no spiritual deficiency can be alleged, and sinlessness
+carries that more directly. It now reads *"the one person in Scripture who
+never fell short"* — the same sentence otherwise, and a cleaner inference to
+*"Whatever heaviness is, it is not proof that something has gone wrong in you
+spiritually."*
+
+Checked against the rest of the list and clear on all of it: the step does not
+suggest Jesus lacked faith, does not name a modern condition (*"grieved to the
+edge of death"* is Mark's own measure), does not make submission into
+pretending (*"He does not open with acceptance and he does not pretend to want
+it"*), does not overclaim what the cup means, and does not equate his
+suffering with the reader's — the inference runs the other way, from his case
+to theirs.
+
+### What these edits did not touch
+
+No canonical passage changed. No Scripture text entered the data. The dataset
+hash is `f4c8380cf3d29d01` and the daily hash `0cb67c036256232a`, both
+unchanged. Three `notice` fields were edited and nothing else — not a title,
+arrive, consider, prayer, nextStep, passage or basis anywhere in the
+catalogue.
 
 ---
 
