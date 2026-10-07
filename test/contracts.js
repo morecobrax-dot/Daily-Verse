@@ -6364,8 +6364,18 @@ async function testSourceRevision(){
       problems.length === 0, problems.slice(0, 3).join(' | '));
     /* Exactly the suffixes corpus.js reads, so a clone can do everything. */
     const NEEDED = ['_vpl.xml', '_usfx.xml', 'metadata.xml', 'BookNames.xml'];
+    /* The held editions too. They are never read by a reader, but CONTRACT 43
+       and CONTRACT 44 audit them — which is the whole reason they are held —
+       and leaving them out is what made a clone report two suites it could
+       not check even with every shipped edition in the repository. */
+    const vendored = corpus.vendoredEditions();
+    T('the held editions are vendored as well, since the audit reads them',
+      vendored.length > shipped.length &&
+      Object.keys(corpus.EDITIONS).filter(id => corpus.EDITIONS[id].held)
+        .every(id => vendored.indexOf(id) !== -1),
+      vendored.join(', '));
     const gaps = [];
-    shipped.forEach(id => {
+    vendored.forEach(id => {
       const dir = corpus.vendoredDir(id);
       if(!fsx.existsSync(dir)){ gaps.push(id + ': nothing vendored'); return; }
       const names = fsx.readdirSync(dir);
@@ -6375,7 +6385,7 @@ async function testSourceRevision(){
         gaps.push(id + ': lock records ' + Object.keys(recorded).length + ' files, not ' + NEEDED.length);
       }
     });
-    T('every shipped edition is vendored in full', gaps.length === 0, gaps.slice(0, 4).join(' | '));
+    T('every vendored edition is complete', gaps.length === 0, gaps.slice(0, 4).join(' | '));
     T('and the lock still names the archives they came out of',
       shipped.every(id => (lock.editions[id].archives || {}).vpl &&
                           lock.editions[id].archives.usfx));

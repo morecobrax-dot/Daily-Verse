@@ -417,7 +417,10 @@ data/corpus/eng-web/eng-webmetadata.xml    title, abbreviation, licence
 data/corpus/eng-web/BookNames.xml          the publisher's book names
 ```
 
-116 MB raw, about 25 MB in git. Every file's SHA-256 is recorded in
+181 MB raw, about 40 MB in git, for all eleven editions in the registry — the
+seven shipped and the four audited-but-held. A held edition is never read by a
+reader, but CONTRACT 44 reads it, which is the whole reason it is held, and its
+pins are as unobtainable as any other. Every file's SHA-256 is recorded in
 `data/corpus.lock.json` beside the archive digests it came out of, so the chain
 runs: **archive digest → the files that came out of it → the Scripture this app
 ships.** `corpus.vendorProblems()` checks that chain and CONTRACT 45 runs it on

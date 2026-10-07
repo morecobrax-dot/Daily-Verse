@@ -610,11 +610,18 @@ function cachedFile(id, suffix){
  * Read once per run by a contract rather than on every file read: these are
  * 116 MB of XML, and hashing them to answer one question is work worth doing
  * once. Returns a list of problems, empty when every vendored file matches. */
+function vendoredEditions(){
+  /* Shipped AND held. A held edition is never read by a reader, but it is
+     read by the numbering audit — which is why it is held — and its pinned
+     bytes are as unobtainable as every other pin here. */
+  return shippedEditions().concat(Object.keys(EDITIONS).filter(id => EDITIONS[id].held));
+}
+
 function vendorProblems(){
   const lock = readLock();
   const out = [];
   if(!lock) return ['no data/corpus.lock.json'];
-  shippedEditions().forEach(id => {
+  vendoredEditions().forEach(id => {
     const files = (lock.editions[id] || {}).files;
     if(!files || !Object.keys(files).length){
       out.push(id + ': the lock records no vendored files');
@@ -758,6 +765,6 @@ if(require.main === module){
   }
 }
 
-module.exports = { EDITIONS, DEFAULT_EDITION, CORPUS_ABSENT, isAbsence, vendorProblems, vendoredDir, shippedEditions, archivesFor, bookNames, bridgedSpans, CACHE, cacheDir, LOCK, readLock,
+module.exports = { EDITIONS, DEFAULT_EDITION, CORPUS_ABSENT, isAbsence, vendorProblems, vendoredDir, vendoredEditions, shippedEditions, archivesFor, bookNames, bridgedSpans, CACHE, cacheDir, LOCK, readLock,
                    sha256, verses, superscriptions, unzip, cachedFile, derivedMeta,
                    revisionDecision, syncEdition, sync, adopt };

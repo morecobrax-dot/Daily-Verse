@@ -95,6 +95,12 @@
           "sha256": "ae52c29fe5779125888a787d399cadb24e227ee2d35d2c81f5274422ce216f0d",
           "entries": 8
         }
+      },
+      "files": {
+        "fraLSG_vpl.xml": "f0f5b473e80ac1d511661ad30c223a4863123f6e9bd101d8744bfaabc427b3d3",
+        "fraLSG_usfx.xml": "404008e7899b77cfb2975e33f297674ef57ad1008b512b57559ec4839cf25683",
+        "fraLSGmetadata.xml": "b85e670d4e156ce595e704a809858b04f57db09bed24478325b698fa773b7c47",
+        "BookNames.xml": "5c44ed42a1cd0e01e1473b32f3f4e68e033dce1c50b73280d0e90ce905147260"
       }
     },
     "engbsb": {
@@ -226,6 +232,12 @@
           "sha256": "b0332f79afd25ca84cbe5324fa80393db795012feee1ff903fddcbb7d0ecbf09",
           "entries": 8
         }
+      },
+      "files": {
+        "ita1927_vpl.xml": "4eac8055ef88863eb6497da3825dfb44f2f898cf07228b4bfe993207c36b35a8",
+        "ita1927_usfx.xml": "e57c54af39e807c608c671504b8ddac2faba2f687b5ce772c9fcb47194f6376b",
+        "ita1927metadata.xml": "d81a4e9bde3f54eb81296c36d47d96d571af76aafa9423e42a77b1c579a3a762",
+        "BookNames.xml": "68360ec1a1b26de1df615c393e570e281d453b2ad8d07d2372aff90c3509b59a"
       }
     },
     "nld": {
@@ -255,6 +267,12 @@
           "sha256": "29a6b50b778b28bc864b5d6ecff63e7caf6f6338648b22f27ed2b556c90e4e5b",
           "entries": 8
         }
+      },
+      "files": {
+        "nld_vpl.xml": "9f8818342a7d306fd0fa86a555db6758235681f47aebbc9d105d365c8d341876",
+        "nld_usfx.xml": "bc275015a794126137a22423f34e8ac053d9a0bb7a098d2a9920044e5d19c48d",
+        "nldmetadata.xml": "c317a109274e2f40609d80e5c1cad05e306eb83d1df8d40b261fb0370d8b5195",
+        "BookNames.xml": "48bfe2f5381504fed7162d4489638a4f34a7b999ee5273d1c97a2d93a021086b"
       }
     },
     "cmn-cu89s": {
@@ -352,6 +370,12 @@
           "sha256": "fa63b35d8728c89cf506648b92e961a5845e840c8eb3aff32d414a1c2ab3ebed",
           "entries": 8
         }
+      },
+      "files": {
+        "fra_fob_vpl.xml": "f9e9e97cba949bde4f86d9fe379be53dcc43a43a919fa7863901c7edca4703ba",
+        "fra_fob_usfx.xml": "699b8b5835489f808b71aedfa150e906a43e3517120153f246865ff4aeb9a96f",
+        "fra_fobmetadata.xml": "835c670b45865d062a23ce091bc28eca1d2780b01ae90857a1a230b63f0d7ebd",
+        "BookNames.xml": "a2888ff8443568929f1ee6b9d7e6ab0531df92f255fe766035c5803d4742352d"
       }
     }
   },
