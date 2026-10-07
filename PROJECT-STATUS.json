@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "appId": "daily-verse",
-  "version": "1.13.4",
-  "phase": "Help Me integration (feature branch)",
-  "status": "building",
+  "version": "1.14.0",
+  "phase": "Help Me release",
+  "status": "release_ready",
   "needsQa": true,
   "needsDecision": false,
-  "currentTask": "Help Me is built on the feature/help-me branch: a fifth destination between Bible and Devotions, seven short Scripture paths, an urgent-help sheet, and Saved moved from the tab bar to a header utility. Not merged and not released; production still serves 1.13.4 without it.",
-  "nextAction": "Short physical iPhone check of the five-tab bar, the Help Me reader, Back behaviour and the urgent-help sheet.",
+  "currentTask": "v1.14.0 adds Help Me: seven short Scripture paths for when someone needs God's Word and does not know where to begin, a quiet route to urgent help, and Saved moved to a bookmark button reachable from every screen.",
+  "nextAction": "Short check on a physical iPhone that the installed app updates to 1.14.0 and keeps existing saved verses, highlights and settings.",
   "blocker": null,
-  "updatedAt": "2026-10-07T13:40:00Z"
+  "updatedAt": "2026-10-07T15:44:26Z"
 }
