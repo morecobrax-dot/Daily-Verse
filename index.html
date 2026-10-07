@@ -12586,8 +12586,12 @@ function loadHelpPassages(step){
     }, function(){
       const host = document.getElementById('helpPassage' + i);
       if(!host) return;
-      host.innerHTML = '<p class="field-hint">This passage could not be loaded. ' +
-        'It will be here once you have opened it with a connection.</p>' +
+      /* Named, for the same reason the pending state names it: a reader told
+         that something could not be loaded, without being told what, cannot
+         look it up anywhere else and cannot tell which step is incomplete. */
+      host.className = 'help-passage is-pending';
+      host.innerHTML = '<p class="field-hint">' + escapeHtml(passageRefLabel(ref)) +
+        ' could not be loaded. It will be here once you have opened it with a connection.</p>' +
         '<button class="btn-secondary" style="margin-top:var(--space-md)" ' +
           'onclick="retryHelpPassages()">Try again</button>';
     });
