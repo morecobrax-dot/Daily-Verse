@@ -62,6 +62,7 @@ const SUITES = [
   C.testHelpMe,
   C.testColdSaved,
   C.testDeviceMove,
+  C.testHelpProduct,
   C.testTranslationLibrary,
   C.testNumberingAudit,
   C.testSourceRevision,

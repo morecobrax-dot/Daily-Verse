@@ -569,19 +569,60 @@ function checkCadence(steps, errors, notes){
 
 /* ---------- Phase A has no reader ---------- */
 
+/* Phase A asserted the opposite of this: that index.html carried no Help Me
+   catalogue, tab or stored progress, because the content had to be proven
+   before anything could be opened. Phase C shipped the feature, so the check
+   became the integration's own invariants rather than a phase gate.
+
+   What matters now is that the app has ONE catalogue and it came from here.
+   A second copy — a path entry retyped into UI source, a crisis number
+   written into a template, a verse pasted into a step — is the failure this
+   replaces, and it is the same failure in a different place. */
 function checkNoUI(errors, notes, text){
   const app = typeof text === 'string' ? text : fs.readFileSync(APP, 'utf8');
-  const tells = [
-    [/const HELP\b/, 'a HELP catalogue in the app'],
-    [/help\.json/, 'a reference to data/help.json'],
-    [/data-tab="help/, 'a Help Me tab'],
-    [/goToTab\('help/, 'navigation to a Help Me tab'],
-    [/helpPathProgress|data\.helpProgress/, 'stored Help Me progress']
-  ];
-  tells.forEach(([re, what]) => {
-    if(re.test(app)) errors.push('index.html carries ' + what + '. Phase A ships content and checks, not a feature.');
+  const doc = readCatalogue();
+  const region = (app.match(/const HELP = \[[\s\S]*?\n\];/) || [''])[0];
+
+  if(!region) errors.push('index.html carries no derived HELP region — run `npm run scripture:build`');
+  if(app.indexOf('data-tab="help"') === -1) errors.push('index.html has no Help Me tab');
+
+  /* Every path's human-facing entry must appear exactly once in the app, and
+     inside the derived region. Twice means somebody wrote it into a template
+     or a comment as well, and two copies of a sentence drift apart.
+
+     Matched in the form the emitter writes: these entries contain straight
+     apostrophes, which are escaped into the region as \\' — searching for the
+     raw sentence finds nothing and reports a false absence. */
+  const asEmitted = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  (doc.paths || []).forEach(p => {
+    const needle = asEmitted(p.entry);
+    const hits = app.split(needle).length - 1 + (needle === p.entry ? 0 : app.split(p.entry).length - 1);
+    if(hits === 0) errors.push('path ' + p.id + ' — its entry does not reach the app');
+    else if(hits > 1) errors.push('path ' + p.id + ' — its entry appears ' + hits +
+      ' times in index.html; the UI should read the catalogue, not restate it');
+    else if(region.indexOf(needle) === -1){
+      errors.push('path ' + p.id + ' — its entry is in the app but outside the derived region');
+    }
   });
-  notes.push('index.html carries no Help Me reader, tab or stored progress');
+
+  /* A crisis resource is read from the configuration, never typed into a
+     template. Checked by VALUE, because a number is what a person dials. */
+  const crisis = ((doc.safety || {}).crisis || {});
+  const urgentRegion = (app.match(/const HELP_URGENT = \{[\s\S]*?\n\};/) || [''])[0];
+  (crisis.territories || []).forEach(t => {
+    (t.actions || []).forEach(a => {
+      const outside = app.split(a.value).length - 1 - (urgentRegion.split(a.value).length - 1);
+      if(outside > 0){
+        errors.push('the resource value "' + a.value + '" appears ' + outside +
+          ' time(s) outside HELP_URGENT; it must be read from the configuration');
+      }
+    });
+  });
+
+  /* Authoring provenance is not shipped: nothing on screen derives from it. */
+  if(/\bbasis:\s*\[/.test(region)) errors.push('the derived HELP region ships `basis`, which nothing renders');
+
+  notes.push('the app carries one Help Me catalogue, and it came from this file');
 }
 
 function checkCrossReferences(doc, errors){

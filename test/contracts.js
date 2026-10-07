@@ -389,11 +389,11 @@ function testNavigation(){
   T('and a sixth would not fit a 320px phone, so it is refused', tabs.length < 6);
 
   sub('an unknown tab is a no-op, not a blank screen');
-  c.switchTab('saved');
+  c.switchTab('help');
   const before = c.currentTab;
   c.switchTab('does-not-exist');
   T('currentTab is unchanged', c.currentTab === before);
-  T('the current view is still active', d.getElementById('view-saved').classList.contains('active'));
+  T('the current view is still active', d.getElementById('view-help').classList.contains('active'));
 
   sub('a tab opens at its top, so the same tap gives the same result');
   app.ctx.window && (app.ctx.window.scrollY = 400);
@@ -2723,9 +2723,16 @@ function testLearnNavigation(){
      a passage is nearer to reading it than studying it is. */
   T('Today is first', tabs[0] === 'today');
   T('Bible is second', tabs[1] === 'bible');
-  T('Devotions is third', tabs[2] === 'devotions');
-  T('Learn is fourth', tabs[3] === 'learn');
-  T('Saved is fifth, and was not demoted to make room', tabs[4] === 'saved');
+  T('Help Me is third', tabs[2] === 'help');
+  T('Devotions is fourth', tabs[3] === 'devotions');
+  T('Learn is fifth', tabs[4] === 'learn');
+  /* Saved left the bar in 1.14.0 so Help Me could have a slot. It is not
+     gone and it is not inside Settings: it is a header utility, one tap from
+     every root, which is what the geometry allowed once What's New gave up
+     its button. */
+  T('Saved is no longer a primary destination', tabs.indexOf('saved') === -1, tabs.join(', '));
+  T('and it is one tap away from every root, in the header',
+    !!d.getElementById('savedBtn'));
   /* Which destinations deserve a slot moved. Settings still does not. */
   T('Settings is not one of them', tabs.indexOf('settings') === -1, tabs.join(', '));
   T('the app boots on Today', c.currentTab === 'today', c.currentTab);
@@ -4579,7 +4586,7 @@ function testPrimaryNavigation(){
   const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab).filter(Boolean);
   T('exactly five primary destinations', tabs.length === 5, tabs.join(', '));
   T('in the order the product reads in',
-    tabs.join(',') === 'today,bible,devotions,learn,saved', tabs.join(','));
+    tabs.join(',') === 'today,bible,help,devotions,learn', tabs.join(','));
   /* The ceiling moved once, for a destination, after being measured. It did
      not move to fit Bible in and it does not move again for a link. */
   T('the bar and the markup agree about how many there are',
@@ -4627,8 +4634,10 @@ function testPrimaryNavigation(){
   sub('closing Settings puts you back where you opened it');
   /* The failure this prevents: a Settings screen that returns everybody to
      Today. Settings never touches currentTab, so the tab underneath is
-     still the tab you were on - which is why this holds for all four. */
-  ['today', 'bible', 'learn', 'saved'].forEach(tab => {
+     still the tab you were on - which is why this holds for all of them.
+     Saved is on this list no longer, because Saved is no longer a tab: it is
+     a level, and the journey table proves it returns to its own origin. */
+  ['today', 'bible', 'help', 'learn'].forEach(tab => {
     const a = H.loadApp({ sharedStorage: new Map() });
     a.ctx.goToTab(tab);
     a.ctx.openSettings();
@@ -5353,7 +5362,7 @@ function testDevotionsExperience(){
   const nav = src.slice(src.indexOf('<nav class="tabbar"'), src.indexOf('</nav>'));
   const tabs = [...d.querySelectorAll('.tab-btn')].map(b => b.dataset.tab);
   T('five slots, in the measured order',
-    tabs.join(',') === 'today,bible,devotions,learn,saved', tabs.join(','));
+    tabs.join(',') === 'today,bible,help,devotions,learn', tabs.join(','));
   T('they share the bar equally, so no tab is compressed against another',
     /\.tab-btn\{[^}]*flex: 1;/.test(src));
   /* Wrapping is the failure that would actually be ugly: one tab two lines
@@ -6766,16 +6775,16 @@ async function testBackNavigation(){
                   () => s.c.openPassageInBible(lesson.passages[0])],
       after: ['studyOverlay > lessonOverlay', 'studyOverlay', 'root'],
       check: (s, i) => i !== 0 || s.c.openLessonId === lesson.id },
-    { name: 'Saved → a verse saved from the Bible → Read in context → Back = Saved', tab: 'saved',
-      open: s => [() => s.c.toggleSavedLocation('GEN.5.3', 'Genesis 5:3'), () => s.c.goToTab('saved'), () => s.c.openPassageInBible('GEN.5.3')],
-      top: 'bibleReaderOverlay', after: ['root'] },
-    { name: 'Saved → Highlights → Read in context → Back = the highlights', tab: 'saved',
-      open: s => [() => s.c.setHighlight('GEN.5.3', 'amber'), () => s.c.goToTab('saved'), () => s.c.setSavedView('highlights'),
+    { name: 'Saved → a verse saved from the Bible → Read in context → Back = Saved', tab: 'today',
+      open: s => [() => s.c.toggleSavedLocation('GEN.5.3', 'Genesis 5:3'), () => s.c.openSaved(), () => s.c.openPassageInBible('GEN.5.3')],
+      top: 'bibleReaderOverlay', after: ['savedOverlay', 'root'] },
+    { name: 'Saved → Highlights → Read in context → Back = the highlights', tab: 'today',
+      open: s => [() => s.c.setHighlight('GEN.5.3', 'amber'), () => s.c.openSaved(), () => s.c.setSavedView('highlights'),
                   () => s.c.openPassageInBible('GEN.5.3')],
-      top: 'bibleReaderOverlay', after: ['root'],
+      top: 'bibleReaderOverlay', after: ['savedOverlay', 'root'],
       check: s => s.c.savedView === 'highlights' },
-    { name: 'Settings → Backup & data → Reset → Back = Backup & data, and nothing is erased', tab: 'saved',
-      open: s => [() => s.c.goToTab('saved'), () => s.c.openSettings(), () => s.c.openDataSettings(), () => { s.c.resetAllData(); }],
+    { name: 'Settings → Backup & data → Reset → Back = Backup & data, and nothing is erased', tab: 'today',
+      open: s => [() => s.c.openSettings(), () => s.c.openDataSettings(), () => { s.c.resetAllData(); }],
       after: ['settingsOverlay > dataOverlay', 'settingsOverlay', 'root'],
       check: (s, i) => i !== 0 || (s.c._confirmResolve === null && s.c.Store.listKeys().length > 0) },
     { name: 'Today → a reflection → Back = Today', tab: 'today',
@@ -6790,11 +6799,43 @@ async function testBackNavigation(){
       open: s => [() => s.c.goToTab('devotions'), () => s.c.openDevotionEntry(series.id, entry.id)],
       top: 'devotionReaderOverlay', after: ['devotionSeriesOverlay', 'root'] }
   ];
-  ['today', 'bible', 'devotions', 'learn', 'saved'].forEach(tab => JOURNEYS.push({
+  const ROOTS = ['today', 'bible', 'help', 'devotions', 'learn'];
+  ROOTS.forEach(tab => JOURNEYS.push({
     name: tab + ' → Settings → Back = ' + tab, tab: tab,
     open: s => [() => s.c.goToTab(tab), () => s.c.openSettings()],
     after: ['root']
   }));
+  /* THE POINT OF MOVING SAVED. It was a root, so it had no history entry and
+     nothing to return to; now it is a level over whichever destination asked
+     for it, and Back must land back there rather than on Today. Every root,
+     because the failure this prevents is the one where four of them work. */
+  ROOTS.forEach(tab => JOURNEYS.push({
+    name: tab + ' → Saved → Back = ' + tab, tab: tab,
+    open: s => [() => s.c.goToTab(tab), () => s.c.openSaved()],
+    top: 'savedOverlay', after: ['root']
+  }));
+  /* And Help Me's own two levels, which is the journey the feature lives on. */
+  JOURNEYS.push({
+    name: 'Help Me → path → step → Back = the path, Back = Help Me', tab: 'help',
+    open: s => [() => s.c.goToTab('help'), () => s.c.openHelpPath('start-here'),
+                () => s.c.openHelpStep('start-here', 'sh-1')],
+    top: 'helpStepOverlay', after: ['helpPathOverlay', 'root'],
+    check: (s, i) => i !== 0 || s.c.openHelpPathId === 'start-here'
+  });
+  JOURNEYS.push({
+    name: 'Help Me step → Open in Bible → Back = the exact step', tab: 'help',
+    open: s => [() => s.c.goToTab('help'), () => s.c.openHelpPath('start-here'),
+                () => s.c.openHelpStep('start-here', 'sh-1'),
+                () => s.c.openHelpPassage('PSA', 23, 1, 3)],
+    top: 'bibleReaderOverlay',
+    after: ['helpPathOverlay > helpStepOverlay', 'helpPathOverlay', 'root'],
+    check: (s, i) => i !== 0 || s.c.openHelpStepId === 'sh-1'
+  });
+  JOURNEYS.push({
+    name: 'Help Me → urgent help → Back = Help Me', tab: 'help',
+    open: s => [() => s.c.goToTab('help'), () => s.c.openHelpUrgent()],
+    top: 'helpUrgentOverlay', after: ['root']
+  });
   [['Scripture & sources', 'openSource'], ['What’s new', 'openUpdates'], ['Backup & data', 'openDataSettings'],
    ['Reading focus', 'openFocusSettings'], ['Translation', 'openTranslationPicker']].forEach(([label, fn]) => JOURNEYS.push({
     name: 'Learn → Settings → ' + label + ' → Back = Settings, Back = Learn', tab: 'learn',
@@ -7005,8 +7046,12 @@ async function testBackNavigation(){
   T('the history and popstate paths never choose a tab', backPaths.length > 400 && !CHOOSES_TAB.test(backPaths));
   const closers = named(/^(close|finish|settle|cancel)[A-Z]/).map(p => p.split('\n}')[0]).join('\n');
   T('no close path chooses a tab either', closers.length > 500 && !CHOOSES_TAB.test(closers));
+  /* THREE, and each one is a button a reader pressed: the two empty-state
+     "Go to today" actions, and the handoff at the end of a Help Me path for
+     the paths whose content sends a reader to the daily reading. The number
+     is pinned so a fourth has to be argued for rather than appear. */
   T('the only code that sends anyone to Today is something they tapped on purpose',
-    (src.match(/goToTab\('today'\)/g) || []).length === 2 && !/switchTab\('today'\)/.test(src));
+    (src.match(/goToTab\('today'\)/g) || []).length === 3 && !/switchTab\('today'\)/.test(src));
   /* A page returns to whatever it was opened over, so its Back control
      cannot know a destination to announce. The reader's said "Back to the
      Bible" while taking a reader back to Saved, a lesson, or the chapters. */
@@ -7723,21 +7768,37 @@ function testHelpMe(){
     ['diagnos', 'mood', 'streak', 'analytic'].every(k =>
       safety.neverBuild.some(x => x.toLowerCase().indexOf(k) !== -1)));
 
-  sub('Phase A ships no feature');
-  /* The whole point of this phase: the content is proven first. A tab, a
-     reader or a stored record here would mean somebody shipped a destination
-     before anyone had read what is in it. */
-  const noUI = [];
-  HELP.checkNoUI(noUI, []);
-  T('index.html carries no Help Me reader, tab, catalogue or stored progress',
-    noUI.length === 0, noUI.join('; '));
-  T('primary navigation still has its five tabs, and Help Me is not one of them',
-    (src.match(/class="tab-btn[^"]*" data-tab="/g) || []).length === 5 &&
-    src.indexOf('data-tab="help"') === -1);
-  T('no release note announces a feature that does not exist',
-    !/Help Me/i.test((src.match(/const APP_UPDATES[\s\S]*?\n\];/) || [''])[0]));
-  T('the catalogue is not wired into the build that writes the app',
-    fsx.readFileSync(pathx.join(H.ROOT, 'scripts', 'scripture.js'), 'utf8').indexOf('help.json') === -1);
+  /* Phase A deliberately shipped no feature and asserted it: the content was
+     proven before anything could be opened. Phase C is the integration, so
+     those assertions are inverted here rather than deleted. What they
+     protected was that nobody ships a destination before the writing has
+     been read — that has now happened. What must still hold is that the
+     wiring did not become a second copy of the content. */
+  sub('Phase C ships the feature, from the same catalogue');
+  T('the catalogue reaches the app through the build, not by hand',
+    fsx.readFileSync(pathx.join(H.ROOT, 'scripts', 'scripture.js'), 'utf8').indexOf('help.json') !== -1);
+  T('Help Me is a primary destination', src.indexOf('data-tab="help"') !== -1);
+  T('and the bar still holds exactly five',
+    (src.match(/class="tab-btn[^"]*" data-tab="/g) || []).length === 5);
+  /* The shipped region must carry every path and step the file does, or a
+     reader is served a stale or partial catalogue. */
+  /* The shipped region, read out of the app the way a phone reads it. */
+  const shippedPaths = H.loadApp({ sharedStorage: new Map() }).ctx.HELP;
+  T('every path in the file is in the app',
+    shippedPaths.length === doc.paths.length, shippedPaths.length + ' of ' + doc.paths.length);
+  T('and every step of every path',
+    shippedPaths.reduce((n, p) => n + p.steps.length, 0) ===
+    doc.paths.reduce((n, p) => n + (p.steps || []).length, 0));
+  T('entries are the file\u2019s own words, not a second taxonomy in the UI',
+    shippedPaths.every(p => {
+      const orig = doc.paths.find(x => x.id === p.id);
+      return orig && orig.entry === p.entry && orig.summary === p.summary;
+    }));
+  /* Authoring provenance is checked, and is not shipped: nothing on screen is
+     derived from it, and it would be dead weight on every phone. */
+  T('basis stays in the file and out of the app',
+    shippedPaths.every(p => p.steps.every(s => s.basis === undefined)) &&
+    doc.paths.every(p => p.steps.every(s => Array.isArray(s.basis))));
 }
 
 /* ---------------------------------------------------------
@@ -7818,7 +7879,7 @@ async function testColdSaved(){
   sub('Saved opened first, with the Bible tab never visited');
   {
     const { c, d, calls } = cold({ ed: 'eng-web' });
-    c.goToTab('saved'); c.__flush();
+    c.openSaved(); c.__flush();
     const first = shown(d);
     T('every reference reads as a book name immediately, with nothing fetched yet',
       /Genesis 5:6/.test(first) && /Ruth 2:12/.test(first) && !LEAK.test(first), first.slice(0, 90));
@@ -7836,7 +7897,7 @@ async function testColdSaved(){
   sub('highlights, on the same cold start');
   {
     const { c, d } = cold({ ed: 'eng-web' });
-    c.goToTab('saved'); c.setSavedView('highlights'); c.__flush();
+    c.openSaved(); c.setSavedView('highlights'); c.__flush();
     T('a highlight names its book before anything is fetched',
       /Genesis 5:7/.test(shown(d)) && !LEAK.test(shown(d)));
     await settle(c);
@@ -7855,7 +7916,7 @@ async function testColdSaved(){
     many.push({ id: 's_rut-2-12', passage: 'RUT.2.12', ref: 'Ruth 2:12', savedAt: '2026-10-01T11:00:00.000Z', updatedAt: '2026-10-01T11:00:00.000Z' });
     store.set('daily-verse.data.saved', JSON.stringify(many));
     const { c, d, calls } = cold({ store: store });
-    c.goToTab('saved'); c.__flush();
+    c.openSaved(); c.__flush();
     await settle(c, 20);
     const gen = calls.filter(u => /GEN\.json$/.test(u)).length;
     T('nine rows across two books are two downloads, not nine',
@@ -7877,7 +7938,7 @@ async function testColdSaved(){
     const { c, d, store } = cold({ ed: 'eng-web' });
     const before = store.get('daily-verse.data.saved');
     const beforeHl = store.get('daily-verse.data.bibleHighlights');
-    c.goToTab('saved'); c.__flush(); await settle(c);
+    c.openSaved(); c.__flush(); await settle(c);
     const seen = {};
     for(const ed of ['spaRV1909', 'deu1912', 'cmn-cu89s', 'cmn-cu89t', 'eng-web']){
       c.setTranslation(ed); c.__flush(); await settle(c);
@@ -7905,7 +7966,7 @@ async function testColdSaved(){
     await c.loadBibleBook('eng-web', 'GEN');          /* read once, online */
     c.navigator.onLine = false;
     c.fetch = () => Promise.reject(new Error('offline'));
-    c.goToTab('saved'); c.__flush(); await settle(c);
+    c.openSaved(); c.__flush(); await settle(c);
     const out = shown(d);
     T('a book that was read before still reads offline', /Seth lived one hundred five years/.test(out));
     T('one that never was says so, and offers to try again',
@@ -7915,7 +7976,7 @@ async function testColdSaved(){
   }
   {
     const { c, d, calls } = cold({ ed: 'eng-web', offline: true });
-    c.goToTab('saved'); c.__flush(); await settle(c);
+    c.openSaved(); c.__flush(); await settle(c);
     T('with nothing cached at all, every row reaches a finite honest state',
       !/Loading this verse/.test(shown(d)) && /not been downloaded yet/.test(shown(d)));
     T('and a failed book is not asked for again and again',
@@ -7981,6 +8042,12 @@ function populatedDevice(storage){
   const series = c.DEVOTIONS[0];
   c.openDevotionSeries(series.id); c.openDevotionEntry(series.id, series.entries[0].id);
   c.completeDevotionEntry();
+  /* A Help Me path, part-read. It is here so the key enumeration below covers
+     helpProgress without anybody remembering to add an assertion for it —
+     which is the same reason every other collection is populated here. */
+  c.openHelpStep('start-here', 'sh-1');
+  c.continueHelpStep();
+  c.closeHelpStep();
   /* Every preference, including the four that were being dropped. */
   c.setTranslation('engbsb');
   c.setAppearance('light');
@@ -8090,6 +8157,13 @@ function testDeviceMove(){
     restored.studyNotes[0].text === 'A lesson note');
   T('their study progress came back', restored.studyProgress.length === c.studyProgress.length);
   T('their devotion progress came back', restored.devotionProgress.length === c.devotionProgress.length);
+  T('and the Help Me path they were partway through',
+    restored.helpProgress.length === c.helpProgress.length &&
+    restored.helpDoneCount(restored.helpPathById('start-here')) === 1,
+    JSON.stringify(restored.helpProgress));
+  T('so it resumes at the step they had not read',
+    restored.firstIncompleteHelpStepId(restored.helpPathById('start-here')) === 'sh-2',
+    String(restored.firstIncompleteHelpStepId(restored.helpPathById('start-here'))));
   T('and nothing threw on the way in', fresh.errors.length === 0 && after.errors.length === 0,
     fresh.errors.concat(after.errors).join(' | '));
 
@@ -8121,6 +8195,23 @@ function testDeviceMove(){
     const checked = H.loadApp({ sharedStorage: junk.storage._map });
     T('a file that is not a backup erases nothing',
       checked.ctx.notes.length === 1 && checked.ctx.translation === 'engbsb');
+  }
+  {
+    /* A backup written before a collection existed simply does not mention
+       it. Restoring one must leave the device's own records alone rather
+       than reading absence as "delete this". Help Me is the newest
+       collection, so it is the one a real older file will be missing. */
+    const older = JSON.parse(bytes);
+    delete older.data[c.KEYS.helpProgress];
+    const dev = H.loadApp({ sharedStorage: new Map(newPhone) });
+    dev.ctx.importData({ files: [{ _text: JSON.stringify(older) }], value: 'x' });
+    const checked = H.loadApp({ sharedStorage: dev.storage._map });
+    T('a backup from before Help Me existed restores, and keeps what is here',
+      checked.ctx.helpProgress.length === c.helpProgress.length &&
+      checked.ctx.notes.length === 1,
+      JSON.stringify(checked.ctx.helpProgress));
+    T('and the schema did not have to move for any of it',
+      checked.ctx.DATA_SCHEMA_VERSION === 2, String(checked.ctx.DATA_SCHEMA_VERSION));
   }
 
   /* THE BOUNDARY: the reader chose to erase everything, so this does not
@@ -8166,8 +8257,285 @@ function testDeviceMove(){
   }
 }
 
+/* ---------------------------------------------------------
+   CONTRACT 52 — HELP ME, AS A PRODUCT
+
+   CONTRACT 49 proves the writing. This proves the feature
+   built on it: that a reader's progress is the smallest record
+   that can answer the questions on screen, that urgent help
+   tells the truth about where a number works, and that the
+   words of Scripture come from the Bible rather than from
+   anything typed into this feature.
+
+   The things it refuses to let happen are the things this
+   feature could most easily become: a mood diary, a streak, a
+   diagnosis, a crisis number printed where nobody verified it.
+   --------------------------------------------------------- */
+function testHelpProduct(){
+  section('CONTRACT 52 — Help Me, as a product');
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx;
+  const d = app.dom.document;
+  const src = H.readApp();
+  const js = H.mainScript(src);
+
+  sub('opening is not reading');
+  const path = c.helpPathById('start-here');
+  c.openHelpStep(path.id, path.steps[0].id);
+  T('a path opened is a path started', !!c.helpProgressFor(path.id));
+  T('and nothing is marked read for having been opened',
+    c.helpDoneCount(path) === 0, String(c.helpDoneCount(path)));
+  c.continueHelpStep();
+  T('Continue marks exactly one step', c.helpDoneCount(path) === 1, String(c.helpDoneCount(path)));
+  T('and moves to the next one', c.openHelpStepId === path.steps[1].id, String(c.openHelpStepId));
+  /* The same tap twice is one step, not two. A reader who taps Continue, goes
+     back and taps it again has not read it twice. */
+  /* Idempotence is about the SAME step. The first Continue already advanced,
+     so a second tap there would legitimately complete the next one — what
+     must not happen is a step counted twice for being read twice. */
+  c.openHelpStep(path.id, path.steps[0].id);
+  c.continueHelpStep();
+  T('re-reading a step already read does not count it twice',
+    c.helpDoneCount(path) === 1, String(c.helpDoneCount(path)));
+  /* Checked on the record, not the count: helpDoneCount() asks whether each
+     step's id is present, so a done list growing duplicates on every re-read
+     would leave the number on screen correct and the record wrong. */
+  T('and the record does not grow a duplicate',
+    (() => { const dn = c.helpProgressFor(path.id).done;
+      return dn.length === new Set(dn).size; })(),
+    JSON.stringify(c.helpProgressFor(path.id).done));
+
+  sub('what the record is allowed to contain');
+  const rec = c.helpProgressFor(path.id);
+  T('one record per path, keyed by the path', rec.id === path.id);
+  T('its done list is step ids and nothing else',
+    Array.isArray(rec.done) && rec.done.every(x => typeof x === 'string'));
+  /* THE WHOLE POINT. A reader's worst week is not a data model: this feature
+     could so easily have become a mood history, and the refusal has to be
+     structural rather than a promise in a comment. */
+  const FORBIDDEN = ['mood', 'feeling', 'severity', 'score', 'rating', 'percent',
+                     'streak', 'diagnosis', 'symptom', 'crisis', 'urgent', 'answers', 'consider'];
+  const fields = Object.keys(rec).map(k => k.toLowerCase());
+  const leaked = fields.filter(k => FORBIDDEN.some(f => k.indexOf(f) !== -1));
+  T('it records no mood, severity, score, streak or diagnosis',
+    leaked.length === 0, leaked.join(', '));
+  T('and exactly the four fields a progress record has',
+    Object.keys(rec).sort().join(',') === 'done,id,startedAt,updatedAt',
+    Object.keys(rec).join(','));
+  /* Nothing about urgent help may be written down, anywhere. */
+  T('opening urgent help stores nothing',
+    (() => {
+      const u = H.loadApp({ sharedStorage: new Map() });
+      const before = [...u.storage._map.keys()].sort().join('|');
+      u.ctx.openHelpUrgent();
+      u.ctx.closeHelpUrgent();
+      return [...u.storage._map.keys()].sort().join('|') === before;
+    })());
+  T('and no code path records a crisis interaction',
+    !/helpUrgent[A-Za-z]*\s*=|Store\.set[A-Za-z]*\([^)]*urgent/i.test(js));
+
+  sub('every number on screen is derived');
+  T('no percentage is stored or shown',
+    !/helpPercent|helpProgressPercent/.test(js) && !/%<\/|percent/i.test(
+      (js.match(/function renderHelp\(\)[\s\S]*?\n\}/) || [''])[0]));
+  T('how far through is counted from the record',
+    /function helpDoneCount\(path\)\{[\s\S]{0,320}rec\.done\.indexOf/.test(js.replace(/\n\s*/g, '')));
+  /* Counted against the path's own steps, so a step retired in a later
+     release cannot push somebody past the number of readings that exist. */
+  T('and counted against the steps that exist, not the ids stored',
+    (() => {
+      const w = H.loadApp({ sharedStorage: new Map() });
+      const p = w.ctx.helpPathById('start-here');
+      w.ctx.Store.setJSON(w.ctx.KEYS.helpProgress,
+        [{ id: 'start-here', done: p.steps.map(s => s.id).concat(['sh-99', 'sh-100']), updatedAt: 'z' }]);
+      const r = H.loadApp({ sharedStorage: w.storage._map });
+      return r.ctx.helpDoneCount(r.ctx.helpPathById('start-here')) === p.steps.length;
+    })());
+
+  sub('one path to resume, not a history of struggles');
+  {
+    const m = H.loadApp({ sharedStorage: new Map() });
+    const k = m.ctx;
+    k.openHelpStep('heavy-heart', 'hh-1'); k.continueHelpStep();
+    k.openHelpStep('direction-decisions', 'dd-1'); k.continueHelpStep();
+    const active = k.activeHelpPath();
+    T('the most recently updated incomplete path is the one offered',
+      active && active.id === 'direction-decisions', active && active.id);
+    k.renderHelp();
+    const html = m.dom.document.getElementById('helpBody').innerHTML;
+    const panels = (html.match(/class="panel help-continue"/g) || []).length;
+    T('and it is offered once, not as a list of everything opened',
+      panels === 1, String(panels));
+    T('the home never names what a reader is going through as a history',
+      !/My struggles|Your struggles|emotional history|recent problems/i.test(js));
+    /* Both paths keep their own progress. */
+    T('each path keeps its own place',
+      k.helpDoneCount(k.helpPathById('heavy-heart')) === 1 &&
+      k.helpDoneCount(k.helpPathById('direction-decisions')) === 1);
+  }
+
+  sub('a finished path is finished, not locked');
+  {
+    const z = H.loadApp({ sharedStorage: new Map() });
+    const k = z.ctx;
+    const p = k.helpPathById('start-here');
+    p.steps.forEach(s => { k.openHelpStep(p.id, s.id); k.continueHelpStep(); });
+    T('it completes', k.helpPathComplete(p));
+    T('and stops being offered to resume', !k.activeHelpPath());
+    const doneAt = k.helpProgressFor(p.id).updatedAt;
+    k.openHelpStep(p.id, p.steps[0].id);
+    k.closeHelpStep();
+    T('reopening it does not erase the completion', k.helpPathComplete(p));
+    T('and does not rewrite when it was finished',
+      k.helpProgressFor(p.id).updatedAt === doneAt);
+    T('the overview offers to read it again rather than refusing',
+      (() => { k.openHelpPath(p.id);
+        return (z.dom.document.getElementById('helpPathBody').innerHTML).indexOf('Read it again') !== -1; })());
+  }
+
+  sub('Scripture comes from the Bible, never from Help Me');
+  /* The catalogue carries addresses. If a verse were typed into a step it
+     would be Scripture this app asserts on its own authority, outside the
+     derived region and outside every check that defends it. */
+  T('no step carries text, only locations',
+    c.HELP.every(p => p.steps.every(s =>
+      s.text === undefined && s.scripture === undefined &&
+      s.passages.every(r => typeof r.c === 'string' && typeof r.ch === 'number'))));
+  T('the reader’s own edition supplies the words',
+    /function locationCardHtml\(ref\)\{[\s\S]{0,200}passageVerses\(ref\)/.test(js.replace(/\n\s*/g, '')));
+  T('and the words are read out of the Bible cache, not the catalogue',
+    /function passageVerses\(ref\)\{[\s\S]{0,160}cachedBibleBook\(translation, ref\.c\)/.test(js.replace(/\n\s*/g, '')));
+  T('a quotation carries its reference and its translation',
+    /function locationCardHtml[\s\S]{0,700}verse-ref[\s\S]{0,200}verse-translation/.test(js));
+  /* Rule 50: an id names a location, never a rendering. */
+  T('no passage id is namespaced by translation',
+    c.HELP.every(p => p.steps.every(s => s.passages.every(r => !/[a-z]{3}-|_/.test(r.c)))));
+
+  sub('urgent help tells the truth about where a number works');
+  const u = c.HELP_URGENT;
+  T('the resources come from the verified configuration', !!u && Array.isArray(u.territories));
+  T('every territory is named', u.territories.every(t => !!t.name && t.name.length > 2));
+  c.openHelpUrgent();
+  const urgent = d.getElementById('helpUrgentBody').innerHTML;
+  /* THE RULE: a resource is never shown without the territory it belongs to.
+     988 is a United States service and is never presented as though it
+     worked anywhere else. */
+  const us = u.territories.find(t => t.code === 'US');
+  T('988 never appears without the United States beside it',
+    urgent.indexOf('988') === -1 || urgent.indexOf(c.escapeHtml(us.name)) !== -1);
+  T('the territory is a heading, not a footnote',
+    new RegExp('help-urgent-place[^>]*>' + us.name).test(urgent));
+  T('readers outside it are told so, in their own section',
+    urgent.indexOf('Outside the United States') !== -1);
+  /* A wrong number given to someone in crisis is worse than no number. */
+  const outside = urgent.slice(urgent.indexOf('help-urgent-outside'));
+  T('and are given no number this app has not verified',
+    !/\b\d{3}[\s-]?\d{3,4}\b|\b(112|999|911|988)\b/.test(outside.replace(/<[^>]*>/g, '')),
+    outside.replace(/<[^>]*>/g, ' ').slice(0, 90));
+  T('the emergency line names the territory its number belongs to',
+    !/911/.test(urgent) || /911 in the United States/.test(urgent));
+  /* Territory is never guessed. */
+  T('territory is never inferred from edition, language or preference',
+    !/translation\s*===\s*['"]|activeTranslation\(\)[^;]{0,60}territor/i.test(
+      (js.match(/function renderHelpUrgent[\s\S]*?\n\}/) || [''])[0]));
+  T('and nothing geolocates', !/geolocation|navigator\.language|Intl\.DateTimeFormat\(\)\.resolvedOptions/.test(js));
+  T('the review date is carried into the app, so staleness is visible',
+    typeof u.reviewBy === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(u.reviewBy), u.reviewBy);
+
+  sub('the quiet entry, and the paths that carry a contextual one');
+  T('the home always offers one way to urgent help',
+    (() => { c.renderHelp();
+      return d.getElementById('helpBody').innerHTML.indexOf('openHelpUrgent()') !== -1; })());
+  T('it is quiet, not a banner', /class="btn-quiet" onclick="openHelpUrgent\(\)/.test(
+    d.getElementById('helpBody').innerHTML));
+  /* Only the paths whose own safety metadata asks for it. A crisis warning on
+     every path alarms every reader and tells none of them anything. */
+  const flagged = c.HELP.filter(p => p.safety).map(p => p.id).sort();
+  T('the contextual offer is the catalogue’s decision, not the UI’s',
+    flagged.join(',') === 'guilt-and-sin,heavy-heart', flagged.join(','));
+  T('and a path without that flag carries no crisis messaging',
+    (() => { c.openHelpPath('direction-decisions');
+      return d.getElementById('helpPathBody').innerHTML.indexOf('help-urgent-contextual') === -1; })());
+  T('while a flagged one does',
+    (() => { c.openHelpPath('heavy-heart');
+      return d.getElementById('helpPathBody').innerHTML.indexOf('help-urgent-contextual') !== -1; })());
+
+  sub('forgiveness is not reconciliation, and the UI does not blur them');
+  /* The content draws six distinctions. A button can collapse all of them. */
+  T('no control invites a reader to reconcile, forgive on cue, or re-establish contact',
+    !/Reconnect|Forgive them now|Restore contact|Reach out to them/i.test(js));
+  T('and no step asks a reader to describe what happened',
+    c.HELP.every(p => p.steps.every(s => !/textarea|input/i.test(JSON.stringify(s)))));
+
+  sub('the reader is handed on, not kept');
+  T('every path ends somewhere outside Help Me',
+    c.HELP.every(p => p.completion && ['bible', 'today', 'learn'].indexOf(p.completion.kind) !== -1),
+    c.HELP.map(p => p.completion && p.completion.kind).join(','));
+  T('a Learn handoff names the study the writing promised',
+    c.HELP.filter(p => p.completion.kind === 'learn')
+      .every(p => !!p.completion.study && !!c.studyById(p.completion.study)));
+  /* And says so on the button. Asserting only the data let the renderer drop
+     the study and offer a generic "Go to Learn", landing a reader on the
+     index of studies instead of the five lessons just promised. */
+  T('and the button carries that study’s own title',
+    (() => {
+      const w = H.loadApp({ sharedStorage: new Map() });
+      const k = w.ctx, p = k.helpPathById('start-here');
+      p.steps.forEach(s => { k.openHelpStep(p.id, s.id); k.continueHelpStep(); });
+      const html = w.dom.document.getElementById('helpStepActions').innerHTML;
+      const study = k.studyById(p.completion.study);
+      return html.indexOf(k.escapeHtml(study.title)) !== -1 &&
+             html.indexOf("leaveHelpFor('learn','" + study.id + "')") !== -1;
+    })());
+  T('and the completion offers one next action, not a menu',
+    (() => {
+      const w = H.loadApp({ sharedStorage: new Map() });
+      const k = w.ctx, p = k.helpPathById('start-here');
+      p.steps.forEach(s => { k.openHelpStep(p.id, s.id); k.continueHelpStep(); });
+      const html = w.dom.document.getElementById('helpStepActions').innerHTML;
+      return (html.match(/<button/g) || []).length === 1;
+    })());
+  T('there is no "choose another struggle" at the end of a path',
+    !/another struggle|choose another path|pick another/i.test(js));
+  /* No celebration. Finishing a hard reading is not an achievement to award. */
+  T('and nothing congratulates anybody',
+    !/confetti|Well done|Congratulations|Great job|streak|badge|achievement/i.test(
+      (js.match(/function helpCompletionHtml[\s\S]*?\n\}/) || [''])[0]));
+
+  sub('marking a step read does not rebuild the reading');
+  /* The permanent rule: a non-navigation state change must not rebuild a long
+     reading surface. On iOS that throws the reader's scroll position away. */
+  T('completion repaints only the action block',
+    /function paintHelpStepActions\(\)\{[\s\S]{0,400}helpStepActions[\s\S]{0,200}innerHTML = helpStepActionsHtml/
+      .test(js.replace(/\n\s*/g, '')));
+  /* Stated as the prohibition rather than as a shape.
+
+     The first version of this matched a pattern inside paintHelpPassage and
+     passed while a renderHelpStep() was added one line above it — which is
+     exactly the defect: a reader partway down a long passage, and the ground
+     rebuilt underneath them when their book finally arrives. The DOM-survival
+     version cannot run here either, because the stub only knows elements
+     declared in markup. So the rule is asserted as what it forbids, and the
+     live behaviour was checked in a browser. */
+  {
+    const body = name => {
+      const at = js.indexOf('function ' + name + '(');
+      return at === -1 ? '' : js.slice(at, js.indexOf('\n}', at));
+    };
+    const rebuilds = /\brenderHelpStep\s*\(|\brenderHelpPath\s*\(|\brenderHelp\s*\(/;
+    T('and the Scripture fills in without rebuilding the step',
+      !!body('paintHelpPassage') && !rebuilds.test(body('paintHelpPassage')),
+      (body('paintHelpPassage').match(rebuilds) || ['none'])[0]);
+    T('and marking a step read does not rebuild it either',
+      !!body('paintHelpStepActions') && !rebuilds.test(body('paintHelpStepActions')),
+      (body('paintHelpStepActions').match(rebuilds) || ['none'])[0]);
+  }
+  T('a step is rebuilt only when the reader moves to a different one',
+    /const nextId = nextHelpStepId[\s\S]{0,400}renderHelpStep\(\);/.test(js.replace(/\n\s*/g, '')));
+}
+
 module.exports = {
-  T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved, testDeviceMove,
+  T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved, testDeviceMove, testHelpProduct,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,

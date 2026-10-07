@@ -354,6 +354,8 @@ const BRIDGE = [
   'TRANSLATIONS', 'TRANSLATION_TEXT', 'translation', 'DEFAULT_TRANSLATION',
   'STUDIES', 'STUDIES_VERSION', 'studyProgress', 'studyNotes', 'checkAnswers',
   'DEVOTIONS', 'DEVOTIONS_VERSION', 'devotionProgress',
+  'HELP', 'HELP_VERSION', 'HELP_URGENT', 'helpProgress',
+  'openHelpPathId', 'openHelpStepId', 'helpStepCompleted',
   'openDevotionSeriesId', 'openDevotionEntryId',
   'openStudyId', 'openLessonId',
   'savedVerses', 'notes', 'assignments', 'selectedDay', 'savedView', 'editingNoteDate',

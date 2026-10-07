@@ -50,6 +50,7 @@ const APP_PATH = path.join(ROOT, 'index.html');
 const CURATION = path.join(ROOT, 'data', 'curation.json');
 const STUDIES = path.join(ROOT, 'data', 'studies.json');
 const DEVOTIONS = path.join(ROOT, 'data', 'devotions.json');
+const HELP_DOC = path.join(ROOT, 'data', 'help.json');
 
 /* Standard SIL/UBS book codes, which is what the corpus is keyed by. */
 const BOOKS = {
@@ -124,6 +125,106 @@ function resolveDevotionRef(ref, where, editionVerses, editionSpans, errors){
     }
   });
   return { ref: ref, c: p.code, ch: p.chapter, from: p.from, to: p.to };
+}
+
+function readHelp(){ return JSON.parse(fs.readFileSync(HELP_DOC, 'utf8')); }
+
+/* ---------- Help Me ----------
+   The same rule as a devotional and a lesson: editorial prose and canonical
+   LOCATIONS, never a word of Scripture. A step carries a human reference in
+   data/help.json; it is resolved here against the canon, validated in every
+   shipped edition, and shipped as a book CODE — so a reader on Reina Valera
+   gets Spanish words under a Spanish reference, and the app never parses an
+   English book name at runtime (rule 50).
+
+   `basis` is authoring provenance — what was read to write the step. It is
+   checked by help:verify and by contract, and is deliberately NOT shipped:
+   nothing on screen is derived from it.
+
+   What the client gets from `safety` is only what it must draw: the home
+   entry's label, which paths carry a contextual offer, and the verified
+   crisis resources themselves. A resource is never retyped in UI source
+   (rule 52's habit applied to safety) — it is read from here, which is read
+   from the file the review date is enforced against. */
+function buildHelp(doc, errors){
+  const editionVerses = {};
+  const editionSpans = {};
+  corpus.shippedEditions().forEach(ed => {
+    editionVerses[ed] = corpus.verses(ed);
+    editionSpans[ed] = corpus.bridgedSpans(ed);
+  });
+  const safety = doc.safety || {};
+  const esc = safety.escalation || {};
+  const contextual = new Set(esc.contextualPaths || []);
+  const crisis = safety.crisis || {};
+  let refCount = 0;
+
+  const paths = (doc.paths || []).map(p => {
+    const steps = (p.steps || []).map(s => {
+      const where = p.id + '/' + s.id;
+      const passages = (s.passages || []).map(r => {
+        refCount++;
+        return resolveDevotionRef(r, where, editionVerses, editionSpans, errors);
+      }).filter(Boolean);
+      if(!passages.length) errors.push(where + ' — a Help Me step with no resolvable passage');
+      /* A nextStep of kind openPassage names a further reading. It is a
+         reference like any other and is resolved here, so the app opens a
+         book CODE and never parses an English book name at runtime. */
+      let nextStep = null;
+      if(s.nextStep){
+        nextStep = { kind: s.nextStep.kind, text: s.nextStep.text || '' };
+        if(s.nextStep.ref){
+          refCount++;
+          const r = resolveDevotionRef(s.nextStep.ref, where + '/nextStep',
+                                       editionVerses, editionSpans, errors);
+          if(r) nextStep.open = r;
+        }
+        if(s.nextStep.kind === 'openPassage' && !nextStep.open){
+          errors.push(where + ' — nextStep is openPassage but its reference did not resolve');
+        }
+      }
+      return {
+        id: s.id, title: s.title,
+        passages: passages,
+        arrive: s.arrive || '',
+        notice: s.notice || '',
+        consider: (s.consider || []).slice(),
+        prayer: s.prayer || '',
+        nextStep: nextStep
+      };
+    });
+    if(!steps.length) errors.push(p.id + ' — a Help Me path with no steps');
+    return {
+      id: p.id, title: p.title, entry: p.entry, summary: p.summary,
+      /* Drives the contextual urgent-help offer, and nothing else. The list
+         lives in the content file so the decision about which paths warrant
+         it stays an editorial one. */
+      safety: contextual.has(p.id),
+      completion: p.completion
+        ? { kind: p.completion.kind, study: p.completion.study || null, text: p.completion.text }
+        : null,
+      steps: steps
+    };
+  });
+
+  return {
+    version: Number(doc.version || 1),
+    paths: paths,
+    refCount: refCount,
+    urgent: {
+      label: (esc.homeEntry && esc.homeEntry.label) || 'Need urgent help?',
+      verifiedOn: crisis.verifiedOn || '',
+      reviewBy: crisis.reviewBy || '',
+      territories: (crisis.territories || []).map(t => ({
+        code: t.code, name: t.name, line: t.line,
+        administrator: t.administrator || '', available: t.available || '',
+        coverage: t.coverage || '',
+        actions: (t.actions || []).map(a => ({ kind: a.kind, label: a.label, value: a.value }))
+      })),
+      emergency: (crisis.emergency && crisis.emergency.text) || '',
+      outside: (crisis.outsideListedTerritories && crisis.outsideListedTerritories.guidance) || ''
+    }
+  };
 }
 
 function buildDevotions(doc, errors){
@@ -247,6 +348,7 @@ function build(){
   const cur = readCuration();
   const studyDoc = readStudies();
   const devotionDoc = readDevotions();
+  const helpDoc = readHelp();
   const verses = corpus.verses(corpus.DEFAULT_EDITION);
   const spans = corpus.bridgedSpans(corpus.DEFAULT_EDITION);
   const supers = corpus.superscriptions(corpus.DEFAULT_EDITION);
@@ -301,6 +403,7 @@ function build(){
      come from data/bible/ at read time, the same as any chapter. Nothing
      is added to the canonical set, so the dataset hash cannot move. */
   const devotions = buildDevotions(devotionDoc, errors);
+  const help = buildHelp(helpDoc, errors);
 
   if(errors.length){
     const e = new Error(errors.length + ' passage(s) failed to derive');
@@ -309,7 +412,7 @@ function build(){
   }
   const canonical = daily.concat(study);
   return { passages: canonical, daily: daily, study: study,
-           devotions: devotions,
+           devotions: devotions, help: help,
            translations: buildTranslations(canonical, lock),
            studies: built.studies, studyDoc: studyDoc, lock: lock, curation: cur };
 }
@@ -728,6 +831,44 @@ function region(built){
            '    entries: [\n' + entries + '\n    ] }';
   }).join(',\n');
 
+  /* Help Me paths. Prose and locations; the verified crisis block is emitted
+     as JSON because it is data read from the publisher, not authored here. */
+  const helpRefs = function(list){
+    return '[' + list.map(function(r){
+      return "{ ref: '" + esc(r.ref) + "', c: '" + esc(r.c) + "', ch: " + r.ch +
+             ', from: ' + r.from + ', to: ' + r.to + ' }';
+    }).join(', ') + ']';
+  };
+  const helpRows = built.help.paths.map(function(p){
+    const steps = p.steps.map(function(s){
+      return "      { id: '" + esc(s.id) + "', title: '" + esc(s.title) + "',\n" +
+        '        passages: ' + helpRefs(s.passages) + ',\n' +
+        "        arrive: '" + esc(s.arrive) + "',\n" +
+        "        notice: '" + esc(s.notice) + "',\n" +
+        '        consider: [' + s.consider.map(function(q){ return "'" + esc(q) + "'"; }).join(', ') + '],\n' +
+        (s.prayer ? "        prayer: '" + esc(s.prayer) + "',\n" : '') +
+        (s.nextStep ? "        nextStep: { kind: '" + esc(s.nextStep.kind) + "', text: '" +
+                      esc(s.nextStep.text) + "'" +
+                      (s.nextStep.open ? ', open: ' + helpRefs([s.nextStep.open]).slice(1, -1) : '') +
+                      ' } }' : '        nextStep: null }');
+    }).join(',\n');
+    return "  { id: '" + esc(p.id) + "', title: '" + esc(p.title) + "',\n" +
+           "    entry: '" + esc(p.entry) + "',\n" +
+           "    summary: '" + esc(p.summary) + "',\n" +
+           '    safety: ' + (p.safety ? 'true' : 'false') + ',\n' +
+           /* A Learn handoff names the study it means, and help:verify refuses
+              a learn completion without one — so it has to reach the app, or
+              the last tap of a path lands on the Learn index instead of the
+              five lessons the writing just promised. */
+           (p.completion ? "    completion: { kind: '" + esc(p.completion.kind) + "'" +
+                           (p.completion.study ? ", study: '" + esc(p.completion.study) + "'" : '') +
+                           ", text: '" + esc(p.completion.text) + "' },\n"
+                         : '    completion: null,\n') +
+           '    steps: [\n' + steps + '\n    ] }';
+  }).join(',\n');
+  const helpUrgent = JSON.stringify(built.help.urgent, null, 2)
+    .split('\n').map(function(l, i){ return i === 0 ? l : '  ' + l; }).join('\n');
+
   /* Every shipped edition, including the default, described from its own
      archive metadata. Text for the default lives inline in SCRIPTURE; the
      others carry theirs here, keyed by the same canonical id. */
@@ -841,6 +982,22 @@ function region(built){
     '',
     'const DEVOTIONS = [',
     devotionRows,
+    '];',
+    '',
+    '/* Help Me. The same rule again: editorial prose and canonical LOCATIONS,',
+    '   never a word of Scripture. A step’s passage is read out of data/bible/',
+    '   in whichever edition the reader has chosen.',
+    '',
+    '   `urgent` is the verified crisis configuration, read from data/help.json',
+    '   rather than retyped in UI source. `npm run help:verify` fails once its',
+    '   review date has passed, so a resource cannot go stale into a release,',
+    '   and a territory is never shown without its name. */',
+    'const HELP_VERSION = ' + built.help.version + ';',
+    '',
+    'const HELP_URGENT = ' + helpUrgent + ';',
+    '',
+    'const HELP = [',
+    helpRows,
     '];',
     '',
     '/* The editions this app ships. A canonical id names a LOCATION; an',

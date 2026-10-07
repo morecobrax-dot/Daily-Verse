@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.13.4",
-  "phase": "P1 pre-submission reliability",
-  "status": "release_ready",
+  "phase": "Help Me integration (feature branch)",
+  "status": "building",
   "needsQa": true,
   "needsDecision": false,
-  "currentTask": "v1.13.4: a backup restores settings as well as records, a failed or stalled network answer can no longer stand in place of the app, and the status bar is readable in Light mode. The pinned Scripture sources now live in the repository, because the publisher replaced them.",
-  "nextAction": "Short physical iPhone check of backup, restore, reset, both appearances and offline recovery.",
+  "currentTask": "Help Me is built on the feature/help-me branch: a fifth destination between Bible and Devotions, seven short Scripture paths, an urgent-help sheet, and Saved moved from the tab bar to a header utility. Not merged and not released; production still serves 1.13.4 without it.",
+  "nextAction": "Short physical iPhone check of the five-tab bar, the Help Me reader, Back behaviour and the urgent-help sheet.",
   "blocker": null,
-  "updatedAt": "2026-10-07T07:51:01Z"
+  "updatedAt": "2026-10-07T13:40:00Z"
 }

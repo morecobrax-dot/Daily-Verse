@@ -1544,6 +1544,259 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
 }
 .devotion-anchor.is-pending .field-hint{ margin: 0; }
 
+/* =========================================================
+   HELP ME
+   ---------------------------------------------------------
+   No mini-brand. Every colour, size and space here is a token
+   the rest of the app already uses, so Help Me reads as the same
+   product in the same two appearances.
+
+   The composition rule: ONE card on a step, and it holds
+   Scripture. Everything else is prose with a quiet label above
+   it. A page where the explanation, the question and the prayer
+   each sat in their own panel read as a form to be completed
+   rather than something to be read.
+   ========================================================= */
+
+/* ---- the home ---- */
+.help-intro{ margin: var(--space-xl) 0 var(--space-lg); }
+.help-question{
+  font-family: var(--font-display);
+  font-size: var(--fs-section); line-height: var(--lh-tight);
+  color: var(--text); margin: 0;
+}
+.help-intro-note{
+  font-size: var(--fs-support); color: var(--text-dim);
+  margin: var(--space-sm) 0 0;
+}
+
+/* A path is a row, not a tile. Seven tiles is a category wall; seven rows is
+   a list somebody can read down with one thumb without deciding anything
+   until they get to the one that fits. */
+.help-paths{ margin-bottom: var(--space-md); }
+
+/* A list row elsewhere is a title that must not wrap — a translation name, a
+   study title, a setting. Here the row IS the sentence a reader chooses by,
+   and the longest of them ellipsised to "I'm hurt, angry, or struggling to
+   forg…". A person deciding whether that line is about them cannot be shown
+   two thirds of it. */
+.help-paths .list-row-title,
+.help-start-here .list-row-title{
+  white-space: normal; overflow: visible; text-overflow: clip;
+}
+
+/* The start-here path is separated from the situations rather than demoted
+   below them: it is a real first choice, and a reader who cannot name what is
+   wrong is the reader this feature is most for. Its wording lives in the
+   catalogue and is deliberately not repeated here. */
+/* Separated by a rule and a gap, and treated identically otherwise: it reads
+   as "and if none of those is it, here" rather than as a smaller option. No
+   colour, no badge, no apology — a reader who cannot name what is wrong is
+   the reader this feature is most for. */
+.help-start-here{
+  margin-top: var(--space-lg); margin-bottom: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-quiet);
+}
+
+/* ---- resume ---- */
+.help-continue{ margin: var(--space-lg) 0 var(--space-xl); }
+.help-continue-title{
+  font-family: var(--font-display);
+  font-size: var(--fs-title); line-height: var(--lh-tight);
+  color: var(--text); margin: 0;
+}
+.help-continue-step{
+  font-size: var(--fs-meta); color: var(--text-faint);
+  margin: var(--space-xs) 0 0;
+}
+
+/* ---- the urgent-help entry ---- */
+/* Quiet on purpose. A reader in trouble should find it; every other reader
+   should not be alarmed by it. Centred, low, and no accent colour. */
+.help-urgent-entry{
+  display: flex; justify-content: center;
+  margin: var(--space-xl) 0 var(--space-lg);
+}
+.help-urgent-contextual{
+  margin: var(--space-lg) 0 var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-quiet);
+}
+
+/* ---- a path, before it is read ---- */
+.help-path-head{ margin-bottom: var(--space-lg); }
+.help-path-entry{
+  font-family: var(--font-display);
+  font-size: var(--fs-section); line-height: var(--lh-tight);
+  color: var(--text); margin: 0;
+}
+.help-path-summary{
+  font-size: var(--fs-support); line-height: var(--lh-body);
+  color: var(--text-dim); margin: var(--space-sm) 0 0;
+}
+.help-path-meta{
+  font-size: var(--fs-meta); color: var(--text-faint);
+  margin: var(--space-sm) 0 0;
+}
+/* A step that has been read says so in a word as well as in weight, so the
+   state is not carried by colour alone. */
+.help-done-mark{ color: var(--accent); font-weight: 600; }
+
+/* ---- one step ---- */
+.help-step-context{
+  font-size: var(--fs-meta); font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-faint);
+  margin: var(--space-md) 0 var(--space-xs);
+}
+.help-step-title{
+  font-family: var(--font-display);
+  font-size: var(--fs-section); line-height: var(--lh-tight);
+  color: var(--text); margin: 0 0 var(--space-md);
+}
+/* Arrive is the one line before Scripture. It is set larger than the prose
+   that follows so the page opens with something, not with a label. */
+.help-arrive{
+  font-size: var(--fs-support); line-height: var(--lh-body);
+  color: var(--text-dim); margin: 0 0 var(--space-lg);
+}
+
+/* ---- Scripture, which outranks everything on the page ---- */
+.help-scripture{ margin-bottom: var(--space-xl); }
+.help-passage + .help-passage{ margin-top: var(--space-md); }
+.help-passage .verse-card{
+  box-shadow: var(--shadow-md), inset 0 1px 0 var(--edge-hi);
+}
+.help-passage .verse-text{ font-size: var(--fs-verse-lesson); }
+.help-passage.is-pending{
+  background: var(--surface-sunken);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+.help-passage.is-pending .field-hint{ margin: 0; }
+
+/* ---- the prose sections ---- */
+.help-section{ margin-bottom: var(--space-xl); }
+.help-section-label{
+  font-size: var(--fs-meta); font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-faint);
+  margin: 0 0 var(--space-sm);
+}
+.help-prose{
+  font-size: var(--fs-body); line-height: var(--lh-devotion);
+  color: var(--text); margin: 0;
+}
+.help-prose + .help-prose{ margin-top: var(--space-md); }
+
+/* ---- consider ---- */
+/* A question, and nothing to fill in. There is no field here on purpose:
+   thinking about it is a complete answer, and Continue is never behind a
+   text box. */
+.help-consider-q{
+  font-family: var(--font-display);
+  font-size: var(--fs-title); line-height: var(--lh-body);
+  color: var(--text); margin: 0;
+}
+.help-consider-q + .help-consider-q{ margin-top: var(--space-md); }
+.help-consider-note{
+  font-size: var(--fs-meta); color: var(--text-faint);
+  margin: var(--space-sm) 0 0;
+}
+
+/* ---- pray ---- */
+/* Visibly the app's words, not the publisher's: the UI face, a tinted
+   ground, and no quotation marks or serif anywhere near it. A reader must
+   never be able to mistake this for Scripture. */
+.help-prayer{
+  background: var(--surface-sunken);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+.help-prayer .help-section-label{ margin-bottom: var(--space-xs); }
+.help-prayer-note{
+  font-size: var(--fs-meta); color: var(--text-faint);
+  margin: 0 0 var(--space-md);
+}
+.help-prayer-text{
+  font-family: var(--font-ui);
+  font-size: var(--fs-body); line-height: var(--lh-devotion);
+  color: var(--text); margin: 0;
+}
+
+/* ---- the foot of a step ---- */
+.help-step-actions{ margin: var(--space-xl) 0 var(--space-lg); }
+
+/* No celebration. One sentence that it is finished, the content's own words
+   about where to go next, and one button that goes there. */
+.help-complete{
+  background: var(--surface-sunken);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+.help-complete-note{
+  font-size: var(--fs-meta); font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--accent);
+  margin: 0 0 var(--space-sm);
+}
+
+/* ---- urgent help ---- */
+/* People first, and nothing in front of them. */
+.help-urgent-lead{
+  font-size: var(--fs-support); line-height: var(--lh-body);
+  color: var(--text); margin: var(--space-md) 0 var(--space-lg);
+}
+.help-urgent-territory{ margin-bottom: var(--space-lg); }
+/* The territory's name is a heading, never a caption: a resource is never
+   shown without the place it belongs to. */
+.help-urgent-place{
+  font-family: var(--font-display);
+  font-size: var(--fs-title); line-height: var(--lh-tight);
+  color: var(--text); margin: 0 0 var(--space-xs);
+}
+.help-urgent-line{
+  font-size: var(--fs-support); font-weight: 600;
+  color: var(--text); margin: 0;
+}
+.help-urgent-meta{
+  font-size: var(--fs-meta); color: var(--text-faint);
+  margin: var(--space-xs) 0 var(--space-md);
+}
+.help-urgent-actions{ display: flex; flex-direction: column; gap: var(--space-sm); }
+.help-urgent-action{
+  width: 100%; text-decoration: none; text-align: center;
+}
+.help-urgent-admin{
+  font-size: var(--fs-meta); color: var(--text-faint);
+  margin: var(--space-md) 0 0;
+}
+.help-urgent-emergency{
+  font-size: var(--fs-support); line-height: var(--lh-body);
+  color: var(--text); margin: 0 0 var(--space-xl);
+}
+.help-urgent-outside{
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-quiet);
+  margin-bottom: var(--space-xl);
+}
+.help-urgent-outside .help-prose{
+  font-size: var(--fs-support); color: var(--text-dim);
+}
+
+/* ---- the unread mark on the gear ---- */
+/* What's New lost its own header button to make room for Saved, so its one
+   signal lives here. A dot, not a count: there is one thing to see, and a
+   number would invite clearing a tally instead of reading the notes. The
+   accessible name carries it too, so it is not a coloured pixel alone. */
+.icon-btn{ position: relative; }
+.util-dot{
+  position: absolute; top: 9px; right: 9px;
+  width: 6px; height: 6px; border-radius: var(--radius-pill);
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface);
+  pointer-events: none;
+}
+
+
 /* The reading itself. A measure, a generous leading, and real space between
    paragraphs — the three things that decide whether long prose on a phone is
    pleasant or a wall. The measure is in `ch` so it tracks the text-size
@@ -1853,8 +2106,15 @@ body.scroll-locked{
   <header class="app-header">
     <div class="header-row">
       <h1 class="app-title" id="appTitle">New Covenant</h1>
+      <!-- Two utilities, and two is the number the header has room for.
+           At 320px the title needs 171.9px and three 44px buttons need
+           323.9px against a 288px row: the product name wrapped to two lines
+           and the header grew from 81px to 99px. What's New lost its button
+           rather than Saved, because Saved is a destination a reader keeps
+           things in and What's New is release notes that were already a full
+           row in Settings. The gear carries its unread mark now. -->
       <div class="header-actions">
-        <button class="icon-btn" id="updatesBtn" aria-label="What's new" onclick="openUpdates()"></button>
+        <button class="icon-btn" id="savedBtn" aria-label="Saved" onclick="openSaved()"></button>
         <button class="icon-btn" id="settingsBtn" aria-label="Settings" onclick="openSettings()"></button>
       </div>
     </div>
@@ -1886,14 +2146,13 @@ body.scroll-locked{
     <div id="devotionsBody"></div>
   </main>
 
-  <!-- SAVED — the verses kept, and the reflections written -->
-  <main class="view" id="view-saved">
-    <div class="segmented" role="tablist" aria-label="What to show" id="savedFilter">
-      <button role="tab" aria-selected="true" data-saved="verses" onclick="setSavedView('verses')">Verses</button>
-      <button role="tab" aria-selected="false" data-saved="notes" onclick="setSavedView('notes')">Reflections</button>
-      <button role="tab" aria-selected="false" data-saved="highlights" onclick="setSavedView('highlights')">Highlights</button>
-    </div>
-    <div id="savedList"></div>
+  <!-- HELP ME — Scripture for the moment someone does not know where to open
+       the Bible. A path is a short ordered reading, not a course and not a
+       diagnosis. Between Bible and Devotions because that is the order the
+       product reads in: the daily rhythm, the text itself, the way in when
+       you are struggling, then authored application, then study. -->
+  <main class="view" id="view-help">
+    <div id="helpBody"></div>
   </main>
 
   <!-- SETTINGS — reading preferences, provenance, data ownership -->
@@ -1905,14 +2164,17 @@ body.scroll-locked{
     <button class="tab-btn" data-tab="bible" onclick="goToTab('bible')">
       <span class="glyph" aria-hidden="true"></span>Bible
     </button>
+    <!-- The only two-word label in the bar. At 320px it measures 44.0px in a
+         56px box, where "Devotions" measures 52.4px — so it is not the tight
+         one, and the bar is no tighter than it was with five single words. -->
+    <button class="tab-btn" data-tab="help" onclick="goToTab('help')">
+      <span class="glyph" aria-hidden="true"></span>Help Me
+    </button>
     <button class="tab-btn" data-tab="devotions" onclick="goToTab('devotions')">
       <span class="glyph" aria-hidden="true"></span>Devotions
     </button>
     <button class="tab-btn" data-tab="learn" onclick="goToTab('learn')">
       <span class="glyph" aria-hidden="true"></span>Learn
-    </button>
-    <button class="tab-btn" data-tab="saved" onclick="goToTab('saved')">
-      <span class="glyph" aria-hidden="true"></span>Saved
     </button>
   </nav>
 </div>
@@ -2263,6 +2525,67 @@ body.scroll-locked{
       <div class="field-hint" style="margin-bottom:var(--space-md)">This permanently erases everything this app has stored. It cannot be undone.</div>
       <button class="btn-secondary btn-danger btn-block" onclick="resetAllData()">Reset all data</button>
     </div>
+  </div>
+</div>
+
+<!-- SAVED — the verses kept, the reflections written, and the marks made.
+     A utility, not a root: it opens OVER whichever destination asked for it,
+     owns one history entry, and Back returns to that destination rather than
+     to Today. It left the tab bar in this release to make room for Help Me,
+     and it is one tap from every root through the header. -->
+<div class="overlay overlay-page" id="savedOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeSaved()" aria-label="Back"></button>
+      <div class="page-topbar-title">Saved</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll">
+      <div class="segmented" role="tablist" aria-label="What to show" id="savedFilter">
+        <button role="tab" aria-selected="true" data-saved="verses" onclick="setSavedView('verses')">Verses</button>
+        <button role="tab" aria-selected="false" data-saved="notes" onclick="setSavedView('notes')">Reflections</button>
+        <button role="tab" aria-selected="false" data-saved="highlights" onclick="setSavedView('highlights')">Highlights</button>
+      </div>
+      <div id="savedList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HELP ME — a path, before it is read -->
+<div class="overlay overlay-page" id="helpPathOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeHelpPath()" aria-label="Back"></button>
+      <div class="page-topbar-title" id="helpPathTitle">Path</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="helpPathBody"></div>
+  </div>
+</div>
+
+<!-- HELP ME — one step. The reading surface. -->
+<div class="overlay overlay-page" id="helpStepOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeHelpStep()" aria-label="Back"></button>
+      <div class="page-topbar-title" id="helpStepTitle">Step</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="helpStepBody"></div>
+  </div>
+</div>
+
+<!-- URGENT HELP — not a Help Me path. It hands a reader to people who can
+     actually help and gets out of the way. Every resource on it is read from
+     the verified configuration in data/help.json; none is written here. -->
+<div class="overlay overlay-page" id="helpUrgentOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeHelpUrgent()" aria-label="Back"></button>
+      <div class="page-topbar-title">Urgent help</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="helpUrgentBody"></div>
   </div>
 </div>
 
@@ -2855,6 +3178,17 @@ const KEYS = {
      `done` is the whole record. No percentage, no count, no last-opened
      pointer - every number a screen shows is derived from this list. */
   devotionProgress: 'data.devotionProgress',
+
+  /* Help Me progress. The same additive, id-bearing collection again, for
+     the same reasons: absent reads as a reader who has begun no path, which
+     is exactly what it means, so no migration and no schema bump. One record
+     per path, and `done` is the whole of it.
+
+     What is deliberately NOT here is the point. No mood, no diagnosis, no
+     severity, no record of which situation a reader chose on which day, no
+     answer to a Consider question, and nothing at all about urgent help
+     being opened. A reader's worst week is not a data model. */
+  helpProgress:   'data.helpProgress',
 
   noteDraft:      'draft.note'
 };
@@ -5104,6 +5438,314 @@ const DEVOTIONS = [
         practice: 'Take a rest this week that you have not earned by finishing anything. Decide beforehand that if it gets interrupted, you will not treat the whole attempt as void.',
         prayer: 'Jesus, I keep waiting until I have a reason serious enough to justify stopping. You told them to come away because they had not eaten, and that was enough for you. Let it be enough for me. And when the quiet place fills up with people, keep me from deciding it was pointless to have gone. Amen.',
         related: [{ ref: 'Mark 6:33-34', c: 'MRK', ch: 6, from: 33, to: 34 }] }
+    ] }
+];
+
+/* Help Me. The same rule again: editorial prose and canonical LOCATIONS,
+   never a word of Scripture. A step’s passage is read out of data/bible/
+   in whichever edition the reader has chosen.
+
+   `urgent` is the verified crisis configuration, read from data/help.json
+   rather than retyped in UI source. `npm run help:verify` fails once its
+   review date has passed, so a resource cannot go stale into a release,
+   and a territory is never shown without its name. */
+const HELP_VERSION = 1;
+
+const HELP_URGENT = {
+    "label": "Need urgent help?",
+    "verifiedOn": "2026-10-06",
+    "reviewBy": "2027-04-06",
+    "territories": [
+      {
+        "code": "US",
+        "name": "United States",
+        "line": "988 Suicide & Crisis Lifeline",
+        "administrator": "Vibrant Emotional Health, with SAMHSA",
+        "available": "24 hours a day, every day",
+        "coverage": "All areas of the United States, including where no local crisis centre takes part.",
+        "actions": [
+          {
+            "kind": "call",
+            "label": "Call 988",
+            "value": "988"
+          },
+          {
+            "kind": "text",
+            "label": "Text 988",
+            "value": "988"
+          },
+          {
+            "kind": "chat",
+            "label": "Chat with the 988 Lifeline",
+            "value": "https://chat.988lifeline.org/"
+          },
+          {
+            "kind": "call",
+            "label": "In Spanish: call 988, then press 2",
+            "value": "988"
+          },
+          {
+            "kind": "text",
+            "label": "In Spanish: text AYUDA to 988",
+            "value": "988"
+          },
+          {
+            "kind": "relay",
+            "label": "TTY: use your relay service, or dial 711 then 988",
+            "value": "711"
+          },
+          {
+            "kind": "videophone",
+            "label": "ASL: dial 988 from a videophone",
+            "value": "988"
+          }
+        ]
+      }
+    ],
+    "emergency": "If someone is in immediate danger, or this is a medical emergency, contact emergency services — 911 in the United States.",
+    "outside": "Outside the United States, New Covenant does not print a number it has not verified. Contact your local emergency number, or a crisis line in your own country."
+  };
+
+const HELP = [
+  { id: 'heavy-heart', title: 'Heavy Heart',
+    entry: 'My heart feels heavy',
+    summary: 'For grief, sadness, loneliness, discouragement and plain exhaustion — when the weight is the thing, whatever its name.',
+    safety: true,
+    completion: { kind: 'bible', text: 'Keep reading the Psalms. They carry more grief than any other part of the Bible, and they were given to people to pray out loud.' },
+    steps: [
+      { id: 'hh-1', title: 'Say the whole thing',
+        passages: [{ ref: 'Psalm 88:1-5', c: 'PSA', ch: 88, from: 1, to: 5 }],
+        arrive: 'Nothing here asks you to settle down first. This is the bleakest prayer in the Bible, and it was kept.',
+        notice: 'Most laments turn somewhere near the end. The writer runs out of complaint, remembers something true, and finishes on firmer ground. This one does not. It goes down, and then it stops, and the last word in it is darkness.\n\nAnd it is a prayer the whole way. He is crying out day and night; he asks for his prayer to reach God; he spreads out his hands. Whatever else is happening, the man is praying hard and has not stopped.\n\nHe is also blunt about who he holds responsible. The pit is God\'s doing, he says. So is the anger on him, and so is the silence where his friends used to be. He does not sort out his theology before he speaks, and nobody edits him afterwards.\n\nThe part that should change how you read it is what happened to this psalm next. It was given a tune. It was handed to the choir director and sung by the congregation. Sorrow this total was not treated as a lapse to be corrected in private; it was given words, a melody, and a place in the book God\'s people pray from.\n\nTwo cautions. Nothing here licenses the conclusion that your suffering is God\'s anger — that is this man reading his own life, and the book of Job spends forty chapters on how badly that kind of reading can go. And no promise is made that the dark lifts by morning. Here it does not lift at all.\n\nWhat it insists on is the direction. Every bitter line of it is said to God rather than about him.',
+        consider: ['What have you not said to God because it seemed too bitter to say?'],
+        prayer: 'God, I am not going to make this sound better than it is. It has gone on a long time and I am tired in a way sleep does not touch. I do not have anything to add about why. I am saying it to you, because this psalm says I am allowed to, and because I would rather be in the dark talking to you than in the dark on my own. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is about someone else who prayed like this, the night before he died.' } },
+      { id: 'hh-2', title: 'He asked to be spared',
+        passages: [{ ref: 'Mark 14:32-36', c: 'MRK', ch: 14, from: 32, to: 36 }],
+        arrive: 'Permission is one thing. Here is a model, and it comes from an unexpected direction.',
+        notice: 'Hours before the cross, Jesus takes three friends further into the garden than the rest, and tells them his soul is crushed to the point of death. Then he goes a little further, falls on the ground, and prays.\n\nWatch the order of what he says. First he asks for the thing he wants: that the hour might pass, that the cup be taken away. He does not open with acceptance and he does not pretend to want it. The request is plain, and it is for rescue.\n\nOnly then comes the handing over — not what I want, but what you want. It arrives after the asking, not instead of it. Both sentences are in the same prayer, in that order, and the second does not cancel the first.\n\nNotice as well what he asked of his friends. Stay here. Keep watch. He wanted company within earshot while he prayed, and when he came back and found them asleep, he said so. Even here, especially here, he did not want to be alone with it.\n\nSo the one person in Scripture with no shortage of faith is face down in the dirt, asking to be let off, grieved to the edge of death. Whatever heaviness is, it is not proof that something has gone wrong in you spiritually.\n\nAnd the cup did not pass. The prayer was heard, answered with a no, and he went on. This passage does not promise that asking changes the outcome. It shows you what to do with the wanting.',
+        consider: ['Is there something you have stopped asking God for, because you decided in advance that the answer was no?'],
+        prayer: 'Father, I want this lifted. I am going to say that plainly before I say anything else, because he did. Take it away if you will take it away. And if you do not, hold on to me while it stays, because I do not have another plan. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is about hope that does not require the grief to be over.' } },
+      { id: 'hh-3', title: 'Hope you have to call to mind',
+        passages: [{ ref: 'Lamentations 3:19-26', c: 'LAM', ch: 3, from: 19, to: 26 }],
+        arrive: 'Familiar line, unfamiliar setting: the sentence everybody knows about God\'s mercies sits in the middle of a funeral for a city.',
+        notice: 'Eighteen verses come first, and they are nothing like the lines people put on calendars. The chapter is a catalogue of injuries: teeth broken on gravel, a man walled in, prayer apparently shut out. It ends with him saying his strength is gone and so is what he expected from God.\n\nThen comes the turn, and how it works deserves a slow read. He does not report a change of mood. He says he calls something back to mind, and that this is why he has hope. The hope is produced by an act of deliberate memory, performed by a man who feels nothing of the kind.\n\nWhat he makes himself remember is not his circumstances improving. It is the character of God: mercy that has not run out, faithfulness that arrives again with the morning whether or not he is glad to see it.\n\nAnd the grief does not leave the paragraph when the hope arrives. One verse earlier he says his soul still remembers the bitterness and is bowed down inside him. That sentence and the hope sentence are neighbours. Scripture puts them next to each other without apology, which means you are not failing when both are true at once.\n\nThe last line asks for waiting, quietly, for a rescue that has not yet come. Waiting is only necessary while something is still unfinished.\n\nNothing here sets a date. Nothing here says the remembering will feel like relief when you do it.',
+        consider: ['What do you know about God that you have stopped repeating to yourself?'],
+        prayer: 'God, I cannot feel much of this at the moment. I am saying it anyway: your mercy has not run out, your faithfulness is not dependent on my condition, and the morning is yours. I will wait. Help me to wait without deciding that nothing is coming. Amen.',
+        nextStep: { kind: 'continue', text: 'One more step, and it is about not doing this on your own.' } },
+      { id: 'hh-4', title: 'Not carried alone',
+        passages: [{ ref: '2 Corinthians 1:3-7', c: '2CO', ch: 1, from: 3, to: 7 }],
+        arrive: 'Grief shrinks a life down to one person. The last step pushes back on that, gently.',
+        notice: 'Before anything else in this letter there is a blessing, and it names God as the Father of mercies — the one every comfort comes from. Comfort is his before it belongs to anybody, which is worth holding on to if you cannot currently produce any.\n\nThen he describes how it travels. Comfort is received in affliction, and it becomes the thing you are able to give to somebody else later, with the same comfort you were given. He is not saying the suffering was sent to make you useful. He is saying what you receive does not stop with you.\n\nThe next paragraph is why he can write this without sounding glib. He describes trouble in Asia that crushed him beyond his strength, until he despaired of life itself. The man writing about comfort is not writing from above the problem; he is writing from the other side of a stretch where he did not expect to survive. What it taught him, he says, was to stop relying on himself and rely on God who raises the dead.\n\nSo the chain runs: he is comforted, so that he can comfort them, so that they can endure. It only works if people are actually near each other and telling each other the truth.\n\nWhat this does not say is that your loss has a purpose you are now obliged to identify, or that you owe anybody your story. You can accept help long before you have anything to give.',
+        consider: ['Who is one person who could be told the actual state of things this week?'],
+        prayer: 'Father of mercies, my way of handling this has been to not mention it. Send me someone to tell the truth to, and make me willing to tell it. Give me enough comfort to pass some on eventually. For now I am asking for the kind I can receive. Amen.',
+        nextStep: { kind: 'support', text: 'Give one person the real answer this week when they ask how you are. And if you are not safe, or you are not sure you can keep yourself safe, that is the point to contact a doctor or a crisis service where you are, today, rather than reading anything else.' } }
+    ] },
+  { id: 'fear-uncertainty', title: 'Fear & Uncertainty',
+    entry: 'I\'m afraid or uncertain',
+    summary: 'For fear, worry, waiting and not knowing — including the waiting that has no end date.',
+    safety: false,
+    completion: { kind: 'today', text: 'Today\'s reading is one passage and a short reflection, with another tomorrow. A small daily place to keep putting this is worth more than one long session.' },
+    steps: [
+      { id: 'fu-1', title: 'Afraid, and saying so',
+        passages: [{ ref: 'Psalm 56:3-4', c: 'PSA', ch: 56, from: 3, to: 4 }],
+        arrive: 'Two short lines, written by a man in custody. They are not as tidy as they are usually quoted.',
+        notice: 'One word carries this, and it is when. Not if I am afraid, and not when I was afraid — when, the way you speak about something that keeps coming back. Fear is treated as recurring weather rather than as a one-off failure.\n\nThe heading on the psalm places it somewhere specific: David seized by the Philistines in Gath, in enemy hands, a long way from help. The opening lines are about men who want to swallow him up and do not let up all day. This is not calm reflection about fear. It is written from inside one.\n\nThen the second line says he will not be afraid, and the two sentences sit side by side without being reconciled. He is afraid; he trusts; he says he will not fear; he says when I am afraid. A psalm is allowed to hold both because people do.\n\nFurther down he asks God to keep count of his tossing and turning, and to collect his tears in a bottle. Whatever that image is doing, it assumes the sleepless nights are noticed and kept rather than waved off.\n\nSo trust here is not the absence of fear. It is what he does with the fear once it has arrived — something he hands over, repeatedly, in the middle of the night, to someone he believes is counting.\n\nNothing in this says the threat was imaginary, or that the feeling stopped once he prayed.',
+        consider: ['What are you afraid of, stated plainly, in one sentence?'],
+        prayer: 'God, here is what I am afraid of, and I am not going to dress it up. I keep handing it over and then taking it back. Count the nights. Keep hold of me while this goes on, and when it comes back tomorrow let me bring it to you again rather than carry it round all day. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is what Jesus said to people who could not stop calculating.' } },
+      { id: 'fu-2', title: 'What your Father already knows',
+        passages: [{ ref: 'Matthew 6:25-34', c: 'MAT', ch: 6, from: 25, to: 34 }],
+        arrive: 'People quote this at anxious friends, usually too fast. Read slowly, it does something other than scold.',
+        notice: 'What follows is an argument rather than a telling-off. He builds a case, and he asks them to look at things: birds that do not farm and are fed anyway, wild flowers better dressed than a king, the plain fact that no amount of turning a problem over has ever added an hour to anyone\'s life.\n\nThe argument runs from the lesser to the greater. If God sees to the birds and the grass, the question is whether you are worth less than they are. The ground of the whole thing is in one sentence near the end: your Father knows what you need. Not that the outcome will be what you want — that your need is already known.\n\nHe does say "you of little faith", and what he does next with that matters. The remedy he prescribes is not to try harder at believing. It is to go and look at something — birds, flowers — until the comparison does its work.\n\nAnd this is not optimism. His last line grants that tomorrow will have trouble in it, and that today\'s is enough to be getting on with. The instruction is not that nothing bad is coming. It is to stop carrying tomorrow\'s share before tomorrow arrives.\n\nIn place of the carrying he gives something to do with the attention: seek the kingdom first. Anxiety is not idle, and he does not ask you to be idle either.',
+        consider: ['What are you carrying today that actually belongs to tomorrow?'],
+        prayer: 'Father, you know what I need, which is more than I can say for me. I have been rehearsing tomorrow all day and it has not moved anything an inch. Take today\'s share. Keep me from spending tonight on something that has not happened, and give me the next thing to do instead. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step turns it into something specific you can actually do.' } },
+      { id: 'fu-3', title: 'Something to do with it',
+        passages: [{ ref: 'Philippians 4:4-7', c: 'PHP', ch: 4, from: 4, to: 7 }],
+        arrive: 'Four lines, written from prison into a church having an argument. The setting keeps them honest.',
+        notice: 'Immediately before this, Paul names two women in the congregation who cannot get along and asks someone to help them sort it out. That is the room into which he says rejoice. He is not writing from a quiet study to people whose lives are going well.\n\nThen comes the sentence that holds the rest up: the Lord is near. Everything after it depends on that being true rather than on circumstances improving.\n\nThe instruction itself is unusually practical. Not "be less anxious", which nobody can do on command, but a swap: take the whole of it to God as a request, with thanks attached. The word he uses for request means asking for particular things. You are not being told to hand God a mood. You are being told to name what you actually want, item by item, out loud.\n\nAnd the promise is precise, which is why it repays a second reading. The peace of God will guard your heart and mind. Guarding is what a garrison does at a gate; it is protection, not a sedative. It does not say the siege lifts, or that you will feel peaceful on a schedule. It says something will be posted between you and the worst of it, and that this peace is beyond working out — so you need not wait until you can explain it.\n\nWhat follows in the next verse is equally ordinary: think about what is true, and do what you have been taught.',
+        consider: ['If you asked for one specific thing in one sentence, what would it be?'],
+        nextStep: { kind: 'continue', text: 'The last step is for when you still do not know how it ends.' } },
+      { id: 'fu-4', title: 'But if not',
+        passages: [{ ref: 'Daniel 3:16-18', c: 'DAN', ch: 3, from: 16, to: 18 }],
+        arrive: 'An ultimatum, a furnace, and an answer in two halves. Most of us want only the first half.',
+        notice: 'Nebuchadnezzar has made the terms clear: bow when the music plays, or go into the fire within the hour. He finishes by asking which god could possibly get them out of his hands.\n\nTheir reply comes in two movements. The first says their God is able to rescue them. The clause introducing it is famously hard to translate — the editions in this app word it three different ways — so nothing here rests on its exact shape. The claim underneath is plain enough, and it is made to a king standing next to the furnace he is threatening them with.\n\nThen the second movement, three words that change the shape of the whole thing: but if not. If he does not, we still will not worship your statue. Their refusal is not a wager on being rescued. It does not depend on the outcome at all.\n\nThis is the difference between trusting God and predicting him. They make no claim to know what will happen in the next hour. They claim to know who he is, and they have already settled what they will do either way. Notice they are not promised anything before they answer, and they do not ask for a sign first.\n\nThey were thrown in. The rescue, when it came, came inside the fire rather than instead of it — the king looks into the furnace and sees four figures walking about, unbound.\n\nThe passage does not teach that faith produces rescue. Faithful people have gone into fires and not come out, and this book knows it. What it offers is somewhere to stand while you do not know: not certainty about the outcome, but a decision about allegiance that the outcome does not control.',
+        consider: ['What would faithfulness look like this week, even if you never find out how this turns out?'],
+        prayer: 'God, you are able. I believe that, and I am not going to pretend I know what you are going to do. If this goes the way I am asking, thank you. If it does not, I am not going anywhere else — I have nowhere else to go, and nobody else worth serving. Hold me to that when the answer comes. Amen.',
+        nextStep: { kind: 'openPassage', text: 'Read what happened next, with your eyes open: they went into the fire. The rescue met them inside it rather than sparing them from it.', open: { ref: 'Daniel 3:19-27', c: 'DAN', ch: 3, from: 19, to: 27 } } }
+    ] },
+  { id: 'coming-back', title: 'Coming Back to God',
+    entry: 'I feel far from God',
+    summary: 'For a long absence, a faith gone quiet, or not knowing how to start again — five short steps back.',
+    safety: false,
+    completion: { kind: 'today', text: 'Today\'s reading is one passage and a short reflection, with another tomorrow. That is the ordinary rhythm this path has been pointing you back into.' },
+    steps: [
+      { id: 'cb-1', title: 'Come back with words',
+        passages: [{ ref: 'Hosea 14:1-4', c: 'HOS', ch: 14, from: 1, to: 4 }],
+        arrive: 'You do not have to arrive repaired. The first step is turning round, and this passage puts words in the mouths of people who had none.',
+        notice: 'This comes at the end of a long and painful book. Hosea has spent thirteen chapters describing a people who went after everything except God, and it does not end with a threat. It ends with directions for coming home.\n\nThe first thing said is not softened: they fell because of their own sin. Nothing is reframed. But the second thing is stranger than it looks — take words with you. Normally you would bring an animal to an altar. Here the instruction is to bring sentences, and then God supplies the sentences himself, which is what you do for someone who has no idea what to say.\n\nThe words he gives are not elaborate. Ask for forgiveness. Ask him to receive what little there is. Then comes a list of the things that were never going to save them: a foreign army, cavalry, objects their own hands had made. Returning, in this passage, is specific. It names what you were relying on instead.\n\nThen God answers, and the answer is medical and free. He treats the turning away itself as the illness, and says he will heal it. The love is given without being earned — the text is blunt about that — and the anger is spoken of in the past tense.\n\nHosea is speaking to a nation, and the promises here were made under that covenant. What carries across to anyone reading now is the character of the God being addressed: he does not wait for a polished return, he supplies words to people who have none, and he treats the wandering itself as the thing he means to heal.',
+        consider: ['What have you been leaning on instead, and could you name it to God today?'],
+        prayer: 'God, I have been away a long time, and the explanation I had ready is not worth much. Forgive me. Take what I have, which is not much. I have been holding on to things that were never going to hold me, and I am naming that to you now. Heal the part of me that keeps walking off. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is about what meets you when you turn round.' } },
+      { id: 'cb-2', title: 'Met before you arrive',
+        passages: [{ ref: 'Luke 15:17-24', c: 'LUK', ch: 15, from: 17, to: 24 }],
+        arrive: 'Most people coming back have a speech prepared. This step is about what happens to it.',
+        notice: 'Jesus tells this story because he is being criticised for the company he keeps. That is the setting: religious people muttering that he eats with the wrong sort. Three stories follow about something lost and the party afterwards, and this is the third.\n\nThe son works out what he will say on the way home. It is a good speech — an admission, then a proposal: take me on as a hired man. He is planning to earn his way back onto the property, because being owed nothing is easier to live with than being forgiven.\n\nHe never gets to the proposal. The detail carrying the paragraph is that the father sees him while he is still a long way off, which means he had been watching the road. Then he runs, and the embrace happens before anything has been explained. The son says the part about no longer deserving to be called a son. The father answers by dressing him as one — robe, ring, sandals, none of them work clothes.\n\nWhat is absent matters. There is no probation. Nobody asks where the money went. The father does not wait for the speech to finish before responding to it.\n\nAnd notice what the story does not pretend. The older brother\'s complaint is left standing at the end, unresolved. Coming back is not made cost-free for everyone around it. What the parable insists on is the posture of the father: already watching, already moving, before you are near enough to explain yourself.',
+        consider: ['Which is harder to accept — being forgiven, or being treated as a son or daughter rather than a hired hand?'],
+        prayer: 'Father, thank you that you were already watching the road. I had a speech ready and most of it was an offer to work my way back. I will say the true part instead: I have sinned, and I am owed nothing here. Thank you that you came out to meet me before I had any of it worked out. Amen.',
+        nextStep: { kind: 'continue', text: 'Step three is short, and it asks for one thing.' } },
+      { id: 'cb-3', title: 'Say it, and let it be said',
+        passages: [{ ref: '1 John 1:8-10', c: '1JN', ch: 1, from: 8, to: 10 }],
+        arrive: 'One thing is asked here, and it is not an explanation.',
+        notice: 'John sets out three sentences that begin the same way, and two of them are things people say to keep off the subject. One is a claim to have no sin at all. The other is a claim not to have done anything. Between them sits the alternative, and it is short: say it.\n\nThe word behind confess means to agree — to say the same thing about it that God says about it, rather than a softened version. Agreeing with God about something is not the same as intending to keep it, and that is what makes this more than a form of words. But what is asked here is the saying. Not an account of how it happened. Not a plan that guarantees it never happens again.\n\nWhat is said about God\'s response is more surprising than it first looks. He is called faithful, which you might expect, and then righteous — just, in some translations. Forgiveness here is not leniency, and it is not a mood he is in. The paragraph immediately after names the ground for it: someone who speaks to the Father on our behalf, and a sacrifice that covers the whole matter. The cost has been met elsewhere. That is why forgiveness can be described here as just, and not only kind.\n\nThen there is the clause people skip. The cleansing covers all unrighteousness — including the part you have not itemised, and the part you cannot see. A complete list is not a condition of this working.\n\nThe passage says to confess, and the one who forgives is God. It does not prescribe a setting or a practice beyond that, and Christians have ordered it differently for a long time. It also makes no promise about how you will feel afterwards.',
+        consider: ['Is there something you have carried for years that you could simply name to God, in plain words, today?'],
+        nextStep: { kind: 'continue', text: 'After this, a step for when prayer has gone quiet.' } },
+      { id: 'cb-4', title: 'When you cannot pray',
+        passages: [{ ref: 'Romans 8:26-27', c: 'ROM', ch: 8, from: 26, to: 27 }],
+        arrive: 'Prayer dries up for all kinds of reasons. This passage is about praying when the words will not come, and it does not treat that as a failure.',
+        notice: 'Paul is writing in a long stretch about things that are not finished. Creation strains. Believers strain. The body itself is still waiting for what it has been promised. Weakness, in this paragraph, is not a character flaw; it is the ordinary condition of people living before everything has been put right.\n\nSo when he admits that praying properly is past us, he is not scolding anyone, and he includes himself. Present tense, first person plural, about Christians.\n\nWhat he sets against it is not advice. No method, no posture, no list. He says the Spirit takes hold alongside us — the word suggests someone getting under the other end of a load — and intercedes for us at a depth that never reaches speech. Prayer too shapeless to count as speech is being carried by someone who does not need the words.\n\nThen one more thing, and it is the part that settles it. God understands what the Spirit means, and what the Spirit asks for is what God wants. The exchange is between the Spirit and the Father. It does not run through your ability to articulate it, and it does not depend on whether it felt like anything at the time.\n\nOne caution about what comes next, because it is quoted so often on its own. Paul does say that everything is being worked toward good — for people who love God, he adds — and then, in the next sentence, says what that good is: being shaped into the likeness of the Son. It is not a promise that circumstances resolve well. And nothing here suggests that silence in prayer means God has gone.',
+        consider: ['What have you stopped bringing to God because you could not find words for it?'],
+        prayer: 'Spirit, I don\'t have the words, and I have stopped expecting to find them this week. Pray what I can\'t. Father, you know what this is without my explaining it, and you are not waiting for a better version. I am here, which is most of what I have. Amen.',
+        nextStep: { kind: 'openPassage', text: 'Before the last step, open Romans 8 and read from verse 18, so these two verses sit in the paragraph they belong to.', open: { ref: 'Romans 8:18-27', c: 'ROM', ch: 8, from: 18, to: 27 } } },
+      { id: 'cb-5', title: 'Keep going, and not alone',
+        passages: [{ ref: 'Hebrews 10:19-25', c: 'HEB', ch: 10, from: 19, to: 25 }],
+        arrive: 'The last step is about staying, and about not doing it on your own.',
+        notice: 'Everything in this paragraph hangs on one word: therefore. Ten chapters have argued a single point — that the old round of sacrifices never finished the job, and that Christ\'s one sacrifice did — ending with the line just before this about sins remembered no more. The confidence here rests on that, not on how you have been doing lately.\n\nThree instructions follow, and all three are plural. Draw near. Hold on to what you have said you believe. And then the third, which is about other people: think about how to spur one another toward love and good works, and do not give up meeting together.\n\nThat last clause was written about people who had already stopped coming. It is not aimed at them, though, but at the ones still in the room, and what they are told to do is provoke each other toward love rather than keep a register of who is missing.\n\nRead on and you will meet a hard paragraph, so it is better met here than by surprise. The writer turns to a severe warning, and he means it: for someone who takes the sacrifice just described and tramples it, treating that blood as worthless, there is nothing else left on offer. That is the act in view — repudiating the thing, not failing at it. Then watch what he does next. He reminds the same people what they once endured, tells them not to throw away their confidence, and puts himself alongside them among those who do not shrink back. The warning is addressed into a wavering community to keep it going, not handed to you as a test to run on yourself at two in the morning. Christians do read it in genuinely different ways, and if it keeps troubling you, that is worth talking through with a pastor rather than settling alone.',
+        consider: ['Who is one Christian you could tell that you are coming back?'],
+        prayer: 'Jesus, you opened the way, and I am taking you at your word instead of waiting until I feel qualified. Hold me to this when it goes quiet again. Give me one or two people who will keep me honest, and the nerve to tell them where I have been. Amen.',
+        nextStep: { kind: 'support', text: 'Tell one Christian this week that you have come back. If that is too much to say out loud, go once to a gathering where nobody knows you and sit at the back. Both are a start.' } }
+    ] },
+  { id: 'guilt-and-sin', title: 'Guilt & Repeated Sin',
+    entry: 'I\'m carrying guilt or stuck in sin',
+    summary: 'For guilt, shame and the sin you keep going back to — confession, forgiveness, and what repentance actually is.',
+    safety: true,
+    completion: { kind: 'learn', study: 'understanding-the-gospel', text: 'Understanding the Gospel is six short lessons, and the last one is about grace and the life that follows it.' },
+    steps: [
+      { id: 'gs-1', title: 'What the silence costs',
+        passages: [{ ref: 'Psalm 32:1-5', c: 'PSA', ch: 32, from: 1, to: 5 }],
+        arrive: 'Hiding is work. The psalm starts by pricing it.',
+        notice: 'Silence is the subject before confession is. The psalm opens by calling a forgiven person happy — the result is announced before anything is described — and then doubles back to tell you what the months before it were like.\n\nWhat he describes is physical. While he said nothing, his bones wore out. He groaned all day. He felt a weight on him he attributes to God\'s hand, and his strength dried up the way ground does in high summer. Whatever else the hiding was protecting, it was expensive, and the psalm bills it in detail.\n\nThen the turn, and it moves faster than you expect. He acknowledged it. He stopped covering it. He said: I will confess — and in the same sentence, before any account of what he actually said, the forgiveness has already happened. There is no interval. Nothing is required in between.\n\nLook at the tense there. Forgiveness lands on the decision to stop hiding, honestly made. Not on the quality of the apology, not on a probationary period, not on proof that it will not happen again.\n\nTwo things to keep hold of. This is one man reading his own life, and the heaviness he describes is not a formula you can run backwards — illness and exhaustion have many causes, and the book of Job exists to stop people deducing guilt from suffering. And nothing here asks you to work up more feeling first. He is not forgiven because he suffered enough. He is forgiven because he spoke.',
+        consider: ['What are you keeping quiet about, and what has the quiet been costing you?'],
+        prayer: 'God, the silence has cost me more than the thing itself ever did, and I have been calling it privacy. I am not going to explain it or grade it. Here it is. I am saying it to you, out loud, and I am taking you at your word about what you do with it. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is about the record you believe is still standing against you.' } },
+      { id: 'gs-2', title: 'The record, and what happened to it',
+        passages: [{ ref: 'Colossians 2:13-14', c: 'COL', ch: 2, from: 13, to: 14 }],
+        arrive: 'A debt you cannot pay is one problem. A record of it that still stands is another.',
+        notice: 'Two words carry the first half: dead, then alive. Paul does not describe the problem as underperformance. He calls it death — which is bleak, and also oddly freeing, because nobody expects a dead man to improve his way out of it.\n\nThen the image changes to paperwork. There was a handwritten document with charges on it, and it stood against us. Three things are said about what became of it: it was wiped out, it was taken out of the way, and it was nailed to the cross. Not reduced. Not renegotiated into instalments. Removed, publicly, and attached to an execution.\n\nThe forgiveness in that sentence is stated as something already done rather than something pending your performance. And the paragraph just before puts the person somewhere new as well — buried with him, raised with him — so this is not only a cancelled bill, it is a change of address.\n\nFor repeated sin, this is the sentence that does the work. Shame keeps re-reading a document that has been taken out of the room. Going back over it feels like seriousness, and often it is only the old habit of self-accounting wearing a better coat.\n\nWhat the passage does not say is that the harm never happened, or that consequences in this world evaporate. A cancelled record is not a rewritten past. It is the end of the charge against you.',
+        consider: ['What do you keep re-reading that God has already taken out of the way?'],
+        prayer: 'Jesus, the list against me is real and I am not going to pretend it is short. You took it. I have been keeping my own copy and consulting it at night, and I would like to stop. Teach me to believe what you did with it. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is the difference between being sorry and actually turning.' } },
+      { id: 'gs-3', title: 'Sorry is not the same as turning',
+        passages: [{ ref: '2 Corinthians 7:8-11', c: '2CO', ch: 7, from: 8, to: 11 }],
+        arrive: 'Feeling terrible and changing are not the same event. Paul separates them here with unusual precision.',
+        notice: 'Grief gets sorted into two kinds in this paragraph, and the sorting is done by results rather than by intensity.\n\nPaul starts by admitting he regretted sending a hard letter, and then stopped regretting it. He is careful to say he is not pleased that they were upset. He is pleased about where the upset went: it moved them.\n\nThen the distinction. One kind of sorrow produces a turn, and leads somewhere, and leaves nothing to regret afterwards. The other kind produces death. Note that both are sorrow. Both feel bad. The difference is not how sharp the feeling is but whether anything happens as a result.\n\nAnd he lists what happened, which keeps it from being an abstraction: urgency, a readiness to put things right, indignation, alarm, longing, and justice actually done in a matter they had been avoiding. Every item is an action. None of them is feeling worse for longer.\n\nThat is the test to carry out of this. Not am I sorry enough, which has no answer and no end, but has this sorrow produced any movement at all — a conversation, a confession, a changed arrangement, a thing returned.\n\nThe second kind of sorrow is the one that circles. It reviews the failure, feels the shame, resolves vaguely, and arrives back where it started a week later, slightly more tired. Scripture does not call that repentance. It calls it deadly, and it is not asking you for more of it.',
+        consider: ['Has your sorrow about this produced anything yet, or has it only gone round again?'],
+        prayer: 'Lord, sorrow has been easier than turning, and I have been offering you the sorrow. I am tired of visiting this and leaving it where it is. Show me the one thing that would count as a turn this week, and make me willing to do it rather than feel it. Amen.',
+        nextStep: { kind: 'continue', text: 'One more step, and it is about where the strength to change is supposed to come from.' } },
+      { id: 'gs-4', title: 'Grace is the teacher',
+        passages: [{ ref: 'Titus 2:11-14', c: 'TIT', ch: 2, from: 11, to: 14 }],
+        arrive: 'Change is the part most people expect to be told to produce on their own. This sentence puts it somewhere else.',
+        notice: 'Grace is the subject of the verb, and that is the surprise. Grace appeared, and grace trains. Not grace excuses, not grace waits politely while you sort yourself out — the same grace that saves is the thing conducting the training.\n\nSo effort and grace are not rivals in this sentence. The effort is grace\'s curriculum. If you have been trying to generate change first in order to qualify for mercy afterwards, the order here is the other way round and always has been.\n\nWhat it trains is specific: saying no to what you know is destroying you, and living sensibly, rightly and in a way that takes God seriously — in this present age, which means now, in the ordinary week, not after you have been repaired.\n\nThe end of it is not self-improvement either. He gave himself to make a people his own, keen on good work. People, plural. This is not a private project, and the next chapter says plainly that none of it was earned: we were foolish ourselves, and he saved us by mercy rather than by anything we had managed.\n\nTwo things it does not say. Failure is not evidence that grace never appeared to you — this is described as training, and training assumes you are not there yet. And progress is not a payment. The purpose clause belongs to him: to redeem and to purify a people for himself.',
+        consider: ['What is the next obedient thing you already know to do?'],
+        prayer: 'Father, teach me what grace is actually for. I have been treating it as the thing that covers the mess and nothing more, and then wondering why nothing changes. Train me. Start with the one thing I have been refusing to put down. Amen.',
+        nextStep: { kind: 'support', text: 'If this is a pattern rather than a single failure, tell one Christian you trust — not for absolution, but because patterns survive on privacy. And if shame has reached the point where you are thinking of harming yourself, that is for a doctor or a crisis service today, not for another reading.' } }
+    ] },
+  { id: 'hurt-and-forgiveness', title: 'Hurt, Anger & Forgiveness',
+    entry: 'I\'m hurt, angry, or struggling to forgive',
+    summary: 'For anger, betrayal and conflict — what forgiveness is, what it is not, and where reconciliation does and does not belong.',
+    safety: false,
+    completion: { kind: 'bible', text: 'Read Matthew\'s Gospel from chapter 5. Much of what Jesus says about anger, enemies and what to do with a grievance is there, in his own words, at length.' },
+    steps: [
+      { id: 'ha-1', title: 'It was not a stranger',
+        passages: [{ ref: 'Psalm 55:12-14', c: 'PSA', ch: 55, from: 12, to: 14 }],
+        arrive: 'Say it to God before you say it to anyone else. This psalm shows how blunt you are allowed to be.',
+        notice: 'Betrayal has a particular sting, and these three lines isolate it. If an enemy had done this, he says, I could have taken it. If someone who already hated me had come for me, I would have seen it and kept out of the way.\n\nBut it was not a stranger. It was an equal, somebody he kept company with, the friend he used to walk to worship beside. He does not generalise the injury or round it down; he presses on the closeness deliberately, because the closeness is what makes it unbearable.\n\nEarlier in the psalm he wishes he had wings so he could get away and stay away. That impulse is in Scripture, written down, and nobody corrects it.\n\nAnd a few lines after our passage he asks God to bring death on them. Look closely at what that is, because it is not an instruction for you. It is a man handing the worst thing he wants to God rather than carrying it out himself. The wish goes somewhere. It goes to the one person who can be trusted with it.\n\nThat is the move this step is asking for. Not a measured summary of the situation, and not the version you would say in front of people. The real thing, addressed to God, including the parts you would not defend.\n\nWatch where his own next sentence goes. He turns from the curse to say that he, for his part, intends to keep calling on God. The unspeakable thing gets said, and then he goes on praying.',
+        consider: ['What would you say about this if you did not have to be careful who heard it?'],
+        prayer: 'God, this was not a stranger, which is why it will not stop aching. You know what I would say if I let myself. I am saying it to you instead of to anyone else, and instead of doing anything with it. Hold on to it, and hold on to me, because I cannot put it down yet. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is about what you are tempted to do with it.' } },
+      { id: 'ha-2', title: 'Not yours to repay',
+        passages: [{ ref: 'Romans 12:17-21', c: 'ROM', ch: 12, from: 17, to: 21 }],
+        arrive: 'Giving up revenge is not the same as pretending nothing happened, and Paul never asks for the second one.',
+        notice: 'Three instructions arrive together, and the middle one carries two limits most people never quote. Do not repay evil with evil. Then: be at peace with everyone — if it is possible, and as far as it depends on you. Paul assumes in writing that some peace is not possible, and that some of it is not yours to produce.\n\nThe reason given for not avenging yourself is not that the wrong was small. It is that repayment has an owner. Vengeance is not abolished in this paragraph; it is reassigned, and the quotation makes the claim in God\'s own voice. Stepping back is not letting it go unanswered. It is declining to be the one who answers.\n\nAnd the very next paragraph matters for anyone reading this with a real injury. Paul says the governing authority does not carry a sword for nothing, and calls it God\'s servant to carry out justice. Scripture\'s own route for wrongdoing runs through lawful authority. Reporting what happened, making a statement, letting a court decide — none of that is private revenge, and none of it is a failure to forgive.\n\nThen the strange command about feeding a hungry enemy. Notice it is concrete and small. He does not ask you to feel warmly about anyone. He asks for bread, if bread is what is needed.\n\nNothing in this paragraph requires you to stay where you are being harmed in order to overcome evil with good.',
+        consider: ['What would you be doing about this if you were not trying to settle the score yourself?'],
+        prayer: 'God, I want them to feel some of this. That is the truth, and you have heard worse. I am handing the account to you because it is yours, not because the debt is small. Keep me from repaying it myself while I wait for you to do whatever you are going to do. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is what forgiveness actually is, which is narrower than the word usually suggests.' } },
+      { id: 'ha-3', title: 'What forgiveness actually is',
+        passages: [{ ref: 'Matthew 18:21-27', c: 'MAT', ch: 18, from: 21, to: 27 }],
+        arrive: 'Forgiveness is a word people use for about five different things. This story narrows it to one.',
+        notice: 'Peter wants a number. Seven times is already generous — he is not being mean — and the answer he gets removes the ledger rather than raising the limit.\n\nThen comes the story, and it is an accounting story from beginning to end. A servant owes an amount nobody could pay in several lifetimes. He begs for time and promises to repay it, which is the one thing he certainly cannot do. The king does not give him time. He cancels the debt and takes the loss himself.\n\nSo here is the definition this path will use, because it is the one Jesus illustrates: forgiveness is releasing a debt. It is the injured party giving up the right to collect. It is not saying the amount was small — the amount is enormous and the story names it. It is not saying nothing happened. It is deciding to stop pursuing payment for something that is genuinely owed.\n\nNotice what the king does not do. He does not say the servant is now trustworthy, and nothing suggests he hands him the accounts again. Releasing a debt and restoring a position are two different acts, and only one of them happens here.\n\nNotice also what sits immediately before this: instructions for confronting someone who has wronged you, privately first, then with others. Forgiving is not a synonym for saying nothing, and Jesus gives a procedure for saying something.\n\nWhat this does not promise is that the feeling follows the decision, or follows it quickly.',
+        consider: ['What are you still trying to collect, and what would it mean to stop?'],
+        nextStep: { kind: 'continue', text: 'The last step is about what forgiving does not automatically come with.' } },
+      { id: 'ha-4', title: 'Living next to it',
+        passages: [{ ref: 'Ephesians 4:29-32', c: 'EPH', ch: 4, from: 29, to: 32 }],
+        arrive: 'What forgiveness does not automatically carry with it is the part most likely to be used against you.',
+        notice: 'Four instructions about how a community talks and keeps itself: nothing rotten out of your mouth, only what builds; do not grieve the Spirit; put bitterness, rage, shouting and slander away; be kind and tender-hearted, forgiving as God in Christ forgave you.\n\nThe ground given is not the other person\'s worth or their apology. It is what was done for you. That is why bitterness is addressed as something to put down rather than something to justify — it is being asked for on the basis of what you have received, not on the basis of what they deserve.\n\nNow the distinctions, because this is where people get hurt a second time by advice.\n\nForgiveness is releasing the debt, and you can do it alone. Trust is an estimate of what somebody is likely to do next; it is rebuilt by evidence, over time, or not at all. Reconciliation takes two people and real change in the one who did the harm. Access is a decision about proximity, and it is yours to make. Consequences belong to justice, and the earlier step put those in God\'s hands and the authorities\'. Safety outranks every item on this list.\n\nScripture puts the qualifiers in itself: be at peace if it is possible, and as far as it depends on you. Both halves assume that sometimes it is not and does not.\n\nSo you can forgive somebody you will never be alone with again. You can forgive and still give a statement. You can forgive and still change the locks.',
+        consider: ['Which of these have you been treating as one thing — forgiving, trusting, or being near?'],
+        prayer: 'Father, bitterness has been good company and I am tired of it. I want to put it down without pretending I am safe when I am not. Give me the honesty to forgive and the sense to be careful, and do not let me confuse the two. Amen.',
+        nextStep: { kind: 'support', text: 'If someone is still hurting you, or you are not safe, that is the next thing to deal with and it is not a question about forgiveness — tell a person who can actually help, today. If the danger is immediate, contact emergency services where you are. Forgiveness can wait; safety cannot.' } }
+    ] },
+  { id: 'direction-decisions', title: 'Direction & Decisions',
+    entry: 'I need direction',
+    summary: 'For decisions, waiting and wanting to do the right thing — wisdom, obedience and what guidance is actually promised.',
+    safety: false,
+    completion: { kind: 'bible', text: 'Read a chapter of Proverbs a day for a month. It is the part of Scripture written for exactly this: people deciding things without knowing how they turn out.' },
+    steps: [
+      { id: 'dd-1', title: 'Wisdom is looked for',
+        passages: [{ ref: 'Proverbs 2:1-6', c: 'PRO', ch: 2, from: 1, to: 6 }],
+        arrive: 'Nobody is handed wisdom. These verses describe the work, and then say who supplies it anyway.',
+        notice: 'Wisdom here is buried rather than broadcast. The whole passage is one long sentence of conditions — if you take the words in, if you store them up, if you turn your ear, if you call out, if you go after it the way people go after silver, digging for it like treasure — and only then does the consequence arrive.\n\nThe verbs are the point. Calling out. Searching. Digging. None of this describes waiting for an impression to arrive while you keep your options open.\n\nAnd then the line that stops it becoming a self-improvement scheme: the LORD gives wisdom. Both halves sit in the same paragraph without embarrassment. You dig, and it is still a gift. If that sounds like a contradiction, it is the same shape as most of the Christian life.\n\nNotice what is found at the end of the digging. Not a decision, and not a plan. What turns up is reverence for God himself, and knowing him. The search terminates in a person rather than an answer, which quietly reframes what you are looking for.\n\nFor a decision, this changes the first move. The opening question is not which option should I take. It is what is God like, what does he value, and what sort of person does he want making this — and that question has material you can go and work through this week.\n\nWhat the passage does not offer is a method for extracting a private instruction. It promises wisdom to the one who digs, which is a different thing and a better one.',
+        consider: ['What would digging actually look like this week, before you decide anything?'],
+        prayer: 'God, give me wisdom, and make me willing to go and look for it rather than wait for it to land. I have been asking which door. Teach me what you are like first, and let the decision come out of that. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is about how much of this is not actually hidden.' } },
+      { id: 'dd-2', title: 'Most of it is not secret',
+        passages: [{ ref: 'Micah 6:8', c: 'MIC', ch: 6, from: 8, to: 8 }],
+        arrive: 'Much of what God wants from you is already on record. The hidden part is smaller than it feels at two in the morning.',
+        notice: 'By the time this verse arrives, a case is being heard. God has a complaint against his people and the mountains are called as witnesses — the setting is a courtroom, and the question in the air is what would put this right.\n\nThe answer comes back as an auction. Calves? Thousands of rams? Rivers of oil? Then, appallingly, a firstborn child. Each offer is larger than the last and each misses by the same distance, which is the point: they are bidding, and the problem was never the price.\n\nThen the reply, and the first thing in it is a past tense. He has already told you what is good. Act justly. Love mercy. Walk humbly with your God. Three things, none of them a secret, all of them available to start on before breakfast tomorrow.\n\nFor a decision, stay with that a moment: it describes the kind of person who decides rather than the decision itself. Scripture gives enormous attention to character and conduct and comparatively little to which post to take or which town to live in. The part that is published is the larger part.\n\nSo the question changes shape. Not only what should I do, but: is there anything in those three I am currently avoiding while I wait for direction about something else?\n\nNothing here suggests that doing the three produces a sign about the fourth. They are not a mechanism. They are what is being asked of you anyway.',
+        consider: ['Is there something in acting justly, loving mercy or walking humbly that you are avoiding while you wait for guidance?'],
+        prayer: 'Lord, you have already said a great deal and I have been waiting for something else. Make me just, make me love mercy, keep me walking close rather than running ahead. If that is most of your will for me this year, let me get on with it. Amen.',
+        nextStep: { kind: 'continue', text: 'The next step is the part people skip.' } },
+      { id: 'dd-3', title: 'Counsel, and the plan that stands',
+        passages: [{ ref: 'Proverbs 19:20-21', c: 'PRO', ch: 19, from: 20, to: 21 }],
+        arrive: 'Counsel is the part people skip, usually because they already know which answer they are shopping for.',
+        notice: 'Both halves of this pair are needed, and they are placed next to each other on purpose.\n\nThe first is an instruction with a long horizon: listen to advice, take correction, so that you may be wise later on. Not so that you will be right this week. Wisdom is treated as something you end up with, accumulated from a hundred times you were told something you did not want to hear.\n\nThe second is about the gap between planning and outcome. Many plans in a person\'s heart; the LORD\'s purpose is the one that stands. Read carelessly that sounds like a warning against planning, but the book it sits in is full of planning and praises it. It is not cancelling your plans. It is putting them inside something larger than themselves.\n\nHeld together, the two lines produce a particular posture: plan seriously, take counsel honestly, and hold the result loosely, because the outcome was never yours to guarantee.\n\nOne thing the passage assumes and this app will say plainly. Counsel means people who will tell you the unwelcome thing. Proverbs elsewhere says plans fail where there is no counsel and succeed where there are many advisers — and an adviser who only confirms you is not one of them.\n\nCounsel is also not a vote. Nobody here is going to carry the decision for you, and no counsellor can tell you God\'s hidden plan, because they do not have it either.',
+        consider: ['Who would tell you the unwelcome thing, and have you asked them yet?'],
+        nextStep: { kind: 'continue', text: 'The last step is about deciding without the certainty you were hoping for.' } },
+      { id: 'dd-4', title: 'Decide, and hold it loosely',
+        passages: [{ ref: 'James 4:13-17', c: 'JAS', ch: 4, from: 13, to: 17 }],
+        arrive: 'Decide. Then add the sentence James gives you, and mean it.',
+        notice: 'James quotes a confident planner — a city picked, a year set aside, business done, a profit expected. Read it twice, because the plan itself is never criticised. It is an ordinary commercial decision and the letter does not call it greedy or faithless.\n\nWhat he objects to is the assumption underneath, that tomorrow is yours to schedule. Nobody has that information. A life, he says, is a mist: it shows up and burns off.\n\nThe correction is not stop planning. It is a clause to add in front of the plan — should the Lord will it, and should we still be alive. The plan survives. The certainty does not. And this is a world away from waiting for a sign: he expects them to choose a city, name a year and go.\n\nThen the ending, which is sharper than most people remember. Anyone who knows the good they ought to do, and does not do it, for him it is sin. A paragraph about not knowing the future closes by pointing at the thing you already know you should do.\n\nSo you are not required to have certainty before you act. You are required to hold the plan under God, and to do the good that is already in front of you while the rest is unclear.\n\nWhat the passage does not supply is the city, the year or the trade. He leaves the decision with the person making it, which is where Scripture usually leaves it.',
+        consider: ['What decision have you been delaying while you wait for certainty that was never promised?'],
+        prayer: 'Father, here is the plan as it stands, and I am holding it with an open hand: if you will it, I will do this. If you close it, close it clearly enough for me to see. While I wait, keep me doing the good I already know about, so that the waiting is not an excuse. Amen.',
+        nextStep: { kind: 'openPassage', text: 'Open James 1 and read from verse 2. The letter\'s first instruction about wisdom is to ask for it, and to ask without hedging.', open: { ref: 'James 1:2-8', c: 'JAS', ch: 1, from: 2, to: 8 } } }
+    ] },
+  { id: 'start-here', title: 'Start Here',
+    entry: 'I don\'t know where to start',
+    summary: 'Three short steps for beginning with God without first working out what is wrong.',
+    safety: false,
+    completion: { kind: 'learn', study: 'learning-to-pray', text: 'If you want to go further with prayer than one step allows, Learning to Pray is five short lessons in Learn.' },
+    steps: [
+      { id: 'sh-1', title: 'Begin where you actually are',
+        passages: [{ ref: 'Psalm 62:5-8', c: 'PSA', ch: 62, from: 5, to: 8 }],
+        arrive: 'Three short steps, one passage each. You do not need the right words to start, or a clear account of what is wrong.',
+        notice: 'The psalm is not written from a settled place. A few lines earlier the writer describes being leaned on like a wall about to go over, surrounded by people whose kindness is a performance. That is the situation he is speaking from when he tells his own soul to wait, and when he turns and tells everyone else to trust.\n\nNotice the order. He speaks to himself first — twice, almost identically, as though it needed saying more than once. Only then does he turn outward with an instruction, and the instruction is not to sort yourself out first. It is to tip out what is in you in God\'s direction, and to let him be the safe place. The verb is the one you would use for tipping a jar until nothing is left in it. It assumes mess. It assumes nothing about eloquence.\n\nWhat the psalm does not say matters too. It does not promise the pressure lifts. It calls God rock, refuge and salvation, and then, a few lines on, says plainly that people are lighter than a breath and that riches are not worth setting your heart on. The comfort being offered is not that your circumstances are about to improve. It is that there is somewhere to put all this that is not yourself.\n\nWaiting in silence, here, is not the same as having nothing to say. It is the quiet of someone who has stopped negotiating.',
+        consider: ['What would you say to God right now if you did not have to say it well?'],
+        prayer: 'God, I do not know how to say this properly, so I am not going to try. You know the shape of it already. I am bringing it to you instead of carrying it round for another day. Be the safe place this psalm says you are, because I do not have another one. Amen.',
+        nextStep: { kind: 'continue', text: 'Go on to the next step. It is one passage and a short reading.' } },
+      { id: 'sh-2', title: 'An invitation, not a summons',
+        passages: [{ ref: 'Matthew 11:28-30', c: 'MAT', ch: 11, from: 28, to: 30 }],
+        arrive: 'If the first step was about bringing what you have, this one is about who you are bringing it to.',
+        notice: 'Read the lines just before this and the welcome gets stranger, not softer. Jesus has finished saying hard things to towns that watched him work and changed nothing. He is not speaking here because his standards are low. Then he thanks his Father that this has been shown to people with no standing — infants, in the comparison he uses — rather than to the ones you would expect to grasp it.\n\nThen he opens it to anyone worn out and loaded down. Two words carry the weight. One is rest. The other is yoke — working equipment, a wooden beam across the shoulders of two animals so they pull together. And he does not stop at offering it: take it, he says, and learn from me. So the offer is not a hammock. It is a swap — his load instead of yours, pulled alongside him rather than alone.\n\nAnd the reason he gives is not a method or a programme. It is what he is like — gentle, and low rather than overbearing, in the way he describes his own heart. That is the argument he makes for coming to him.\n\nThe promise is rest for souls. Not an easier week, not an end to what is heavy, not a feeling that arrives on a schedule. You can come to him before any of that has changed.',
+        consider: ['What would change if you came to Christ as you are, rather than after sorting yourself out?'],
+        prayer: 'Jesus, I am tired, and I have been carrying this by myself. You said to come, so I am coming — not fixed, not clear, not sure what to ask for. Teach me your way of carrying things. Amen.',
+        nextStep: { kind: 'continue', text: 'One step left, and it is an ordinary one.' } },
+      { id: 'sh-3', title: 'Something ordinary to do next',
+        passages: [{ ref: 'Luke 11:1-4', c: 'LUK', ch: 11, from: 1, to: 4 }],
+        arrive: 'This is the last step. Help Me is not meant to be somewhere you stay.',
+        notice: 'Someone who had been with Jesus every day asked to be taught how to pray. Sit with that before anything else here. Not knowing how was not a disqualification among the people closest to him — it was the reason for the question. The request itself names John, who had taught his own followers; they wanted the same from Jesus.\n\nHe does not answer with encouragement. He answers with words, and they are short. A name to honour. A kingdom to want. Bread for today. Forgiveness, given and received. A request to be kept out of what would break you. That is all of it; read aloud, it takes about fifteen seconds.\n\nTwo things in it are easy to miss. The bread is for the day — not the month, not the plan — so you are being taught to come back tomorrow for the next one. And forgiveness sits in the middle of an ordinary daily prayer rather than as the conclusion of some long process, which tells you what sort of thing it is meant to be: regular, not exceptional.\n\nWhat follows in the chapter is a story about a man banging on a neighbour\'s door at midnight until he gets what he needs, and then an instruction to keep asking. Persistence is not treated as pestering.\n\nNone of this requires you to feel prayerful first. The words are plain enough to survive being said badly, half asleep, or through your teeth.',
+        consider: ['Could you pray something this short today, and again tomorrow?'],
+        nextStep: { kind: 'today', text: 'Go to Today\'s reading. One passage, a short reflection, and another one tomorrow.' } }
     ] }
 ];
 
@@ -9039,6 +9681,8 @@ function loadVerseData(){
   bibleRead = Array.isArray(rd) ? rd.filter(isReadRecord) : [];
   const dp = Store.getJSON(KEYS.devotionProgress, []);
   devotionProgress = Array.isArray(dp) ? dp.filter(isDevotionProgressRecord) : [];
+  const hp = Store.getJSON(KEYS.helpProgress, []);
+  helpProgress = Array.isArray(hp) ? hp.filter(isHelpProgressRecord) : [];
   loadPrefs();
   /* Absent is a new reader, not a broken one: the app opens on today. */
   if(!isDayKey(selectedDay)) selectedDay = todayKey();
@@ -10920,12 +11564,17 @@ function activeDevotionSeries(){
    book name: the build resolved every reference to a book CODE, which is the
    same in every edition, so a reader on Reina Valera gets Spanish words under
    a Spanish reference without a single string being matched by hand. */
-function devotionRefLabel(ref){
+/* Shared by Devotions and Help Me. Both carry canonical locations and need
+   the reader's own edition's words under the reader's own edition's book
+   name; a second copy of this is a second set of rules about what Scripture
+   looks like, which is the one thing that may not fork. Extracted rather
+   than generalised in advance — this is the second caller, not the first. */
+function passageRefLabel(ref){
   const label = bibleBookName(translation, ref.c) + ' ' + ref.ch + ':' + ref.from;
   return ref.to !== ref.from ? label + '-' + ref.to : label;
 }
 
-function devotionVerses(ref){
+function passageVerses(ref){
   const book = cachedBibleBook(translation, ref.c);
   if(!book) return null;
   const ch = book.ch[ref.ch - 1];
@@ -10940,31 +11589,63 @@ function devotionVerses(ref){
   return out.length ? out : null;
 }
 
+/* The Scripture card for a canonical LOCATION, read out of data/bible/.
+
+   Named for a location, not a passage, because passageCardHtml() already
+   exists and means something else: it renders a CURATED passage, which
+   carries its own text, its own superscription and a Read-in-context link.
+   This one takes an address and fetches the words. Calling both of them
+   passageCardHtml shadowed the lesson renderer's and emptied the Read
+   section of all 23 lessons — found by contract, which is the only reason
+   it is not shipped. */
+function locationCardHtml(ref){
+  const verses = passageVerses(ref);
+  if(!verses) return null;
+  const text = verses.map(function(v){ return v.t; }).join(' ').replace(/\s+/g, ' ').trim();
+  return '<article class="verse-card">' +
+      '<blockquote class="verse-text" lang="' + escapeAttr(activeTranslation().lang) + '">' +
+        escapeHtml(text) + '</blockquote>' +
+      '<div class="verse-cite">' +
+        '<cite class="verse-ref">' + escapeHtml(passageRefLabel(ref)) + '</cite>' +
+        '<span class="verse-translation">' + escapeHtml(activeTranslation().abbr) + '</span>' +
+      '</div>' +
+    '</article>';
+}
+
+/* What a quoting surface says where the words would be. Absence is reported
+   as absence: a passage whose book has never been fetched and no connection
+   to fetch it with is not "loading", and saying so is the whole fix.
+
+   With a `ref`, it also NAMES the passage. A reader offline was being told
+   that something had not downloaded without being told what — so they could
+   not look it up in a paper Bible, and could not tell which step was
+   incomplete. The reference costs nothing to produce: book names for every
+   book of every shipped edition ship with the app, so this resolves with no
+   Bible data at all and in the reader's own edition. */
+function passagePendingHtml(ref){
+  const offline = !!(navigator && navigator.onLine === false);
+  const named = ref ? escapeHtml(passageRefLabel(ref)) : null;
+  return '<p class="field-hint">' +
+    (offline
+      ? (named ? named + ' has not been downloaded yet. Open it once with a connection and it will be here offline.'
+               : 'This passage has not been downloaded yet. Open it once with a connection and it will be here offline.')
+      : (named ? 'Loading ' + named + '…' : 'Loading this passage…')) +
+    '</p>';
+}
+
+function devotionRefLabel(ref){ return passageRefLabel(ref); }
+function devotionVerses(ref){ return passageVerses(ref); }
+
 /* Scripture, set as Scripture. The serif face, the quotation, the reference
    and the edition it came from — the same card language Today and Learn use,
    so a reader never has to wonder which words are God's and which are ours. */
 function devotionAnchorHtml(ref){
-  const verses = devotionVerses(ref);
-  if(!verses){
+  const card = locationCardHtml(ref);
+  if(!card){
     return '<div class="devotion-anchor is-pending" id="devotionAnchor">' +
-      '<p class="field-hint">' +
-        (navigator && navigator.onLine === false
-          ? 'This passage has not been downloaded yet. Open it once with a connection and it will be here offline.'
-          : 'Loading this passage…') +
-      '</p></div>';
+      passagePendingHtml() + '</div>';
   }
-  const text = verses.map(function(v){ return v.t; }).join(' ')
-    .replace(/\s+/g, ' ').trim();
-  return '<div class="devotion-anchor" id="devotionAnchor">' +
-    '<article class="verse-card">' +
-      '<blockquote class="verse-text" lang="' + escapeAttr(activeTranslation().lang) + '">' +
-        escapeHtml(text) + '</blockquote>' +
-      '<div class="verse-cite">' +
-        '<cite class="verse-ref">' + escapeHtml(devotionRefLabel(ref)) + '</cite>' +
-        '<span class="verse-translation">' + escapeHtml(activeTranslation().abbr) + '</span>' +
-      '</div>' +
-    '</article>' +
-  '</div>';
+  return '<div class="devotion-anchor" id="devotionAnchor">' + card + '</div>';
 }
 
 /* Fills the anchor once its book has arrived. ONLY the anchor: the reading
@@ -11406,6 +12087,612 @@ function refreshDevotionsForEdition(){
 }
 
 /* ---------- this product claims the foundation's four seams ---------- */
+/* =========================================================
+   HELP ME
+   ---------------------------------------------------------
+   For the moment someone needs Scripture and does not know where
+   to open the Bible. A path is a short ordered reading — four or
+   five steps — that moves from what a person is carrying, into a
+   passage, into understanding it, into one question, into words
+   for prayer, and then out into ordinary reading.
+
+   WHAT IT IS NOT, and the code reflects this:
+   no diagnosis, no assessment, no mood record, no severity, no
+   streak, no score, no percentage, and no history of which
+   situation anybody chose. HELP carries prose and canonical
+   LOCATIONS; the words of Scripture come from data/bible/ in the
+   reader's own edition, exactly as they do for a devotional.
+
+   PROGRESS is one record per path, { id, done, startedAt,
+   updatedAt }, and `done` is the whole of it. Every number on
+   screen — how far through, which step is next, whether a path is
+   finished, which path to offer to resume — is derived from it.
+
+   URGENT HELP is not a path. It is an escape hatch that hands a
+   reader to people who can actually help and gets out of the way.
+   Every resource it prints is read from HELP_URGENT, which the
+   build read from data/help.json, which `npm run help:verify`
+   fails on once its review date has passed. Nothing about a
+   territory is inferred, and nothing about using it is stored.
+   ========================================================= */
+
+let helpProgress = [];
+let openHelpPathId = null;
+let openHelpStepId = null;
+/* Set while a completion screen is showing, so the step surface can present
+   an ending without a second overlay level to back out of. */
+let helpStepCompleted = false;
+
+/* `done` is the only truth, exactly as it is for a devotional series. */
+function isHelpProgressRecord(r){
+  return isRecord(r) && Array.isArray(r.done) &&
+         r.done.every(function(x){ return typeof x === 'string'; });
+}
+function persistHelpProgress(){
+  const ok = Store.setJSON(KEYS.helpProgress, helpProgress);
+  if(!ok) toast('Could not save — this browser is not storing data.', 'error');
+  return ok;
+}
+
+function helpPathById(id){
+  for(let i = 0; i < HELP.length; i++) if(HELP[i].id === id) return HELP[i];
+  return null;
+}
+function helpStepById(pathId, stepId){
+  const p = helpPathById(pathId);
+  if(!p) return null;
+  for(let i = 0; i < p.steps.length; i++) if(p.steps[i].id === stepId) return p.steps[i];
+  return null;
+}
+function helpStepIndex(path, stepId){
+  for(let i = 0; i < path.steps.length; i++) if(path.steps[i].id === stepId) return i;
+  return -1;
+}
+function helpProgressFor(pathId){
+  for(let i = 0; i < helpProgress.length; i++){
+    if(helpProgress[i].id === pathId) return helpProgress[i];
+  }
+  return null;
+}
+
+/* Opening a path starts it. That is a fact about what happened, not a claim
+   that anything was read — `done` is still empty, and only the button at the
+   foot of a step ever adds to it. */
+function ensureHelpStarted(pathId){
+  let rec = helpProgressFor(pathId);
+  if(rec) return rec;
+  const now = new Date().toISOString();
+  rec = { id: pathId, done: [], startedAt: now, updatedAt: now };
+  helpProgress.push(rec);
+  persistHelpProgress();
+  return rec;
+}
+
+function isHelpStepDone(pathId, stepId){
+  const rec = helpProgressFor(pathId);
+  return !!(rec && rec.done.indexOf(stepId) !== -1);
+}
+
+/* Counted against the path's OWN steps, so a step removed from the catalogue
+   in a later release cannot inflate somebody's progress past the number of
+   readings that exist. */
+function helpDoneCount(path){
+  const rec = helpProgressFor(path.id);
+  if(!rec) return 0;
+  let n = 0;
+  path.steps.forEach(function(s){ if(rec.done.indexOf(s.id) !== -1) n++; });
+  return n;
+}
+function helpPathComplete(path){
+  return path.steps.length > 0 && helpDoneCount(path) >= path.steps.length;
+}
+
+/* The first step not yet done, which is where Continue goes. A path whose
+   middle step was somehow completed first resumes at the earliest gap rather
+   than at the end — the order is the content's, not the reader's history. */
+function firstIncompleteHelpStepId(path){
+  for(let i = 0; i < path.steps.length; i++){
+    if(!isHelpStepDone(path.id, path.steps[i].id)) return path.steps[i].id;
+  }
+  return null;
+}
+function nextHelpStepId(path, stepId){
+  const at = helpStepIndex(path, stepId);
+  if(at === -1 || at + 1 >= path.steps.length) return null;
+  return path.steps[at + 1].id;
+}
+
+/* Which path the home offers to resume: the most recently updated INCOMPLETE
+   one, and only one. A reader who has opened three difficult things does not
+   need a dashboard of them.
+
+   A path with something finished outranks one that was merely opened, the
+   same tie-break Devotions uses — otherwise opening a path to see what it was
+   replaces a reader's actual place with it. */
+function activeHelpPath(){
+  let best = null;
+  helpProgress.forEach(function(r){
+    const p = helpPathById(r.id);
+    if(!p || helpPathComplete(p)) return;
+    if(!best){ best = r; return; }
+    const started = r.done.length > 0, bestStarted = best.done.length > 0;
+    if(started !== bestStarted){ if(started) best = r; return; }
+    /* `>=`, not `>`. updatedAt is an ISO string at millisecond resolution and
+       two paths touched in the same millisecond compare equal, which left
+       "most recently updated" decided by whichever happened to be earlier in
+       the array — a rule nobody wrote down and nobody could predict. On a tie
+       the later record wins, and records are appended in first-touch order,
+       so the one touched most recently is offered. */
+    if(String(r.updatedAt || '') >= String(best.updatedAt || '')) best = r;
+  });
+  return best;
+}
+
+/* ---------- the home ---------- */
+/* Restrained orientation, and never a percentage: "2 of 4" is a fact a reader
+   can check against the step list. A ring is a number nobody asked for. */
+function helpProgressNote(path){
+  const done = helpDoneCount(path);
+  if(!done) return '';
+  if(helpPathComplete(path)) return 'Finished';
+  return done + ' of ' + path.steps.length;
+}
+
+function helpPathRowHtml(path){
+  const note = helpProgressNote(path);
+  return '<button class="list-row" onclick="openHelpPath(' + "'" + escapeAttr(path.id) + "'" + ')">' +
+    '<span class="list-row-main">' +
+      '<span class="list-row-title">' + escapeHtml(path.entry) + '</span>' +
+      (note ? '<span class="list-row-desc">' + escapeHtml(note) + '</span>' : '') +
+    '</span>' +
+    '<span class="list-row-arrow" aria-hidden="true">' + chevronRight(15) + '</span>' +
+  '</button>';
+}
+
+function renderHelp(){
+  const host = document.getElementById('helpBody');
+  if(!host) return;
+
+  const active = activeHelpPath();
+  const activePath = active ? helpPathById(active.id) : null;
+  let out = '';
+
+  /* With progress, one Continue surface comes first. Without it there is
+     simply no Continue area — not an empty container announcing absence. */
+  if(activePath){
+    const stepId = firstIncompleteHelpStepId(activePath);
+    const step = stepId ? helpStepById(activePath.id, stepId) : null;
+    const at = step ? helpStepIndex(activePath, stepId) + 1 : 1;
+    out += '<section class="panel help-continue">' +
+      '<div class="section-label" style="margin-top:0">Continue</div>' +
+      '<h2 class="help-continue-title">' +
+        '<span class="sr-only">Continue reading: </span>' +
+        escapeHtml(activePath.entry) + '</h2>' +
+      '<p class="help-continue-step">Step ' + at + ' of ' + activePath.steps.length +
+        (step ? ' · ' + escapeHtml(step.title) : '') + '</p>' +
+      '<button class="btn-primary" style="width:100%;margin-top:var(--space-md)" ' +
+        'onclick="startHelpPath(' + "'" + escapeAttr(activePath.id) + "'" + ')">Continue</button>' +
+    '</section>';
+  }
+
+  /* The question is the heading, because it is the only thing a reader in
+     difficulty should have to read before choosing. */
+  out += '<header class="help-intro">' +
+    '<h2 class="help-question">Where do you need God’s Word today?</h2>' +
+    '<p class="help-intro-note">Choose the closest place to start. You can change paths anytime.</p>' +
+  '</header>';
+
+  /* The situations, in the catalogue's own order. "I don't know where to
+     start" is held back and given its own quiet emphasis below — it is a
+     legitimate first choice, not a lesser route. */
+  const START = 'start-here';
+  const situations = HELP.filter(function(p){ return p.id !== START; });
+  const startHere = helpPathById(START);
+
+  out += '<div class="list help-paths">' +
+    situations.map(helpPathRowHtml).join('') +
+  '</div>';
+
+  if(startHere){
+    out += '<div class="list help-start-here">' + helpPathRowHtml(startHere) + '</div>';
+  }
+
+  /* Quiet, low, and always present. Discreet by design: a reader in trouble
+     should find it without every other reader being alarmed by it. */
+  out += '<div class="help-urgent-entry">' +
+    '<button class="btn-quiet" onclick="openHelpUrgent()">' +
+      escapeHtml(HELP_URGENT.label) + '</button>' +
+  '</div>';
+
+  host.innerHTML = out;
+}
+
+/* ---------- a path, before it is read ---------- */
+function openHelpPath(pathId){
+  const path = helpPathById(pathId);
+  if(!path) return;
+  openHelpPathId = pathId;
+  renderHelpPath();
+  pushOverlayHistory('helpPathOverlay');
+  openOverlay('helpPathOverlay');
+}
+function closeHelpPath(){
+  closeOverlay('helpPathOverlay');
+  releaseOverlayHistory();
+  openHelpPathId = null;
+  renderHelp();
+}
+
+function renderHelpPath(){
+  const path = helpPathById(openHelpPathId);
+  const host = document.getElementById('helpPathBody');
+  const titleEl = document.getElementById('helpPathTitle');
+  if(!path || !host) return;
+  if(titleEl) titleEl.textContent = path.title;
+
+  const done = helpDoneCount(path);
+  const complete = helpPathComplete(path);
+  const nextId = firstIncompleteHelpStepId(path);
+
+  const steps = path.steps.map(function(s, i){
+    const isDone = isHelpStepDone(path.id, s.id);
+    return '<button class="list-row" onclick="openHelpStep(' +
+        "'" + escapeAttr(path.id) + "','" + escapeAttr(s.id) + "'" + ')">' +
+      '<span class="list-row-main">' +
+        '<span class="list-row-desc">Step ' + (i + 1) +
+          (isDone ? ' · <span class="help-done-mark">Read</span>' : '') + '</span>' +
+        '<span class="list-row-title">' + escapeHtml(s.title) + '</span>' +
+      '</span>' +
+      '<span class="list-row-arrow" aria-hidden="true">' + chevronRight(15) + '</span>' +
+    '</button>';
+  }).join('');
+
+  host.innerHTML =
+    '<header class="help-path-head">' +
+      '<h2 class="help-path-entry">' + escapeHtml(path.entry) + '</h2>' +
+      '<p class="help-path-summary">' + escapeHtml(path.summary) + '</p>' +
+      '<p class="help-path-meta">' + path.steps.length + ' steps' +
+        (done && !complete ? ' · ' + done + ' read' : '') +
+        (complete ? ' · finished' : '') + '</p>' +
+    '</header>' +
+    '<div class="list help-steps">' + steps + '</div>' +
+    '<button class="btn-primary" style="width:100%;margin-top:var(--space-lg)" ' +
+      'onclick="startHelpPath(' + "'" + escapeAttr(path.id) + "'" + ')">' +
+      (complete ? 'Read it again' : (done ? 'Continue' : 'Start')) +
+    '</button>' +
+    (path.safety ? helpContextualSafetyHtml() : '');
+}
+
+/* Start or resume. A finished path reopens at its first step rather than
+   refusing to open: completion is a record of having read it, not a lock. */
+function startHelpPath(pathId){
+  const path = helpPathById(pathId);
+  if(!path || !path.steps.length) return;
+  const nextId = firstIncompleteHelpStepId(path) || path.steps[0].id;
+  if(!isOverlayOpen('helpPathOverlay')){
+    /* Resumed straight from the home: the overview still opens beneath, so
+       Back from the step lands on the path it belongs to. */
+    openHelpPath(pathId);
+  }
+  openHelpStep(pathId, nextId);
+}
+
+/* ---------- one step ---------- */
+function openHelpStep(pathId, stepId){
+  const path = helpPathById(pathId);
+  const step = helpStepById(pathId, stepId);
+  if(!path || !step) return;
+  openHelpPathId = pathId;
+  openHelpStepId = stepId;
+  helpStepCompleted = false;
+  ensureHelpStarted(pathId);
+  renderHelpStep();
+  pushOverlayHistory('helpStepOverlay');
+  openOverlay('helpStepOverlay');
+  loadHelpPassages(step);
+}
+function closeHelpStep(){
+  closeOverlay('helpStepOverlay');
+  releaseOverlayHistory();
+  openHelpStepId = null;
+  helpStepCompleted = false;
+  /* The overview is still open beneath, and now needs to show what was read. */
+  renderHelpPath();
+  renderHelp();
+}
+
+function helpSectionHtml(label, body){
+  if(!body) return '';
+  return '<section class="help-section">' +
+    '<h3 class="help-section-label">' + escapeHtml(label) + '</h3>' +
+    '<p class="help-prose">' + escapeHtml(body) + '</p>' +
+  '</section>';
+}
+
+function renderHelpStep(){
+  const path = helpPathById(openHelpPathId);
+  const step = helpStepById(openHelpPathId, openHelpStepId);
+  const host = document.getElementById('helpStepBody');
+  const titleEl = document.getElementById('helpStepTitle');
+  if(!path || !step || !host) return;
+
+  const at = helpStepIndex(path, step.id);
+  const last = at === path.steps.length - 1;
+  if(titleEl) titleEl.textContent = path.title;
+
+  /* Each passage gets a host element with a stable id, so the Scripture can
+     be filled in when its book arrives without rebuilding the reading around
+     it. A reader may already be partway down this page. */
+  const scripture = step.passages.map(function(ref, i){
+    const card = locationCardHtml(ref);
+    return '<div class="help-passage' + (card ? '' : ' is-pending') + '" id="helpPassage' + i + '">' +
+      (card || passagePendingHtml(ref)) + '</div>';
+  }).join('');
+
+  const consider = (step.consider || []).map(function(q){
+    return '<p class="help-consider-q">' + escapeHtml(q) + '</p>';
+  }).join('');
+
+  const nx = step.nextStep;
+
+  host.innerHTML =
+    '<p class="help-step-context">Step ' + (at + 1) + ' of ' + path.steps.length + '</p>' +
+    '<h2 class="help-step-title">' + escapeHtml(step.title) + '</h2>' +
+
+    (step.arrive ? '<p class="help-arrive">' + escapeHtml(step.arrive) + '</p>' : '') +
+
+    '<div class="help-scripture">' + scripture + '</div>' +
+
+    helpSectionHtml('What to notice', step.notice) +
+
+    (consider ? '<section class="help-section help-consider">' +
+        '<h3 class="help-section-label">Consider</h3>' + consider +
+        '<p class="help-consider-note">Nothing to fill in. Thinking about it is the point.</p>' +
+      '</section>' : '') +
+
+    /* Prayer is the app's words offered to a reader, never a quotation and
+       never set like one: sans face, its own panel, and an explicit
+       invitation rather than a script somebody must say. */
+    (step.prayer ? '<section class="help-section help-prayer">' +
+        '<h3 class="help-section-label">Pray</h3>' +
+        '<p class="help-prayer-note">Words you can use, or your own.</p>' +
+        '<p class="help-prayer-text">' + escapeHtml(step.prayer) + '</p>' +
+      '</section>' : '') +
+
+    (nx && nx.text ? '<section class="help-section help-next">' +
+        '<h3 class="help-section-label">' + (last ? 'Where to go from here' : 'Next') + '</h3>' +
+        '<p class="help-prose">' + escapeHtml(nx.text) + '</p>' +
+        (nx.kind === 'support' ? '<button class="btn-secondary" style="margin-top:var(--space-md)" ' +
+            'onclick="openHelpUrgent()">' + escapeHtml(HELP_URGENT.label) + '</button>' : '') +
+        (nx.open ? '<button class="btn-secondary" style="margin-top:var(--space-md)" ' +
+            'onclick="openHelpPassage(' + "'" + escapeAttr(nx.open.c) + "'," + nx.open.ch + ',' +
+            nx.open.from + ',' + nx.open.to + ')">Open ' +
+            escapeHtml(passageRefLabel(nx.open)) + '</button>' : '') +
+      '</section>' : '') +
+
+    '<div class="help-step-actions" id="helpStepActions">' + helpStepActionsHtml(path, step, last) + '</div>';
+}
+
+/* The only thing a completion changes. Replacing this one element is what
+   keeps marking a step read from rebuilding a long reading surface. */
+function helpStepActionsHtml(path, step, last){
+  if(helpStepCompleted){
+    return helpCompletionHtml(path);
+  }
+  return '<button class="btn-primary" style="width:100%" onclick="continueHelpStep()">' +
+    (last ? 'Complete path' : 'Continue') + '</button>';
+}
+
+function paintHelpStepActions(){
+  const path = helpPathById(openHelpPathId);
+  const step = helpStepById(openHelpPathId, openHelpStepId);
+  const host = document.getElementById('helpStepActions');
+  if(!path || !step || !host) return;
+  const last = helpStepIndex(path, step.id) === path.steps.length - 1;
+  host.innerHTML = helpStepActionsHtml(path, step, last);
+}
+
+/* Opening a step does not complete it. Only this does. */
+function continueHelpStep(){
+  const path = helpPathById(openHelpPathId);
+  const step = helpStepById(openHelpPathId, openHelpStepId);
+  if(!path || !step) return;
+
+  const rec = ensureHelpStarted(path.id);
+  /* Idempotent: tapping Continue twice marks one step once. */
+  if(rec.done.indexOf(step.id) === -1){
+    rec.done.push(step.id);
+    rec.updatedAt = new Date().toISOString();
+    persistHelpProgress();
+  }
+
+  const nextId = nextHelpStepId(path, step.id);
+  if(nextId){
+    /* Moving to the next step IS navigation, so the reading surface is
+       rebuilt for the new reading and returned to its top. */
+    openHelpStepId = nextId;
+    helpStepCompleted = false;
+    screenChanged();
+    renderHelpStep();
+    const scroll = document.querySelector('#helpStepOverlay .sheet-scroll');
+    if(scroll) scroll.scrollTop = 0;
+    loadHelpPassages(helpStepById(path.id, nextId));
+    return;
+  }
+
+  /* The end of the path. No celebration: one calm next action, named by the
+     content rather than by this function. Only the action block is replaced,
+     so the reading the person just finished stays where it is. */
+  helpStepCompleted = true;
+  paintHelpStepActions();
+}
+
+/* Where a finished path hands the reader. The destination is the content's
+   decision; this only knows how to get there. */
+/* One calm next action, and the content chooses it. A Learn handoff names the
+   study it means, so the button says that study's own title rather than "Go
+   to Learn" — the writing has just promised five short lessons on prayer, and
+   landing on the Learn index would not be them. */
+function helpCompletionHtml(path){
+  const c = path.completion;
+  const kind = c && ['bible', 'today', 'learn'].indexOf(c.kind) !== -1 ? c.kind : 'today';
+  const study = kind === 'learn' && c.study ? studyById(c.study) : null;
+  const label = kind === 'bible' ? 'Open the Bible'
+              : kind === 'learn' ? (study ? study.title : 'Go to Learn')
+              : 'Go to Today';
+  return '<section class="help-complete">' +
+    '<p class="help-complete-note">You have read every step of this path.</p>' +
+    (c && c.text ? '<p class="help-prose">' + escapeHtml(c.text) + '</p>' : '') +
+    '<button class="btn-primary" style="width:100%;margin-top:var(--space-md)" ' +
+      'onclick="leaveHelpFor(' + "'" + escapeAttr(kind) + "','" +
+      escapeAttr(study ? study.id : '') + "'" + ')">' +
+      escapeHtml(label) + '</button>' +
+  '</section>';
+}
+
+/* Help Me is a way in, not a place to stay. Finishing a path hands the reader
+   to ordinary Scripture use — which is why there is no "choose another
+   struggle" here.
+
+   Deliberately not named as a close or finish path. Those may never choose a
+   tab (rule 55, and the contract that enforces it) and this one does — it is
+   not a close path. It runs because the reader tapped a named destination,
+   and it unwinds Help Me's own two levels before going there so nothing is
+   left on the stack. */
+function leaveHelpFor(kind, studyId){
+  closeHelpStep();
+  closeHelpPath();
+  if(kind === 'bible'){ goToTab('bible'); return; }
+  if(kind === 'learn'){
+    goToTab('learn');
+    /* Into the study the content named, not the index of studies. Opened
+       after the tab so the study page stacks over Learn and Back returns
+       there, which is the same rule every other drill-down follows. */
+    if(studyId && studyById(studyId)) openStudy(studyId);
+    return;
+  }
+  goToTab('today');
+}
+
+/* ---------- a step's Scripture ---------- */
+function loadHelpPassages(step){
+  if(!step) return;
+  step.passages.forEach(function(ref, i){
+    if(cachedBibleBook(translation, ref.c)) return;
+    loadBibleBook(translation, ref.c).then(function(){
+      /* The reader may have moved on while the book was in flight. */
+      const live = helpStepById(openHelpPathId, openHelpStepId);
+      if(live && live.passages[i] && live.passages[i].c === ref.c) paintHelpPassage(i);
+    }, function(){
+      const host = document.getElementById('helpPassage' + i);
+      if(!host) return;
+      host.innerHTML = '<p class="field-hint">This passage could not be loaded. ' +
+        'It will be here once you have opened it with a connection.</p>' +
+        '<button class="btn-secondary" style="margin-top:var(--space-md)" ' +
+          'onclick="retryHelpPassages()">Try again</button>';
+    });
+  });
+}
+
+/* ONLY the passage. The reading around it is never rebuilt. */
+function paintHelpPassage(i){
+  const step = helpStepById(openHelpPathId, openHelpStepId);
+  const host = document.getElementById('helpPassage' + i);
+  if(!step || !host || !step.passages[i]) return;
+  const card = locationCardHtml(step.passages[i]);
+  host.className = 'help-passage' + (card ? '' : ' is-pending');
+  host.innerHTML = card || passagePendingHtml(step.passages[i]);
+}
+
+function retryHelpPassages(){
+  const step = helpStepById(openHelpPathId, openHelpStepId);
+  if(!step) return;
+  step.passages.forEach(function(ref, i){ paintHelpPassage(i); });
+  loadHelpPassages(step);
+}
+
+/* Opening Scripture from a step opens the reader OVER the step, so Back
+   returns to the exact place in the path the reader left. */
+function openHelpPassage(code, chapter, from, to){
+  openBibleAt(code, chapter, from, to);
+}
+
+/* ---------- urgent help ---------- */
+/* A contextual offer, on the paths whose own safety metadata asks for one. It
+   names what is available and does not diagnose anybody. */
+function helpContextualSafetyHtml(){
+  return '<div class="help-urgent-entry help-urgent-contextual">' +
+    '<button class="btn-quiet" onclick="openHelpUrgent()">' +
+      escapeHtml(HELP_URGENT.label) + '</button>' +
+  '</div>';
+}
+
+function openHelpUrgent(){
+  renderHelpUrgent();
+  pushOverlayHistory('helpUrgentOverlay');
+  openOverlay('helpUrgentOverlay');
+}
+function closeHelpUrgent(){
+  closeOverlay('helpUrgentOverlay');
+  releaseOverlayHistory();
+}
+
+/* Actionable human help first, and nothing in front of it. No devotional
+   prose, no passage, no prayer and no question before the numbers: spiritual
+   support may accompany urgent help and may never delay it.
+
+   Every line here is read from HELP_URGENT. A territory is never printed
+   without its name, and no number is printed for a territory this app has
+   not verified — a wrong number given to someone in crisis is worse than
+   none. Nothing about opening this screen is recorded anywhere. */
+function renderHelpUrgent(){
+  const host = document.getElementById('helpUrgentBody');
+  if(!host) return;
+  const u = HELP_URGENT;
+
+  const territories = (u.territories || []).map(function(t){
+    const actions = (t.actions || []).map(function(a){
+      const isLink = a.kind === 'chat' && /^https?:/.test(a.value);
+      return isLink
+        ? '<a class="btn-secondary help-urgent-action" href="' + escapeAttr(a.value) + '" ' +
+            'target="_blank" rel="noopener noreferrer">' + escapeHtml(a.label) + '</a>'
+        : '<a class="btn-secondary help-urgent-action" href="tel:' + escapeAttr(a.value) + '">' +
+            escapeHtml(a.label) + '</a>';
+    }).join('');
+    return '<section class="panel help-urgent-territory">' +
+      '<h2 class="help-urgent-place">' + escapeHtml(t.name) + '</h2>' +
+      '<p class="help-urgent-line">' + escapeHtml(t.line) + '</p>' +
+      (t.available ? '<p class="help-urgent-meta">' + escapeHtml(t.available) +
+        (t.coverage ? ' · ' + escapeHtml(t.coverage) : '') + '</p>' : '') +
+      '<div class="help-urgent-actions">' + actions + '</div>' +
+      (t.administrator ? '<p class="help-urgent-admin">Run by ' +
+        escapeHtml(t.administrator) + '</p>' : '') +
+    '</section>';
+  }).join('');
+
+  host.innerHTML =
+    '<p class="help-urgent-lead">If you are in danger, or thinking of harming yourself, ' +
+      'talk to a person now. This is the fastest way to reach one.</p>' +
+    territories +
+    (u.emergency ? '<p class="help-urgent-emergency">' + escapeHtml(u.emergency) + '</p>' : '') +
+    (u.outside ? '<section class="help-urgent-outside">' +
+        '<h2 class="help-urgent-place">Outside the United States</h2>' +
+        '<p class="help-prose">' + escapeHtml(u.outside) + '</p>' +
+        '<p class="help-prose">If you can, tell someone you trust where you are and ask them ' +
+          'to stay with you.</p>' +
+      '</section>' : '');
+}
+
+/* ---------- repairing a record that outlived its content ---------- */
+/* A path or step removed in a later release leaves a record pointing at
+   nothing. It is ignored rather than deleted: the reader may upgrade again,
+   or restore a backup, and the content may come back. Nothing on screen is
+   derived from an id that no longer resolves. */
+function helpProgressIsLive(rec){
+  const p = helpPathById(rec.id);
+  return !!p;
+}
+
 Domain.tabIcons = {
   /* Today is a day, so it is a sunrise over a horizon. Bible inherits the
      open book, which is what it was always drawing. */
@@ -11419,6 +12706,14 @@ Domain.tabIcons = {
              '<path d="M8 7.6C5.4 7.6 3.3 5.6 3.3 3.1c2.6 0 4.7 2 4.7 4.5Z"/>' +
              '<path d="M8 10.1c0-2.5 2.1-4.5 4.7-4.5 0 2.5-2.1 4.5-4.7 4.5Z"/>',
   saved:    '<path d="M4.2 2.6h7.6v10.8L8 10.8l-3.8 2.6z"/>',
+  /* Help Me is a way IN, so it is a path with a turn in it and a mark at the
+     end: somewhere to go, and something found there. Deliberately not a
+     cross (Devotions already owns the sprout and a cross would outrank every
+     other tab), not a book (indistinguishable from Bible at 18px), and
+     emphatically not a medical sign — no cross-in-a-box, no pulse line, no
+     headset. None of those is what this is. */
+  help:     '<path d="M3.4 13.2c0-3.4 1.6-5.1 4.6-5.1 2.2 0 3.4-1.2 3.4-3.1"/>' +
+            '<circle cx="11.4" cy="3.3" r="1.5"/>',
   /* A hub, a rim and teeth. It was a hub and teeth alone, which reads as a
      small sun - fine when Today was a book, confusing now that Today is a
      sunrise. The rim is the whole difference. */
@@ -11429,7 +12724,7 @@ Domain.hydrate = loadVerseData;
 /* applyTextSize() runs on every render rather than only when the control is
    touched, so the root attribute cannot end up disagreeing with the stored
    preference after a reset, an import, or a restored backup. */
-Domain.render  = function(){ applyAppearance(); applyTextSize(); renderToday(); renderDevotions(); renderLearn(); renderSaved(); paintPrefControls(); };
+Domain.render  = function(){ applyAppearance(); applyTextSize(); renderToday(); renderHelp(); renderDevotions(); renderLearn(); renderSaved(); paintPrefControls(); };
 Domain.wire    = function(){
   applyAppearance();
   applyTextSize();
@@ -12571,6 +13866,28 @@ function shareSelectedVerses(){
    which tab you are on. Closing it therefore returns you to Today from
    Today and to Bible from Bible, without anything having to remember
    where you came from. The overlay engine restores focus to the gear. */
+/* ---------- Saved, as a utility ----------
+   It was a primary tab until 1.14.0, when Help Me took the fifth slot. It is
+   the same surface; what changed is that it opens OVER whichever destination
+   asked for it and owns one history entry, so Back returns to Today from
+   Today and to Help Me from Help Me, instead of everything landing on Today.
+
+   `isSavedOpen()` is the one truthful answer to "is anybody looking at
+   Saved", and the Scripture resolver asks it rather than comparing a tab
+   name. A tab name was never what it meant. */
+function isSavedOpen(){ return isOverlayOpen('savedOverlay'); }
+
+function openSaved(){
+  renderSaved();
+  pushOverlayHistory('savedOverlay');
+  openOverlay('savedOverlay');
+  /* Painted before opening so the list is there on the first frame, then
+     asked again now that it is open — resolveSavedScripture() only fetches
+     while the surface is visible, and it has just become visible. */
+  renderSaved();
+}
+function closeSaved(){ closeOverlay('savedOverlay'); releaseOverlayHistory(); }
+
 function openSettings(){
   paintPrefControls();
   pushOverlayHistory('settingsOverlay');
@@ -12757,8 +14074,13 @@ function resolveSavedScripture(){
   /* Only while somebody is looking at Saved. renderSaved also runs at boot,
      as part of painting every surface, and starting a megabyte of downloads
      on every launch for a screen nobody has opened is not what this fix is
-     for. Entering the tab paints again, and that is when the asking starts. */
-  if(currentTab !== 'saved') return 0;
+     for. Opening Saved paints again, and that is when the asking starts.
+
+     This asked `currentTab === 'saved'` until Saved became a utility in
+     1.14.0. The tab is gone, so that test could only ever be false and the
+     fix would have silently stopped working — the condition was never about
+     a tab, it was about whether anyone is looking. */
+  if(!isSavedOpen()) return 0;
   const ed = translation;
   const wanted = [];
   savedScriptureIds().forEach(function(id){
@@ -12806,7 +14128,7 @@ function paintSavedSoon(){
   savedPaintQueued = true;
   setTimeout(function(){
     savedPaintQueued = false;
-    if(currentTab === 'saved') repaintKeepingFocus(renderSaved);
+    if(isSavedOpen()) repaintKeepingFocus(renderSaved);
   }, 0);
 }
 
@@ -13070,14 +14392,26 @@ function openUpdates(){
 }
 function closeUpdates(){ closeOverlay('updatesOverlay'); releaseOverlayHistory(); }
 
+/* The unread mark for a new release.
+ *
+ * It used to BE the What's New button in the header, tinted accent. That
+ * button is gone: at 320px the title plus three 44px utilities needs 323.9px
+ * against a 288px row, and the product name wrapped. What's New was already a
+ * full row in Settings, so it kept the row and lost the button — and the
+ * signal moved here, onto the gear, as a dot rather than a tinted icon.
+ *
+ * A dot and not a count: there is one thing to see, and a number on it would
+ * invite a reader to clear a tally rather than read release notes. The gear
+ * keeps its own name and gains the reason to tap it, so a screen reader is
+ * told there is something new rather than being shown a coloured pixel. */
 function renderUpdatesDot(){
-  const btn = document.getElementById('updatesBtn');
+  const btn = document.getElementById('settingsBtn');
   if(!btn) return;
   const seen = Store.get(KEYS.lastSeenUpdate);
   const unread = seen !== APP_UPDATES[0].id;
-  btn.innerHTML = sparkIcon(18);
-  btn.style.color = unread ? 'var(--accent)' : '';
-  btn.setAttribute('aria-label', unread ? "What's new — unread" : "What's new");
+  btn.innerHTML = tabIcon('settings') + (unread ? '<span class="util-dot" aria-hidden="true"></span>' : '');
+  btn.classList.toggle('has-dot', unread);
+  btn.setAttribute('aria-label', unread ? 'Settings — new release notes' : 'Settings');
 }
 
 function renderUpdates(){
@@ -13189,8 +14523,11 @@ function paintStaticIcons(){
     const glyph = btn.querySelector('.glyph');
     if(glyph && btn.dataset.tab) glyph.innerHTML = tabIcon(btn.dataset.tab);
   });
-  const gear = document.getElementById('settingsBtn');
-  if(gear && !gear.innerHTML) gear.innerHTML = tabIcon('settings');
+  const bookmark = document.getElementById('savedBtn');
+  if(bookmark && !bookmark.innerHTML) bookmark.innerHTML = tabIcon('saved');
+  /* The gear is painted by renderUpdatesDot(), which owns it because it
+     also carries the unread mark for a new release. One owner, so there is
+     no flash of a dotless gear before the dot arrives. */
   const back = chevronLeft(20);
   document.querySelectorAll('.page-topbar .icon-btn:empty').forEach(b => { b.innerHTML = back; });
   document.querySelectorAll('.list-row-arrow:empty').forEach(a => { a.innerHTML = chevronRight(15); });
