@@ -376,8 +376,19 @@ exactly the confusion this product exists to prevent.
 
 `scripts/corpus.js` downloads eBible.org's own release of **World English Bible
 Classic** (`eng-web`) and pins each archive by SHA-256 in
-`data/corpus.lock.json`. The cache is gitignored; the lock is not, so any
-machine can re-download and prove it received the same bytes.
+`data/corpus.lock.json`. The download cache, `.corpus-cache/`, is gitignored;
+the lock is not.
+
+The lock used to be the whole story, on the assumption that any machine could
+re-download an archive and prove it had received the pinned bytes. **That
+assumption was wrong, and it failed completely.** eBible serves one archive per
+edition at a fixed URL and replaces it in place: on 2026-10-03 it re-published
+every edition this app ships. Nine of the fourteen pinned archives changed
+size; the other five were re-dated. Not one pin can be fetched again. The bytes
+the shipped Scripture was derived from — and is verified against on every
+release — existed in exactly one place: one laptop's gitignored cache.
+
+So they are in the repository. See *The pinned sources live here* below.
 
 Two archives are needed, and each carries something the other does not:
 
@@ -393,6 +404,45 @@ existing reader. It is a decision to be announced, never a side effect.
 
 The same pipeline now pins every shipped edition, and the audited-but-held ones,
 the same way; `EDITIONS` in `corpus.js` says which is which and why.
+
+### The pinned sources live here
+
+`data/corpus/<id>/` holds the publisher's own files, copied byte for byte, for
+each of the seven shipped editions — the four that `corpus.js` reads:
+
+```
+data/corpus/eng-web/eng-web_vpl.xml        verse text
+data/corpus/eng-web/eng-web_usfx.xml       marked superscriptions
+data/corpus/eng-web/eng-webmetadata.xml    title, abbreviation, licence
+data/corpus/eng-web/BookNames.xml          the publisher's book names
+```
+
+116 MB raw, about 25 MB in git. Every file's SHA-256 is recorded in
+`data/corpus.lock.json` beside the archive digests it came out of, so the chain
+runs: **archive digest → the files that came out of it → the Scripture this app
+ships.** `corpus.vendorProblems()` checks that chain and CONTRACT 45 runs it on
+every suite, so a file that drifts by a byte fails the gate.
+
+All seven editions are Public Domain by the publisher's own metadata (rule 52 —
+rights are read, not typed). A byte-identical copy is also what the World
+English Bible trademark asks for: it restricts the *name* to faithful copies,
+and this is one.
+
+**`cachedFile()` prefers `data/corpus/` over `.corpus-cache/`.** A build on the
+machine that synced and a build on a fresh clone must read the same bytes, or
+the pin does not mean anything. The cache is still consulted for anything not
+vendored, and `.gitattributes` marks `data/corpus/**` as `-text` — without it
+git stores these with LF and hands them back as CRLF, and a clone configured
+differently from the machine that committed gets different bytes and reports
+the publisher's Scripture as altered. Same trap as rule 24.
+
+**Absence is a condition, not a fault.** `cachedFile()` throws an error tagged
+`code === 'CORPUS_ABSENT'`, and `corpus.isAbsence(err)` is how a caller asks.
+`test/run.js` catches only that, records the suite as **NOT CHECKED**, names it
+with its reason, and exits non-zero — it never counts it as a pass. Before
+this, a machine without the corpus died on a stack trace at the first contract
+to reach for it, roughly twenty contracts ran but were never reported, and
+nothing said why. A release gate that cannot run is not a gate.
 
 ### When a publisher revises a pinned edition
 

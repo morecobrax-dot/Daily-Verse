@@ -544,23 +544,93 @@ function status(){
    --------------------------------------------------------- */
 function cacheDir(id){ return path.join(CACHE, id); }
 
-/* Per edition. The archives all use the same file suffixes, so a flat cache
-   would have three editions silently overwriting one another. */
+/* Absence of the corpus is a distinct condition from a fault, and callers
+   need to tell them apart. The cache is gitignored and the publisher revises
+   archives in place, so on any machine but the one that synced, "the pinned
+   bytes are not here" is the normal state — a test run should report which
+   checks it could not make, not die with a stack trace halfway through. The
+   code is the contract; the message is for the person reading it. */
+const CORPUS_ABSENT = 'CORPUS_ABSENT';
+function absent(message){
+  const e = new Error(message);
+  e.code = CORPUS_ABSENT;
+  return e;
+}
+/* Asked rather than pattern-matched. A caller that tests the message instead
+   starts swallowing real faults the day the wording changes. */
+function isAbsence(err){ return !!err && err.code === CORPUS_ABSENT; }
+
+/* The pinned inputs, vendored into the repository.
+ *
+ * WHY THEY ARE HERE AND NOT ONLY DOWNLOADED: eBible serves one archive per
+ * edition at a fixed URL and replaces it in place. On 2026-10-03 it
+ * re-published every edition this app ships, so no pin here can be fetched
+ * again — the bytes the shipped Scripture was derived from and is verified
+ * against existed only in one laptop's gitignored .corpus-cache. These are
+ * the publisher's own files, copied byte-for-byte, with the SHA-256 of each
+ * recorded beside the archive digests in data/corpus.lock.json. All seven
+ * shipped editions are Public Domain by the publisher's own metadata, and a
+ * byte-identical copy is what the World English Bible trademark asks for.
+ *
+ * .gitattributes marks them -text so git cannot normalise a line ending and
+ * make every digest mismatch on a machine configured differently. */
+const VENDORED = path.join(ROOT, 'data', 'corpus');
+function vendoredDir(id){ return path.join(VENDORED, id); }
+
+/* Per edition. The archives all use the same file suffixes, so a flat
+   directory would have three editions silently overwriting one another.
+ *
+ * The vendored copy is preferred over the download cache, so that a build on
+ * the machine that synced and a build on a fresh clone read the same bytes.
+ * Determinism is the whole point: a corpus that differs by where it came
+ * from is not a pin. */
 function cachedFile(id, suffix){
-  const dir = cacheDir(id);
-  if(!fs.existsSync(dir)){
-    /* On a fresh machine, sync cannot restore a pin the publisher has since
-       replaced. Say so, rather than send someone round the same loop until
-       they copy the candidate over the pin to get past it. */
-    if(fs.existsSync(cacheDir(id + '.candidate'))){
-      throw new Error('no cached corpus for ' + id + ' at its pinned bytes — the publisher has revised it and ' +
-                      'the new release is held in .corpus-cache/' + id + '.candidate. See CLAUDE.md rule 53.');
-    }
-    throw new Error('no cached corpus for ' + id + ' — run `npm run corpus:sync`');
+  const tries = [vendoredDir(id), cacheDir(id)];
+  for(const dir of tries){
+    if(!fs.existsSync(dir)) continue;
+    const f = fs.readdirSync(dir).find(n => n.endsWith(suffix));
+    if(f) return fs.readFileSync(path.join(dir, f), 'utf8');
   }
-  const f = fs.readdirSync(dir).find(n => n.endsWith(suffix));
-  if(!f) throw new Error(id + ' cache is missing a *' + suffix + ' file — run `npm run corpus:sync`');
-  return fs.readFileSync(path.join(dir, f), 'utf8');
+  /* On a fresh machine, sync cannot restore a pin the publisher has since
+     replaced. Say so, rather than send someone round the same loop until
+     they copy the candidate over the pin to get past it. */
+  if(fs.existsSync(cacheDir(id + '.candidate'))){
+    throw absent('no corpus for ' + id + ' at its pinned bytes — the publisher has revised it and ' +
+                 'the new release is held in .corpus-cache/' + id + '.candidate. See CLAUDE.md rule 53.');
+  }
+  if(fs.existsSync(vendoredDir(id)) || fs.existsSync(cacheDir(id))){
+    throw absent(id + ' is missing a *' + suffix + ' file in data/corpus/ and .corpus-cache/');
+  }
+  throw absent('no corpus for ' + id + ' — it is not vendored in data/corpus/ and not in ' +
+               '.corpus-cache/; run `npm run corpus:sync`');
+}
+
+/* Does the repository's own copy still match what the lock says it is?
+ *
+ * Read once per run by a contract rather than on every file read: these are
+ * 116 MB of XML, and hashing them to answer one question is work worth doing
+ * once. Returns a list of problems, empty when every vendored file matches. */
+function vendorProblems(){
+  const lock = readLock();
+  const out = [];
+  if(!lock) return ['no data/corpus.lock.json'];
+  shippedEditions().forEach(id => {
+    const files = (lock.editions[id] || {}).files;
+    if(!files || !Object.keys(files).length){
+      out.push(id + ': the lock records no vendored files');
+      return;
+    }
+    Object.keys(files).forEach(name => {
+      const p = path.join(vendoredDir(id), name);
+      if(!fs.existsSync(p)){ out.push(id + '/' + name + ': recorded in the lock but not in the repository'); return; }
+      const got = crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+      if(got !== files[name]){
+        out.push(id + '/' + name + ': sha256 ' + got.slice(0, 16) + '… does not match the lock\'s ' +
+                 String(files[name]).slice(0, 16) + '…');
+      }
+    });
+  });
+  return out;
 }
 
 /* Rights and identity, read out of the publisher's own DBL metadata rather
@@ -688,6 +758,6 @@ if(require.main === module){
   }
 }
 
-module.exports = { EDITIONS, DEFAULT_EDITION, shippedEditions, archivesFor, bookNames, bridgedSpans, CACHE, cacheDir, LOCK, readLock,
+module.exports = { EDITIONS, DEFAULT_EDITION, CORPUS_ABSENT, isAbsence, vendorProblems, vendoredDir, shippedEditions, archivesFor, bookNames, bridgedSpans, CACHE, cacheDir, LOCK, readLock,
                    sha256, verses, superscriptions, unzip, cachedFile, derivedMeta,
                    revisionDecision, syncEdition, sync, adopt };

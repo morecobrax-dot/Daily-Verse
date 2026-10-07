@@ -21,7 +21,7 @@
  */
 
 /* APP-CACHE-BEGIN */
-const CACHE_NAME = 'daily-verse-v1.13.3';
+const CACHE_NAME = 'daily-verse-v1.13.4';
 /* APP-CACHE-END */
 
 const ASSETS = [
@@ -66,6 +66,43 @@ function cachePrefix(){
  * soon as there is a connection, with the cache as the offline fallback. */
 function isBibleData(url){ return url.pathname.indexOf('/data/bible/') !== -1; }
 
+/* What may be written to the cache.
+ *
+ * `fetch` resolving is not success. A 404, a 500, or a host's error page all
+ * arrive as a Response, and the shell used to cache whichever one turned up:
+ * one bad answer while online replaced the app with an error page for every
+ * launch afterwards, until a good one happened to come back. The Bible branch
+ * already checked; this is the same rule, applied once, for both.
+ *
+ * `type === 'basic'` keeps it to our own origin's real responses — an opaque
+ * cross-origin reply cannot be inspected, so it is never stored. */
+function worthCaching(res){
+  return !!res && res.ok && res.status === 200 && res.type === 'basic';
+}
+
+/* How long a launch waits for the network before it uses what it already has.
+ *
+ * Not a tuned number and not pretending to be: it is the point past which a
+ * reader on a phone has concluded the app is broken. A connection that is
+ * merely slow still answers inside it on 3G; one that has accepted the
+ * connection and gone quiet — hotel Wi-Fi, a captive portal, a train — never
+ * answers at all, and before this the launch waited for the browser's own
+ * timeout, which is tens of seconds of white screen.
+ *
+ * It only ever shortens the wait when there is already a cached answer to
+ * fall back on. With nothing cached, waiting is all there is to do. */
+const SHELL_NETWORK_TIMEOUT_MS = 4000;
+
+function shellFromNetwork(req){
+  return fetch(req).then(res => {
+    if(worthCaching(res)){
+      const copy = res.clone();
+      caches.open(CACHE_NAME).then(c => c.put(req, copy)).catch(() => {});
+    }
+    return res;
+  });
+}
+
 self.addEventListener('fetch', event => {
   const req = event.request;
   if(req.method !== 'GET') return;
@@ -80,7 +117,7 @@ self.addEventListener('fetch', event => {
   if(isBibleData(url)){
     event.respondWith(
       caches.match(req).then(hit => hit || fetch(req).then(res => {
-        if(res && res.ok){
+        if(worthCaching(res)){
           const copy = res.clone();
           caches.open(CACHE_NAME).then(c => c.put(req, copy)).catch(() => {});
         }
@@ -90,13 +127,28 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  /* Network first, but only for as long as it is worth waiting. If a cached
+     copy exists, the timer hands it over and the request is left to finish in
+     the background — so the next launch still gets the newer bytes. If
+     nothing is cached, there is nothing to fall back to and the fetch is
+     simply awaited. */
   event.respondWith(
-    fetch(req)
-      .then(res => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(c => c.put(req, copy)).catch(() => {});
-        return res;
-      })
-      .catch(() => caches.match(req).then(hit => hit || caches.match('./index.html')))
+    caches.match(req).then(cached => {
+      const network = shellFromNetwork(req);
+      if(!cached){
+        return network.catch(() => caches.match('./index.html'));
+      }
+      return new Promise(resolve => {
+        let settled = false;
+        const done = res => { if(!settled){ settled = true; resolve(res); } };
+        const timer = setTimeout(() => done(cached), SHELL_NETWORK_TIMEOUT_MS);
+        network.then(res => {
+          clearTimeout(timer);
+          /* A network answer that is not worth caching is not worth showing
+             either when a good cached copy is in hand. */
+          done(worthCaching(res) ? res : cached);
+        }, () => { clearTimeout(timer); done(cached); });
+      });
+    })
   );
 });

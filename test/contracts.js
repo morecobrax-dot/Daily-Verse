@@ -81,6 +81,80 @@ function testBoot(){
   T('exactly one substantial <script> block', blocks.length === 1, String(blocks.length));
   T('boot is wrapped so a failure still reports itself',
     /catch\(err\)\{[\s\S]{0,400}could not start/.test(js()));
+
+  /* THE DEFECT, and it hid a real one: an async contract that awaits a
+     promise the code under test never settles leaves the event loop empty.
+     Node calls that a clean finish and exits 0. The result block is never
+     printed, so two genuine FAIL lines scrolled past and `npm run verify`
+     reported success — a suite that cannot report its own failure is worth
+     less than no suite. Found while mutation-testing the service worker:
+     the mutation was caught and the runner called it a pass.
+
+     Asserted by running the guard, not by finding its text. The first case
+     proves the hole is still there in Node, so the guard stays load-bearing;
+     the second proves the shipped guard closes it. */
+  sub('and a run that does not finish cannot report a pass');
+  {
+    const fs = require('fs'), path = require('path');
+    const { spawnSync } = require('child_process');
+    const runner = fs.readFileSync(path.join(__dirname, 'run.js'), 'utf8');
+    const from = runner.indexOf('/* COMPLETION-GUARD-BEGIN */');
+    const to = runner.indexOf('/* COMPLETION-GUARD-END */');
+    T('the guard is marked so it can be tested rather than described',
+      from !== -1 && to > from, from + '..' + to);
+    const guard = from === -1 ? '' : runner.slice(from, to);
+    const hang = 'new Promise(() => {}).then(() => { throw new Error("unreachable"); });';
+    const run = code => spawnSync(process.execPath, ['-e', code], { encoding: 'utf8' });
+    const bare = run(hang);
+    T('without it, an unsettled promise exits as a success — the hole is real',
+      bare.status === 0, 'exit ' + bare.status);
+    const guarded = run(guard + '\n' + hang);
+    T('with it, the same run exits non-zero', guarded.status === 1, 'exit ' + guarded.status);
+    T('and says why, instead of printing nothing',
+      /RUNNER NEVER FINISHED/.test(guarded.stdout || ''), (guarded.stdout || '').slice(0, 60));
+    /* The guard must not fire on the ordinary path, or every green run ends
+       in a false alarm. */
+    const normal = run(guard + '\nfinished = true; process.exit(0);');
+    T('a run that does finish is left alone', normal.status === 0,
+      'exit ' + normal.status + ' ' + (normal.stdout || '').slice(0, 40));
+  }
+
+  /* THE DEFECT: the Scripture provenance contracts read the publisher's
+     archives out of .corpus-cache/, which is gitignored — and eBible
+     replaces its archives in place, so the pinned bytes cannot be fetched
+     again. On any machine but the one that synced them the whole run died on
+     a stack trace at the first contract to reach for the corpus. Every
+     contract after it never ran and nothing said so, so a clone of this
+     repository could not satisfy its own release gate and could not see why.
+
+     A check that could not be made is now reported as not made. It is not a
+     failure and it is emphatically not a pass: the one thing a Bible app may
+     not do is guess about whether its text is the publisher's. */
+  sub('and a check that could not be made is never counted as a pass');
+  {
+    const corpus = require('../scripts/corpus.js');
+    T('absence of the corpus is a condition with a name',
+      corpus.CORPUS_ABSENT === 'CORPUS_ABSENT', String(corpus.CORPUS_ABSENT));
+    let thrown = null;
+    try{ corpus.verses('an-edition-that-does-not-exist'); }catch(e){ thrown = e; }
+    T('reaching for a corpus that is not here raises it',
+      !!thrown && corpus.isAbsence(thrown), thrown && thrown.message);
+    T('and says what to run', !!thrown && /corpus:sync/.test(thrown.message));
+    /* The distinction that matters: a real fault must still stop the run. */
+    T('an unrelated error is not absence',
+      corpus.isAbsence(new Error('no cached corpus for anything')) === false);
+    T('and neither is nothing at all',
+      corpus.isAbsence(null) === false && corpus.isAbsence(undefined) === false);
+    const runner = require('fs').readFileSync(require('path').join(__dirname, 'run.js'), 'utf8');
+    T('the runner asks, rather than matching on the wording',
+      /if\(!isAbsence\(err\)\) throw err;/.test(runner) &&
+      !/err\.message.*no cached corpus/.test(runner));
+    T('it names the suites it could not run',
+      /NOT CHECKED — these contracts never ran/.test(runner) &&
+      /unrun\.forEach/.test(runner));
+    T('and a run with anything unchecked is not a green run',
+      /process\.exit\(r\.fail \|\| unrun\.length \? 1 : 0\)/.test(runner));
+  }
 }
 
 /* =========================================================
@@ -815,7 +889,7 @@ function testDesignSystem(){
 /* =========================================================
    CONTRACT 13 — PWA
    ========================================================= */
-function testPWA(){
+async function testPWA(){
   section('CONTRACT 13 — installable, offline-capable, and self-contained');
   const man = H.readManifest(), sw = H.readSW(), src = H.readApp();
 
@@ -857,11 +931,179 @@ function testPWA(){
   T('registration is guarded to http(s)',
     /location\.protocol\.indexOf\('http'\) === 0/.test(js()));
   T('a failed registration cannot break boot', /register\('sw\.js'\)\.catch\(\(\) => \{\}\)/.test(js()));
-  T('the shell is network-first, so a deploy is picked up promptly',
-    /fetch\(req\)[\s\S]{0,400}\.catch\(\(\) => caches\.match\(req\)/.test(sw));
   T('index.html is the offline fallback', /caches\.match\('\.\/index\.html'\)/.test(sw));
   T('cross-origin requests are left alone',
     /new URL\(req\.url\)\.origin !== location\.origin/.test(sw));
+
+  /* Everything below RUNS sw.js rather than reading it.
+
+     This section replaced a regex — "does the source contain
+     fetch(req).catch(caches.match(req))" — which asserted a shape and
+     therefore passed while the worker did the two worst things it can do:
+     cache a bad answer, and wait for a network that never replies. Neither
+     is visible in the text of the file. Both are one assertion away once the
+     worker is executed. */
+  const SHELL = 'https://example.test/index.html';
+
+  sub('the shell, actually run');
+  {
+    const w = H.loadSW();
+    w.seed(w.cacheName, SHELL, w.res({ body: 'OLD' }));
+    w.serve(() => Promise.resolve(w.res({ body: 'NEW' })));
+    const p = w.request(SHELL);
+    await w.drain();
+    const got = await w.answer(p);
+    T('a new deploy is served on the next launch, not the one after',
+      got.body === 'NEW', got.body);
+    T('and the fresh bytes replace the stale ones in the cache',
+      w.cached(w.cacheName, SHELL).body === 'NEW', w.cached(w.cacheName, SHELL).body);
+    T('the network answered, so no timer is left behind to fire later',
+      w.timers.every(t => t.cleared), JSON.stringify(w.timers.map(t => t.cleared)));
+  }
+  {
+    const w = H.loadSW();
+    w.serve(() => Promise.resolve(w.res({ body: 'FIRST' })));
+    const p = w.request(SHELL);
+    await w.drain();
+    T('a first launch with nothing cached waits for the network',
+      (await w.answer(p)).body === 'FIRST');
+  }
+  {
+    const w = H.loadSW();
+    w.seed(w.cacheName, './index.html', w.res({ body: 'SHELL' }));
+    w.serve(() => Promise.reject(new Error('offline')));
+    const p = w.request('https://example.test/anything');
+    await w.drain();
+    const got = await w.answer(p);
+    T('and a request that cannot be fetched is answered with the page',
+      !!got && got.body === 'SHELL', got && got.body);
+  }
+
+  /* THE DEFECT: `fetch` resolving is not success. A 404, a 500 or a host's
+     error page all arrive as a Response. The shell cached whichever one
+     turned up, so a single bad answer while online replaced the app with an
+     error page on every launch afterwards — until a good one happened to
+     come back on its own. */
+  sub('a bad answer from the network never becomes the app');
+  for(const bad of [{ status: 404 }, { status: 500 }, { status: 302 }]){
+    const w = H.loadSW();
+    w.serve(() => Promise.resolve(w.res(bad)));
+    const p = w.request(SHELL);
+    await w.drain();
+    await w.answer(p);
+    T('a ' + bad.status + ' is never written to the cache',
+      !w.cached(w.cacheName, SHELL), String(!!w.cached(w.cacheName, SHELL)));
+  }
+  {
+    /* A same-origin request can still be answered from somewhere else. A
+       captive portal, a hotel gateway or a host that redirects to a login
+       page returns 200 and ok, with a body that is not this app — so `ok`
+       cannot tell the difference and the response TYPE is what can. This is
+       the case that makes the type check load-bearing: an opaque reply is
+       already excluded by its status, a redirected 200 is not. */
+    const w = H.loadSW();
+    w.serve(() => Promise.resolve(w.res({ type: 'cors', status: 200, body: 'PORTAL LOGIN' })));
+    const p = w.request(SHELL);
+    await w.drain();
+    const portal = await w.answer(p);
+    T('a 200 that came back from another origin is never cached as the app',
+      !w.cached(w.cacheName, SHELL), portal && portal.body);
+  }
+  {
+    const w = H.loadSW();
+    w.serve(() => Promise.resolve(w.res({ type: 'opaque', status: 0 })));
+    const p = w.request(SHELL);
+    await w.drain();
+    await w.answer(p);
+    T('and an opaque reply is never written either — it cannot be inspected',
+      !w.cached(w.cacheName, SHELL));
+  }
+  {
+    const w = H.loadSW();
+    w.seed(w.cacheName, SHELL, w.res({ body: 'GOOD' }));
+    w.serve(() => Promise.resolve(w.res({ status: 500, body: 'ERROR PAGE' })));
+    for(let i = 0; i < 3; i++){
+      const p = w.request(SHELL);
+      await w.drain();
+      T('a good cached copy outranks a bad network answer (launch ' + (i + 1) + ')',
+        (await w.answer(p)).body === 'GOOD');
+    }
+    T('so three bad launches in a row leave the app exactly as it was',
+      w.cached(w.cacheName, SHELL).body === 'GOOD', w.cached(w.cacheName, SHELL).body);
+  }
+  {
+    const BOOK = 'https://example.test/data/bible/PSA.json';
+    const w = H.loadSW();
+    w.serve(() => Promise.resolve(w.res({ status: 404 })));
+    const p = w.request(BOOK);
+    await w.drain();
+    T('a missing book is reported as missing, not cached as a book',
+      (await w.answer(p)).status === 404 && !w.cached(w.cacheName, BOOK));
+    const v = H.loadSW();
+    v.seed(v.cacheName, BOOK, v.res({ body: 'PSALMS' }));
+    let asked = 0;
+    v.serve(() => { asked++; return Promise.resolve(v.res({ body: 'NET' })); });
+    const q = v.request(BOOK);
+    await v.drain();
+    T('and a book already held is served without touching the network',
+      (await v.answer(q)).body === 'PSALMS' && asked === 0, 'network calls: ' + asked);
+  }
+
+  /* THE DEFECT: a connection that accepts the socket and goes quiet — hotel
+     Wi-Fi, a captive portal, a train tunnel — never rejects. The launch used
+     to wait on the browser's own timeout, which is tens of seconds of blank
+     screen with a cached copy of the app sitting right there. */
+  sub('a launch cannot wait for ever');
+  {
+    const w = H.loadSW();
+    w.seed(w.cacheName, SHELL, w.res({ body: 'HELD' }));
+    w.serve(() => new Promise(() => {}));          /* accepted, never answers */
+    const p = w.request(SHELL);
+    await w.drain();
+    const pending = w.timers.filter(t => !t.cleared);
+    T('the wait is bounded by a declared timeout, not by the browser',
+      pending.length === 1, JSON.stringify(pending.map(t => t.ms)));
+    T('and the bound is short enough to be a launch, not a wait',
+      pending[0] && pending[0].ms > 0 && pending[0].ms <= 5000, String(pending[0] && pending[0].ms));
+    w.expire();
+    await w.drain();
+    T('when it expires the app opens from the cache',
+      (await w.answer(p)).body === 'HELD');
+    T('and nothing from the request that never answered reaches the cache',
+      w.cached(w.cacheName, SHELL).body === 'HELD');
+  }
+  {
+    const w = H.loadSW();
+    w.serve(() => new Promise(() => {}));
+    w.request(SHELL);
+    await w.drain();
+    /* Honest, not a shortcut: shortening the wait is only possible because
+       there is something to hand over. With an empty cache there is nothing
+       a timer could usefully do. */
+    T('with an empty cache no timer is set, because there is nothing to show',
+      w.timers.filter(t => !t.cleared).length === 0);
+  }
+
+  sub('the cache belongs to this app and this release');
+  {
+    const w = H.loadSW();
+    w.seed('daily-verse-v1.0.0', SHELL);
+    w.seed('another-app-v3', SHELL);
+    w.seed(w.cacheName, SHELL);
+    await w.activate();
+    const names = [...w.caches.keys()];
+    T('an older release of this app is cleared', names.indexOf('daily-verse-v1.0.0') === -1, names.join(', '));
+    T('another app on the same origin is left completely alone',
+      names.indexOf('another-app-v3') !== -1, names.join(', '));
+    T('this release survives its own activation', names.indexOf(w.cacheName) !== -1);
+    T('and the worker takes over the open pages', w.claimed);
+  }
+  {
+    const w = H.loadSW();
+    w.serve(() => Promise.reject(new Error('offline during install')));
+    await w.install();
+    T('a precache that fails cannot leave the app without a worker', w.skipped);
+  }
   T('non-GET requests are left alone', /req\.method !== 'GET'/.test(sw));
   T('a failed precache still activates', /\.catch\(\(\) => self\.skipWaiting\(\)\)/.test(sw));
   T('it says out loud that it never touches user data',
@@ -1264,6 +1506,67 @@ function testPortability(){
     T('a backup cannot downgrade the schema version or restore old backups',
       guarded.collections === 0 &&
       a.ctx.Store.get(a.ctx.KEYS.schemaVersion) === String(a.ctx.DATA_SCHEMA_VERSION));
+  }
+
+  /* THE DEFECT: a value that is not JSON is still a value. Preferences are
+     stored as bare strings — an edition id, "light", "large" — and the merge
+     opened with JSON.parse inside a try whose catch returned. Every record
+     came back on a new phone and not one setting did: the reader was handed
+     their verses, notes and highlights in the wrong translation at the wrong
+     size, with no indication that anything had been dropped. Failing to parse
+     means "not a record collection", not "not data". */
+  sub('a backup restores settings, not only records');
+  {
+    const a = H.loadApp();
+    const r = a.ctx.mergeBackup({ 'ui.flavour': 'vanilla' });
+    T('a bare string is restored, not discarded as unparseable',
+      a.ctx.Store.get('ui.flavour') === 'vanilla', String(a.ctx.Store.get('ui.flavour')));
+    T('and it counts as something restored, so the report is truthful',
+      r.added === 1 && r.collections === 1, JSON.stringify(r));
+    /* Values that merely look like JSON must not be reinterpreted on the way
+       in: "1" and "null" are preference strings here, not a number and not an
+       absence. What they mean is decided where they are read. */
+    a.ctx.mergeBackup({ 'ui.one': '1', 'ui.none': 'null', 'ui.no': 'false' });
+    T('a string that parses as JSON is still stored as the string it was',
+      a.ctx.Store.get('ui.one') === '1' && a.ctx.Store.get('ui.none') === 'null' &&
+      a.ctx.Store.get('ui.no') === 'false',
+      [a.ctx.Store.get('ui.one'), a.ctx.Store.get('ui.none'), a.ctx.Store.get('ui.no')].join('|'));
+  }
+  {
+    const a = H.loadApp();
+    a.ctx.Store.set('ui.flavour', 'chosen-since');
+    a.ctx.mergeBackup({ 'ui.flavour': 'from-an-old-file' });
+    T('a setting this device already has is never overwritten by a backup',
+      a.ctx.Store.get('ui.flavour') === 'chosen-since', a.ctx.Store.get('ui.flavour'));
+  }
+  {
+    /* A preference is a short word. Anything longer is not one, whatever the
+       file calls it, and the bound is what stops a hand-edited or corrupt
+       backup from writing a megabyte into a settings key. */
+    const a = H.loadApp();
+    const huge = 'x'.repeat(a.ctx.PREF_VALUE_MAX + 1);
+    const r = a.ctx.mergeBackup({ 'ui.huge': huge, 'ui.fine': 'small' });
+    T('a value too long to be a setting is refused',
+      a.ctx.Store.get('ui.huge') === null, String(a.ctx.Store.get('ui.huge')).slice(0, 20));
+    T('and refusing it does not abandon the rest of the restore',
+      a.ctx.Store.get('ui.fine') === 'small' && r.added === 1, JSON.stringify(r));
+    const edge = H.loadApp();
+    edge.ctx.mergeBackup({ 'ui.edge': 'y'.repeat(edge.ctx.PREF_VALUE_MAX) });
+    T('a value exactly at the bound is still a setting',
+      (edge.ctx.Store.get('ui.edge') || '').length === edge.ctx.PREF_VALUE_MAX);
+  }
+  {
+    /* Corrupt input is not a reason to lose what is already here. */
+    const a = H.loadApp();
+    a.ctx.Store.setJSON('data.widgets', [{ id: 'w1', title: 'KEEP', updatedAt: '2026-01-01' }]);
+    const r = a.ctx.mergeBackup({
+      'data.widgets': '{"not":"an array"}',
+      'data.other': '[{"no":"id"}]',
+      'data.third': '[1,2,3]'
+    });
+    T('malformed collections are left alone rather than half-written',
+      a.ctx.Store.getJSON('data.widgets', [])[0].title === 'KEEP' && r.updated === 0,
+      JSON.stringify(r));
   }
 
   sub('a product does not inherit the starter\'s own release history');
@@ -3247,6 +3550,71 @@ function testAppearance(){
   T('LIGHT_THEME_COLOR equals the light ground it stands for',
     String(ground).trim().toUpperCase() === String(two.ctx.LIGHT_THEME_COLOR).toUpperCase(),
     String(ground).trim() + ' vs ' + two.ctx.LIGHT_THEME_COLOR);
+
+  /* THE DEFECT, found on a physical iPhone: the status bar was declared
+     `black-translucent`, which extends the web view under it and draws the
+     clock, signal and battery in WHITE over whatever the page puts there.
+     Against the light theme's paper ground that is white on cream, and it is
+     unreadable. The value is read once when the app launches, so no runtime
+     code can repaint it when the reader switches appearance — theme-color
+     being dynamic could not help. Handing the bar back to the system is the
+     only fix that cannot be put out of contrast by this page. */
+  sub('the status bar is legible in both appearances');
+  {
+    const headM = markup.match(/<head>[\s\S]*?<\/head>/);
+    const head = headM ? headM[0] : '';
+    const styleM = head.match(/<meta name="apple-mobile-web-app-status-bar-style" content="([^"]+)"/);
+    const style = styleM ? styleM[1] : '(absent)';
+    T('the status bar style is declared', !!styleM, style);
+    T('and it is not black-translucent, which forces white glyphs over the page',
+      style !== 'black-translucent', style);
+    T('it is a style the system draws for itself',
+      style === 'default' || style === 'black', style);
+    /* The meta sits outside the derived block on purpose: config:sync owns
+       title, description, apple title and theme-color, and nothing else. */
+    const derived = head.slice(head.indexOf('APP-META-BEGIN'), head.indexOf('APP-META-END'));
+    T('and it is not inside the block config:sync rewrites',
+      derived.indexOf('status-bar-style') === -1);
+  }
+  {
+    /* The platform also styles scrollbars and the native controls inside the
+       note field and the backup file picker. Those followed the DEVICE, which
+       can disagree with the app: a phone set to light running this app set to
+       dark got its chrome from the phone and its page from the app. */
+    const stripped = stripComments(css());
+    T('the page declares which palette the platform should use',
+      /color-scheme:\s*var\(--ua-scheme\)/.test(stripped),
+      (stripped.match(/color-scheme:[^;]*/g) || []).join(' | '));
+    T('and it is declared exactly once, so two rules cannot disagree',
+      (stripped.match(/color-scheme\s*:/g) || []).length === 1,
+      String((stripped.match(/color-scheme\s*:/g) || []).length));
+    const rootBlock = stripped.slice(stripped.indexOf(':root{'), stripped.indexOf('\n}', stripped.indexOf(':root{')));
+    const lightOnly = stripped.slice(stripped.indexOf(':root[data-theme="light"]'));
+    T('dark answers it', /--ua-scheme:\s*dark/.test(rootBlock),
+      (rootBlock.match(/--ua-scheme:[^;]*/) || [])[0]);
+    T('light answers it', /--ua-scheme:\s*light/.test(lightOnly.slice(0, lightOnly.indexOf('\n}'))),
+      (lightOnly.match(/--ua-scheme:[^;]*/) || [])[0]);
+    /* Keyed off the reader's attribute, not the device's media query, or the
+       two can disagree again by a different route. */
+    T('it follows the reader\'s choice and not the device setting',
+      !/prefers-color-scheme[\s\S]{0,200}--ua-scheme/.test(stripped));
+  }
+  {
+    /* Handing the bar back to the system means the web view starts BELOW it,
+       so safe-area-inset-top reports zero in standalone. Nothing may depend
+       on that inset being non-zero to keep content off the top edge. */
+    const stripped = stripComments(css());
+    T('the top inset has a zero fallback, so an absent value is not invalid',
+      /--inset-top:\s*env\(safe-area-inset-top,\s*0px\)/.test(stripped));
+    const header = stripped.slice(stripped.indexOf('.app-header{'));
+    T('the header adds the inset to its own padding rather than relying on it',
+      /padding-top:\s*calc\(var\(--space-[a-z]+\)\s*\+\s*var\(--inset-top\)\)/
+        .test(header.slice(0, header.indexOf('\n}'))),
+      (header.match(/padding-top:[^;]*/) || [])[0]);
+    const bars = (stripped.match(/padding(?:-top)?:\s*calc\(var\(--space-[a-z]+\)\s*\+\s*var\(--inset-top\)\)/g) || []);
+    T('and every bar that owns the inset does the same',
+      bars.length >= 2, bars.length + ' rules');
+  }
 
   sub('the theme is tokens only — no component is themed');
   /* This is the stop condition made testable. If the light block ever needs a
@@ -5975,6 +6343,72 @@ async function testSourceRevision(){
     T(id + ' ships exactly the protected Bible', corpusDigest === p.corpus, corpusDigest);
     T(id + ' ships exactly the protected passages', curatedDigest === p.curated, curatedDigest);
   });
+
+  /* THE DEFECT: every digest above was evidence about bytes that existed in
+     exactly one place — one laptop's gitignored .corpus-cache. eBible serves
+     one archive per edition at a fixed URL and replaces it in place, and on
+     2026-10-03 it re-published all seven of these, so no pin here can be
+     fetched again. A clone could not re-derive the shipped Scripture, could
+     not run scripture:verify, and could not run four of these contracts;
+     losing the machine would have left the shipped text with nothing to be
+     checked against but itself.
+
+     So the publisher's own files are now in the repository, byte for byte,
+     with the SHA-256 of each recorded beside the archive digests. This is
+     the link that was missing from the chain: archive digest → the files
+     that came out of it → the Scripture this app ships. */
+  sub('and the pinned bytes are in the repository, not only on one machine');
+  {
+    const problems = corpus.vendorProblems();
+    T('every vendored file matches the digest recorded for it',
+      problems.length === 0, problems.slice(0, 3).join(' | '));
+    /* Exactly the suffixes corpus.js reads, so a clone can do everything. */
+    const NEEDED = ['_vpl.xml', '_usfx.xml', 'metadata.xml', 'BookNames.xml'];
+    const gaps = [];
+    shipped.forEach(id => {
+      const dir = corpus.vendoredDir(id);
+      if(!fsx.existsSync(dir)){ gaps.push(id + ': nothing vendored'); return; }
+      const names = fsx.readdirSync(dir);
+      NEEDED.forEach(s => { if(!names.some(n => n.endsWith(s))) gaps.push(id + s); });
+      const recorded = (lock.editions[id] || {}).files || {};
+      if(Object.keys(recorded).length !== NEEDED.length){
+        gaps.push(id + ': lock records ' + Object.keys(recorded).length + ' files, not ' + NEEDED.length);
+      }
+    });
+    T('every shipped edition is vendored in full', gaps.length === 0, gaps.slice(0, 4).join(' | '));
+    T('and the lock still names the archives they came out of',
+      shipped.every(id => (lock.editions[id].archives || {}).vpl &&
+                          lock.editions[id].archives.usfx));
+    /* Where both copies exist, they agree — so which one a build happens to
+       read cannot change what it produces. */
+    const disagree = [];
+    shipped.forEach(id => {
+      const vdir = corpus.vendoredDir(id), cdir = corpus.cacheDir(id);
+      if(!fsx.existsSync(cdir)) return;
+      Object.keys((lock.editions[id] || {}).files || {}).forEach(name => {
+        const a = pathx.join(vdir, name), b = pathx.join(cdir, name);
+        if(!fsx.existsSync(b)) return;
+        if(sha(fsx.readFileSync(a)) !== sha(fsx.readFileSync(b))) disagree.push(id + '/' + name);
+      });
+    });
+    T('the repository copy and the download cache do not disagree',
+      disagree.length === 0, disagree.join(', '));
+
+    /* THE TRAP, and it would have broken every digest above silently: this
+       repository is developed on Windows with core.autocrlf=true. Without an
+       attribute git stores these with LF and returns CRLF, so a clone
+       configured any other way gets different bytes and reports the
+       publisher's Scripture as altered. Same trap as CLAUDE.md rule 24. */
+    const attrs = fsx.existsSync(pathx.join(H.ROOT, '.gitattributes'))
+      ? fsx.readFileSync(pathx.join(H.ROOT, '.gitattributes'), 'utf8') : '';
+    T('git is told never to normalise them',
+      /^data\/corpus\/\*\*\s+-text\s*$/m.test(attrs), attrs ? '(.gitattributes present)' : '(no .gitattributes)');
+    const ignore = fsx.readFileSync(pathx.join(H.ROOT, '.gitignore'), 'utf8');
+    T('the download cache stays out of git',
+      /^\.corpus-cache\/?\s*$/m.test(ignore));
+    T('and the vendored corpus is not ignored with it',
+      !/^data\/corpus/m.test(ignore));
+  }
 }
 
 /* ---------------------------------------------------------
@@ -7492,8 +7926,238 @@ async function testColdSaved(){
     /function paintSavedSoon\(/.test(src) && /savedPaintQueued/.test(src));
 }
 
+/* =========================================================
+   CONTRACT 51 — A CHANGE OF PHONE
+
+   The one journey nobody rehearses until it is the only thing
+   that matters: a reader moves to a new device, restores the
+   file they exported, and expects to find what they had.
+
+   THE DEFECT: they got every verse, note and highlight back and
+   not one setting. The merge opened a preference with JSON.parse,
+   bare strings threw, and the catch returned — so translation,
+   appearance, text size, focus strength and the last-seen release
+   were dropped in silence. The import reported success, because
+   from its own point of view it had succeeded.
+
+   WHY THIS IS ENUMERATED AND NOT LISTED: the defect was one key
+   silently not arriving. A contract that names the keys it checks
+   has exactly the same blind spot the code did, so this walks
+   every key the populated device holds and requires each one to
+   arrive. A preference added later is covered by having been
+   written, not by somebody remembering to assert it.
+   ========================================================= */
+function populatedDevice(storage){
+  const a = H.loadApp({ sharedStorage: storage });
+  const c = a.ctx;
+  const today = c.todayKey();
+  c.toggleSaved(c.passageForDay(today).id);
+  c.toggleSavedLocation('GEN.5.3', 'Genesis 5:3');
+  c.setHighlight('JHN.3.16', 'amber');
+  c.markChapterRead('RUT', 2, false);
+  c.openNote(today);
+  a.dom.document.getElementById('noteText').value = 'What I wrote on my old phone';
+  c.saveNote();
+  const study = c.STUDIES.find(s => s.lessons.some(l => (l.checks || []).length));
+  const lesson = study.lessons.find(l => (l.checks || []).length);
+  c.openStudy(study.id); c.openLesson(study.id, lesson.id);
+  /* Written into the field and left there, because that is how a reader
+     leaves it: completing a lesson flushes whatever the field holds, so
+     calling saveStudyNote and then completing would delete it again. */
+  const noteField = a.dom.document.getElementById('lessonNote');
+  if(noteField) noteField.value = 'A lesson note';
+  c.answerCheck(study.id, lesson.checks[0].id, 0);
+  c.completeLesson();
+  const series = c.DEVOTIONS[0];
+  c.openDevotionSeries(series.id); c.openDevotionEntry(series.id, series.entries[0].id);
+  c.completeDevotionEntry();
+  /* Every preference, including the four that were being dropped. */
+  c.setTranslation('engbsb');
+  c.setAppearance('light');
+  c.setTextSize('large');
+  c.toggleReflections();
+  c.toggleFocusTheme('hope');
+  c.setFocusStrength('focused');
+  c.rememberBibleLast('PSA', 23);
+  c.openUpdates(); c.closeUpdates();
+  return a;
+}
+
+/* exportData hands a Blob to the browser; this takes the bytes it built. */
+function exportedBytes(app){
+  let captured = null;
+  app.ctx.Blob = class { constructor(parts){ captured = parts.join(''); } };
+  app.ctx.exportData();
+  return captured;
+}
+
+function testDeviceMove(){
+  section('CONTRACT 51 — a reader moves to a new phone and finds their app');
+  const oldPhone = new Map();
+  const old = populatedDevice(oldPhone);
+  const c = old.ctx;
+
+  sub('the file the reader is handed');
+  const bytes = exportedBytes(old);
+  T('a backup file is actually produced', typeof bytes === 'string' && bytes.length > 0);
+  let payload = null;
+  try{ payload = JSON.parse(bytes); }catch(e){}
+  T('and it is valid JSON', !!payload && typeof payload === 'object');
+  T('it names this app, so another app cannot swallow it',
+    payload.app === c.APP_CONFIG.id, String(payload && payload.app));
+  T('it records the schema it was written under',
+    payload.schema === c.DATA_SCHEMA_VERSION, String(payload && payload.schema));
+  T('it records the release that wrote it', payload.version === c.APP_VERSION);
+  T('it carries no backup of a backup',
+    Object.keys(payload.data).every(k => k.indexOf(c.KEYS.backupPrefix) !== 0));
+
+  /* The export walks the namespace, so every key on the device is in the
+     file whether or not the exporter was taught about it. */
+  const onDevice = [...oldPhone.keys()]
+    .map(k => k.replace(c.STORAGE_NAMESPACE, ''))
+    .filter(k => k.indexOf(c.KEYS.backupPrefix) !== 0);
+  const missingFromFile = onDevice.filter(k => !Object.prototype.hasOwnProperty.call(payload.data, k));
+  T('every key the device holds is in the file',
+    missingFromFile.length === 0, missingFromFile.join(', '));
+  T('and the device really was populated, so this is not a vacuous pass',
+    onDevice.length >= 12, onDevice.length + ' keys');
+
+  sub('what the export claims to have done');
+  /* Where the file went — Downloads, a share sheet, a cancelled save — is
+     not something the app is told on any platform it runs on. The one place
+     a false success costs most is the step people take before erasing. */
+  const words = H.readApp();
+  T('it does not claim the file reached a place it cannot check',
+    !/toast\('Backup exported/.test(words) && !/Saved to Downloads/.test(words));
+  T('it says a file was created, and where to look',
+    /Backup file created[\s\S]{0,60}downloads or Files/.test(words));
+  T('and a failure to create one is reported as a failure',
+    /Could not create the backup file/.test(words));
+
+  sub('restoring it on a phone that has never run this app');
+  const newPhone = new Map();
+  const fresh = H.loadApp({ sharedStorage: newPhone });
+  fresh.ctx.importData({ files: [{ _text: bytes }], value: 'x' });
+  const after = H.loadApp({ sharedStorage: newPhone });
+  const restored = after.ctx;
+
+  const notArrived = onDevice.filter(k =>
+    newPhone.get(c.STORAGE_NAMESPACE + k) === undefined);
+  T('every key that was on the old phone is on the new one',
+    notArrived.length === 0, notArrived.join(', '));
+
+  sub('and the app the reader opens is the one they set up');
+  /* The four that were silently dropped, named individually because these
+     are the ones a reader notices within seconds of opening the app. */
+  T('their translation came back', restored.translation === 'engbsb', restored.translation);
+  T('their appearance came back', restored.appearance === 'light', restored.appearance);
+  T('their text size came back', restored.textSize === 'large', restored.textSize);
+  T('their focus strength came back', restored.focusStrength === 'focused', restored.focusStrength);
+  T('their choice to hide reflections came back',
+    restored.showReflections === false, String(restored.showReflections));
+  T('their focus themes came back',
+    JSON.stringify(restored.focusThemes) === '["hope"]', JSON.stringify(restored.focusThemes));
+  T('where they were reading came back',
+    JSON.stringify(restored.readBibleLast()) === JSON.stringify(c.readBibleLast()),
+    JSON.stringify(restored.readBibleLast()));
+
+  sub('and everything they wrote or kept');
+  T('their saved verses came back',
+    restored.savedVerses.length === c.savedVerses.length,
+    restored.savedVerses.length + ' of ' + c.savedVerses.length);
+  T('their highlights came back',
+    restored.bibleHighlights.length === c.bibleHighlights.length);
+  T('their chapters read came back', restored.bibleRead.length === c.bibleRead.length);
+  T('their reflection came back, with its words intact',
+    restored.notes.length === 1 && restored.notes[0].text === 'What I wrote on my old phone',
+    restored.notes.length ? restored.notes[0].text : '(none)');
+  /* Rule 31: a note carries the reference it was written against, so a
+     catalogue that grows can never re-pair it with a passage its author
+     never saw — least of all across a restore. */
+  T('and with the reference it was written against',
+    restored.notes[0].ref === c.notes[0].ref, String(restored.notes[0] && restored.notes[0].ref));
+  T('their lesson note came back', restored.studyNotes.length === 1 &&
+    restored.studyNotes[0].text === 'A lesson note');
+  T('their study progress came back', restored.studyProgress.length === c.studyProgress.length);
+  T('their devotion progress came back', restored.devotionProgress.length === c.devotionProgress.length);
+  T('and nothing threw on the way in', fresh.errors.length === 0 && after.errors.length === 0,
+    fresh.errors.concat(after.errors).join(' | '));
+
+  sub('a restore cannot be made to lose data');
+  {
+    /* Re-importing the same file is something people do when they are not
+       sure the first one worked. */
+    const twice = H.loadApp({ sharedStorage: newPhone });
+    twice.ctx.importData({ files: [{ _text: bytes }], value: 'x' });
+    const settled = H.loadApp({ sharedStorage: newPhone });
+    T('importing the same backup twice changes nothing',
+      settled.ctx.notes.length === 1 && settled.ctx.savedVerses.length === c.savedVerses.length &&
+      settled.ctx.translation === 'engbsb',
+      settled.ctx.notes.length + '/' + settled.ctx.savedVerses.length);
+  }
+  {
+    /* A backup from another app must be refused rather than merged. */
+    const other = H.loadApp({ sharedStorage: new Map(oldPhone) });
+    const foreign = JSON.stringify({ app: 'some-other-app', data: { 'data.saved': '[]' } });
+    other.ctx.importData({ files: [{ _text: foreign }], value: 'x' });
+    const checked = H.loadApp({ sharedStorage: other.storage._map });
+    T('a backup belonging to another app is refused',
+      checked.ctx.notes.length === 1 && checked.ctx.savedVerses.length === c.savedVerses.length);
+  }
+  {
+    /* And garbage must not be treated as an empty backup. */
+    const junk = H.loadApp({ sharedStorage: new Map(oldPhone) });
+    junk.ctx.importData({ files: [{ _text: 'not json at all' }], value: 'x' });
+    const checked = H.loadApp({ sharedStorage: junk.storage._map });
+    T('a file that is not a backup erases nothing',
+      checked.ctx.notes.length === 1 && checked.ctx.translation === 'engbsb');
+  }
+
+  /* THE BOUNDARY: the reader chose to erase everything, so this does not
+     argue with them. It states the cost in the same sentence it asks for
+     confirmation, counted from the records rather than written in advance —
+     a generic warning is clicked through, and a wrong number is worse than
+     none. No banner, no nagging: one sentence, at the one place it matters. */
+  sub('and the one place it can all be lost says what will go');
+  {
+    const d = populatedDevice(new Map());
+    const held = d.ctx.storedDataSummary();
+    T('the reset warning counts what is actually held',
+      /saved verse/.test(held) && /reflection/.test(held) && /highlight/.test(held), held);
+    T('and names progress without pretending to count it',
+      /reading and study progress/.test(held), held);
+    T('the numbers are the records, not a stored total',
+      held.indexOf(String(d.ctx.savedVerses.length) + ' saved verse') !== -1, held);
+    T('it tells them a backup is the way out',
+      /Export a backup first/.test(H.readApp()));
+    T('and it cannot be undone is said, not implied',
+      /It cannot be undone/.test(H.readApp()));
+  }
+  {
+    /* Rule 15: absent is not zero. A new reader is told the truth about an
+       empty device, not given a sentence with "0 saved verses" in it. */
+    const empty = H.loadApp({ sharedStorage: new Map() });
+    const held = empty.ctx.storedDataSummary();
+    T('a device holding nothing claims nothing',
+      held === '', JSON.stringify(held));
+    T('and the warning still reads as a sentence',
+      /Every record this app has stored on this device will be erased/.test(H.readApp()));
+  }
+  {
+    /* Singular and plural, because "1 saved verses" is the kind of thing a
+       reader reads as carelessness at the exact moment they need to trust it. */
+    const one = H.loadApp({ sharedStorage: new Map() });
+    one.ctx.toggleSaved(one.ctx.passageForDay(one.ctx.todayKey()).id);
+    T('one record is described in the singular',
+      one.ctx.storedDataSummary() === '1 saved verse', one.ctx.storedDataSummary());
+    one.ctx.toggleSavedLocation('GEN.5.3', 'Genesis 5:3');
+    T('two are described in the plural',
+      one.ctx.storedDataSummary() === '2 saved verses', one.ctx.storedDataSummary());
+  }
+}
+
 module.exports = {
-  T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved,
+  T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved, testDeviceMove,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,

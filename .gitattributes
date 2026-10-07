@@ -1,0 +1,14 @@
+# The publisher's own archive files, vendored byte-for-byte under
+# data/corpus/. Git must never normalise them.
+#
+# THE DEFECT THIS PREVENTS: this repository is developed on Windows with
+# core.autocrlf=true, so git would store these with LF and hand them back as
+# CRLF — and a clone configured any other way would get different bytes. The
+# SHA-256 recorded for each file in data/corpus.lock.json is of these exact
+# bytes, so a line-ending conversion anywhere in the round trip makes every
+# digest mismatch and reports the publisher's own Scripture as altered. It is
+# the same trap CLAUDE.md rule 24 names for comparing a deployment.
+data/corpus/** -text
+
+# Derived Bible data is generated, compared by hash, and served as-is.
+data/bible/** -text

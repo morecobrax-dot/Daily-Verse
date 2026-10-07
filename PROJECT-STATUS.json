@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "appId": "daily-verse",
-  "version": "1.13.3",
-  "phase": "P0 remediation",
+  "version": "1.13.4",
+  "phase": "P1 pre-submission reliability",
   "status": "release_ready",
   "needsQa": true,
   "needsDecision": false,
-  "currentTask": "v1.13.3 fixes both release blockers from the September readiness audit: Saved and Highlights now resolve their own Scripture on a cold start, in any translation, and Scripture & sources no longer prints a placeholder where the publisher states nothing.",
-  "nextAction": "Physical iPhone check of the two fixes after deployment, then the P1 remediation phase.",
+  "currentTask": "v1.13.4: a backup restores settings as well as records, a failed or stalled network answer can no longer stand in place of the app, and the status bar is readable in Light mode. The pinned Scripture sources now live in the repository, because the publisher replaced them.",
+  "nextAction": "Short physical iPhone check of backup, restore, reset, both appearances and offline recovery.",
   "blocker": null,
-  "updatedAt": "2026-10-07T04:17:52Z"
+  "updatedAt": "2026-10-07T07:51:01Z"
 }

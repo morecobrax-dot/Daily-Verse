@@ -12,7 +12,18 @@
 <!-- APP-META-END -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Not `black-translucent`. That value extends the web view under the status
+     bar and draws the clock, signal and battery in WHITE over whatever the page
+     puts there — and it is read once when the app launches, so no runtime code
+     can repaint it when the reader switches appearance. Against the Light
+     theme's paper ground (#F7F4EF) white glyphs were unreadable on a physical
+     iPhone. `default` hands the bar back to the system, which picks its own
+     glyph colour and cannot be put out of contrast by this page. The web view
+     then starts BELOW the bar, so safe-area-inset-top goes to zero in
+     standalone; every rule that consumes --inset-top is a calc() with a 0px
+     fallback and collapses to its un-inset spacing, which is correct once
+     nothing is overlapping. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
@@ -177,6 +188,17 @@
   /* iOS Safari zooms a focused field below this and never zooms back. */
   --input-min-size: 16px;
 
+  /* Which palette the platform should use for the parts of the screen this
+     page does not paint: the iOS status bar, scrollbars, and the native
+     controls inside the note field and the backup file picker.
+
+     A token, and not a themed rule, because it varies by appearance and the
+     light theme is a token swap and nothing else. It is keyed off the reader's
+     choice rather than the device's, because the two can disagree — a phone
+     set to Light running this app set to Dark was getting its system chrome
+     from the phone and its page from the app. */
+  --ua-scheme: dark;
+
   /* Read once here so no component hand-writes env() arithmetic. */
   --inset-top: env(safe-area-inset-top, 0px);
   --inset-bottom: env(safe-area-inset-bottom, 0px);
@@ -240,6 +262,9 @@ html.appearance-switching *::after{
    what keeps the two appearances the same product rather than two designs.
    ========================================================= */
 :root[data-theme="light"]{
+  /* The platform's own chrome follows the reader here too. */
+  --ua-scheme: light;
+
   /* Ground and surfaces. Sunken is the only step darker than the page. */
   --brand-ground: #F7F4EF;
   --brand-surface: #FFFFFF;
@@ -333,6 +358,9 @@ html{
      those away. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* The one consumer of --ua-scheme. Declaring it here rather than per theme
+     is what lets the appearance stay a token swap. */
+  color-scheme: var(--ua-scheme);
 }
 body{ touch-action: manipulation; }
 
@@ -2323,6 +2351,21 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-13-4',
+    version: '1.13.4',
+    title: 'Backups keep everything, and a steadier start',
+    date: '2026-10-07',
+    summary: 'A backup now brings back how you had the app set up, not only what you ' +
+             'kept in it. The app also opens on a poor connection instead of waiting.',
+    fixes: [
+      'Restoring a backup brings back your translation, appearance, text size and reading preferences. Before, every verse, note and highlight came back and none of your settings did',
+      'Exporting a backup now says that the file was created and where to look, rather than claiming it was saved somewhere the app cannot see',
+      'Reset all data now names what is about to be erased — your saved verses, highlights, reflections and progress — before you confirm',
+      'On a connection that stalls, the app opens from what it already has instead of waiting, and a failed response can no longer get stuck in place of the app',
+      'In Light mode the clock and battery at the top of the screen are readable again'
+    ]
+  },
   {
     id: 'v1-13-3',
     version: '1.13.3',
@@ -12866,7 +12909,14 @@ function exportData(){
     a.download = backupFileName(new Date());
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast('Backup exported', 'success');
+    /* What actually happened is that a file was handed to the browser. Where
+       it went after that — Downloads, a share sheet, a cancelled save — is
+       not something this app is told, on any platform it runs on. It used to
+       say "Backup exported", which is a claim about the reader's device that
+       it cannot check, and the one place a false success costs the most is
+       the thing people do before erasing something. So it says what it did,
+       and tells them where to look. */
+    toast('Backup file created — check your downloads or Files', 'success');
   }catch(e){
     toast('Could not create the backup file.', 'error');
   }
@@ -12915,6 +12965,10 @@ function importData(input){
    optionally an `updatedAt` — and nothing about what those records mean. */
 function isRecord(r){ return r && typeof r === 'object' && typeof r.id === 'string'; }
 
+/* A preference is a short word: an edition id, "light", "large". Anything
+   longer than this is not one, whatever the file says it is. */
+const PREF_VALUE_MAX = 256;
+
 function mergeBackup(data){
   let added = 0, updated = 0, collections = 0;
   Object.keys(data).forEach(key => {
@@ -12924,10 +12978,17 @@ function mergeBackup(data){
     const raw = data[key];
     if(typeof raw !== 'string') return;
 
-    let incoming;
-    try{ incoming = JSON.parse(raw); }catch(e){ return; }
+    /* A value that is not JSON is still a value. Preferences are stored as
+       bare strings — "engbsb", "light", "large" — and parsing them threw,
+       which used to return here and skip the branch below. A reader who
+       restored onto a new phone got every verse, note and highlight back
+       and none of their settings. Failing to parse means "not a record
+       collection", not "not data". */
+    let incoming = null;
+    let isJson = true;
+    try{ incoming = JSON.parse(raw); }catch(e){ isJson = false; }
 
-    if(Array.isArray(incoming) && incoming.every(isRecord)){
+    if(isJson && Array.isArray(incoming) && incoming.every(isRecord)){
       collections++;
       const existing = Store.getJSON(key, []);
       const byId = new Map(Array.isArray(existing) ? existing.filter(isRecord).map(r => [r.id, r]) : []);
@@ -12940,6 +13001,14 @@ function mergeBackup(data){
       });
       Store.setJSON(key, [...byId.values()]);
     } else if(Store.get(key) === null){
+      /* Only where this device has nothing, so an older backup can never
+         overwrite a setting somebody has since changed. Whether the value
+         means anything is decided where it is read: hydrate() checks every
+         preference against the set this build ships and falls back to the
+         default, so a stale or hand-edited value reads as "never chosen"
+         rather than breaking anything. One source of truth for what is
+         valid, and it is not here. */
+      if(raw.length > PREF_VALUE_MAX) return;
       collections++;
       Store.set(key, raw);
       added++;
@@ -12948,11 +13017,32 @@ function mergeBackup(data){
   return { added, updated, collections };
 }
 
+/* What is actually about to be erased, counted from the records themselves.
+   A generic warning is clicked through; "11 saved verses, 4 reflections and
+   your Learn progress" is the same sentence with the cost in it, and it is
+   the only honest protection available at a boundary the reader chose. */
+function storedDataSummary(){
+  const parts = [];
+  const add = (n, one, many) => { if(n > 0) parts.push(n + ' ' + (n === 1 ? one : many)); };
+  add(savedVerses.length, 'saved verse', 'saved verses');
+  add(bibleHighlights.length, 'highlight', 'highlights');
+  add(notes.length, 'reflection', 'reflections');
+  add(studyNotes.length, 'lesson note', 'lesson notes');
+  const progress = (studyProgress.length ? 1 : 0) + (devotionProgress.length ? 1 : 0) + (bibleRead.length ? 1 : 0);
+  if(progress) parts.push('your reading and study progress');
+  if(!parts.length) return '';
+  if(parts.length === 1) return parts[0];
+  return parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+}
+
 async function resetAllData(){
+  const held = storedDataSummary();
   const ok = await confirmAction({
     title: 'Reset all data?',
-    message: 'Every record this app has stored on this device will be erased. ' +
-             'Export a backup first if you want to keep it.',
+    message: (held
+      ? 'This erases ' + held + ', along with every other record this app has stored on this device. '
+      : 'Every record this app has stored on this device will be erased. ') +
+      'It cannot be undone. Export a backup first if you want to keep any of it.',
     confirmLabel: 'Erase everything',
     destructive: true
   });

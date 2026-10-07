@@ -369,7 +369,8 @@ const BRIDGE = [
   'OVERLAY_Z_BASE', '_openSheetStack', '_sheetOpeners', '_lockDepth', '_lockedScrollY',
   '_historyDepth', '_pendingSelfPops', '_confirmResolve',
   'CLOSE_ACTION', 'GHOST_TAP_MS', '_screenChangedAt', 'FETCH_TIMEOUT_MS', 'bibleIndexFailed', 'bibleRequest',
-  'bibleInFlight', 'savedLoadFailed', 'savedResolveTicket', 'SAVED_BOOKS_PER_PASS'
+  'bibleInFlight', 'savedLoadFailed', 'savedResolveTicket', 'SAVED_BOOKS_PER_PASS',
+  'PREF_VALUE_MAX'
 ];
 
 /* =========================================================
@@ -569,9 +570,165 @@ function loadApp(opts){
 
 function settle(ms){ return new Promise(r => setTimeout(r, ms === undefined ? 30 : ms)); }
 
+/* =========================================================
+   SERVICE WORKER HARNESS
+   ---------------------------------------------------------
+   sw.js, actually executed, against a fake Cache Storage and a
+   network the test writes itself.
+
+   WHY THIS EXISTS
+   The service worker was covered by regexes over its own source:
+   "does the text contain fetch(req).catch(...)". That proves a
+   shape and not a behaviour, so it passed while the shell cached
+   whatever a bad deploy returned, and it could not have noticed a
+   launch that waits for a network that never answers. Both of
+   those are the failures the worker exists to prevent, and both
+   are only visible by running it.
+
+   THE CLOCK IS FAKE ON PURPOSE
+   The shell's network timeout is measured in seconds. A test that
+   waited them out would be slow and flaky; instead setTimeout is
+   recorded and the test fires it, so the timeout is asserted by
+   its declared length and by what happens when it expires.
+   ========================================================= */
+function makeResponse(opts){
+  const o = opts || {};
+  const status = o.status === undefined ? 200 : o.status;
+  return {
+    body: o.body === undefined ? 'body:' + status : o.body,
+    status,
+    ok: status >= 200 && status < 300,
+    type: o.type || 'basic',
+    clone(){ return makeResponse({ status, body: this.body, type: this.type }); }
+  };
+}
+
+function loadSW(){
+  const caches = new Map();          /* cache name -> Map(url -> response) */
+  const timers = [];
+  const handlers = {};
+  let claimed = false, skipped = false;
+  /* The network, as the test chooses to define it. Default: everything 200s. */
+  let network = url => Promise.resolve(makeResponse({ body: 'net:' + url }));
+
+  const cacheFor = name => {
+    if(!caches.has(name)) caches.set(name, new Map());
+    return caches.get(name);
+  };
+  /* The real Cache API keys on the resolved request URL, so './index.html'
+     stored during precache is found by caches.match('./index.html') later.
+     Without this the offline fallback silently misses and the worker looks
+     broken when it is the harness that is. */
+  const SCOPE = 'https://example.test/';
+  const keyOf = req => {
+    const raw = String(req && req.url !== undefined ? req.url : req);
+    try{ return new URL(raw, SCOPE).href; }catch(e){ return raw; }
+  };
+
+  const wrap = name => ({
+    addAll: list => Promise.all(list.map(u => network(keyOf(u)).then(res => {
+      if(!res || !res.ok) throw new Error('precache failed: ' + u);
+      cacheFor(name).set(keyOf(u), res);
+    }))),
+    put: (req, res) => { cacheFor(name).set(keyOf(req), res); return Promise.resolve(); },
+    match: req => Promise.resolve(cacheFor(name).get(keyOf(req)))
+  });
+
+  const sandbox = {
+    URL, Promise, Object, Array, String, Error, JSON, console,
+    setTimeout: (fn, ms) => { timers.push({ fn, ms, cleared: false }); return timers.length - 1; },
+    clearTimeout: id => { if(timers[id]) timers[id].cleared = true; },
+    location: { origin: 'https://example.test' },
+    fetch: req => network(keyOf(req)),
+    caches: {
+      open: name => Promise.resolve(wrap(name)),
+      keys: () => Promise.resolve([...caches.keys()]),
+      delete: name => Promise.resolve(caches.delete(name)),
+      /* The real one searches every cache, newest first. */
+      match: req => {
+        for(const store of caches.values()){
+          const hit = store.get(keyOf(req));
+          if(hit) return Promise.resolve(hit);
+        }
+        return Promise.resolve(undefined);
+      }
+    }
+  };
+  sandbox.self = {
+    addEventListener: (name, fn) => { handlers[name] = fn; },
+    skipWaiting: () => { skipped = true; },
+    clients: { claim: () => { claimed = true; return Promise.resolve(); } }
+  };
+
+  const ctx = vm.createContext(sandbox);
+  vm.runInContext(readSW(), ctx, { filename: 'sw.js' });
+
+  const fire = (name, extra) => {
+    let waited = null, answered = null;
+    const event = Object.assign({
+      waitUntil: p => { waited = p; },
+      respondWith: p => { answered = p; }
+    }, extra);
+    if(handlers[name]) handlers[name](event);
+    return { waited, answered };
+  };
+
+  return {
+    ctx,
+    /* A top-level `const` lives in the script's lexical scope and never
+       becomes a property of the sandbox, so it is read back by evaluating it. */
+    cacheName: vm.runInContext('CACHE_NAME', ctx),
+    get caches(){ return caches; },
+    get timers(){ return timers; },
+    get claimed(){ return claimed; },
+    get skipped(){ return skipped; },
+    res: makeResponse,
+    /* Define the network for the next request. `fn(url)` returns a response,
+       a rejected promise, or a promise the test resolves later. */
+    serve(fn){ network = fn; return this; },
+    /* Put a response in a cache without going through the worker. */
+    seed(name, url, res){ cacheFor(name).set(keyOf(url), res || makeResponse({ body: 'cached:' + url })); return this; },
+    cached(name, url){ return cacheFor(name).get(keyOf(url)); },
+    contents(name){ return cacheFor(name); },
+    install(){ return Promise.resolve(fire('install').waited); },
+    activate(){ return Promise.resolve(fire('activate').waited); },
+    /* One GET through the fetch handler. `answered` is null when the worker
+       declined to handle it, which means the browser would go to the network
+       on its own. */
+    request(url, method){
+      const req = { url, method: method || 'GET' };
+      return fire('fetch', { request: req }).answered;
+    },
+    /* Expire the pending timeout the way the clock would. */
+    expire(){
+      const live = timers.filter(t => !t.cleared);
+      live.forEach(t => { t.cleared = true; t.fn(); });
+      return live.length;
+    },
+    /* Let queued microtasks run. */
+    async drain(n){
+      for(let i = 0; i < (n || 20); i++) await Promise.resolve();
+    },
+    /* Read a response without ever awaiting a promise that may not settle.
+       The clock here is fake, so once microtasks are drained a response that
+       has not arrived is never going to; it comes back as {pending:true} and
+       the assertion fails with a readable reason. A bare `await` on the same
+       promise would instead leave the event loop empty, which Node exits as a
+       success — see the completion guard in test/run.js. */
+    async answer(p){
+      if(!p) return null;
+      let settled = false, value = null;
+      p.then(v => { settled = true; value = v; },
+             e => { settled = true; value = { error: String(e && e.message || e) }; });
+      for(let i = 0; i < 200 && !settled; i++) await Promise.resolve();
+      return settled ? value : { pending: true };
+    }
+  };
+}
+
 module.exports = {
   ROOT, APP_PATH, SW_PATH, MANIFEST_PATH, PKG_PATH,
   readApp, readSW, readManifest, readPkg,
   scriptBlocks, mainScript, styleBlock, bodyBlock,
-  loadApp, settle, mulberry32, makeLocalStorage, makeHistory, BRIDGE
+  loadApp, loadSW, settle, mulberry32, makeLocalStorage, makeHistory, BRIDGE
 };

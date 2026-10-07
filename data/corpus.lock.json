@@ -26,6 +26,12 @@
           "sha256": "d1de86950c40da97ccf10f17809a0b8ed99e3062617b739e21ee6d9b4aa8d2cd",
           "entries": 8
         }
+      },
+      "files": {
+        "eng-web_vpl.xml": "740d0571f508de486bf1f0fc2c28971fe6df325d9fe50d257dc77ca45b00c9e2",
+        "eng-web_usfx.xml": "e26d0ebc270b020cecedbf88ee65bf45c78d9e4c2303b97a9b2c3bbf9ed4bf19",
+        "eng-webmetadata.xml": "81946bd205fc740aaa0180b044874d91e8f9eb982b55627094403b4690265a79",
+        "BookNames.xml": "87cd62b0430f3f78baab3cf3364a920cf3efc81e009fed086bfdfea70eac0a0f"
       }
     },
     "spaRV1909": {
@@ -54,6 +60,12 @@
           "sha256": "2ca64656e7c06773480049201816b408ef3d937bd372db28ab7b05b543da66ac",
           "entries": 8
         }
+      },
+      "files": {
+        "spaRV1909_vpl.xml": "6e62b5d521fb67d71fc8478e50f2c5707e9086e40d847768eff0a483760adc24",
+        "spaRV1909_usfx.xml": "233b4d6a87f833ac809d0e68dcf9ba83c709d612e914a357a4f5473782b703a3",
+        "spaRV1909metadata.xml": "63ec8120124bd3aa1e986afe06aff0c0e935940c3b22ff747ddf494f63864ce5",
+        "BookNames.xml": "d5c5fd5e287728859156f6df80ba14a833a4fddb851484c658966e8f0761a916"
       }
     },
     "fraLSG": {
@@ -111,6 +123,12 @@
           "sha256": "7ec2e485d4127fa6b6f49a02dc1f1ab8faf7aca94294a0501cd338a66258577e",
           "entries": 8
         }
+      },
+      "files": {
+        "engbsb_vpl.xml": "c89940ba5b7f9e046d45217de7d90dc3ee811f3bd26d32e0ba6c66930c21765c",
+        "engbsb_usfx.xml": "3356ac05074fbcab09409190c612b4d36abc31498e286f10e83256f5f3d3bbf1",
+        "engbsbmetadata.xml": "baf7d49c5d746d28949858b925c2a6812fb2881b58075f368e00aa71e9932e0e",
+        "BookNames.xml": "9e53f08b33b14f90e3634363b2b36f059f63f9cdc35f4b902ab3a068d94beec6"
       }
     },
     "eng-asv": {
@@ -139,6 +157,12 @@
           "sha256": "365da92d6d9b09260f63b4d86e867cc06a54dc67a5a6a1342de7ab8fffa57961",
           "entries": 8
         }
+      },
+      "files": {
+        "eng-asv_vpl.xml": "c1f2847ae9856ea062f675103f8931b6338949ba8ec673e9234140d5b60f6ce8",
+        "eng-asv_usfx.xml": "136d9cc4eb3043285bb90c079a9a70e4e75efb52b091a7c4f38b2d38787eed7a",
+        "eng-asvmetadata.xml": "3ac63bb6334bee1632e12c7a28b7473ff16a271934e0929620382dd40df89d1b",
+        "BookNames.xml": "a271864b9a3da9d5030451a8029afc7d36eb3c62b9af6e24d40ffedefabaecc6"
       }
     },
     "deu1912": {
@@ -167,6 +191,12 @@
           "sha256": "c289e07aa5ca717d2071509c3617b96a5ab37cbd5823cc61e4e09fc4da8315c4",
           "entries": 8
         }
+      },
+      "files": {
+        "deu1912_vpl.xml": "aef32e66031a8e9c08aed65a8100bd4e877640b1352a7416c4c6647118230a11",
+        "deu1912_usfx.xml": "d61c2ad862af1cf3687f7dff82302bacfd2c925dead9cab71285a74a3a41eccc",
+        "deu1912metadata.xml": "bfb3e09329cc0a3d83df25276fb8f824ab28d6a4b28039b838f2689e0e6bf630",
+        "BookNames.xml": "0221fdc12ad017f0986e13a84ed9dca9cf0bdb74c40e569408422035806def07"
       }
     },
     "ita1927": {
@@ -253,6 +283,12 @@
           "sha256": "60d711b9914178e4f7492a2ee66a2a3601ecf31d5f402979d29161b479575833",
           "entries": 8
         }
+      },
+      "files": {
+        "cmn-cu89s_vpl.xml": "bec55d2d2a16d91eefd3a7b6dd848baf8ce086abbbec7c0b5602526bbc358cd5",
+        "cmn-cu89s_usfx.xml": "b20d2a62ff8e55f551766b78e723286542b19f576e14762c7bc3c8106d2ff35d",
+        "cmn-cu89smetadata.xml": "cc926ba138ff78f13b301d7abb6fe42a192700aa8dd0771e465f5b9396dfc574",
+        "BookNames.xml": "363c0ef3151985f144c79fab32481b67972d25db90e9ba034a7b97779cab32d9"
       }
     },
     "cmn-cu89t": {
@@ -281,6 +317,12 @@
           "sha256": "26568f1a3b8d877f9cb58614d855756b5751556599ff2c0efb933d12336eb3bb",
           "entries": 8
         }
+      },
+      "files": {
+        "cmn-cu89t_vpl.xml": "74fcf7361e6deb449d6bfc336d84e1604971d62f9391219abb046e9e7af9a134",
+        "cmn-cu89t_usfx.xml": "425b9dd31de05b74f904291bbcd30d3cdabb1cd73c66aec85434436c3f52a992",
+        "cmn-cu89tmetadata.xml": "b35405ddd145f998f4d9f8a29bed5620979a0e8be1bde8fd1f0133997040114e",
+        "BookNames.xml": "00ea40293054df50ace211e8541fae89f6cc22d376665ce78d3a7167805bad24"
       }
     },
     "fra_fob": {
