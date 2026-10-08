@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "appId": "daily-verse",
-  "version": "1.14.0",
-  "phase": "Help Me release",
+  "version": "1.14.1",
+  "phase": "Help Me reading refinement",
   "status": "release_ready",
   "needsQa": true,
   "needsDecision": false,
-  "currentTask": "v1.14.0 adds Help Me: seven short Scripture paths for when someone needs God's Word and does not know where to begin, a quiet route to urgent help, and Saved moved to a bookmark button reachable from every screen.",
-  "nextAction": "Short check on a physical iPhone that the installed app updates to 1.14.0 and keeps existing saved verses, highlights and settings.",
+  "currentTask": "v1.14.1 makes the longer Help Me readings easier to follow: explanations are paced as short passages rather than one block, and where a reading points at a particular verse that verse appears beside it in the reader's own translation.",
+  "nextAction": "Short check on a physical iPhone that the installed app updates to 1.14.1 and the longer readings match the approved build.",
   "blocker": null,
-  "updatedAt": "2026-10-07T15:44:26Z"
+  "updatedAt": "2026-10-08T04:01:48Z"
 }
