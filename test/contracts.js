@@ -8502,6 +8502,178 @@ function testHelpProduct(){
     !/confetti|Well done|Congratulations|Great job|streak|badge|achievement/i.test(
       (js.match(/function helpCompletionHtml[\s\S]*?\n\}/) || [''])[0]));
 
+
+  /* THE DEFECT: every step is authored as four to six beats separated by
+     blank lines, and the renderer put the whole of `notice` inside one <p>.
+     HTML collapses a blank line to a space, so all of them arrived as a
+     single block — 678px of unbroken prose at 390px on the longest step,
+     with nowhere for the eye to rest. The writing was never the problem.
+
+     These assert the beats reach the screen, and that nothing swung the
+     other way into a page of fragments. */
+  sub('the explanation arrives in the paragraphs it was written in');
+  {
+    const stepsOf = p => p.steps.map(s => ({ path: p.id, s: s }));
+    const all = c.HELP.reduce((a, p) => a.concat(stepsOf(p)), []);
+    const rendered = x => {
+      c.openHelpStep(x.path, x.s.id);
+      const body = d.getElementById('helpStepBody');
+      const html = body ? body.innerHTML : '';
+      c.closeHelpStep();
+      return html;
+    };
+    const counts = all.map(x => {
+      const html = rendered(x);
+      const section = html.slice(html.indexOf('What to notice'));
+      const end = section.indexOf('</section>');
+      const notice = end === -1 ? section : section.slice(0, end);
+      return { id: x.path + '/' + x.s.id,
+               paras: (notice.match(/<p class="help-prose">/g) || []).length,
+               authored: String(x.s.notice).split(/\n{2,}/).filter(t => t.trim()).length };
+    });
+    const monolithic = counts.filter(r => r.paras < 2);
+    T('no step renders its explanation as a single block',
+      monolithic.length === 0, monolithic.map(r => r.id).join(', '));
+    const lost = counts.filter(r => r.paras !== r.authored);
+    T('and every authored paragraph reaches the screen',
+      lost.length === 0, lost.map(r => r.id + ' ' + r.authored + '->' + r.paras).join(', '));
+    T('the renderer splits on blank lines rather than printing one string',
+      /function helpNoticeHtml\(body, anchors\)\{[\s\S]{0,200}split\(\/\\n\{2,\}\//
+        .test(js.replace(/\n\s*/g, '')));
+    /* Fragmentation is the opposite failure and just as unreadable. */
+    const fragmented = c.HELP.reduce((a, p) => a.concat(p.steps.filter(s => {
+      const paras = String(s.notice).split(/\n{2,}/).filter(t => t.trim());
+      const words = String(s.notice).split(/\s+/).filter(Boolean).length;
+      return paras.length > 0 && words / paras.length < 25;
+    }).map(s => p.id + '/' + s.id)), []);
+    T('and none is chopped into fragments', fragmented.length === 0, fragmented.join(', '));
+    const longest = Math.max.apply(null, c.HELP.reduce((a, p) => a.concat(
+      p.steps.map(s => Math.max.apply(null,
+        String(s.notice).split(/\n{2,}/).filter(t => t.trim()).map(t => t.split(/\s+/).length)))), []));
+    T('no single paragraph is long enough to be a wall on its own',
+      longest <= 120, longest + ' words');
+  }
+
+  sub('a Scripture anchor is a location, never a quotation');
+  {
+    const anchored = [];
+    c.HELP.forEach(p => p.steps.forEach(s => (s.anchors || []).forEach(a =>
+      anchored.push({ id: p.id + '/' + s.id, a: a, step: s }))));
+    T('there are anchors to check', anchored.length > 0, String(anchored.length));
+    /* The rule the whole feature rests on: no word of Scripture is stored. */
+    T('no anchor carries a word of the verse',
+      anchored.every(x => Object.keys(x.a).sort().join(',') === 'after,c,ch,from,ref,to'),
+      anchored.map(x => Object.keys(x.a).join(',')).join(' | '));
+    T('each names a canonical book, chapter and verse',
+      anchored.every(x => /^[A-Z0-9]{3}$/.test(x.a.c) &&
+        Number.isInteger(x.a.ch) && Number.isInteger(x.a.from) && Number.isInteger(x.a.to)));
+    T('none is namespaced by translation',
+      anchored.every(x => !/[a-z]{3}-|_/.test(x.a.c)));
+    /* Two is a pause; three is a quote wall. */
+    const over = c.HELP.reduce((a, p) => a.concat(
+      p.steps.filter(s => (s.anchors || []).length > 2).map(s => p.id + '/' + s.id)), []);
+    T('no step carries more than two', over.length === 0, over.join(', '));
+    T('and most steps carry none, so an anchor still means something',
+      anchored.length <= 14,
+      anchored.length + ' anchors across ' +
+      c.HELP.reduce((n, p) => n + p.steps.length, 0) + ' steps');
+    /* It sits BETWEEN paragraphs, which is why no prose had to move. */
+    T('each sits after a paragraph that exists',
+      anchored.every(x => {
+        const n = String(x.step.notice).split(/\n{2,}/).filter(t => t.trim()).length;
+        return Number.isInteger(x.a.after) && x.a.after >= 1 && x.a.after <= n;
+      }));
+    /* An anchor may not introduce a biblical claim the step was not built
+       on: its book must already be in the step's basis. */
+    const doc = require('./../scripts/help.js').readCatalogue();
+    const outside = [];
+    doc.paths.forEach(p => p.steps.forEach(s => (s.anchors || []).forEach(a => {
+      const book = String(a.ref).replace(/\s+\d+:.*$/, '');
+      if(!(s.basis || []).some(b => b.indexOf(book) === 0)) outside.push(p.id + '/' + s.id + ' ' + a.ref);
+    })));
+    T('and none reaches outside the references the step was built on',
+      outside.length === 0, outside.join(', '));
+    /* Short. A long one is a second passage competing with the card. */
+    T('each is one verse or a short range',
+      anchored.every(x => x.a.to - x.a.from <= 2),
+      anchored.map(x => x.a.ref).join(', '));
+  }
+
+  sub('and its words come from the edition the reader chose');
+  {
+    const spot = c.HELP.find(p => p.id === 'direction-decisions').steps.find(s => s.id === 'dd-3');
+    const a = spot.anchors[0];
+    const seen = {};
+    ['eng-web', 'spaRV1909', 'deu1912'].forEach(ed => {
+      c.setTranslation(ed);
+      seen[ed] = { ref: c.passageRefLabel(a), abbr: c.activeTranslation().abbr,
+                   lang: c.activeTranslation().lang };
+    });
+    c.setTranslation('eng-web');
+    T('the reference is localised with the edition',
+      seen['eng-web'].ref !== seen['spaRV1909'].ref && seen['spaRV1909'].ref !== seen['deu1912'].ref,
+      Object.keys(seen).map(k => seen[k].ref).join(' / '));
+    T('and the language tag moves with it',
+      seen['eng-web'].lang === 'en' && seen['spaRV1909'].lang === 'es' && seen['deu1912'].lang === 'de');
+    T('the anchor is rendered through the shared resolver, not its own copy',
+      /function helpAnchorHtml\(a, i\)\{[\s\S]{0,160}passageVerses\(a\)/.test(js.replace(/\n\s*/g, '')));
+    T('and it is marked up as a quotation, in the right language',
+      /help-anchor-text" lang="/.test(js));
+    /* It must not become a second card. */
+    T('it is not a card',
+      !/help-anchor[\s\S]{0,200}verse-card/.test(js.replace(/\n\s*/g, '')));
+  }
+
+  sub('an anchor that cannot load does not break the lesson');
+  T('a missing anchor prints its reference and its state',
+    /function helpAnchorHtml[\s\S]{0,900}help-anchor-pending[\s\S]{0,120}not downloaded yet/
+      .test(js.replace(/\n\s*/g, '')));
+  T('and the explanation around it is unaffected', (() => {
+    /* No Bible book is ever fetched in this harness, so every anchor here is
+       in its pending state — which is exactly the offline case. The lesson
+       has to be whole regardless: all its paragraphs, and an anchor that
+       still says which passage it is waiting for. */
+    const w = H.loadApp({ sharedStorage: new Map() });
+    const k = w.ctx, dd = w.dom.document;
+    k.openHelpStep('direction-decisions', 'dd-3');
+    const html = dd.getElementById('helpStepBody').innerHTML;
+    const step = k.helpStepById('direction-decisions', 'dd-3');
+    const authored = String(step.notice).split(/\n{2,}/).filter(x => x.trim()).length;
+    const shown = (html.match(/<p class="help-prose">/g) || []).length;
+    return shown >= authored &&
+           /help-anchor is-pending/.test(html) &&
+           html.indexOf('Proverbs 15:22') !== -1;
+  })());
+  /* One load per book, anchors included: an anchor in the step's own book
+     must not cause the book to be fetched twice. */
+  T('a book is asked for once, whatever needs it',
+    /function loadHelpPassages\(step\)\{[\s\S]{0,420}books\.indexOf\(a\.c\) === -1/
+      .test(js.replace(/\n\s*/g, '')));
+  T('and filling an anchor in does not rebuild the step',
+    (() => {
+      const at = js.indexOf('function paintHelpAnchors(');
+      const body = at === -1 ? '' : js.slice(at, js.indexOf('\n}', at));
+      return !!body && !/\brenderHelpStep\s*\(|\brenderHelpPath\s*\(/.test(body);
+    })());
+
+  sub('the end of a step says where it goes');
+  {
+    const p = c.HELP.find(x => x.id === 'direction-decisions');
+    c.openHelpStep(p.id, p.steps[0].id);
+    /* getElementById only reaches elements declared in markup here, and
+       this one is created by the render — so read the body it wrote into. */
+    const mid = d.getElementById('helpStepBody').innerHTML;
+    T('a step in the middle names the next one', /Continue to Step 2/.test(mid), mid.slice(0, 70));
+    c.closeHelpStep();
+    c.openHelpStep(p.id, p.steps[p.steps.length - 1].id);
+    const last = d.getElementById('helpStepBody').innerHTML;
+    T('the last one completes the path instead', /Complete path/.test(last));
+    /* The failure this prevents: offering Step 5 of a four-step path. */
+    T('and never offers a step that does not exist',
+      !new RegExp('Continue to Step ' + (p.steps.length + 1)).test(last), last.slice(0, 70));
+    c.closeHelpStep();
+  }
+
   sub('marking a step read does not rebuild the reading');
   /* The permanent rule: a non-navigation state change must not rebuild a long
      reading surface. On iOS that throws the reader's scroll position away. */

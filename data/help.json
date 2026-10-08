@@ -1,8 +1,6 @@
 {
   "_about": "Help Me — short guided Scripture paths for a reader who does not know where in the Bible to begin. Like data/studies.json and data/devotions.json, this file carries canonical passage REFERENCES and this app's own editorial prose, and never a word of Scripture: the text is read out of the shipped editions at render time, through the same resolver Today, Learn and Devotions use. A verse typed in here would be a verse this app asserts on its own authority, outside every check that defends the rest. Phase A ships no reader, no tab and no stored progress; this file, its verifier and its contracts exist so the content is proven before any of that is built.",
-
   "_notTheJob": "Help Me is not therapy, not counselling, not diagnosis, and not spiritual direction from a machine. It does not decide what a reader has, does not score anyone, does not read what anyone writes, and never claims that God has spoken privately to the person holding the phone. Where a person needs a pastor, a doctor or emergency help, the honest move is to say so.",
-
   "_authoring": {
     "arriveMax": 420,
     "noticeMax": 2400,
@@ -26,12 +24,9 @@
       "Read every anchor in all three shipped English editions before writing about it. Daniel 3:17 is rendered \"If it happens\", \"If it be so\" and \"If the God whom we serve exists\" — three different arguments — so a reading that leans on one edition's wording is wrong beside another. No lint can judge this: word it so no shipped edition contradicts the reading."
     ]
   },
-
   "version": 1,
-
   "safety": {
     "_about": "The configuration future Help Me surfaces will read for urgent help, and the rules that bind the writing. Nothing here is written from memory: every resource carries the source it was read from and the date it was checked, and no number is listed for a territory nobody verified.",
-
     "escalation": {
       "policy": "Help Me does not put a crisis warning on every path. One quiet route is always reachable from the Help Me home, and only paths that genuinely warrant it carry a contextual offer. Urgent help is an escape hatch, not a Help Me path: it hands a reader to people who can actually help and gets out of the way.",
       "homeEntry": {
@@ -39,16 +34,20 @@
         "placement": "Quiet, low in the Help Me home, always present.",
         "note": "Discreet by design. A reader in trouble should find it without every other reader being alarmed by it."
       },
-      "contextualPaths": ["heavy-heart", "guilt-and-sin"],
+      "contextualPaths": [
+        "heavy-heart",
+        "guilt-and-sin"
+      ],
       "contextualRule": "A contextual offer names what is available and does nothing else. It never asks how bad it is, never scores an answer, and never changes the path a reader is on."
     },
-
     "unsafeRelationship": {
       "rule": "Never tell a reader to remain in danger, return to an unsafe person, or restore someone's access to them, for the sake of forgiveness, reconciliation, submission or spiritual duty. Forgiveness is not reconciliation, and neither of them requires proximity.",
-      "appliesTo": ["hurt-and-forgiveness", "guilt-and-sin"],
+      "appliesTo": [
+        "hurt-and-forgiveness",
+        "guilt-and-sin"
+      ],
       "reviewRequired": true
     },
-
     "neverBuild": [
       "diagnosis of any medical or psychiatric condition",
       "severity scores",
@@ -61,7 +60,6 @@
       "streaks, missed days or completion pressure",
       "remote profiles, accounts or analytics of any kind"
     ],
-
     "crisis": {
       "displayRule": "A resource is never shown without the territory it belongs to. 988 is a United States service and is never presented as though it worked anywhere else.",
       "neverInferTerritoryFrom": [
@@ -81,13 +79,41 @@
           "available": "24 hours a day, every day",
           "coverage": "All areas of the United States, including where no local crisis centre takes part.",
           "actions": [
-            { "kind": "call", "label": "Call 988", "value": "988" },
-            { "kind": "text", "label": "Text 988", "value": "988" },
-            { "kind": "chat", "label": "Chat with the 988 Lifeline", "value": "https://chat.988lifeline.org/" },
-            { "kind": "call", "label": "In Spanish: call 988, then press 2", "value": "988" },
-            { "kind": "text", "label": "In Spanish: text AYUDA to 988", "value": "988" },
-            { "kind": "relay", "label": "TTY: use your relay service, or dial 711 then 988", "value": "711" },
-            { "kind": "videophone", "label": "ASL: dial 988 from a videophone", "value": "988" }
+            {
+              "kind": "call",
+              "label": "Call 988",
+              "value": "988"
+            },
+            {
+              "kind": "text",
+              "label": "Text 988",
+              "value": "988"
+            },
+            {
+              "kind": "chat",
+              "label": "Chat with the 988 Lifeline",
+              "value": "https://chat.988lifeline.org/"
+            },
+            {
+              "kind": "call",
+              "label": "In Spanish: call 988, then press 2",
+              "value": "988"
+            },
+            {
+              "kind": "text",
+              "label": "In Spanish: text AYUDA to 988",
+              "value": "988"
+            },
+            {
+              "kind": "relay",
+              "label": "TTY: use your relay service, or dial 711 then 988",
+              "value": "711"
+            },
+            {
+              "kind": "videophone",
+              "label": "ASL: dial 988 from a videophone",
+              "value": "988"
+            }
           ]
         }
       ],
@@ -123,7 +149,6 @@
       ]
     }
   },
-
   "paths": [
     {
       "id": "heavy-heart",
@@ -169,7 +194,13 @@
           "nextStep": {
             "kind": "continue",
             "text": "The next step is about someone else who prayed like this, the night before he died."
-          }
+          },
+          "anchors": [
+            {
+              "after": 1,
+              "ref": "Psalm 88:18"
+            }
+          ]
         },
         {
           "id": "hh-2",
@@ -231,7 +262,13 @@
           "nextStep": {
             "kind": "support",
             "text": "Give one person the real answer this week when they ask how you are. And if you are not safe, or you are not sure you can keep yourself safe, that is the point to contact a doctor or a crisis service where you are, today, rather than reading anything else."
-          }
+          },
+          "anchors": [
+            {
+              "after": 3,
+              "ref": "2 Corinthians 1:8"
+            }
+          ]
         }
       ]
     },
@@ -278,7 +315,13 @@
           "nextStep": {
             "kind": "continue",
             "text": "The next step is what Jesus said to people who could not stop calculating."
-          }
+          },
+          "anchors": [
+            {
+              "after": 4,
+              "ref": "Psalm 56:8"
+            }
+          ]
         },
         {
           "id": "fu-2",
@@ -319,7 +362,13 @@
           "nextStep": {
             "kind": "continue",
             "text": "The last step is for when you still do not know how it ends."
-          }
+          },
+          "anchors": [
+            {
+              "after": 5,
+              "ref": "Philippians 4:8"
+            }
+          ]
         },
         {
           "id": "fu-4",
@@ -350,7 +399,13 @@
       "title": "Coming Back to God",
       "entry": "I feel far from God",
       "summary": "For a long absence, a faith gone quiet, or not knowing how to start again — five short steps back.",
-      "covers": ["long absence", "spiritual numbness", "weak faith", "difficulty praying or reading", "wanting to return"],
+      "covers": [
+        "long absence",
+        "spiritual numbness",
+        "weak faith",
+        "difficulty praying or reading",
+        "wanting to return"
+      ],
       "plannedSteps": 5,
       "status": "authored",
       "completion": {
@@ -361,11 +416,18 @@
         {
           "id": "cb-1",
           "title": "Come back with words",
-          "passages": ["Hosea 14:1-4"],
-          "basis": ["Hosea 14:1-9", "Hosea 11:1-4"],
+          "passages": [
+            "Hosea 14:1-4"
+          ],
+          "basis": [
+            "Hosea 14:1-9",
+            "Hosea 11:1-4"
+          ],
           "arrive": "You do not have to arrive repaired. The first step is turning round, and this passage puts words in the mouths of people who had none.",
           "notice": "This comes at the end of a long and painful book. Hosea has spent thirteen chapters describing a people who went after everything except God, and it does not end with a threat. It ends with directions for coming home.\n\nThe first thing said is not softened: they fell because of their own sin. Nothing is reframed. But the second thing is stranger than it looks — take words with you. Normally you would bring an animal to an altar. Here the instruction is to bring sentences, and then God supplies the sentences himself, which is what you do for someone who has no idea what to say.\n\nThe words he gives are not elaborate. Ask for forgiveness. Ask him to receive what little there is. Then comes a list of the things that were never going to save them: a foreign army, cavalry, objects their own hands had made. Returning, in this passage, is specific. It names what you were relying on instead.\n\nThen God answers, and the answer is medical and free. He treats the turning away itself as the illness, and says he will heal it. The love is given without being earned — the text is blunt about that — and the anger is spoken of in the past tense.\n\nHosea is speaking to a nation, and the promises here were made under that covenant. What carries across to anyone reading now is the character of the God being addressed: he does not wait for a polished return, he supplies words to people who have none, and he treats the wandering itself as the thing he means to heal.",
-          "consider": ["What have you been leaning on instead, and could you name it to God today?"],
+          "consider": [
+            "What have you been leaning on instead, and could you name it to God today?"
+          ],
           "prayer": "God, I have been away a long time, and the explanation I had ready is not worth much. Forgive me. Take what I have, which is not much. I have been holding on to things that were never going to hold me, and I am naming that to you now. Heal the part of me that keeps walking off. Amen.",
           "nextStep": {
             "kind": "continue",
@@ -375,11 +437,18 @@
         {
           "id": "cb-2",
           "title": "Met before you arrive",
-          "passages": ["Luke 15:17-24"],
-          "basis": ["Luke 15:1-3", "Luke 15:25-32"],
+          "passages": [
+            "Luke 15:17-24"
+          ],
+          "basis": [
+            "Luke 15:1-3",
+            "Luke 15:25-32"
+          ],
           "arrive": "Most people coming back have a speech prepared. This step is about what happens to it.",
           "notice": "Jesus tells this story because he is being criticised for the company he keeps. That is the setting: religious people muttering that he eats with the wrong sort. Three stories follow about something lost and the party afterwards, and this is the third.\n\nThe son works out what he will say on the way home. It is a good speech — an admission, then a proposal: take me on as a hired man. He is planning to earn his way back onto the property, because being owed nothing is easier to live with than being forgiven.\n\nHe never gets to the proposal. The detail carrying the paragraph is that the father sees him while he is still a long way off, which means he had been watching the road. Then he runs, and the embrace happens before anything has been explained. The son says the part about no longer deserving to be called a son. The father answers by dressing him as one — robe, ring, sandals, none of them work clothes.\n\nWhat is absent matters. There is no probation. Nobody asks where the money went. The father does not wait for the speech to finish before responding to it.\n\nAnd notice what the story does not pretend. The older brother's complaint is left standing at the end, unresolved. Coming back is not made cost-free for everyone around it. What the parable insists on is the posture of the father: already watching, already moving, before you are near enough to explain yourself.",
-          "consider": ["Which is harder to accept — being forgiven, or being treated as a son or daughter rather than a hired hand?"],
+          "consider": [
+            "Which is harder to accept — being forgiven, or being treated as a son or daughter rather than a hired hand?"
+          ],
           "prayer": "Father, thank you that you were already watching the road. I had a speech ready and most of it was an offer to work my way back. I will say the true part instead: I have sinned, and I am owed nothing here. Thank you that you came out to meet me before I had any of it worked out. Amen.",
           "nextStep": {
             "kind": "continue",
@@ -389,11 +458,18 @@
         {
           "id": "cb-3",
           "title": "Say it, and let it be said",
-          "passages": ["1 John 1:8-10"],
-          "basis": ["1 John 1:5-10", "1 John 2:1-2"],
+          "passages": [
+            "1 John 1:8-10"
+          ],
+          "basis": [
+            "1 John 1:5-10",
+            "1 John 2:1-2"
+          ],
           "arrive": "One thing is asked here, and it is not an explanation.",
           "notice": "John sets out three sentences that begin the same way, and two of them are things people say to keep off the subject. One is a claim to have no sin at all. The other is a claim not to have done anything. Between them sits the alternative, and it is short: say it.\n\nThe word behind confess means to agree — to say the same thing about it that God says about it, rather than a softened version. Agreeing with God about something is not the same as intending to keep it, and that is what makes this more than a form of words. But what is asked here is the saying. Not an account of how it happened. Not a plan that guarantees it never happens again.\n\nWhat is said about God's response is more surprising than it first looks. He is called faithful, which you might expect, and then righteous — just, in some translations. Forgiveness here is not leniency, and it is not a mood he is in. The paragraph immediately after names the ground for it: someone who speaks to the Father on our behalf, and a sacrifice that covers the whole matter. The cost has been met elsewhere. That is why forgiveness can be described here as just, and not only kind.\n\nThen there is the clause people skip. The cleansing covers all unrighteousness — including the part you have not itemised, and the part you cannot see. A complete list is not a condition of this working.\n\nThe passage says to confess, and the one who forgives is God. It does not prescribe a setting or a practice beyond that, and Christians have ordered it differently for a long time. It also makes no promise about how you will feel afterwards.",
-          "consider": ["Is there something you have carried for years that you could simply name to God, in plain words, today?"],
+          "consider": [
+            "Is there something you have carried for years that you could simply name to God, in plain words, today?"
+          ],
           "prayerPrompt": "Say the thing itself, in ordinary words, without the explanation you have rehearsed. Then stop, and let the passage answer rather than answering for it. If you are not sure you believe what it says yet, say that as well.",
           "nextStep": {
             "kind": "continue",
@@ -403,26 +479,47 @@
         {
           "id": "cb-4",
           "title": "When you cannot pray",
-          "passages": ["Romans 8:26-27"],
-          "basis": ["Romans 8:18-25", "Romans 8:28-30"],
+          "passages": [
+            "Romans 8:26-27"
+          ],
+          "basis": [
+            "Romans 8:18-25",
+            "Romans 8:28-30"
+          ],
           "arrive": "Prayer dries up for all kinds of reasons. This passage is about praying when the words will not come, and it does not treat that as a failure.",
           "notice": "Paul is writing in a long stretch about things that are not finished. Creation strains. Believers strain. The body itself is still waiting for what it has been promised. Weakness, in this paragraph, is not a character flaw; it is the ordinary condition of people living before everything has been put right.\n\nSo when he admits that praying properly is past us, he is not scolding anyone, and he includes himself. Present tense, first person plural, about Christians.\n\nWhat he sets against it is not advice. No method, no posture, no list. He says the Spirit takes hold alongside us — the word suggests someone getting under the other end of a load — and intercedes for us at a depth that never reaches speech. Prayer too shapeless to count as speech is being carried by someone who does not need the words.\n\nThen one more thing, and it is the part that settles it. God understands what the Spirit means, and what the Spirit asks for is what God wants. The exchange is between the Spirit and the Father. It does not run through your ability to articulate it, and it does not depend on whether it felt like anything at the time.\n\nOne caution about what comes next, because it is quoted so often on its own. Paul does say that everything is being worked toward good — for people who love God, he adds — and then, in the next sentence, says what that good is: being shaped into the likeness of the Son. It is not a promise that circumstances resolve well. And nothing here suggests that silence in prayer means God has gone.",
-          "consider": ["What have you stopped bringing to God because you could not find words for it?"],
+          "consider": [
+            "What have you stopped bringing to God because you could not find words for it?"
+          ],
           "prayer": "Spirit, I don't have the words, and I have stopped expecting to find them this week. Pray what I can't. Father, you know what this is without my explaining it, and you are not waiting for a better version. I am here, which is most of what I have. Amen.",
           "nextStep": {
             "kind": "openPassage",
             "ref": "Romans 8:18-27",
             "text": "Before the last step, open Romans 8 and read from verse 18, so these two verses sit in the paragraph they belong to."
-          }
+          },
+          "anchors": [
+            {
+              "after": 5,
+              "ref": "Romans 8:28"
+            }
+          ]
         },
         {
           "id": "cb-5",
           "title": "Keep going, and not alone",
-          "passages": ["Hebrews 10:19-25"],
-          "basis": ["Hebrews 10:11-18", "Hebrews 10:26-31", "Hebrews 10:32-39"],
+          "passages": [
+            "Hebrews 10:19-25"
+          ],
+          "basis": [
+            "Hebrews 10:11-18",
+            "Hebrews 10:26-31",
+            "Hebrews 10:32-39"
+          ],
           "arrive": "The last step is about staying, and about not doing it on your own.",
-          "notice": "Everything in this paragraph hangs on one word: therefore. Ten chapters have argued a single point — that the old round of sacrifices never finished the job, and that Christ's one sacrifice did — ending with the line just before this about sins remembered no more. The confidence here rests on that, not on how you have been doing lately.\n\nThree instructions follow, and all three are plural. Draw near. Hold on to what you have said you believe. And then the third, which is about other people: think about how to spur one another toward love and good works, and do not give up meeting together.\n\nThat last clause was written about people who had already stopped coming. It is not aimed at them, though, but at the ones still in the room, and what they are told to do is provoke each other toward love rather than keep a register of who is missing.\n\nRead on and you will meet a hard paragraph, so it is better met here than by surprise. The writer turns to a severe warning, and he means it: for someone who takes the sacrifice just described and tramples it, treating that blood as worthless, there is nothing else left on offer. That is the act in view — repudiating the thing, not failing at it. Then watch what he does next. He reminds the same people what they once endured, tells them not to throw away their confidence, and puts himself alongside them among those who do not shrink back. The warning is addressed into a wavering community to keep it going, not handed to you as a test to run on yourself at two in the morning. Christians do read it in genuinely different ways, and if it keeps troubling you, that is worth talking through with a pastor rather than settling alone.",
-          "consider": ["Who is one Christian you could tell that you are coming back?"],
+          "notice": "Everything in this paragraph hangs on one word: therefore. Ten chapters have argued a single point — that the old round of sacrifices never finished the job, and that Christ's one sacrifice did — ending with the line just before this about sins remembered no more. The confidence here rests on that, not on how you have been doing lately.\n\nThree instructions follow, and all three are plural. Draw near. Hold on to what you have said you believe. And then the third, which is about other people: think about how to spur one another toward love and good works, and do not give up meeting together.\n\nThat last clause was written about people who had already stopped coming. It is not aimed at them, though, but at the ones still in the room, and what they are told to do is provoke each other toward love rather than keep a register of who is missing.\n\nRead on and you will meet a hard paragraph, so it is better met here than by surprise. The writer turns to a severe warning, and he means it: for someone who takes the sacrifice just described and tramples it, treating that blood as worthless, there is nothing else left on offer. That is the act in view — repudiating the thing, not failing at it.\n\nThen watch what he does next. He reminds the same people what they once endured, tells them not to throw away their confidence, and puts himself alongside them among those who do not shrink back. The warning is addressed into a wavering community to keep it going, not handed to you as a test to run on yourself at two in the morning. Christians do read it in genuinely different ways, and if it keeps troubling you, that is worth talking through with a pastor rather than settling alone.",
+          "consider": [
+            "Who is one Christian you could tell that you are coming back?"
+          ],
           "prayer": "Jesus, you opened the way, and I am taking you at your word instead of waiting until I feel qualified. Hold me to this when it goes quiet again. Give me one or two people who will keep me honest, and the nerve to tell them where I have been. Amen.",
           "nextStep": {
             "kind": "support",
@@ -511,7 +608,7 @@
             "2 Corinthians 7:12-13"
           ],
           "arrive": "Feeling terrible and changing are not the same event. Paul separates them here with unusual precision.",
-          "notice": "Grief gets sorted into two kinds in this paragraph, and the sorting is done by results rather than by intensity.\n\nPaul starts by admitting he regretted sending a hard letter, and then stopped regretting it. He is careful to say he is not pleased that they were upset. He is pleased about where the upset went: it moved them.\n\nThen the distinction. One kind of sorrow produces a turn, and leads somewhere, and leaves nothing to regret afterwards. The other kind produces death. Note that both are sorrow. Both feel bad. The difference is not how sharp the feeling is but whether anything happens as a result.\n\nAnd he lists what happened, which keeps it from being an abstraction: urgency, a readiness to put things right, indignation, alarm, longing, and justice actually done in a matter they had been avoiding. Every item is an action. None of them is feeling worse for longer.\n\nThat is the test to carry out of this. Not am I sorry enough, which has no answer and no end, but has this sorrow produced any movement at all — a conversation, a confession, a changed arrangement, a thing returned.\n\nWhich leaves the sorrow that never turns. It stays with the failure, or with how the failure makes you look, and never gets as far as God or as far as the thing that needs doing. Scripture does not call that repentance; it calls it deadly. But the word is about where that sorrow ends up, not about how much it hurts \u2014 sorrow that is heavy, or that will not lift when you want it to, is not what Paul is naming here. He is not asking you for more of it.",
+          "notice": "Grief gets sorted into two kinds in this paragraph, and the sorting is done by results rather than by intensity.\n\nPaul starts by admitting he regretted sending a hard letter, and then stopped regretting it. He is careful to say he is not pleased that they were upset. He is pleased about where the upset went: it moved them.\n\nThen the distinction. One kind of sorrow produces a turn, and leads somewhere, and leaves nothing to regret afterwards. The other kind produces death. Note that both are sorrow. Both feel bad. The difference is not how sharp the feeling is but whether anything happens as a result.\n\nAnd he lists what happened, which keeps it from being an abstraction: urgency, a readiness to put things right, indignation, alarm, longing, and justice actually done in a matter they had been avoiding. Every item is an action. None of them is feeling worse for longer.\n\nThat is the test to carry out of this. Not am I sorry enough, which has no answer and no end, but has this sorrow produced any movement at all — a conversation, a confession, a changed arrangement, a thing returned.\n\nWhich leaves the sorrow that never turns. It stays with the failure, or with how the failure makes you look, and never gets as far as God or as far as the thing that needs doing. Scripture does not call that repentance; it calls it deadly. But the word is about where that sorrow ends up, not about how much it hurts — sorrow that is heavy, or that will not lift when you want it to, is not what Paul is naming here. He is not asking you for more of it.",
           "consider": [
             "Has your sorrow about this produced anything yet, or has it only gone round again?"
           ],
@@ -602,7 +699,7 @@
             "Romans 13:1-4"
           ],
           "arrive": "Giving up revenge is not the same as pretending nothing happened, and Paul never asks for the second one.",
-          "notice": "Three instructions arrive together, and the middle one carries two limits most people never quote. Do not repay evil with evil. Then: be at peace with everyone — if it is possible, and as far as it depends on you. Paul assumes in writing that some peace is not possible, and that some of it is not yours to produce.\n\nThe reason given for not avenging yourself is not that the wrong was small. It is that repayment has an owner. Vengeance is not abolished in this paragraph; it is reassigned, and the quotation makes the claim in God's own voice. Stepping back is not letting it go unanswered. It is declining to be the one who answers.\n\nAnd the very next paragraph matters for anyone reading this with a real injury. Paul moves straight from private revenge to public office: the governing authority does not carry a sword for nothing, and he calls it God's servant in the matter of wrongdoing. Whatever else those verses settle \u2014 and they have been argued over for centuries \u2014 they put that answering somewhere other than your own hands. Reporting what happened, making a statement, letting a court decide — none of that is private revenge, and none of it is a failure to forgive.\n\nThen the strange command about feeding a hungry enemy. Notice it is concrete and small. He does not ask you to feel warmly about anyone. He asks for bread, if bread is what is needed.\n\nNothing in this paragraph requires you to stay where you are being harmed in order to overcome evil with good.",
+          "notice": "Three instructions arrive together, and the middle one carries two limits most people never quote. Do not repay evil with evil. Then: be at peace with everyone — if it is possible, and as far as it depends on you. Paul assumes in writing that some peace is not possible, and that some of it is not yours to produce.\n\nThe reason given for not avenging yourself is not that the wrong was small. It is that repayment has an owner. Vengeance is not abolished in this paragraph; it is reassigned, and the quotation makes the claim in God's own voice. Stepping back is not letting it go unanswered. It is declining to be the one who answers.\n\nAnd the very next paragraph matters for anyone reading this with a real injury. Paul moves straight from private revenge to public office: the governing authority does not carry a sword for nothing, and he calls it God's servant in the matter of wrongdoing. Whatever else those verses settle — and they have been argued over for centuries — they put that answering somewhere other than your own hands. Reporting what happened, making a statement, letting a court decide — none of that is private revenge, and none of it is a failure to forgive.\n\nThen the strange command about feeding a hungry enemy. Notice it is concrete and small. He does not ask you to feel warmly about anyone. He asks for bread, if bread is what is needed.\n\nNothing in this paragraph requires you to stay where you are being harmed in order to overcome evil with good.",
           "consider": [
             "What would you be doing about this if you were not trying to settle the score yourself?"
           ],
@@ -740,7 +837,13 @@
           "nextStep": {
             "kind": "continue",
             "text": "The last step is about deciding without the certainty you were hoping for."
-          }
+          },
+          "anchors": [
+            {
+              "after": 5,
+              "ref": "Proverbs 15:22"
+            }
+          ]
         },
         {
           "id": "dd-4",
@@ -771,7 +874,11 @@
       "title": "Start Here",
       "entry": "I don't know where to start",
       "summary": "Three short steps for beginning with God without first working out what is wrong.",
-      "covers": ["no idea where to begin", "no words for it", "wanting to start with God rather than with a problem"],
+      "covers": [
+        "no idea where to begin",
+        "no words for it",
+        "wanting to start with God rather than with a problem"
+      ],
       "plannedSteps": 3,
       "status": "authored",
       "completion": {
@@ -783,11 +890,18 @@
         {
           "id": "sh-1",
           "title": "Begin where you actually are",
-          "passages": ["Psalm 62:5-8"],
-          "basis": ["Psalm 62:1-4", "Psalm 62:9-12"],
+          "passages": [
+            "Psalm 62:5-8"
+          ],
+          "basis": [
+            "Psalm 62:1-4",
+            "Psalm 62:9-12"
+          ],
           "arrive": "Three short steps, one passage each. You do not need the right words to start, or a clear account of what is wrong.",
           "notice": "The psalm is not written from a settled place. A few lines earlier the writer describes being leaned on like a wall about to go over, surrounded by people whose kindness is a performance. That is the situation he is speaking from when he tells his own soul to wait, and when he turns and tells everyone else to trust.\n\nNotice the order. He speaks to himself first — twice, almost identically, as though it needed saying more than once. Only then does he turn outward with an instruction, and the instruction is not to sort yourself out first. It is to tip out what is in you in God's direction, and to let him be the safe place. The verb is the one you would use for tipping a jar until nothing is left in it. It assumes mess. It assumes nothing about eloquence.\n\nWhat the psalm does not say matters too. It does not promise the pressure lifts. It calls God rock, refuge and salvation, and then, a few lines on, says plainly that people are lighter than a breath and that riches are not worth setting your heart on. The comfort being offered is not that your circumstances are about to improve. It is that there is somewhere to put all this that is not yourself.\n\nWaiting in silence, here, is not the same as having nothing to say. It is the quiet of someone who has stopped negotiating.",
-          "consider": ["What would you say to God right now if you did not have to say it well?"],
+          "consider": [
+            "What would you say to God right now if you did not have to say it well?"
+          ],
           "prayer": "God, I do not know how to say this properly, so I am not going to try. You know the shape of it already. I am bringing it to you instead of carrying it round for another day. Be the safe place this psalm says you are, because I do not have another one. Amen.",
           "nextStep": {
             "kind": "continue",
@@ -797,11 +911,18 @@
         {
           "id": "sh-2",
           "title": "An invitation, not a summons",
-          "passages": ["Matthew 11:28-30"],
-          "basis": ["Matthew 11:20-24", "Matthew 11:25-27"],
+          "passages": [
+            "Matthew 11:28-30"
+          ],
+          "basis": [
+            "Matthew 11:20-24",
+            "Matthew 11:25-27"
+          ],
           "arrive": "If the first step was about bringing what you have, this one is about who you are bringing it to.",
           "notice": "Read the lines just before this and the welcome gets stranger, not softer. Jesus has finished saying hard things to towns that watched him work and changed nothing. He is not speaking here because his standards are low. Then he thanks his Father that this has been shown to people with no standing — infants, in the comparison he uses — rather than to the ones you would expect to grasp it.\n\nThen he opens it to anyone worn out and loaded down. Two words carry the weight. One is rest. The other is yoke — working equipment, a wooden beam across the shoulders of two animals so they pull together. And he does not stop at offering it: take it, he says, and learn from me. So the offer is not a hammock. It is a swap — his load instead of yours, pulled alongside him rather than alone.\n\nAnd the reason he gives is not a method or a programme. It is what he is like — gentle, and low rather than overbearing, in the way he describes his own heart. That is the argument he makes for coming to him.\n\nThe promise is rest for souls. Not an easier week, not an end to what is heavy, not a feeling that arrives on a schedule. You can come to him before any of that has changed.",
-          "consider": ["What would change if you came to Christ as you are, rather than after sorting yourself out?"],
+          "consider": [
+            "What would change if you came to Christ as you are, rather than after sorting yourself out?"
+          ],
           "prayer": "Jesus, I am tired, and I have been carrying this by myself. You said to come, so I am coming — not fixed, not clear, not sure what to ask for. Teach me your way of carrying things. Amen.",
           "nextStep": {
             "kind": "continue",
@@ -811,11 +932,18 @@
         {
           "id": "sh-3",
           "title": "Something ordinary to do next",
-          "passages": ["Luke 11:1-4"],
-          "basis": ["Luke 11:5-10", "Luke 11:11-13"],
+          "passages": [
+            "Luke 11:1-4"
+          ],
+          "basis": [
+            "Luke 11:5-10",
+            "Luke 11:11-13"
+          ],
           "arrive": "This is the last step. Help Me is not meant to be somewhere you stay.",
           "notice": "Someone who had been with Jesus every day asked to be taught how to pray. Sit with that before anything else here. Not knowing how was not a disqualification among the people closest to him — it was the reason for the question. The request itself names John, who had taught his own followers; they wanted the same from Jesus.\n\nHe does not answer with encouragement. He answers with words, and they are short. A name to honour. A kingdom to want. Bread for today. Forgiveness, given and received. A request to be kept out of what would break you. That is all of it; read aloud, it takes about fifteen seconds.\n\nTwo things in it are easy to miss. The bread is for the day — not the month, not the plan — so you are being taught to come back tomorrow for the next one. And forgiveness sits in the middle of an ordinary daily prayer rather than as the conclusion of some long process, which tells you what sort of thing it is meant to be: regular, not exceptional.\n\nWhat follows in the chapter is a story about a man banging on a neighbour's door at midnight until he gets what he needs, and then an instruction to keep asking. Persistence is not treated as pestering.\n\nNone of this requires you to feel prayerful first. The words are plain enough to survive being said badly, half asleep, or through your teeth.",
-          "consider": ["Could you pray something this short today, and again tomorrow?"],
+          "consider": [
+            "Could you pray something this short today, and again tomorrow?"
+          ],
           "prayerPrompt": "Pray it in your own words. Honour God's name, ask for what today actually needs, say where you need forgiving and where you need to forgive, and ask to be kept. If that takes twenty seconds, it has still been prayed.",
           "nextStep": {
             "kind": "today",

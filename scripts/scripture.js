@@ -167,6 +167,38 @@ function buildHelp(doc, errors){
         return resolveDevotionRef(r, where, editionVerses, editionSpans, errors);
       }).filter(Boolean);
       if(!passages.length) errors.push(where + ' — a Help Me step with no resolvable passage');
+
+      /* Inline Scripture anchors. A step's prose often sends the reader to a
+         specific line — "one verse earlier", "read on and you will meet", "it
+         is quoted so often on its own". An anchor puts that line, in the
+         reader's own edition, between the paragraphs that discuss it.
+
+         `after` is a 1-based paragraph index, so the prose itself is never
+         touched: the anchor sits BETWEEN existing paragraphs rather than
+         inside them, and the approved wording stays byte-identical.
+
+         Two at most. A third would be a quote wall rather than a pause. */
+      const paraCount = String(s.notice || '').split(/\n{2,}/).filter(x => x.trim()).length;
+      const anchors = (s.anchors || []).map(a => {
+        refCount++;
+        const r = resolveDevotionRef(a.ref, where + '/anchor', editionVerses, editionSpans, errors);
+        if(!r) return null;
+        if(!Number.isInteger(a.after) || a.after < 1 || a.after > paraCount){
+          errors.push(where + ' — anchor "' + a.ref + '" sits after paragraph ' + a.after +
+                      ', but the notice has ' + paraCount);
+          return null;
+        }
+        /* A long anchor is a second passage, not a pause. */
+        if(r.to - r.from > 2){
+          errors.push(where + ' — anchor "' + a.ref + '" spans ' + (r.to - r.from + 1) +
+                      ' verses; an inline anchor is one verse or a short range');
+          return null;
+        }
+        return { after: a.after, ref: r.ref, c: r.c, ch: r.ch, from: r.from, to: r.to };
+      }).filter(Boolean);
+      if(anchors.length > 2){
+        errors.push(where + ' — ' + anchors.length + ' inline anchors; two is the limit');
+      }
       /* A nextStep of kind openPassage names a further reading. It is a
          reference like any other and is resolved here, so the app opens a
          book CODE and never parses an English book name at runtime. */
@@ -190,6 +222,7 @@ function buildHelp(doc, errors){
         notice: s.notice || '',
         consider: (s.consider || []).slice(),
         prayer: s.prayer || '',
+        anchors: anchors,
         nextStep: nextStep
       };
     });
@@ -846,6 +879,14 @@ function region(built){
         "        arrive: '" + esc(s.arrive) + "',\n" +
         "        notice: '" + esc(s.notice) + "',\n" +
         '        consider: [' + s.consider.map(function(q){ return "'" + esc(q) + "'"; }).join(', ') + '],\n' +
+        /* Anchors carry a paragraph index and a canonical location. Never a
+           word of the verse: the reader's own edition supplies those. */
+        (s.anchors && s.anchors.length
+          ? '        anchors: [' + s.anchors.map(function(a){
+              return '{ after: ' + a.after + ", ref: '" + esc(a.ref) + "', c: '" + esc(a.c) +
+                     "', ch: " + a.ch + ', from: ' + a.from + ', to: ' + a.to + ' }';
+            }).join(', ') + '],\n'
+          : '') +
         (s.prayer ? "        prayer: '" + esc(s.prayer) + "',\n" : '') +
         (s.nextStep ? "        nextStep: { kind: '" + esc(s.nextStep.kind) + "', text: '" +
                       esc(s.nextStep.text) + "'" +

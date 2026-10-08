@@ -467,6 +467,61 @@ function checkNoProfileFields(node, errors, trail){
   });
 }
 
+/* ---------- inline Scripture anchors ----------
+   An anchor names a place in Scripture and a paragraph to sit after. That is
+   all it may ever contain.
+
+   THE FAILURE THIS PREVENTS: a quote typed into the catalogue. The build's
+   emitter only copies the fields it knows, so a stray `text` would never
+   reach a reader — but it would sit in the content file looking authoritative
+   and unverified, and the next person to write an emitter would ship it. The
+   catalogue is where Scripture words must be refused, not the renderer. */
+const ANCHOR_FIELDS = ['after', 'ref'];
+
+function checkAnchors(doc, errors, notes){
+  let total = 0, steps = 0;
+  (doc.paths || []).forEach(p => (p.steps || []).forEach(s => {
+    const list = s.anchors;
+    if(list === undefined) return;
+    const where = p.id + '/' + s.id;
+    if(!Array.isArray(list)){ errors.push(where + ' — anchors must be a list'); return; }
+    if(!list.length) return;
+    steps++;
+    if(list.length > 2){
+      errors.push(where + ' — ' + list.length + ' inline anchors; two is the limit, ' +
+                  'and a third is a quote wall rather than a pause');
+    }
+    const paras = String(s.notice || '').split(/\n{2,}/).filter(x => x.trim()).length;
+    list.forEach(a => {
+      total++;
+      if(!a || typeof a !== 'object'){ errors.push(where + ' — an anchor is not an object'); return; }
+      Object.keys(a).forEach(k => {
+        if(ANCHOR_FIELDS.indexOf(k) === -1){
+          errors.push(where + ' — anchor carries "' + k + '". An anchor is a LOCATION: ' +
+                      'only ' + ANCHOR_FIELDS.join(' and ') + ' are allowed, and no Scripture ' +
+                      'text is ever stored in this file.');
+        }
+      });
+      if(typeof a.ref !== 'string' || !a.ref.trim()){
+        errors.push(where + ' — an anchor with no reference');
+      }
+      if(!Number.isInteger(a.after) || a.after < 1 || a.after > paras){
+        errors.push(where + ' — anchor "' + a.ref + '" sits after paragraph ' + a.after +
+                    ', and the notice has ' + paras);
+      }
+      /* Its book must already be one the step was built on, so an anchor
+         cannot smuggle in a biblical claim nobody reviewed. */
+      const book = String(a.ref).replace(/\s+\d+:.*$/, '');
+      if(!(s.basis || []).some(b => b.indexOf(book) === 0) &&
+         !(s.passages || []).some(b => b.indexOf(book) === 0)){
+        errors.push(where + ' — anchor "' + a.ref + '" is outside the passages and basis ' +
+                    'this step was written from');
+      }
+    });
+  }));
+  notes.push(total + ' inline Scripture anchor(s) across ' + steps + ' step(s), locations only');
+}
+
 /* ---------- crisis resources ---------- */
 
 function checkSafety(doc, errors, notes){
@@ -654,6 +709,7 @@ function run(){
 
   const { steps, refs } = validate(doc, errors, notes);
   checkNoProfileFields(doc, errors, 'help');
+  checkAnchors(doc, errors, notes);
   checkSafety(doc, errors, notes);
   checkCrossReferences(doc, errors);
   checkNoUI(errors, notes);
