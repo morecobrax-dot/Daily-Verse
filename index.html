@@ -1838,6 +1838,10 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
 .help-urgent-action{
   width: 100%; text-decoration: none; text-align: center;
 }
+.help-urgent-action-plain{
+  font-size: var(--fs-support); line-height: var(--lh-body);
+  color: var(--text); margin: 0; text-align: center;
+}
 .help-urgent-admin{
   font-size: var(--fs-meta); color: var(--text-faint);
   margin: var(--space-md) 0 0;
@@ -2747,6 +2751,18 @@ function validateAppId(id){
 
    ========================================================= */
 const APP_UPDATES = [
+  {
+    id: 'v1-14-2',
+    version: '1.14.2',
+    title: 'Urgent help reaches the right place',
+    date: '2026-10-08',
+    summary: 'In urgent help, the actions that offer to send a message now open your messages rather than your phone, so each way of reaching a crisis line does what it says.',
+    fixes: [
+      'Tapping a text option in urgent help now opens your messages, addressed to the crisis line, instead of starting a call',
+      'The Spanish text option opens your messages the same way, so you can send the word it asks for',
+      'Calling, texting and opening a chat are now each described to screen readers, so it is clear what tapping will do'
+    ]
+  },
   {
     id: 'v1-14-1',
     version: '1.14.1',
@@ -12856,6 +12872,56 @@ function closeHelpUrgent(){
   releaseOverlayHistory();
 }
 
+/* ---------- what a crisis action actually does ---------- */
+/* Declared, never guessed. Five editorial kinds reach three mechanisms, and
+   the mechanism alone decides the URI scheme.
+
+   This used to be a two-branch ternary: a chat action became a link, and
+   EVERYTHING ELSE became tel:. So both text actions dialled instead of
+   opening a composer, and shipped that way in 1.14.0 and 1.14.1. The defect
+   was inferring an action from the one case somebody had in mind, in the
+   surface where a wrong outcome costs most. The kinds were right in the
+   configuration the whole time; only this read them wrong.
+
+   `relay` and `videophone` are dialled on purpose — a relay service, and a
+   videophone — so they are phone mechanisms, not an oversight. They stay
+   distinct kinds because they are separately sourced accessibility routes.
+
+   No body is prefilled on an sms: URI. The syntax is not portable: iOS and
+   Android disagree, it has changed between iOS versions, and an unsupported
+   query can stop the link opening at all. The Spanish action's own label
+   already tells the reader to text AYUDA, which is true on every platform.
+   A correct recipient with a clear instruction beats a fragile URI. */
+const CRISIS_ACTIONS = {
+  call:       { scheme: 'tel:', does: 'Opens your phone' },
+  relay:      { scheme: 'tel:', does: 'Opens your phone' },
+  videophone: { scheme: 'tel:', does: 'Opens your phone' },
+  text:       { scheme: 'sms:', does: 'Opens your messages' },
+  chat:       { scheme: '',     does: 'Opens a website in a new tab' }
+};
+
+/* The mechanism is announced as well as shown, so a screen reader says what
+   tapping will do rather than only "link".
+
+   Nothing here records anything: no handler, no counter, no stored key. The
+   reader taps and the platform takes over. */
+function helpUrgentActionHtml(a){
+  const m = CRISIS_ACTIONS[a && a.kind];
+  /* A web action is checked here and not only at build time: a value that is
+     not a web address must never reach an href. */
+  const usable = !!m && (m.scheme ? true : String(a.value).indexOf('https://') === 0);
+  /* An action this app cannot place is shown and not made actionable. The
+     words stay in front of the reader, who can act on them by hand, and
+     nothing guesses a mechanism. `npm run help:verify` refuses an unknown
+     kind, so this is a safety net rather than a shipped state. */
+  if(!usable) return '<p class="help-urgent-action-plain">' + escapeHtml(a.label) + '</p>';
+  const href = m.scheme ? m.scheme + a.value : a.value;
+  return '<a class="btn-secondary help-urgent-action" href="' + escapeAttr(href) + '"' +
+    (m.scheme ? '' : ' target="_blank" rel="noopener noreferrer"') + '>' +
+    escapeHtml(a.label) +
+    '<span class="sr-only"> — ' + escapeHtml(m.does) + '</span></a>';
+}
+
 /* Actionable human help first, and nothing in front of it. No devotional
    prose, no passage, no prayer and no question before the numbers: spiritual
    support may accompany urgent help and may never delay it.
@@ -12870,14 +12936,7 @@ function renderHelpUrgent(){
   const u = HELP_URGENT;
 
   const territories = (u.territories || []).map(function(t){
-    const actions = (t.actions || []).map(function(a){
-      const isLink = a.kind === 'chat' && /^https?:/.test(a.value);
-      return isLink
-        ? '<a class="btn-secondary help-urgent-action" href="' + escapeAttr(a.value) + '" ' +
-            'target="_blank" rel="noopener noreferrer">' + escapeHtml(a.label) + '</a>'
-        : '<a class="btn-secondary help-urgent-action" href="tel:' + escapeAttr(a.value) + '">' +
-            escapeHtml(a.label) + '</a>';
-    }).join('');
+    const actions = (t.actions || []).map(helpUrgentActionHtml).join('');
     return '<section class="panel help-urgent-territory">' +
       '<h2 class="help-urgent-place">' + escapeHtml(t.name) + '</h2>' +
       '<p class="help-urgent-line">' + escapeHtml(t.line) + '</p>' +

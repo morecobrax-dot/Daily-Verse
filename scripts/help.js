@@ -54,6 +54,22 @@ const STATUS = ['authored', 'outline'];
    is a feature invented early. */
 const NEXT_KINDS = ['continue', 'openPassage', 'today', 'learn', 'support'];
 const COMPLETION_KINDS = ['today', 'learn', 'bible', 'devotions'];
+/* The mechanism each crisis action reaches, and the only kinds that may
+   appear in safety.crisis. An unrecognised kind used to fall through the
+   renderer to tel:, which is how both text actions shipped as phone calls
+   in 1.14.0 and 1.14.1. CRISIS_ACTIONS in index.html must agree with this
+   list, and a contract proves it does: adding a mechanism is a deliberate
+   change in both places, never a new string in the content file. */
+const CRISIS_ACTION_KINDS = {
+  call: 'phone', relay: 'phone', videophone: 'phone',
+  text: 'sms', chat: 'web'
+};
+/* What each mechanism's value may look like. A dialled or texted value has
+   to carry a number: the character class alone would accept "---", which is
+   not somewhere a phone can reach anybody. */
+const PREFIX_HTTPS = new RegExp('^https://');
+const DIALABLE = new RegExp('^[0-9+#*() -]+$');
+const HAS_DIGIT = new RegExp('[0-9]');
 
 /* Claims Help Me may not make, over and above the ones devotional writing
    is already held to (those are imported, not retyped). Matched against
@@ -569,8 +585,27 @@ function checkSafety(doc, errors, notes){
       if(!t.code || !t.name || !t.line) errors.push(at + ' — needs code, name and the service it names');
       if(!Array.isArray(t.actions) || !t.actions.length) errors.push(at + ' — no way to reach it');
       (t.actions || []).forEach(a => {
-        if(!a.kind || !a.label || !a.value) errors.push(at + ' — an action needs kind, label and value');
-        if(a.kind === 'chat' && !/^https:\/\//.test(a.value)) errors.push(at + ' — a chat action must be an https url');
+        if(!a.kind || !a.label || !a.value){
+          errors.push(at + ' — an action needs kind, label and value');
+          return;
+        }
+        /* What an action DOES is declared, never inferred from its label. A
+           kind nothing recognises is refused here rather than guessed at
+           render time. */
+        const mech = CRISIS_ACTION_KINDS[a.kind];
+        if(!mech){
+          errors.push(at + ' — "' + a.kind + '" is not a crisis action kind. One of ' +
+            Object.keys(CRISIS_ACTION_KINDS).join(' | ') + '.');
+        } else if(mech === 'web'){
+          if(!PREFIX_HTTPS.test(a.value)){
+            errors.push(at + ' — a ' + a.kind + ' action must be an https url');
+          }
+        } else if(!DIALABLE.test(String(a.value)) || !HAS_DIGIT.test(String(a.value))){
+          /* A phone or sms action is reached at a number. A url here would
+             become tel:https://... , which dials nothing. */
+          errors.push(at + ' — a ' + a.kind + ' action is reached at "' + a.value +
+            '", which is not something a phone can dial or text');
+        }
       });
     });
   }
@@ -758,7 +793,7 @@ module.exports = { readCatalogue, stepFields, pathFields, stepWordCount, run,
                    validate, checkReferences, passagesForOverlap, scanProse,
                    checkNumbersInProse, checkNoProfileFields, checkSafety,
                    checkCadence, checkNoUI, checkCrossReferences,
-                   STATUS, NEXT_KINDS, COMPLETION_KINDS,
+                   STATUS, NEXT_KINDS, COMPLETION_KINDS, CRISIS_ACTION_KINDS,
                    HELP_CLAIMS, DIAGNOSIS_CLAIMS, UNSAFE_RECONCILIATION, GENERIC_COPY,
                    SALVATION_STATUS, HISTORICAL_CLAIMS,
                    FORBIDDEN_KEYS, CATALOGUE };

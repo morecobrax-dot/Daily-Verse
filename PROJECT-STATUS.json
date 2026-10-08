@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "appId": "daily-verse",
-  "version": "1.14.1",
-  "phase": "Native iOS — Gate 1 (architecture)",
+  "version": "1.14.2",
+  "phase": "Crisis action hotfix",
   "status": "release_ready",
   "needsQa": true,
   "needsDecision": true,
-  "currentTask": "Native iOS packaging was assessed against the app as it stands. A Capacitor wrapper is the recommended path, with a small platform layer built first so that sharing, saving a backup, and the urgent-help call and chat actions work inside a native app rather than a browser tab.",
-  "nextAction": "Decide the Mac build route, the Apple Developer enrolment type and the bundle identifier; patch the urgent-help text actions; then build the platform layer.",
+  "currentTask": "v1.14.2 corrects the text options in urgent help: they now open your messages, addressed to the crisis line, rather than starting a call. Calling, texting and opening a chat are each described to screen readers. No crisis wording, resource or source changed.",
+  "nextAction": "Short check on a physical iPhone that a text option in urgent help opens Messages and not Phone. The native iOS decisions from Gate 1 are still open.",
   "blocker": null,
-  "updatedAt": "2026-10-08T18:51:49Z"
+  "updatedAt": "2026-10-08T19:46:50Z"
 }

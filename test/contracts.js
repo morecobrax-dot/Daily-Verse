@@ -8706,8 +8706,180 @@ function testHelpProduct(){
     /const nextId = nextHelpStepId[\s\S]{0,400}renderHelpStep\(\);/.test(js.replace(/\n\s*/g, '')));
 }
 
+/* =========================================================
+   CONTRACT 53 — A CRISIS ACTION DOES WHAT IT SAYS
+   ---------------------------------------------------------
+   The urgent-help sheet is the one surface here where a wrong
+   outcome is not an inconvenience.
+
+   In 1.14.0 and 1.14.1 the renderer was a two-branch ternary: a
+   chat action became a link, and EVERYTHING ELSE became tel:. So
+   both configured text actions dialled instead of opening a
+   message, and one of those tells the reader to send a particular
+   word, which a dialler cannot carry at all.
+
+   The configuration was right the whole time — every action has
+   carried an explicit kind since the feature shipped. What was
+   missing was anything that READ it, and anything that would
+   notice if it stopped being read.
+
+   So this does not grep for a scheme. It renders the sheet and
+   checks the href a reader's phone would actually receive, for
+   every configured action.
+   ========================================================= */
+function testCrisisActions(){
+  section('CONTRACT 53 — a crisis action does what it says');
+  const store = new Map();
+  const app = H.loadApp({ sharedStorage: store });
+  const c = app.ctx;
+  const d = app.dom.document;
+  const js = H.mainScript(H.readApp());
+  const KINDS = require('../scripts/help.js').CRISIS_ACTION_KINDS;
+
+  /* The rendered sheet, read once and shared by everything below. */
+  c.openHelpUrgent();
+  const html = d.getElementById('helpUrgentBody').innerHTML;
+  const configured = [];
+  (c.HELP_URGENT.territories || []).forEach(function(t){
+    (t.actions || []).forEach(function(a){ configured.push(a); });
+  });
+  const anchors = [];
+  const re = /<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
+  let m;
+  while((m = re.exec(html))) anchors.push({ href: m[1], inner: m[2] });
+  const scheme = h => String(h).split(':')[0];
+  /* Pair each configured action with what the sheet actually produced. */
+  const rendered = configured.map(function(a){
+    const hit = anchors.filter(function(x){ return x.inner.indexOf(c.escapeHtml(a.label)) !== -1; })[0];
+    return { a: a, href: hit ? hit.href : null, inner: hit ? hit.inner : null };
+  });
+
+  sub('every action declares what it is, and nothing guesses');
+  T('every configured action carries a kind the app supports',
+    configured.length > 0 && configured.every(function(a){ return !!KINDS[a.kind]; }),
+    configured.map(function(a){ return a.kind; }).join(', '));
+  /* Two lists, in two files, that must not drift apart. */
+  T('the renderer knows exactly the kinds the build allows',
+    Object.keys(c.CRISIS_ACTIONS).sort().join() === Object.keys(KINDS).sort().join(),
+    Object.keys(c.CRISIS_ACTIONS).sort().join());
+  T('and every kind in use is one of them',
+    configured.every(function(a){ return !!c.CRISIS_ACTIONS[a.kind]; }));
+  T('every configured action reached the screen',
+    rendered.every(function(r){ return !!r.href; }),
+    rendered.filter(function(r){ return !r.href; }).map(function(r){ return r.a.label; }).join('; '));
+  /* The defect was a label being trusted to imply a mechanism. */
+  T('the renderer reads the kind, and never the label',
+    /CRISIS_ACTIONS\[a && a\.kind\]/.test(js) &&
+    !/a\.label\s*\.\s*(indexOf|match|test)/.test(js));
+
+  sub('a call dials, a text texts, and a chat opens the web');
+  const byMech = function(mech){ return rendered.filter(function(r){ return KINDS[r.a.kind] === mech; }); };
+  T('a phone action generates tel:, never sms: or https:',
+    byMech('phone').length >= 1 && byMech('phone').every(function(r){ return scheme(r.href) === 'tel'; }),
+    byMech('phone').map(function(r){ return r.a.kind + '=' + r.href; }).join(' '));
+  T('a text action generates sms:, never tel:',
+    byMech('sms').length >= 1 && byMech('sms').every(function(r){ return scheme(r.href) === 'sms'; }),
+    byMech('sms').map(function(r){ return r.a.kind + '=' + r.href; }).join(' '));
+  T('a chat action generates https:, never tel: or sms:',
+    byMech('web').length >= 1 && byMech('web').every(function(r){ return scheme(r.href) === 'https'; }),
+    byMech('web').map(function(r){ return r.a.kind + '=' + r.href; }).join(' '));
+  T('and every action is reached at the value the configuration carries',
+    rendered.every(function(r){ return r.href.indexOf(String(r.a.value)) !== -1; }));
+  /* A relay service and a videophone are DIALLED on purpose. They are
+     separate kinds because they are separately sourced, not because they
+     reach a different mechanism. */
+  T('the accessibility routes dial, which is what their sources say',
+    ['relay', 'videophone'].every(function(k){ return !KINDS[k] || KINDS[k] === 'phone'; }));
+
+  sub('the two actions that shipped wrong cannot ship wrong again');
+  const texts = rendered.filter(function(r){ return r.a.kind === 'text'; });
+  T('both text actions are configured, as the sources record them',
+    texts.length === 2, String(texts.length));
+  /* THE REGRESSION. Named for the failure, not the function. */
+  T('the plain text action opens a message and does not dial',
+    texts.length === 2 && texts.every(function(r){ return r.href.indexOf('tel:') !== 0; }) &&
+    texts.some(function(r){ return r.a.label.indexOf('Spanish') === -1 && scheme(r.href) === 'sms'; }),
+    texts.map(function(r){ return r.href; }).join(' '));
+  /* A dialler cannot carry a word, so this action is not merely untidy when
+     it dials — it is unusable. */
+  const sp = texts.filter(function(r){ return r.a.label.indexOf('Spanish') !== -1; })[0];
+  T('the Spanish text action opens a message and does not dial',
+    !!sp && scheme(sp.href) === 'sms', sp ? sp.href : 'missing');
+  T('and its own label still carries the word the reader must send',
+    !!sp && /AYUDA/.test(sp.a.label), sp ? sp.a.label : 'missing');
+  /* No prefilled body: the syntax is not portable across platforms or iOS
+     versions, and an unsupported query can stop the link opening at all. The
+     recipient is correct and the label instructs, which is true everywhere. */
+  T('no sms action gambles on a prefilled body',
+    texts.every(function(r){ return r.href.indexOf('?') === -1 && r.href.indexOf('&') === -1; }),
+    texts.map(function(r){ return r.href; }).join(' '));
+
+  sub('a screen reader is told what tapping will do');
+  T('every action announces its mechanism, not merely "link"',
+    rendered.every(function(r){ return /class="sr-only"/.test(r.inner || ''); }));
+  T('and the three mechanisms announce three different things',
+    new Set(Object.keys(c.CRISIS_ACTIONS).map(function(k){ return c.CRISIS_ACTIONS[k].does; })).size === 3,
+    Object.keys(c.CRISIS_ACTIONS).map(function(k){ return c.CRISIS_ACTIONS[k].does; }).join(' | '));
+  T('the announcement comes from the mechanism, so it cannot contradict the href',
+    rendered.every(function(r){
+      return (r.inner || '').indexOf(c.escapeHtml(c.CRISIS_ACTIONS[r.a.kind].does)) !== -1;
+    }));
+  T('a web action says it leaves the app',
+    byMech('web').every(function(){ return /rel="noopener noreferrer"/.test(html); }));
+
+  sub('the territory is never dropped, and never widened');
+  const us = (c.HELP_URGENT.territories || []).filter(function(t){ return t.code === 'US'; })[0];
+  T('the territory is a heading above its own actions',
+    !!us && new RegExp('help-urgent-place[^>]*>' + us.name).test(html));
+  /* The rule this product will not break: a resource is never shown without
+     the territory it belongs to. */
+  T('every actionable number sits inside a named territory section',
+    html.split('help-urgent-territory').slice(1).every(function(part){
+      return part.split('</section>')[0].indexOf('help-urgent-place') !== -1;
+    }) &&
+    html.split('help-urgent-territory')[0].indexOf('tel:') === -1 &&
+    html.split('help-urgent-territory')[0].indexOf('sms:') === -1);
+  const outside = html.slice(html.indexOf('help-urgent-outside'));
+  T('and the section for everybody else offers no number at all',
+    outside.indexOf('tel:') === -1 && outside.indexOf('sms:') === -1 &&
+    !/\d{3,}/.test(outside.replace(/<[^>]*>/g, '')));
+
+  sub('nothing fires, and nothing is recorded');
+  /* A crisis action is placed by the reader, never by the app. */
+  T('no action carries an inline handler', !/<a\b[^>]*\son[a-z]+=/i.test(html));
+  const builder = (js.match(/function helpUrgentActionHtml[\s\S]*?\n\}/) || [''])[0];
+  const render = (js.match(/function renderHelpUrgent[\s\S]*?\n\}/) || [''])[0];
+  T('and nothing in the sheet navigates on the reader’s behalf',
+    !!builder && !!render &&
+    !/location\s*\.\s*href\s*=|location\s*\.\s*assign|window\.open\(|\.click\(\)/.test(builder + render));
+  /* Opening this screen is not an event. Nothing about a reader in trouble is
+     worth recording, and there is nowhere for it to go. */
+  const before = JSON.stringify([...store.entries()].sort());
+  c.renderHelpUrgent();
+  c.openHelpUrgent();
+  T('opening urgent help writes nothing to storage',
+    JSON.stringify([...store.entries()].sort()) === before);
+  T('and the action builder touches no store, no key and no counter',
+    !!builder && !/Store\.|KEYS\.|localStorage|sessionStorage|fetch\(|navigator\.send/.test(builder));
+
+  sub('an action this app cannot place is shown, not guessed');
+  /* The safety net below the build gate: help:verify refuses an unknown kind,
+     so this state should never ship — but if it ever did, the words stay in
+     front of the reader instead of becoming a wrong action. */
+  const odd = c.helpUrgentActionHtml({ kind: 'carrier-pigeon', label: 'Send a bird', value: '1' });
+  T('an unknown kind renders as plain text rather than a phone call',
+    odd.indexOf('tel:') === -1 && odd.indexOf('href') === -1, odd.slice(0, 70));
+  T('and its words are still on the screen', odd.indexOf('Send a bird') !== -1);
+  /* escapeAttr alone would not stop a javascript: url, which carries no quote
+     to escape. A web action is checked at render time as well as at build. */
+  T('a web action that is not an https address is never made tappable',
+    c.helpUrgentActionHtml({ kind: 'chat', label: 'Chat', value: 'javascript:alert(1)' })
+      .indexOf('href') === -1);
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved, testDeviceMove, testHelpProduct,
+  testCrisisActions,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,
