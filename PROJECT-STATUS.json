@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.14.1",
-  "phase": "Help Me reading refinement",
+  "phase": "Native iOS — Gate 1 (architecture)",
   "status": "release_ready",
   "needsQa": true,
-  "needsDecision": false,
-  "currentTask": "v1.14.1 makes the longer Help Me readings easier to follow: explanations are paced as short passages rather than one block, and where a reading points at a particular verse that verse appears beside it in the reader's own translation.",
-  "nextAction": "Short check on a physical iPhone that the installed app updates to 1.14.1 and the longer readings match the approved build.",
+  "needsDecision": true,
+  "currentTask": "Native iOS packaging was assessed against the app as it stands. A Capacitor wrapper is the recommended path, with a small platform layer built first so that sharing, saving a backup, and the urgent-help call and chat actions work inside a native app rather than a browser tab.",
+  "nextAction": "Decide the Mac build route, the Apple Developer enrolment type and the bundle identifier; patch the urgent-help text actions; then build the platform layer.",
   "blocker": null,
-  "updatedAt": "2026-10-08T04:01:48Z"
+  "updatedAt": "2026-10-08T18:51:49Z"
 }
