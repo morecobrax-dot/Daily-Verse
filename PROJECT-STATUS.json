@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.14.2",
-  "phase": "Crisis action hotfix",
+  "phase": "Native iOS — Gate 1.5 preparation",
   "status": "release_ready",
   "needsQa": true,
   "needsDecision": true,
-  "currentTask": "v1.14.2 corrects the text options in urgent help: they now open your messages, addressed to the crisis line, rather than starting a call. Calling, texting and opening a chat are each described to screen readers. No crisis wording, resource or source changed.",
-  "nextAction": "Short check on a physical iPhone that a text option in urgent help opens Messages and not Phone. The native iOS decisions from Gate 1 are still open.",
+  "currentTask": "The repository is prepared for a native iOS build: the few behaviours that would differ inside an app rather than a browser now sit behind one small boundary, and a command assembles exactly the files the app needs to run. The web app itself is unchanged.",
+  "nextAction": "Decide the Mac build route, the Apple Developer enrolment type and the bundle identifier. The short iPhone check of the v1.14.2 urgent-help fix is still outstanding.",
   "blocker": null,
-  "updatedAt": "2026-10-08T19:46:50Z"
+  "updatedAt": "2026-10-09T05:21:52Z"
 }

@@ -254,13 +254,43 @@ const MARK = [
    the favicon, which nobody crops, spends more of its 32 pixels on them. */
 const PLACEMENT = {
   icon:    { scale: 0.92, dy: -44 },
-  favicon: { scale: 1.12, dy: -70 }
+  favicon: { scale: 1.12, dy: -70 },
+  /* A launch screen is not an icon. The mark sits small and centred with the
+     app's own background around it, so that opening the app is a fade from
+     one New Covenant surface to the next rather than a logo being presented.
+     dy keeps the same optical centring as the icon, scaled down with it. */
+  launch:  { scale: 0.40, dy: -19 }
 };
+
+/* The colour behind the launch mark is APP_CONFIG.backgroundColor, read from
+   index.html rather than written here a second time. A launch screen that
+   does not match the app it opens into is the white flash this exists to
+   remove, only in a different colour. Read lazily and once: the generator is
+   also re-run inside the contract suite.
+
+   scripts/config.js reads the same constant through the test harness. This
+   does it with a narrow regex on purpose — the icon generator has no business
+   booting the whole app to learn one colour. */
+let _bg = null;
+function appBackground(){
+  if(_bg) return _bg;
+  const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const m = src.match(/backgroundColor:\s*'(#[0-9a-fA-F]{6})'/);
+  if(!m) throw new Error('icons: APP_CONFIG.backgroundColor could not be read from index.html');
+  _bg = m[1];
+  return _bg;
+}
 
 const SCENES = {
   icon:    { placement: PLACEMENT.icon, ground: 'bleed' },
   favicon: { placement: PLACEMENT.favicon, ground: 'rounded', radius: 220 },
-  mark:    { placement: PLACEMENT.icon, ground: 'none' }
+  mark:    { placement: PLACEMENT.icon, ground: 'none' },
+  /* 'flat' is the app background with nothing over it but the mark: no
+     gradient, no vignette, nothing that has to line up with a device bezel. */
+  launch:  { placement: PLACEMENT.launch, ground: 'flat' },
+  /* The mark alone at launch scale, transparent, for a LaunchScreen that
+     paints the background colour itself. */
+  launchMark: { placement: PLACEMENT.launch, ground: 'none' }
 };
 
 const GROUND = gradient(0, 1000, [{ t: 0, color: PALETTE.groundTop }, { t: 1, color: PALETTE.groundBase }]);
@@ -366,11 +396,12 @@ function render(sceneName, size){
   const alpha = new Float32Array(n);
 
   if(scene.ground !== 'none'){
+    const flat = scene.ground === 'flat' ? hexRgb(appBackground()) : null;
     const groundCov = scene.ground === 'rounded'
       ? coverage(roundRectPath(0, 0, 1000, 1000, scene.radius), size, { scale: 1, dy: 0 })
       : null;
     for(let y = 0; y < size; y++){
-      const c = sampleGradient(GROUND, (y + 0.5) * k).rgb;
+      const c = flat || sampleGradient(GROUND, (y + 0.5) * k).rgb;
       for(let x = 0; x < size; x++){
         const i = y * size + x;
         rgb[i * 3] = c[0]; rgb[i * 3 + 1] = c[1]; rgb[i * 3 + 2] = c[2];
@@ -399,7 +430,9 @@ function render(sceneName, size){
     }
   });
 
-  const channels = scene.ground === 'bleed' ? 3 : 4;
+  /* An opaque ground means no alpha channel at all, which is what the App
+     Store requires of an icon and what a launch image has no use for. */
+  const channels = (scene.ground === 'bleed' || scene.ground === 'flat') ? 3 : 4;
   const out = Buffer.alloc(n * channels);
   for(let i = 0; i < n; i++){
     for(let ch = 0; ch < 3; ch++) out[i * channels + ch] = Math.max(0, Math.min(255, Math.round(rgb[i * 3 + ch])));
@@ -449,7 +482,22 @@ const ASSETS = [
   { file: 'favicon.svg',                  scene: 'favicon',             use: 'browser tab, scalable' },
   { file: 'brand/app-icon-1024.png',      scene: 'icon',    size: 1024, use: 'App Store master, no alpha' },
   { file: 'brand/new-covenant-icon.svg',  scene: 'icon',                use: 'vector master, full bleed' },
-  { file: 'brand/new-covenant-mark.svg',  scene: 'mark',                use: 'the mark alone, transparent' }
+  { file: 'brand/new-covenant-mark.svg',  scene: 'mark',                use: 'the mark alone, transparent' },
+
+  /* ---- iOS, prepared ahead of the native build ----
+     The App Store icon is brand/app-icon-1024.png above: 1024 square and
+     opaque already, which is the whole requirement.
+
+     These two are launch sources, and there are two because the choice
+     between them belongs to the native project rather than here. A
+     LaunchScreen storyboard paints the background colour itself and centres
+     a transparent mark; an image-based splash wants the background baked in.
+     Both are generated from the same mark at the same placement, so they
+     cannot drift apart. Final placement into Assets.xcassets is deliberately
+     NOT guessed here — the slot schema belongs to the Xcode version that
+     generates the project, and nothing on this machine can prove it. */
+  { file: 'brand/native/ios-launch-1024.png',      scene: 'launch',     size: 1024, use: 'iOS launch, mark on APP_CONFIG.backgroundColor, opaque' },
+  { file: 'brand/native/ios-launch-mark-1024.png', scene: 'launchMark', size: 1024, use: 'iOS launch, mark alone, transparent' }
 ];
 
 function build(asset){
@@ -502,9 +550,9 @@ function run(mode){
     console.log('icons:verify  ok — ' + ASSETS.length + ' assets match the mark');
     return 0;
   }
-  fs.mkdirSync(path.join(ROOT, 'brand'), { recursive: true });
   ASSETS.forEach(a => {
     const file = path.join(ROOT, a.file);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, build(a));
     console.log('  wrote ' + a.file.padEnd(30) + (fs.statSync(file).size / 1024).toFixed(1).padStart(6) + ' KB   ' + a.use);
   });
@@ -513,4 +561,4 @@ function run(mode){
 }
 
 if(require.main === module) process.exit(run((process.argv[2] || '').toLowerCase()));
-module.exports = { ASSETS, PALETTE, PLACEMENT, SCENES, MARK, build, render, svg, matches, encodePng, decodePng, solidExtent };
+module.exports = { ASSETS, PALETTE, PLACEMENT, SCENES, MARK, build, render, svg, matches, encodePng, decodePng, solidExtent, appBackground };

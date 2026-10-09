@@ -8877,9 +8877,408 @@ function testCrisisActions(){
       .indexOf('href') === -1);
 }
 
+/* =========================================================
+   CONTRACT 54 — THE REPOSITORY IS READY TO CROSS TO A MAC
+   ---------------------------------------------------------
+   Gate 1 concluded that a Capacitor shell is the right native
+   path, and that four behaviours would have to differ inside one:
+   sharing, saving a backup, opening a link out of the app, and
+   being told the app is going away. Everything else — storage,
+   the one fetch of a bundled Bible file, the clipboard, the file
+   picker behind import — behaves the same in both.
+
+   So this holds three things that would otherwise be discovered
+   on a Mac, late, with Xcode in the loop:
+
+     1. the four divergent behaviours sit behind one small seam,
+        and the WEB side of it still does exactly what v1.14.2 did;
+     2. the native bundle is the runtime package and nothing else —
+        above all, never the vendored publisher archives, which are
+        many times the size of the app;
+     3. nothing here has quietly become dependent on Capacitor.
+
+   None of it tests a comment or a symbol name. It renders, it
+   stages, it reads the bytes back.
+   ========================================================= */
+function testNativePrep(){
+  section('CONTRACT 54 — the repository is ready to cross to a Mac');
+  const store = new Map();
+  const app = H.loadApp({ sharedStorage: store });
+  const c = app.ctx;
+  const d = c.document;
+  const src = H.readApp();
+  const js = H.mainScript(src);
+  const N = require('../scripts/native.js');
+  const I = require('../scripts/icons.js');
+  const pathx = require('path');
+  const osx = require('os');
+  const fsx = require('fs');
+
+  /* ---------------------------------------------------------------- */
+  sub('four capabilities, and only the four that diverge');
+
+  T('the seam exists and declares itself web',
+    !!c.Platform && c.Platform.kind === 'web', String(c.Platform && c.Platform.kind));
+  /* Gate 1 measured these four. A fifth would mean a new divergence was
+     found, which is a decision rather than a refactor. */
+  const caps = Object.keys(c.Platform).filter(k => typeof c.Platform[k] === 'function').sort();
+  T('it covers share, copy, saving a file, opening outwards and lifecycle',
+    caps.join() === 'copy,externalLinkAttrs,onLifecycle,saveTextFile,share', caps.join());
+  /* The product half of the file. Putting this in the foundation would make a
+     generic starter carry one app's native plans. */
+  T('the seam lives below the FOUNDATION -> DOMAIN seam',
+    src.indexOf('const Platform = {') > src.indexOf('FOUNDATION → DOMAIN SEAM'));
+  /* A guess about the platform is wrong on somebody's device, silently. */
+  const seam = (js.match(/const Platform = \{[\s\S]*?\n\};/) || [''])[0];
+  T('and nothing in it sniffs a user agent, a platform or standalone mode',
+    !!seam && !/userAgent|platform\s*===|standalone|MSStream|maxTouchPoints/i.test(seam));
+
+  sub('the web side still does what it did');
+  /* Share: the platform is offered the text, and a cancelled share is a
+     choice rather than an error the reader is told about. */
+  const calls = [];
+  const toasts = [];
+  c.toast = (m, k) => toasts.push(k + ':' + m);
+  const nav = c.navigator;
+  const set = (k, v) => Object.defineProperty(nav, k, { configurable: true, writable: true, value: v });
+  set('share', o => { calls.push('share:' + o.text); return Promise.resolve(); });
+  set('clipboard', { writeText: t => { calls.push('clip:' + t); return Promise.resolve(); } });
+  c.shareOrCopy('VERSE');
+  T('a platform that can share is handed the verse, and nothing is announced',
+    calls.join() === 'share:VERSE' && toasts.length === 0, calls.join() + ' / ' + toasts.join());
+  /* Fallback: copying is a different outcome and says so. */
+  calls.length = 0; toasts.length = 0;
+  delete nav.share;
+  c.shareOrCopy('VERSE');
+  T('without a share sheet it copies instead', calls.join() === 'clip:VERSE', calls.join());
+  /* Truthful: no share, no clipboard, and the reader is told plainly rather
+     than being shown a success for something that did not happen. */
+  calls.length = 0; toasts.length = 0;
+  set('clipboard', undefined);
+  c.shareOrCopy('VERSE');
+  T('with neither, it says so rather than claiming success',
+    calls.length === 0 && toasts.length === 1 && /warning:/.test(toasts[0]) &&
+    !/copied|shared/i.test(toasts[0]), toasts.join());
+
+  /* Backup export: still a file handed to the browser, still named by the
+     app, still honest about not knowing where it went. */
+  const anchors = [];
+  const realCreate = d.createElement.bind(d);
+  d.createElement = tag => {
+    const el = realCreate(tag);
+    if(tag === 'a') el.click = () => anchors.push({ href: String(el.href), download: String(el.download) });
+    return el;
+  };
+  c.URL.createObjectURL = () => 'blob:stub';
+  c.URL.revokeObjectURL = () => {};
+  /* A call site that reaches past the seam loses its error handling with it,
+     so this must record a throw rather than being killed by one. */
+  const runExport = () => { try{ c.exportData(); }catch(e){ toasts.push('threw:' + e.message); } };
+  toasts.length = 0;
+  runExport();
+  T('exporting a backup still hands a named file to the browser',
+    anchors.length === 1 && /\.json$/.test(anchors[0].download) &&
+    anchors[0].download.indexOf('backup') !== -1, JSON.stringify(anchors));
+  T('and still refuses to claim it knows where the file went',
+    toasts.length === 1 && /success:/.test(toasts[0]) && !/exported/i.test(toasts[0]), toasts.join());
+  /* A platform that cannot save must not report a success. */
+  toasts.length = 0; anchors.length = 0;
+  c.URL.createObjectURL = () => { throw new Error('denied'); };
+  runExport();
+  T('a save the platform refuses is reported as a failure',
+    toasts.length === 1 && /error:/.test(toasts[0]), toasts.join());
+  c.URL.createObjectURL = () => 'blob:stub';
+
+  sub('leaving the app, and the one link that does it');
+  T('an https address is opened outwards, in a new tab, without passing a referrer',
+    c.Platform.externalLinkAttrs('https://example.org/') === ' target="_blank" rel="noopener noreferrer"');
+  /* escapeAttr cannot save a javascript: url — it has no quote to escape. */
+  T('a javascript: url is never given link attributes',
+    c.Platform.externalLinkAttrs('javascript:alert(1)') === null);
+  T('nor is a tel: or sms: address, which is not a web page',
+    c.Platform.externalLinkAttrs('tel:988') === null && c.Platform.externalLinkAttrs('sms:988') === null);
+  c.openHelpUrgent();
+  const urgent = d.getElementById('helpUrgentBody').innerHTML;
+  T('the crisis chat link is still https, still target=_blank, still noopener',
+    /<a[^>]+href="https:\/\/[^"]+"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/.test(urgent));
+  /* Routing ordinary navigation through the seam would make every tap a
+     platform decision. Only the crisis sheet leaves the app. */
+  T('nothing else in the app asks the platform to leave it',
+    (js.match(/Platform\.externalLinkAttrs\(/g) || []).length === 1,
+    String((js.match(/Platform\.externalLinkAttrs\(/g) || []).length));
+  /* Counted in code, not in prose: the seam's own comment names the attribute
+     while explaining why a native shell drops it. */
+  const code = stripComments(js);
+  T('and no second target="_blank" was left behind outside the seam',
+    (code.match(/target="_blank"/g) || []).length === 1,
+    String((code.match(/target="_blank"/g) || []).length));
+
+  sub('and the call sites go through it, not around it');
+  /* Behaviour alone cannot catch a bypass: a call site that reaches for the
+     browser directly behaves identically TODAY and silently does nothing on a
+     native build. So this checks where each call site actually goes. */
+  const bodyOf = n => (js.match(new RegExp('function ' + n + '\\([\\s\\S]*?\\n\\}')) || [''])[0];
+  const seamCode = stripComments(seam);
+  T('sharing a verse asks the platform rather than the browser',
+    /Platform\.share\(/.test(bodyOf('shareOrCopy')) && !/navigator\.share/.test(bodyOf('shareOrCopy')));
+  T('copying asks the platform too',
+    /Platform\.copy\(/.test(bodyOf('copyText')) && !/navigator\.clipboard/.test(bodyOf('copyText')));
+  T('exporting a backup asks the platform to save the file',
+    /Platform\.saveTextFile\(/.test(bodyOf('exportData')) &&
+    !/createObjectURL|\.download\s*=/.test(bodyOf('exportData')));
+  /* And the browser-only ways of doing those exist in exactly one place, so a
+     native implementation has one thing to replace rather than several. */
+  T('the browser-only mechanisms live only inside the seam',
+    ['navigator.share', 'navigator.clipboard', 'createObjectURL', '.download ='].every(x =>
+      code.split(x).length === seamCode.split(x).length),
+    ['navigator.share', 'navigator.clipboard', 'createObjectURL', '.download ='].filter(x =>
+      code.split(x).length !== seamCode.split(x).length).join(' '));
+
+  sub('the seam records nothing');
+  /* A capability wrapper is the easiest place in an app to start counting
+     things. This one has nowhere to write and nothing to write with. */
+  T('no platform method touches storage, a key, the network or a beacon',
+    !!seam && !/Store\.|KEYS\.|localStorage|sessionStorage|fetch\(|navigator\.send|XMLHttpRequest/.test(seam));
+  const before = JSON.stringify([...store.entries()].sort());
+  c.Platform.share('x'); c.Platform.copy('x');
+  c.Platform.externalLinkAttrs('https://example.org/');
+  T('and exercising them writes nothing',
+    JSON.stringify([...store.entries()].sort()) === before);
+
+  sub('lifecycle is wired through the seam, not around it');
+  T('the app registers its suspend and resume through the platform',
+    /Platform\.onLifecycle\(\{/.test(js));
+  /* The two listeners that used to be attached directly are the exact ones
+     the seam now owns; a stray one would flush twice or not at all. */
+  T('and nothing attaches pagehide or visibilitychange outside it',
+    (js.match(/addEventListener\('pagehide'/g) || []).length === 1 &&
+    (js.match(/addEventListener\('visibilitychange'/g) || []).length === 1,
+    (js.match(/addEventListener\('(pagehide|visibilitychange)'/g) || []).join(' '));
+  T('both of those are inside the seam',
+    /onLifecycle: function\(h\)\{[\s\S]{0,400}pagehide[\s\S]{0,400}visibilitychange/.test(js));
+
+  sub('no Capacitor has been installed, and no iOS project exists');
+  /* Gate 1.5 prepares; it does not adopt. A stray import or a half-written
+     config would make the next phase start from an unknown state. */
+  const pkg = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'package.json'), 'utf8'));
+  T('no Capacitor package is a dependency',
+    !Object.keys(Object.assign({}, pkg.dependencies, pkg.devDependencies))
+      .some(k => /^@capacitor\//.test(k) || k === 'capacitor'),
+    JSON.stringify(Object.assign({}, pkg.dependencies, pkg.devDependencies)));
+  T('the app imports nothing from Capacitor and reads no bridge',
+    !/@capacitor\/|Capacitor\.|window\.Capacitor|isNativePlatform/.test(js));
+  T('there is no capacitor config and no ios project yet',
+    !['capacitor.config.ts', 'capacitor.config.js', 'capacitor.config.json', 'ios']
+      .some(f => fsx.existsSync(pathx.join(H.ROOT, f))));
+  /* The staging script is the one place that may know a native shell is
+     coming, and even it only copies files. */
+  T('the staging script opens no connection and spawns nothing',
+    !/require\(\s*['"](?:node:)?(?:https?|net|tls|http2|child_process)['"]\s*\)/
+      .test(fsx.readFileSync(pathx.join(H.ROOT, 'scripts', 'native.js'), 'utf8')));
+
+  /* ---------------------------------------------------------------- */
+  sub('the native bundle is the runtime package and nothing else');
+  const plan = N.plan();
+  T('the allowlist resolves with nothing to complain about',
+    plan.refusals.length === 0, plan.refusals.map(r => r.code + ': ' + r.message).join(' | '));
+  const paths = plan.files.map(f => f.path);
+
+  /* THE ONE THAT MATTERS MOST. data/corpus is the vendored publisher
+     archives: verification input, many times the size of the app, and
+     absolutely not something to ship inside a phone. */
+  T('the publisher archives are not staged, and cannot be',
+    !paths.some(p => p.indexOf('data/corpus') === 0) &&
+    N.NEVER_PREFIX.indexOf('data/corpus/') !== -1);
+  T('no script, test, document or brand master is staged',
+    !paths.some(p => /^(scripts|test|brand)\//.test(p) || /\.md$/.test(p)),
+    paths.filter(p => /^(scripts|test|brand)\//.test(p) || /\.md$/.test(p)).join(', '));
+  T('no project metadata or status file is staged',
+    !paths.some(p => ['package.json', 'package-lock.json', 'PROJECT-STATUS.json', '.gitignore', '.gitattributes'].indexOf(p) !== -1));
+  T('nothing that looks like signing material could be staged',
+    !paths.some(p => N.SECRET_PATTERNS.some(re => re.test(p))));
+  /* Selection is positive: a file is staged because it was named, never
+     because a deletion pass failed to remove it. */
+  T('every staged path is either a named shell file or a locked Bible file',
+    paths.every(p => N.SHELL.some(e => e[0] === p) || /^data\/bible\/[^/]+\/[^/]+\.json$/.test(p)));
+
+  sub('all seven editions, and only the seven that ship');
+  const corpusx = require('../scripts/corpus.js');
+  const shipped = corpusx.shippedEditions().slice().sort();
+  T('every shipped edition is staged', shipped.length === 7 &&
+    shipped.every(ed => paths.some(p => p.indexOf('data/bible/' + ed + '/') === 0)), shipped.join(' '));
+  const stagedEds = [...new Set(paths.filter(p => p.indexOf('data/bible/') === 0).map(p => p.split('/')[2]))].sort();
+  T('and no edition that is held reached the bundle',
+    stagedEds.join() === shipped.join(), stagedEds.join(' '));
+  T('each edition brings its index and its books',
+    shipped.every(ed => paths.indexOf('data/bible/' + ed + '/index.json') !== -1));
+
+  sub('what the app asks for is what the bundle carries');
+  /* A new runtime reference — another icon, another data file — would
+     otherwise be discovered as a 404 inside a shipped app. */
+  const refs = N.runtimeReferences(
+    fsx.readFileSync(pathx.join(H.ROOT, 'index.html'), 'utf8'),
+    fsx.readFileSync(pathx.join(H.ROOT, 'sw.js'), 'utf8'),
+    fsx.readFileSync(pathx.join(H.ROOT, 'manifest.webmanifest'), 'utf8'));
+  T('every local file the app references by name is staged',
+    [...refs].filter(r => r && r !== './' && r !== '.' && r.indexOf('data/bible/') !== 0)
+      .every(r => paths.indexOf(r) !== -1),
+    [...refs].filter(r => r && r !== './' && r !== '.' && r.indexOf('data/bible/') !== 0 && paths.indexOf(r) === -1).join(', '));
+  T('the catalogues are not staged, because nothing fetches them',
+    !paths.some(p => /^data\/(curation|studies|devotions|help|corpus\.lock|bible\.lock)\.json$/.test(p)) &&
+    ![...refs].some(r => /^data\/[^/]+\.json$/.test(r)));
+
+  sub('a real staging, read back from disk');
+  /* Not a plan: files written, then opened again and hashed. */
+  const tmp = pathx.join(osx.tmpdir(), 'nc-native-' + process.pid + '-' + Date.now());
+  let staged = null;
+  try{
+    staged = N.stage(tmp, true);
+    /* Read defensively: a refused plan returns before it has written
+       anything, and a contract that throws there reports nothing at all
+       instead of reporting the refusal. */
+    const drift = staged.drift || [], extra = staged.extra || [];
+    T('staging a clean repository succeeds',
+      staged.refusals.length === 0 && drift.length === 0 && extra.length === 0,
+      staged.refusals.map(r => r.code).join(',') + ' drift=' + drift.length + ' extra=' + extra.length);
+    const onDisk = N.walk(tmp);
+    T('the staged tree holds exactly the planned files, and nothing more',
+      onDisk.length === staged.files.length &&
+      onDisk.slice().sort().join() === staged.files.map(f => f.path).sort().join(),
+      onDisk.length + ' on disk vs ' + staged.files.length + ' planned');
+    /* Byte identity, checked against the source rather than against the
+       plan's own record of it. */
+    /* A refused plan writes nothing, so a missing file is a mismatch to
+       report rather than an exception to die on. */
+    const readStaged = rel => {
+      try{ return fsx.readFileSync(pathx.join(tmp, rel.split('/').join(pathx.sep))); }
+      catch(e){ return null; }
+    };
+    const bad = staged.files.filter(f => {
+      const got = readStaged(f.path);
+      if(!got) return true;
+      let want = fsx.readFileSync(pathx.join(H.ROOT, f.path.split('/').join(pathx.sep)));
+      if(f.kind === 'shell' && !N.isBinary(want)) want = N.toLF(want);
+      return !got.equals(want);
+    });
+    T('every staged file is byte-identical to its source', bad.length === 0,
+      bad.slice(0, 3).map(f => f.path).join(', '));
+    /* The Bible is held to the hash the build lock records, which is the same
+       hash npm run bible:verify holds the working tree to. */
+    const lock = JSON.parse(fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible.lock.json'), 'utf8'));
+    const cryptox = require('crypto');
+    const wrong = staged.files.filter(f => f.kind === 'bible').filter(f => {
+      const parts = f.path.split('/');
+      const rec = lock.editions[parts[2]][parts[3]];
+      const buf = readStaged(f.path);
+      if(!buf) return true;
+      return cryptox.createHash('sha256').update(buf).digest('hex') !== rec.sha256;
+    });
+    T('and every staged verse matches the hash the build lock records',
+      wrong.length === 0, wrong.slice(0, 3).map(f => f.path).join(', '));
+    /* A bundle whose Scripture bytes differ from the web's would be a second
+       edition of this app's Bible, created by a line-ending default. */
+    T('a text file is staged as the web serves it, with no carriage returns',
+      ['index.html', 'sw.js', 'manifest.webmanifest'].every(f => {
+        const b = readStaged(f); return !!b && b.indexOf(13) === -1;
+      }));
+    T('and a binary file is never line-ending converted',
+      (readStaged('icon-512.png') || Buffer.alloc(0))
+        .equals(fsx.readFileSync(pathx.join(H.ROOT, 'icon-512.png'))));
+    T('the bundle is the size the runtime package actually is',
+      staged.totals.bytes > 20 * 1048576 && staged.totals.bytes < 60 * 1048576,
+      (staged.totals.bytes / 1048576).toFixed(2) + ' MB in ' + staged.files.length + ' files');
+  } finally {
+    try{ fsx.rmSync(tmp, { recursive: true, force: true }); }catch(e){}
+  }
+  T('the staging probe left nothing behind', !fsx.existsSync(tmp));
+  /* The receipt is a development artefact. Inside webDir it would be copied
+     into the app, which is how build metadata ends up shipped to readers. */
+  T('the staging receipt is written outside the staged tree',
+    N.RECEIPT_DIR.indexOf(N.OUT) === -1);
+
+  /* ---------------------------------------------------------------- */
+  sub('git will not be handed signing material or a build directory');
+  const ignore = fsx.readFileSync(pathx.join(H.ROOT, '.gitignore'), 'utf8');
+  const ignoreLines = ignore.split('\n').map(l => l.trim());
+  const ignored = pat => ignoreLines.indexOf(pat) !== -1;
+  T('the generated bundle and its receipt are ignored',
+    ignored('dist-native/') && ignored('.native-stage/'));
+  /* A certificate in a public repository is a published private key. */
+  T('every Apple credential and key file type is ignored',
+    ['*.p12', '*.cer', '*.p8', '*.mobileprovision', '*.provisionprofile', '*.keystore', '*.pem', '*.key']
+      .every(ignored),
+    ['*.p12', '*.cer', '*.p8', '*.mobileprovision', '*.provisionprofile', '*.keystore', '*.pem', '*.key']
+      .filter(x => !ignored(x)).join(' '));
+  T('local environment and credential files are ignored',
+    ['.env', '.netrc', '.npmrc', 'id_rsa'].every(ignored));
+  T('Xcode build products and per-developer state are ignored',
+    ['DerivedData/', 'xcuserdata/', '*.xcuserstate', '*.xcarchive', '*.ipa'].every(ignored));
+  /* The shared project must be committable, or a clone cannot build it. */
+  T('but the iOS project itself is NOT ignored wholesale',
+    !ignored('ios/') && !ignored('ios/*') && !/^ios\/\s*$/m.test(ignore));
+  T('and the generated copy of the web app inside it is',
+    ignored('ios/App/App/public/'));
+
+  /* ---------------------------------------------------------------- */
+  sub('one instruction file, and it does not pretend to be the other');
+  const agents = fsx.readFileSync(pathx.join(H.ROOT, 'AGENTS.md'), 'utf8');
+  /* The failure this prevents: a second, stale copy of the development
+     method that still called the product by its old name. */
+  T('AGENTS.md is a pointer, not a second copy of the rules',
+    agents.split('\n').length < 40, agents.split('\n').length + ' lines');
+  T('it names the product as it is now',
+    /New Covenant/.test(agents) && !/\bDaily Verse\b/.test(agents));
+  T('it sends the reader to CLAUDE.md and says which one wins',
+    /CLAUDE\.md/.test(agents) && /canonical|authoritative|wins/i.test(agents));
+  /* Numbered rules here would be rules that can disagree with the real ones. */
+  T('and it restates no numbered rule of its own',
+    !/^\s*\d+\.\s+\*\*/m.test(agents) && !/## Hard rules|## Product rules/.test(agents));
+
+  /* ---------------------------------------------------------------- */
+  sub('the iOS art is prepared, and still the same mark');
+  const png = f => {
+    const b = fsx.readFileSync(pathx.join(H.ROOT, f));
+    return { w: b.readUInt32BE(16), h: b.readUInt32BE(20), type: b[25], bytes: b.length,
+             hasTRNS: b.indexOf(Buffer.from('tRNS')) !== -1 };
+  };
+  /* The App Store rejects an icon with an alpha channel. */
+  const master = png('brand/app-icon-1024.png');
+  T('the App Store master is 1024 square',
+    master.w === 1024 && master.h === 1024, master.w + 'x' + master.h);
+  T('and carries no transparency at all',
+    master.type === 2 && !master.hasTRNS, 'colour type ' + master.type);
+  const launch = png('brand/native/ios-launch-1024.png');
+  const launchMark = png('brand/native/ios-launch-mark-1024.png');
+  T('a launch image is prepared, opaque, on the app background',
+    launch.w === 1024 && launch.h === 1024 && launch.type === 2 && !launch.hasTRNS);
+  T('and a transparent mark beside it, for a storyboard that paints its own',
+    launchMark.w === 1024 && launchMark.h === 1024 && launchMark.type === 6);
+  /* A launch screen in a different colour from the app is the white flash
+     this exists to remove, repainted. */
+  T('the launch background is APP_CONFIG.backgroundColor, not a second copy of it',
+    I.appBackground().toLowerCase() === String(c.APP_CONFIG.backgroundColor).toLowerCase(),
+    I.appBackground() + ' vs ' + c.APP_CONFIG.backgroundColor);
+  const hex = I.appBackground().toLowerCase();
+  const rgb = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const corner = I.render('launch', 64).pixels;
+  T('and the image really is painted in it',
+    corner[0] === rgb[0] && corner[1] === rgb[1] && corner[2] === rgb[2],
+    [corner[0], corner[1], corner[2]].join(',') + ' vs ' + rgb.join(','));
+  /* Generated, not drawn: the same command twice gives the same bytes. */
+  T('every shipped asset still matches the generator exactly',
+    I.ASSETS.every(a => I.matches(a, fsx.readFileSync(pathx.join(H.ROOT, a.file)))),
+    I.ASSETS.filter(a => !I.matches(a, fsx.readFileSync(pathx.join(H.ROOT, a.file)))).map(a => a.file).join(', '));
+  T('and the launch art is the same mark as the icon, only smaller',
+    I.SCENES.launch.placement.scale < I.SCENES.icon.placement.scale &&
+    I.SCENES.launchMark.placement === I.SCENES.launch.placement);
+  /* Branding is not reinvented for a platform. */
+  T('no iOS-only wordmark or text was introduced',
+    !I.ASSETS.some(a => /text|word|title|logotype/i.test(a.file)));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved, testDeviceMove, testHelpProduct,
-  testCrisisActions,
+  testCrisisActions, testNativePrep,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,

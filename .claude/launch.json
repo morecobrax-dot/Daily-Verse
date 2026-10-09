@@ -12,6 +12,18 @@
       ],
       "port": 8391,
       "autoPort": true
+    },
+    {
+      "name": "daily-verse-native",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--yes",
+        "http-server",
+        "-c-1",
+        "dist-native"
+      ],
+      "port": 8392,
+      "autoPort": true
     }
   ]
 }

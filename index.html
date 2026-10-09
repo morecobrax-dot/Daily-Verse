@@ -4248,6 +4248,102 @@ function renderAll(){
 }
 
 /* =========================================================
+   THE PLATFORM SEAM
+   ---------------------------------------------------------
+   Four behaviours — and only four — that a native shell would
+   have to do differently from a browser.
+
+   Those four, measured rather than assumed: under a WKWebView
+   served from a custom scheme, `a.download` has no handler, a
+   `target="_blank"` navigation is dropped without a UIDelegate,
+   `navigator.share` is a Safari feature rather than a WKWebView
+   guarantee, and `pagehide` is not promised when iOS terminates
+   a suspended app.
+
+   Everything else this app does behaves the same in both and is
+   therefore NOT here: storage, the one fetch of a bundled Bible
+   file, the clipboard, the file picker behind import. A
+   capability nothing diverges on is an abstraction with one
+   implementation, which is worse than the call it replaced.
+
+   This is the web implementation, and it is the behaviour of
+   v1.14.2 moved rather than altered. The words a reader sees
+   stay with the product: this layer owns the mechanism and
+   reports what happened, and the caller says it.
+
+   `kind` is a constant because the only honest way to know you
+   are inside a native shell is to ask a bridge, and there is no
+   bridge in this repository. Nothing here sniffs a user agent,
+   a platform string or standalone mode — a guess would be wrong
+   on somebody's device and silently so. A native build replaces
+   these functions when it brings a bridge with it.
+   ========================================================= */
+const Platform = {
+  kind: 'web',
+
+  /* True when the platform took the text and will handle it from here. A
+     cancelled share is a choice, not a failure, so a rejection is swallowed
+     exactly as it was before this moved. */
+  share: function(text){
+    if(!(navigator && typeof navigator.share === 'function')) return false;
+    navigator.share({ text: text }).catch(function(){});
+    return true;
+  },
+
+  /* The promise for a copy, or null when there is no clipboard to copy to.
+     The caller owns both outcomes, because the caller owns the wording. */
+  copy: function(text){
+    if(!(navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function')) return null;
+    return navigator.clipboard.writeText(text);
+  },
+
+  /* Hands a file to the platform. True when it was handed over — which is
+     not the same as knowing where it went, and this returns no opinion
+     about that. Deliberately named for the mechanism rather than for a
+     backup: a seam that knows what a backup is would be the product again. */
+  saveTextFile: function(name, mime, text){
+    try{
+      const blob = new Blob([text], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      return true;
+    }catch(e){ return false; }
+  },
+
+  /* The attributes that send a link out of the app, or null for a address
+     this layer will not open externally at all. The web form of "open
+     somewhere else" is an anchor, so that is what this returns; a native
+     build adds the imperative form beside it rather than reinterpreting
+     this one.
+
+     The scheme check here is the platform's own: handing a `javascript:`
+     url to anything that opens addresses is a hazard in any app, whatever
+     the address was for. A caller with a stricter rule of its own — the
+     crisis sheet requires https, not merely http(s) — still applies it. */
+  externalLinkAttrs: function(url){
+    const u = String(url);
+    if(u.indexOf('https://') !== 0 && u.indexOf('http://') !== 0) return null;
+    return ' target="_blank" rel="noopener noreferrer"';
+  },
+
+  /* Going away, and coming back. Two web signals because neither is enough
+     alone: pagehide fires on a real teardown, visibilitychange when a tab or
+     an app is merely backgrounded. Both reach the same suspend handler, which
+     is why that handler has to stay idempotent. */
+  onLifecycle: function(h){
+    window.addEventListener('pagehide', h.onSuspend);
+    window.addEventListener('visibilitychange', function(){
+      if(document.visibilityState === 'hidden'){ h.onSuspend(); return; }
+      h.onResume();
+    });
+  }
+};
+
+/* =========================================================
    SCRIPTURE AND STUDIES — the quoted text, and the teaching
    ---------------------------------------------------------
    DERIVED, NOT TYPED. Every character between the markers is
@@ -10105,13 +10201,10 @@ function sharePassage(id){
    reference and the edition travel together. */
 function shareOrCopy(payload){
   try{
-    if(navigator && typeof navigator.share === 'function'){
-      navigator.share({ text: payload })
-        .catch(function(){ /* a cancelled share is a choice, not a failure */ });
-      return;
-    }
-    if(navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function'){
-      navigator.clipboard.writeText(payload)
+    if(Platform.share(payload)) return;
+    const copying = Platform.copy(payload);
+    if(copying){
+      copying
         .then(function(){ toast('Verse copied', 'success'); })
         .catch(function(){ toast('Could not copy the verse.', 'error'); });
       return;
@@ -10122,8 +10215,9 @@ function shareOrCopy(payload){
 
 function copyText(payload){
   try{
-    if(navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function'){
-      navigator.clipboard.writeText(payload)
+    const copying = Platform.copy(payload);
+    if(copying){
+      copying
         .then(function(){ toast('Verse copied', 'success'); })
         .catch(function(){ toast('Could not copy the verse.', 'error'); });
       return;
@@ -12916,8 +13010,12 @@ function helpUrgentActionHtml(a){
      kind, so this is a safety net rather than a shipped state. */
   if(!usable) return '<p class="help-urgent-action-plain">' + escapeHtml(a.label) + '</p>';
   const href = m.scheme ? m.scheme + a.value : a.value;
+  /* A web action leaves the app, and how that is expressed is the
+     platform's business rather than this sheet's. */
+  const away = m.scheme ? '' : Platform.externalLinkAttrs(a.value);
+  if(away === null) return '<p class="help-urgent-action-plain">' + escapeHtml(a.label) + '</p>';
   return '<a class="btn-secondary help-urgent-action" href="' + escapeAttr(href) + '"' +
-    (m.scheme ? '' : ' target="_blank" rel="noopener noreferrer"') + '>' +
+    away + '>' +
     escapeHtml(a.label) +
     '<span class="sr-only"> — ' + escapeHtml(m.does) + '</span></a>';
 }
@@ -13015,8 +13113,13 @@ Domain.wire    = function(){
     form.addEventListener('input', scheduleDraftSave);
     form.addEventListener('change', scheduleDraftSave);
   }
-  window.addEventListener('pagehide', flushDraft);
-  window.addEventListener('pagehide', flushLessonNote);
+  /* Going away: a last-chance flush if the page is about to be torn down
+     mid-sentence. Coming back: a phone put down before midnight is showing a
+     verse under a heading that has since stopped being true. */
+  Platform.onLifecycle({
+    onSuspend: function(){ flushDraft(); flushLessonNote(); },
+    onResume: rolloverIfDayChanged
+  });
 
   /* Rotating a phone changes the rail's width, and the offset computed for the
      old width can leave the selected day — often today — scrolled off the
@@ -13024,12 +13127,6 @@ Domain.wire    = function(){
      answer rather than preserving a position that now points somewhere else. */
   window.addEventListener('resize', centreSelectedDay);
 
-  window.addEventListener('visibilitychange', function(){
-    /* Going away: last-chance flush if the page is about to be torn down
-       mid-sentence. */
-    if(document.visibilityState === 'hidden'){ flushDraft(); flushLessonNote(); return; }
-    rolloverIfDayChanged();
-  });
 };
 
 /* Coming back: a phone put down at 23:58 and picked up at 00:02 was showing
@@ -14501,23 +14598,17 @@ function exportData(){
     if(k.indexOf(KEYS.backupPrefix) === 0) return;
     payload.data[k] = Store.get(k);
   });
-  try{
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = backupFileName(new Date());
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    /* What actually happened is that a file was handed to the browser. Where
-       it went after that — Downloads, a share sheet, a cancelled save — is
-       not something this app is told, on any platform it runs on. It used to
-       say "Backup exported", which is a claim about the reader's device that
-       it cannot check, and the one place a false success costs the most is
-       the thing people do before erasing something. So it says what it did,
-       and tells them where to look. */
+  /* What actually happened is that a file was handed to the platform. Where
+     it went after that — Downloads, a share sheet, a cancelled save — is
+     not something this app is told, on any platform it runs on. It used to
+     say "Backup exported", which is a claim about the reader's device that
+     it cannot check, and the one place a false success costs the most is
+     the thing people do before erasing something. So it says what it did,
+     and tells them where to look. */
+  if(Platform.saveTextFile(backupFileName(new Date()), 'application/json',
+                           JSON.stringify(payload, null, 2))){
     toast('Backup file created — check your downloads or Files', 'success');
-  }catch(e){
+  } else {
     toast('Could not create the backup file.', 'error');
   }
 }

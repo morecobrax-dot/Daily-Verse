@@ -1,2 +1,87 @@
 .corpus-cache/
 node_modules/
+
+# ---------------------------------------------------------------
+# Native staging
+# ---------------------------------------------------------------
+# dist-native/ is the Capacitor webDir: a generated, runtime-only copy of
+# the app, rebuilt from committed blobs by `npm run native:stage`. It is
+# derived, never authored, and is large enough that committing it would
+# double the repository for no gain.
+dist-native/
+# The staging receipt — what was staged, from which commit, with hashes.
+# Deliberately outside dist-native so it cannot ship inside an iOS app.
+.native-stage/
+
+# ---------------------------------------------------------------
+# Xcode and CocoaPods
+# ---------------------------------------------------------------
+# NOTE: the ios/ project itself BELONGS in git once it exists. Only the
+# generated and per-developer parts are ignored here, so that a clone can
+# open and build the same project.
+#
+# The copied web assets: cap sync writes dist-native/ into the app here, so
+# it is generated twice over and must not be committed.
+ios/App/App/public/
+# Capacitor writes this from capacitor.config; it is derived.
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+
+# Build products and caches.
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/
+DerivedData/
+build/
+*.xcarchive
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Per-developer Xcode state: window layout, breakpoints, scheme ordering.
+# Shared schemes live under xcshareddata and are NOT ignored.
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+
+# Podfile.lock is deliberately NOT ignored: it pins the exact pod versions a
+# build used, which is the same reason data/corpus.lock.json exists.
+
+# ---------------------------------------------------------------
+# Signing material and credentials — never, under any name
+# ---------------------------------------------------------------
+# An Apple certificate or provisioning profile in a public repository is a
+# published private key. These patterns are a backstop; the real rule is that
+# signing material is held by the developer or an encrypted CI secret store
+# and never reaches a working tree that git is watching.
+*.p12
+*.pem
+*.cer
+*.der
+*.p8
+*.key
+*.keystore
+*.jks
+*.mobileprovision
+*.provisionprofile
+ExportOptions.plist
+exportOptions.plist
+.env
+.env.*
+.netrc
+.npmrc
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# ---------------------------------------------------------------
+# macOS and editor noise, for when this repository crosses to a Mac
+# ---------------------------------------------------------------
+.DS_Store
+._*
+.AppleDouble
+.Spotlight-V100
+.Trashes

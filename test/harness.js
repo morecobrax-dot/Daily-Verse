@@ -349,7 +349,7 @@ function buildDom(src){
 const BRIDGE = [
   'APP_CONFIG', 'APP_UPDATES', 'APP_VERSION', 'APP_ID_PATTERN',
   'STORAGE_NAMESPACE', 'CACHE_NAMESPACE', 'KEYS',
-  'Store', 'DATA_SCHEMA_VERSION', 'MIGRATIONS', 'migrationWarning', 'Domain',
+  'Store', 'DATA_SCHEMA_VERSION', 'MIGRATIONS', 'migrationWarning', 'Domain', 'Platform',
   'SCRIPTURE', 'SCRIPTURE_SOURCE', 'REFLECTIONS', 'THEMES', 'FOCUS_CHOICES',
   'TRANSLATIONS', 'TRANSLATION_TEXT', 'translation', 'DEFAULT_TRANSLATION',
   'STUDIES', 'STUDIES_VERSION', 'studyProgress', 'studyNotes', 'checkAnswers',
