@@ -5951,32 +5951,32 @@ const HELP = [
    words a reader memorises are read out of data/bible/ in the edition
    they locked when they began, which is why changing translation later
    cannot rewrite a passage somebody is halfway through learning. */
-const MEMORY_VERSION = 1;
+const MEMORY_VERSION = 2;
 const MEMORY_MAX_VERSES = 6;
 
 const MEMORY = [
-  { id: 'mem-jos-1-9', c: 'JOS', ch: 1, from: 9, to: 9, theme: 'Courage', status: 'proposed' },
-  { id: 'mem-psa-23-1', c: 'PSA', ch: 23, from: 1, to: 1, theme: 'God\'s care', status: 'proposed' },
-  { id: 'mem-psa-46-1', c: 'PSA', ch: 46, from: 1, to: 1, theme: 'Refuge', status: 'proposed' },
-  { id: 'mem-psa-119-105', c: 'PSA', ch: 119, from: 105, to: 105, theme: 'Scripture', status: 'proposed' },
-  { id: 'mem-pro-3-5', c: 'PRO', ch: 3, from: 5, to: 6, theme: 'Trust', status: 'proposed' },
-  { id: 'mem-isa-41-10', c: 'ISA', ch: 41, from: 10, to: 10, theme: 'Fear', status: 'proposed' },
-  { id: 'mem-lam-3-22', c: 'LAM', ch: 3, from: 22, to: 23, theme: 'Mercy', status: 'proposed' },
-  { id: 'mem-mic-6-8', c: 'MIC', ch: 6, from: 8, to: 8, theme: 'Obedience', status: 'proposed' },
-  { id: 'mem-mat-6-33', c: 'MAT', ch: 6, from: 33, to: 33, theme: 'Priorities', status: 'proposed' },
-  { id: 'mem-mat-11-28', c: 'MAT', ch: 11, from: 28, to: 28, theme: 'Rest', status: 'proposed' },
-  { id: 'mem-jhn-3-16', c: 'JHN', ch: 3, from: 16, to: 16, theme: 'God\'s love', status: 'proposed' },
-  { id: 'mem-rom-5-8', c: 'ROM', ch: 5, from: 8, to: 8, theme: 'The cross', status: 'proposed' },
-  { id: 'mem-rom-8-28', c: 'ROM', ch: 8, from: 28, to: 28, theme: 'Providence', status: 'proposed' },
-  { id: 'mem-rom-12-2', c: 'ROM', ch: 12, from: 2, to: 2, theme: 'Renewal', status: 'proposed' },
-  { id: 'mem-1co-10-13', c: '1CO', ch: 10, from: 13, to: 13, theme: 'Temptation', status: 'proposed' },
-  { id: 'mem-2co-5-17', c: '2CO', ch: 5, from: 17, to: 17, theme: 'New life', status: 'proposed' },
-  { id: 'mem-gal-5-22', c: 'GAL', ch: 5, from: 22, to: 23, theme: 'The Spirit', status: 'proposed' },
-  { id: 'mem-eph-2-8', c: 'EPH', ch: 2, from: 8, to: 9, theme: 'Grace', status: 'proposed' },
-  { id: 'mem-php-4-6', c: 'PHP', ch: 4, from: 6, to: 7, theme: 'Anxiety', status: 'proposed' },
-  { id: 'mem-heb-11-1', c: 'HEB', ch: 11, from: 1, to: 1, theme: 'Faith', status: 'proposed' },
-  { id: 'mem-jas-1-5', c: 'JAS', ch: 1, from: 5, to: 5, theme: 'Wisdom', status: 'proposed' },
-  { id: 'mem-1jn-1-9', c: '1JN', ch: 1, from: 9, to: 9, theme: 'Confession', status: 'proposed' }
+  { id: 'mem-eph-2-8', c: 'EPH', ch: 2, from: 8, to: 9, theme: 'Grace', status: 'approved' },
+  { id: 'mem-mat-11-28', c: 'MAT', ch: 11, from: 28, to: 29, theme: 'Rest', status: 'approved' },
+  { id: 'mem-rom-5-8', c: 'ROM', ch: 5, from: 8, to: 8, theme: 'The cross', status: 'approved' },
+  { id: 'mem-mic-6-8', c: 'MIC', ch: 6, from: 8, to: 8, theme: 'Justice', status: 'approved' },
+  { id: 'mem-gal-5-22', c: 'GAL', ch: 5, from: 22, to: 23, theme: 'The Spirit', status: 'approved' },
+  { id: 'mem-jhn-3-16', c: 'JHN', ch: 3, from: 16, to: 16, theme: 'God\'s love', status: 'approved' },
+  { id: 'mem-1co-10-13', c: '1CO', ch: 10, from: 13, to: 13, theme: 'Temptation', status: 'approved' },
+  { id: 'mem-heb-11-1', c: 'HEB', ch: 11, from: 1, to: 1, theme: 'Faith', status: 'approved' },
+  { id: 'mem-2co-5-17', c: '2CO', ch: 5, from: 17, to: 17, theme: 'New life', status: 'approved' },
+  { id: 'mem-psa-119-105', c: 'PSA', ch: 119, from: 105, to: 105, theme: 'Scripture', status: 'approved' },
+  { id: 'mem-rom-12-2', c: 'ROM', ch: 12, from: 2, to: 2, theme: 'Renewal', status: 'approved' },
+  { id: 'mem-lam-3-22', c: 'LAM', ch: 3, from: 22, to: 23, theme: 'Mercy', status: 'approved' },
+  { id: 'mem-jhn-13-34', c: 'JHN', ch: 13, from: 34, to: 35, theme: 'Love one another', status: 'approved' },
+  { id: 'mem-jas-1-5', c: 'JAS', ch: 1, from: 5, to: 6, theme: 'Wisdom', status: 'approved' },
+  { id: 'mem-php-4-6', c: 'PHP', ch: 4, from: 6, to: 7, theme: 'Anxiety', status: 'approved' },
+  { id: 'mem-pro-3-5', c: 'PRO', ch: 3, from: 5, to: 6, theme: 'Trust', status: 'approved' },
+  { id: 'mem-deu-6-4', c: 'DEU', ch: 6, from: 4, to: 5, theme: 'Love for God', status: 'approved' },
+  { id: 'mem-psa-103-8', c: 'PSA', ch: 103, from: 8, to: 8, theme: 'God\'s character', status: 'approved' },
+  { id: 'mem-isa-41-10', c: 'ISA', ch: 41, from: 10, to: 10, theme: 'Fear', status: 'approved' },
+  { id: 'mem-mat-6-33', c: 'MAT', ch: 6, from: 32, to: 33, theme: 'Priorities', status: 'approved' },
+  { id: 'mem-rom-8-28', c: 'ROM', ch: 8, from: 28, to: 28, theme: 'Providence', status: 'approved' },
+  { id: 'mem-1jn-1-9', c: '1JN', ch: 1, from: 9, to: 9, theme: 'Confession', status: 'approved' }
 ];
 
 /* The editions this app ships. A canonical id names a LOCATION; an
@@ -13109,7 +13109,18 @@ function renderHelpUrgent(){
    ========================================================= */
 const MEMORY_ID = 'active';
 const MEMORY_STAGES = ['read', 'practice', 'hints', 'recall'];
-const MEMORY_STAGE_LABEL = { read: 'Read', practice: 'Practice', hints: 'Hints', recall: 'Recall' };
+/* The fourth column of this map is the only place the reader's word for a
+   level lives. The ids are not renamed with it: a stage id is where a record
+   points, and renaming one to match a word on screen is how a reader's place
+   in a passage gets lost.
+
+   `hints` is shown as Cues. "Hints" promises MORE help, and this level gives
+   less than Practice does — it is the harder step, not the gentler one. Nor
+   is it "First letters": two of the seven editions are written in characters,
+   where the cue is a first character rather than a letter, and a label that is
+   only true in English is a label that is wrong for the reader it matters most
+   to. A cue is the mark that starts you off, in any script. */
+const MEMORY_STAGE_LABEL = { read: 'Read', practice: 'Practice', hints: 'Cues', recall: 'Recall' };
 /* How much of the verse Practice hides. Hints hides every segment and gives
    back a first character instead, which is strictly less help. */
 const MEMORY_PRACTICE_HIDDEN = 0.35;

@@ -8953,6 +8953,51 @@ function testScriptureMemory(){
     !c.memoryEligible({ c: 'JUD', ch: 1, from: 1, to: 1 + c.MEMORY_MAX_VERSES }) &&
     c.memoryEligible(REF));
 
+  sub('the catalogue a person signed off, and the passages they ruled out');
+  /* The editorial gate, held structurally. These do not judge whether a
+     passage is wisely chosen - a test cannot - but they keep the decisions
+     somebody already made from being undone by accident. */
+  const cat = require('../scripts/memory.js').readCatalogue();
+  T('every passage has been read and approved',
+    cat.passages.every(function(p){ return p.status === 'approved'; }),
+    cat.passages.filter(function(p){ return p.status !== 'approved'; }).map(function(p){ return p.ref; }).join(', '));
+  T('and the app offers exactly those',
+    c.MEMORY.length === cat.passages.length && c.memoryPool().length === cat.passages.length,
+    c.MEMORY.length + ' in the app, ' + cat.passages.length + ' in the catalogue');
+  const ids = cat.passages.map(function(p){ return p.id; });
+  T('no id appears twice', new Set(ids).size === ids.length);
+  const refs = cat.passages.map(function(p){ return p.ref; });
+  T('and no passage is offered twice under two ids', new Set(refs).size === refs.length);
+
+  /* A passage ruled out of the weekly rotation stays out. Each one is
+     recorded with its reason in data/memory.json: a promise to a particular
+     historical audience, a proverb read as a guarantee, or a psalm whose
+     first verse is mostly its own title. A reader may still choose any of
+     them from the Bible; the app does not put them forward unasked. */
+  const ruledOut = ((cat._authoring || {}).notRecommended || []);
+  T('the passages ruled out are recorded with a reason, not just dropped',
+    ruledOut.length >= 3 && ruledOut.every(function(x){ return x.ref && x.why && x.why.length > 40; }),
+    ruledOut.length + ' recorded');
+  T('and not one of them is in the weekly rotation',
+    !ruledOut.some(function(x){ return refs.indexOf(x.ref) !== -1; }),
+    ruledOut.filter(function(x){ return refs.indexOf(x.ref) !== -1; }).map(function(x){ return x.ref; }).join(', '));
+  /* Checked on the LOCATION the app resolved, so a ruled-out passage cannot
+     come back under a different spelling of the same reference. */
+  const ruledLoc = ruledOut.map(function(x){
+    const p = require('../scripts/scripture.js').parseRef(x.ref);
+    return p ? p.code + '.' + p.chapter + '.' + p.from : null;
+  }).filter(Boolean);
+  T('not under another spelling of the same address either',
+    !c.MEMORY.some(function(m){ return ruledLoc.indexOf(m.c + '.' + m.ch + '.' + m.from) !== -1; }));
+
+  /* Twenty-two weeks in a row from the same book would read as a series
+     rather than a rotation. The order of the array is the only thing that
+     decides this; the rotation itself is untouched. */
+  const books = c.MEMORY.map(function(m){ return m.c; });
+  const sameRun = books.filter(function(b, i){ return b === books[(i + 1) % books.length]; });
+  T('no two consecutive weeks come from the same book, the wrap included',
+    sameRun.length === 0, sameRun.join(', '));
+
   sub('one week, one suggestion, and the same one however often you look');
   const wk = c.thisWeekKey();
   T('the week is a local calendar week, named by its Sunday',
@@ -9085,7 +9130,14 @@ function testScriptureMemory(){
         c.memorySegments('a\uD83D\uDE42b').length >= 1);
 
       sub('read, practice, hints, recall — and the reader moves freely');
-      T('the four levels are exactly these',
+      /* The third level gives LESS away than the second, so it must not be
+     called something that promises more. "Hints" did. The ids are
+     unchanged - only the reader's word for it moved. */
+  T('the level that helps least is not named as though it helped most',
+    /hints: 'Cues'|hints: '(?!Hints)[^']+'/.test(js), (js.match(/hints: '[^']*'/) || ['?'])[0]);
+  T('and no level label is only true in one script',
+    !/hints: '(First letters|Letters|Initials)'/.test(js));
+  T('the four levels are exactly these',
         c.MEMORY_STAGES.join() === 'read,practice,hints,recall', c.MEMORY_STAGES.join());
       give('eng-web');
       const exact = c.passageVerses(REF, 'eng-web')[0].t;

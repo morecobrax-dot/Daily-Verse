@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.14.2",
-  "phase": "Scripture Memory V1 (branch)",
+  "phase": "Scripture Memory — content gate",
   "status": "building",
   "needsQa": true,
   "needsDecision": true,
-  "currentTask": "Scripture Memory is built on a branch: one passage at a time, read, practised with gaps, prompted from memory, and revealed in the exact wording it was begun in. The 22 suggested passages still need a person to read each one in context before any release.",
-  "nextAction": "Review the 22 suggested passages, then check the practice on a physical iPhone. The v1.14.2 urgent-help check and the native iOS decisions are still open.",
+  "currentTask": "The 22 weekly memory passages were each read in context. Three were held from the rotation, four ranges were widened so they do not promise more alone than they do in their paragraph, and three passages were added to widen the catalogue beyond comfort and Paul.",
+  "nextAction": "One editorial decision is open: whether to offer Philippians 4:12-13. Then the short check of the practice on a physical iPhone.",
   "blocker": null,
-  "updatedAt": "2026-10-11T22:37:19Z"
+  "updatedAt": "2026-10-11T23:43:49Z"
 }
