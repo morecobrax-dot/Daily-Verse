@@ -8403,8 +8403,11 @@ function testHelpProduct(){
       s.passages.every(r => typeof r.c === 'string' && typeof r.ch === 'number'))));
   T('the reader’s own edition supplies the words',
     /function locationCardHtml\(ref\)\{[\s\S]{0,200}passageVerses\(ref\)/.test(js.replace(/\n\s*/g, '')));
+  /* The second argument is the edition. It defaults to the one the reader
+     is on; Scripture Memory is the only caller that passes it, because a
+     passage somebody is learning keeps the wording it was begun in. */
   T('and the words are read out of the Bible cache, not the catalogue',
-    /function passageVerses\(ref\)\{[\s\S]{0,160}cachedBibleBook\(translation, ref\.c\)/.test(js.replace(/\n\s*/g, '')));
+    /function passageVerses\(ref, ed\)\{[\s\S]{0,200}cachedBibleBook\(ed \|\| translation, ref\.c\)/.test(js.replace(/\n\s*/g, '')));
   T('a quotation carries its reference and its translation',
     /function locationCardHtml[\s\S]{0,700}verse-ref[\s\S]{0,200}verse-translation/.test(js));
   /* Rule 50: an id names a location, never a rendering. */
@@ -8877,9 +8880,373 @@ function testCrisisActions(){
       .indexOf('href') === -1);
 }
 
+/* =========================================================
+   CONTRACT 55 — SCRIPTURE MEMORY
+   ---------------------------------------------------------
+   Numbered 55 rather than 54 because feature/native-prep holds
+   54 on its own branch, and two contracts with one number is a
+   merge nobody notices went wrong.
+
+   Memorising is memorising PARTICULAR WORDS. That one fact is
+   what most of this defends:
+
+     - the edition is captured when a passage is begun, and the
+       app's Bible translation moving afterwards must not rewrite
+       a verse somebody is halfway through learning;
+     - the words come from data/bible/ every time, so nothing is
+       ever stored, cached or re-typed as text;
+     - in Recall the words are not in the document at all, which
+       is the only way a screen reader cannot read out the answer
+       to an exercise about remembering it.
+
+   And the practice itself has to work in every edition this app
+   ships. Whitespace tokenisation would have given a memory
+   feature that worked in five of the seven and silently did
+   nothing in the two Chinese ones.
+
+   There is no score here, and these check that there is nowhere
+   for one to be kept.
+   ========================================================= */
+function testScriptureMemory(){
+  section('CONTRACT 55 — Scripture Memory');
+  const store = new Map();
+  const app = H.loadApp({ sharedStorage: store });
+  const c = app.ctx;
+  const d = c.document;
+  const js = H.mainScript(H.readApp());
+  const fsx = require('fs');
+  const pathx = require('path');
+  const corpusx = require('../scripts/corpus.js');
+
+  c.toast = function(){};
+  c.confirmAction = function(){ return Promise.resolve(true); };
+
+  /* Only three books are held in memory at a time, so each edition's book is
+     handed over immediately before it is read rather than all at once. */
+  /* Parsed fresh and handed straight over, never held here. Keeping seven
+     parsed books alive for the length of a contract is tens of megabytes
+     that nothing can reclaim, and the suite runs out of heap. */
+  const give = function(ed){
+    c.rememberBibleBook(ed, 'JUD', JSON.parse(
+      fsx.readFileSync(pathx.join(H.ROOT, 'data', 'bible', ed, 'JUD.json'), 'utf8')));
+  };
+  const REF = { c: 'JUD', ch: 1, from: 24, to: 25 };   /* small book, real memory passage */
+  const eds = corpusx.shippedEditions();
+
+  sub('the catalogue is locations, and the limit is a property of the location');
+  T('the catalogue reached the app', Array.isArray(c.MEMORY) && c.MEMORY.length > 0, String(c.MEMORY.length));
+  /* A text field here would be Scripture this app asserts on its own
+     authority, outside the derived region and every check that defends it. */
+  const fields = new Set();
+  c.MEMORY.forEach(function(m){ Object.keys(m).forEach(function(k){ fields.add(k); }); });
+  T('and carries no field that could hold Scripture',
+    [...fields].sort().join() === 'c,ch,from,id,status,theme,to', [...fields].sort().join());
+  T('every entry is a canonical location',
+    c.MEMORY.every(function(m){ return typeof m.c === 'string' && m.ch > 0 && m.to >= m.from; }));
+  /* Verse count is identical in every edition; a rendered word count is not.
+     Measuring the limit on the text would offer a passage in Chinese and
+     refuse the same passage in German. */
+  T('the length limit is judged on the reference, never on rendered text',
+    c.MEMORY.every(function(m){ return (m.to - m.from + 1) <= c.MEMORY_MAX_VERSES; }) &&
+    /function memoryEligible\(ref\)\{[\s\S]{0,260}MEMORY_MAX_VERSES/.test(js.replace(/\n\s*/g, '')));
+  T('a passage longer than the limit is refused',
+    !c.memoryEligible({ c: 'JUD', ch: 1, from: 1, to: 1 + c.MEMORY_MAX_VERSES }) &&
+    c.memoryEligible(REF));
+
+  sub('one week, one suggestion, and the same one however often you look');
+  const wk = c.thisWeekKey();
+  T('the week is a local calendar week, named by its Sunday',
+    c.weekKeyFor('2026-10-11') === '2026-10-11' && c.weekKeyFor('2026-10-17') === '2026-10-11' &&
+    c.weekKeyFor('2026-10-18') === '2026-10-18');
+  /* Derived from the device's own calendar. A UTC week would hand half the
+     world the previous week's verse for part of every day. */
+  T('and is never derived from UTC',
+    !/toISOString\(\)[^;]{0,40}slice\(0, ?10\)/.test(
+      (js.match(/function weekKeyFor[\s\S]*?\n\}/) || [''])[0]));
+  const first = c.memorySuggestion(wk);
+  T('a week has a suggestion', !!first, first ? first.id : 'none');
+  T('and asking again gives the same one', c.memorySuggestion(wk).id === first.id);
+  /* A suggestion somebody could re-roll is a suggestion they would re-roll. */
+  T('nothing random chooses it',
+    !/Math\.random/.test((js.match(/function memorySuggestion[\s\S]*?\n\}/) || [''])[0]));
+  T('every day of the same week agrees',
+    ['2026-10-11', '2026-10-14', '2026-10-17'].every(function(k){
+      return c.memorySuggestion(c.weekKeyFor(k)).id === c.memorySuggestion(c.weekKeyFor('2026-10-11')).id;
+    }));
+  /* A hash into the list repeated four times in twelve weeks while other
+     passages went unoffered. A rotation gives each one its turn. */
+  const cycle = [];
+  let dd = c.dateFromKey('2026-10-11');
+  for(let i = 0; i < c.memoryPool().length; i++){
+    cycle.push(c.memorySuggestion(c.weekKeyFor(c.dayKey(dd))).id);
+    dd = new Date(dd.getFullYear(), dd.getMonth(), dd.getDate() + 7);
+  }
+  T('and the whole catalogue is offered before any passage comes round again',
+    new Set(cycle).size === cycle.length, new Set(cycle).size + ' of ' + cycle.length);
+
+  sub('starting one');
+  give('eng-web');
+  return Promise.resolve()
+    .then(function(){ return c.startMemorizing('JUD', 1, 24, 25); })
+    .then(function(){
+      const r = c.memoryRecord();
+      T('a passage is active', !!r && !!c.memoryActive());
+      T('exactly one, ever', c.scriptureMemory.length === 1, String(c.scriptureMemory.length));
+      /* The whole record, named. A field appearing here that is not in this
+         list is a field somebody added without deciding it should exist. */
+      T('and it holds a location, an edition, a day and a level — nothing else',
+        Object.keys(r).sort().join() === 'c,ch,completedAt,from,id,stage,startedOn,to,translation,updatedAt',
+        Object.keys(r).sort().join());
+
+      sub('no Scripture is ever stored');
+      const raw = String(store.get('daily-verse.' + c.KEYS.scriptureMemory) || '');
+      T('something was written', raw.length > 0 && raw.length < 400, raw.length + ' bytes');
+      const words = c.passageVerses(REF, 'eng-web')[0].t.split(/\s+/)
+        .map(function(w){ return w.replace(/[^\p{L}]/gu, ''); })
+        .filter(function(w){ return w.length > 4; });
+      T('and not one word of the verse is in it',
+        words.length >= 4 && !words.some(function(w){ return raw.indexOf(w) !== -1; }),
+        words.filter(function(w){ return raw.indexOf(w) !== -1; }).join(','));
+      /* The renderer must go to the Bible for words every time. */
+      T('the practice reads its words from the Bible, by reference and edition',
+        /passageVerses\(ref, r\.translation\)/.test(js));
+
+      sub('the edition is locked to the passage, not to the app');
+      const began = c.memoryRecord().translation;
+      give('eng-web');
+      const lockedText = c.passageVerses(REF, began)[0].t;
+      c.setTranslation('spaRV1909');
+      give('spaRV1909');
+      const otherText = c.passageVerses(REF, 'spaRV1909')[0].t;
+      T('the two editions really do differ, or this proves nothing',
+        lockedText !== otherText, lockedText.slice(0, 20) + ' / ' + otherText.slice(0, 20));
+      /* Render while the app is on the other edition: a render is exactly
+         where a record could be quietly overwritten with the current one. */
+      give('eng-web');
+      c.setMemoryStage('read');
+      c.openMemory();
+      const shownWhileElsewhere = d.getElementById('memoryBody').innerHTML;
+      T('the practice still shows the words it was begun in',
+        shownWhileElsewhere.indexOf(c.escapeHtml(lockedText)) !== -1 &&
+        shownWhileElsewhere.indexOf(c.escapeHtml(otherText)) === -1);
+      T('and the record still names that edition after rendering',
+        c.memoryRecord().translation === began, c.memoryRecord().translation);
+      T('while the Bible tab is on the other one',
+        c.translation === 'spaRV1909', c.translation);
+      /* Changing it is allowed, but never silently: the words change. */
+      T('and changing it is a deliberate act with a confirmation',
+        /function relockMemoryTranslation[\s\S]{0,420}confirmAction\(/.test(js));
+      c.setTranslation('eng-web');
+
+      sub('every shipped edition can actually be practised');
+      const rows = [];
+      eds.forEach(function(ed){
+        give(ed);
+        const v = c.passageVerses(REF, ed);
+        if(!v){ rows.push(ed + ':unresolved'); return; }
+        const segs = c.memorySegments(v[0].t).filter(function(x){ return x.kind !== 'gap'; });
+        const seed = 'JUD.1.24-25|' + ed;
+        const pr = c.memoryMaskedHtml(v, 'practice', seed);
+        const hi = c.memoryMaskedHtml(v, 'hints', seed);
+        rows.push({ ed: ed, segs: segs.length, kinds: [...new Set(segs.map(function(x){ return x.kind; }))],
+                    pr: pr, hi: hi, stable: pr === c.memoryMaskedHtml(v, 'practice', seed) });
+      });
+      const good = rows.filter(function(r){ return typeof r === 'object'; });
+      T('all seven editions resolve and segment', good.length === eds.length, String(good.length));
+      /* THE ONE THAT WOULD HAVE SHIPPED BROKEN. Chinese has no spaces, so a
+         whitespace split produces a single segment and hides either nothing
+         or the entire verse. */
+      T('and every one of them has something to hide',
+        good.every(function(r){ return r.segs >= 4; }),
+        good.map(function(r){ return r.ed + '=' + r.segs; }).join(' '));
+      T('Chinese is segmented by character run, not by space',
+        good.filter(function(r){ return r.ed.indexOf('cmn') === 0; })
+          .every(function(r){ return r.kinds.indexOf('han') !== -1; }));
+      T('practice hides some of the verse and not all of it',
+        good.every(function(r){
+          const n = (r.pr.match(/mem-gap/g) || []).length;
+          return n >= 1 && n < r.segs;
+        }), good.map(function(r){ return r.ed + '=' + (r.pr.match(/mem-gap/g) || []).length + '/' + r.segs; }).join(' '));
+      /* Hints is the first-letter method: less help than Practice, not more. */
+      T('hints gives less away than practice, in every edition',
+        good.every(function(r){
+          return (r.hi.match(/mem-gap/g) || []).length >= (r.pr.match(/mem-gap/g) || []).length;
+        }));
+      /* Gaps that moved on each render would be a different exercise every
+         time, and nothing could be learned from it. */
+      T('the same verse always hides the same words',
+        good.every(function(r){ return r.stable; }));
+      T('and nothing random decides which',
+        !/Math\.random/.test((js.match(/function memoryHidden[\s\S]*?\n\}/) || [''])[0]));
+      /* Punctuation is the scaffolding that makes a gap readable as a gap. */
+      T('punctuation and spacing are never hidden',
+        c.memorySegments('For God, so loved.').filter(function(x){ return x.kind === 'gap'; }).length >= 3);
+      T('a character outside the basic plane is one unit, not two halves',
+        c.memorySegments('a\uD83D\uDE42b').length >= 1);
+
+      sub('read, practice, hints, recall — and the reader moves freely');
+      T('the four levels are exactly these',
+        c.MEMORY_STAGES.join() === 'read,practice,hints,recall', c.MEMORY_STAGES.join());
+      give('eng-web');
+      const exact = c.passageVerses(REF, 'eng-web')[0].t;
+      c.setMemoryStage('read'); c.openMemory();
+      const readHtml = d.getElementById('memoryBody').innerHTML;
+      T('Read shows the verse exactly as the edition publishes it',
+        readHtml.indexOf(c.escapeHtml(exact)) !== -1);
+      c.setMemoryStage('practice');
+      const prHtml = d.getElementById('memoryBody').innerHTML;
+      T('Practice shows gaps, and no longer the whole verse',
+        prHtml.indexOf('mem-gap') !== -1 && prHtml.indexOf(c.escapeHtml(exact)) === -1);
+      c.setMemoryStage('hints');
+      T('Hints shows gaps too', d.getElementById('memoryBody').innerHTML.indexOf('mem-gap') !== -1);
+
+      sub('recall, and the answer that is not in the room');
+      c.setMemoryStage('recall');
+      const hidden = d.getElementById('memoryBody').innerHTML;
+      const probe = words[0];
+      /* Hiding the words with CSS would leave them for a screen reader to
+         read out, which is the one thing a recall exercise must not do. */
+      T('the words are not in the document at all before Reveal',
+        hidden.indexOf(probe) === -1, probe);
+      T('and the reader is asked for them calmly',
+        hidden.indexOf('Say the verse from memory') !== -1);
+      c.revealMemory();
+      const shown = d.getElementById('memoryBody').innerHTML;
+      T('Reveal shows the exact published wording',
+        shown.indexOf(c.escapeHtml(exact)) !== -1);
+      /* The reader decides. Nothing marks an answer. */
+      T('nothing grades the attempt',
+        !/\b(correct|incorrect|wrong|right answer|score|you got)\b/i.test(shown), shown.slice(0, 80));
+      T('and the choice afterwards is theirs',
+        shown.indexOf('I know this verse') !== -1 && shown.indexOf('Practise again') !== -1);
+
+      sub('nothing is counted, and nothing is sent');
+          /* Sliced by its own landmarks rather than by a regex over a comment:
+         an extraction that silently returns nothing would let the two
+         assertions below pass against an empty string. */
+      const a0 = js.indexOf('const MEMORY_ID =');
+      const b0 = js.indexOf('function memoryLearnHtml');
+      const body = (a0 !== -1 && b0 > a0) ? js.slice(a0, b0) : '';
+      T('the feature has a body to check', body.length > 2000, String(body.length));
+      T('it keeps no streak, score, count or attempt',
+        !/streak|\bscore\b|attempts|accuracy|correctCount|percent/i.test(body));
+      T('it sends nothing anywhere',
+        !/fetch\(|XMLHttpRequest|navigator\.send|analytics|gtag|dataLayer/.test(body));
+      T('and the record cannot grow one by being restored',
+        !c.isMemoryRecord({ id: 'active', c: 'ROM', ch: 8, from: 28, to: 28,
+          translation: 'eng-web', startedOn: '2026-10-11', stage: 'nonsense' }));
+
+      sub('a new week never takes an unfinished verse away');
+      const rec = c.memoryRecord();
+      rec.startedOn = '2026-09-06';
+      c.persistMemory();
+      c.Domain.hydrate();
+      T('the passage survives the week it was begun in',
+        !!c.memoryActive() && c.memoryRecord().startedOn === '2026-09-06');
+      T('and Learn offers the new one rather than imposing it',
+        c.memoryLearnHtml().indexOf('Start this week') !== -1);
+      /* No overdue state, no missed days, no guilt. */
+      T('nothing anywhere says a day was missed',
+        !/overdue|missed|you broke|don.t lose|keep your streak/i.test(c.memoryLearnHtml() + c.memoryTodayHtml()));
+
+      sub('replacing it is a question, not a surprise');
+      T('and the question names both passages',
+        /confirmAction\(\{[\s\S]{0,400}passageRefLabel\(memoryRef\(current\)/.test(js));
+      /* Declining it must leave the passage somebody is halfway through
+         exactly where it was. */
+      const held = c.memoryRecord();
+      /* If an earlier assertion already found the passage gone, there is
+         nothing to decline; report that rather than dying on it. */
+      if(!held){ T('saying no keeps the passage already being learned', false, 'no active passage'); return; }
+      c.confirmAction = function(){ return Promise.resolve(false); };
+      return Promise.resolve(c.startMemorizing('JUD', 1, 20, 21)).then(function(){
+        T('saying no keeps the passage already being learned',
+          c.memoryRecord().from === held.from && c.memoryRecord().to === held.to,
+          c.memoryRecord().from + '-' + c.memoryRecord().to);
+        c.confirmAction = function(){ return Promise.resolve(true); };
+        return Promise.resolve(c.startMemorizing('JUD', 1, 20, 21));
+      }).then(function(){
+        T('and saying yes replaces it',
+          c.memoryRecord().from === 20 && c.memoryRecord().to === 21,
+          c.memoryRecord().from + '-' + c.memoryRecord().to);
+        c.scriptureMemory = [held]; c.persistMemory();
+      });
+
+      sub('backup, restore and reset');
+      const payload = {};
+      c.Store.listKeys().forEach(function(k){
+        if(k.indexOf(c.KEYS.backupPrefix) !== 0) payload[k] = c.Store.get(k);
+      });
+      T('a backup carries the memory verse', payload[c.KEYS.scriptureMemory] !== undefined);
+      T('and still carries no Scripture',
+        !words.some(function(w){ return String(payload[c.KEYS.scriptureMemory]).indexOf(w) !== -1; }));
+      const before = c.memoryRecord();
+      store.delete('daily-verse.' + c.KEYS.scriptureMemory);
+      c.Domain.hydrate();
+      T('clearing it leaves none', c.memoryRecord() === null);
+      c.mergeBackup(payload);
+      c.Domain.hydrate();
+      const after = c.memoryRecord();
+      T('restoring brings back the same passage, in the same edition',
+        !!after && after.c === before.c && after.from === before.from &&
+        after.translation === before.translation);
+      /* A reader on 1.14.2 has a backup with no memory key in it. */
+      const old = {};
+      Object.keys(payload).forEach(function(k){ if(k !== c.KEYS.scriptureMemory) old[k] = payload[k]; });
+      store.delete('daily-verse.' + c.KEYS.scriptureMemory);
+      c.Domain.hydrate();
+      let threw = false;
+      try{ c.mergeBackup(old); c.Domain.hydrate(); }catch(e){ threw = true; }
+      T('a backup from before this feature restores without complaint', !threw);
+      T('and leaves no memory verse, which is the truth about that device',
+        c.memoryRecord() === null);
+      /* Schema 2 is unchanged: an absent optional collection is a reader who
+         has not started one, which needs no migration to express. */
+      T('no schema bump was needed, and none was taken',
+        c.DATA_SCHEMA_VERSION === 2, String(c.DATA_SCHEMA_VERSION));
+      c.mergeBackup(payload); c.Domain.hydrate();
+      T('and a reset would name it among what is lost',
+        /add\(scriptureMemory\.length, 'memory verse'/.test(js));
+
+      sub('when the words cannot be fetched');
+      /* A failing load re-renders so the reader sees why, and that render
+         asks for the passage again. Asked once, it stops; asked every time,
+         one unreachable file becomes an endless retry. */
+      let asks = 0;
+      const realLoad = c.loadBibleBook;
+      c.loadBibleBook = function(){ asks++; return Promise.reject(new Error('offline')); };
+      c.bibleCache.books = {}; c.bibleCache.order = []; c.memoryLoadTried = '';
+      c.openMemory();
+      const offline = d.getElementById('memoryBody').innerHTML;
+      /* The reference and the edition, and a way to try again. Never another
+         edition's words, and never remembered words from before. */
+      T('it says which passage and which edition, and offers to retry',
+        offline.indexOf('Try again') !== -1 &&
+        offline.indexOf(c.escapeHtml(c.translationName(c.memoryRecord().translation))) !== -1);
+      T('and invents nothing in the meantime',
+        offline.indexOf(c.escapeHtml(exact)) === -1);
+      return Promise.resolve().then(function(){
+        return new Promise(function(res){ setTimeout(res, 0); });
+      }).then(function(){
+        T('and it asks for the file once, rather than for ever',
+          asks === 1, asks + ' requests');
+        c.loadBibleBook = realLoad;
+        c.closeMemory();
+        c.__flush();
+      });
+      /* Nothing the contract loaded outlives it. */
+      /* Leave the app settled. A contract that walks away from an open
+         overlay leaves its history entry and its observer behind, and the
+         next contract in the same process inherits the mess. */
+      c.closeMemory();
+      c.__flush();
+      c.bibleCache.books = {}; c.bibleCache.order = []; c.bibleCache.verses = {};
+    });
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved, testDeviceMove, testHelpProduct,
-  testCrisisActions,
+  testCrisisActions, testScriptureMemory,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,
   testMobile, testDesignSystem, testPWA, testRelease, testStress,

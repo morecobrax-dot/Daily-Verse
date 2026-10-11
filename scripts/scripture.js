@@ -51,6 +51,7 @@ const CURATION = path.join(ROOT, 'data', 'curation.json');
 const STUDIES = path.join(ROOT, 'data', 'studies.json');
 const DEVOTIONS = path.join(ROOT, 'data', 'devotions.json');
 const HELP_DOC = path.join(ROOT, 'data', 'help.json');
+const MEMORY_DOC = path.join(ROOT, 'data', 'memory.json');
 
 /* Standard SIL/UBS book codes, which is what the corpus is keyed by. */
 const BOOKS = {
@@ -128,6 +129,7 @@ function resolveDevotionRef(ref, where, editionVerses, editionSpans, errors){
 }
 
 function readHelp(){ return JSON.parse(fs.readFileSync(HELP_DOC, 'utf8')); }
+function readMemory(){ return JSON.parse(fs.readFileSync(MEMORY_DOC, 'utf8')); }
 
 /* ---------- Help Me ----------
    The same rule as a devotional and a lesson: editorial prose and canonical
@@ -260,6 +262,44 @@ function buildHelp(doc, errors){
   };
 }
 
+/* The weekly suggestions. Canonical locations and editorial metadata only:
+   the words are read out of data/bible/ at render time, in whichever edition
+   the reader locked when they began. Nothing here carries Scripture, and the
+   catalogue validator refuses any field that could.
+
+   Length is judged on the REFERENCE. Verse count is a property of the
+   location and is the same in every edition; a rendered word count is not,
+   and measuring the limit that way would offer a passage in one translation
+   and refuse it in another. */
+function buildMemory(doc, errors){
+  const max = Number(doc.maxVerses) || 6;
+  const list = (doc.passages || []).map(e => {
+    const p = parseRef(e.ref);
+    if(!p){ errors.push('memory ' + e.id + ' — cannot parse "' + e.ref + '"'); return null; }
+    const span = p.to - p.from + 1;
+    if(span > max){
+      errors.push('memory ' + e.id + ' — ' + e.ref + ' is ' + span + ' verses, over the limit of ' + max);
+      return null;
+    }
+    /* Resolved against the pinned corpus so a build cannot ship a suggestion
+       that does not exist in an edition somebody reads. */
+    corpus.shippedEditions().forEach(ed => {
+      const verses = corpus.verses(ed);
+      for(let v = p.from; v <= p.to; v++){
+        const t = verses.get(p.code + ' ' + p.chapter + ':' + v);
+        if(t === undefined || !String(t).trim()){
+          errors.push('memory ' + e.id + ' — ' + e.ref + ' does not resolve in ' + ed);
+        }
+      }
+    });
+    return { id: e.id, c: p.code, ch: p.chapter, from: p.from, to: p.to,
+             theme: e.theme, status: e.status };
+  }).filter(Boolean);
+
+  if(!list.length) errors.push('memory — the catalogue resolved to nothing');
+  return { version: Number(doc.version || 1), maxVerses: max, passages: list };
+}
+
 function buildDevotions(doc, errors){
   const editionVerses = {};
   const editionSpans = {};
@@ -382,6 +422,7 @@ function build(){
   const studyDoc = readStudies();
   const devotionDoc = readDevotions();
   const helpDoc = readHelp();
+  const memoryDoc = readMemory();
   const verses = corpus.verses(corpus.DEFAULT_EDITION);
   const spans = corpus.bridgedSpans(corpus.DEFAULT_EDITION);
   const supers = corpus.superscriptions(corpus.DEFAULT_EDITION);
@@ -437,6 +478,7 @@ function build(){
      is added to the canonical set, so the dataset hash cannot move. */
   const devotions = buildDevotions(devotionDoc, errors);
   const help = buildHelp(helpDoc, errors);
+  const memory = buildMemory(memoryDoc, errors);
 
   if(errors.length){
     const e = new Error(errors.length + ' passage(s) failed to derive');
@@ -445,7 +487,7 @@ function build(){
   }
   const canonical = daily.concat(study);
   return { passages: canonical, daily: daily, study: study,
-           devotions: devotions, help: help,
+           devotions: devotions, help: help, memory: memory,
            translations: buildTranslations(canonical, lock),
            studies: built.studies, studyDoc: studyDoc, lock: lock, curation: cur };
 }
@@ -907,6 +949,13 @@ function region(built){
                          : '    completion: null,\n') +
            '    steps: [\n' + steps + '\n    ] }';
   }).join(',\n');
+  /* Locations and a theme. No text field exists to fill. */
+  const memoryRows = built.memory.passages.map(function(m){
+    return "  { id: '" + esc(m.id) + "', c: '" + esc(m.c) + "', ch: " + m.ch +
+      ", from: " + m.from + ", to: " + m.to +
+      ", theme: '" + esc(m.theme) + "', status: '" + esc(m.status) + "' }";
+  }).join(',\n');
+
   const helpUrgent = JSON.stringify(built.help.urgent, null, 2)
     .split('\n').map(function(l, i){ return i === 0 ? l : '  ' + l; }).join('\n');
 
@@ -1039,6 +1088,17 @@ function region(built){
     '',
     'const HELP = [',
     helpRows,
+    '];',
+    '',
+    '/* Scripture Memory. Canonical LOCATIONS and a theme, nothing else: the',
+    '   words a reader memorises are read out of data/bible/ in the edition',
+    '   they locked when they began, which is why changing translation later',
+    '   cannot rewrite a passage somebody is halfway through learning. */',
+    'const MEMORY_VERSION = ' + built.memory.version + ';',
+    'const MEMORY_MAX_VERSES = ' + built.memory.maxVerses + ';',
+    '',
+    'const MEMORY = [',
+    memoryRows,
     '];',
     '',
     '/* The editions this app ships. A canonical id names a LOCATION; an',

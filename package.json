@@ -20,6 +20,7 @@
     "scripture:audit": "node scripts/scripture.js audit",
     "devotions:verify": "node scripts/devotions.js",
     "help:verify": "node scripts/help.js",
+    "memory:verify": "node scripts/memory.js",
     "versify": "node scripts/versify.js",
     "corpus:adopt": "node scripts/corpus.js adopt",
     "status": "node scripts/project-status.js verify"

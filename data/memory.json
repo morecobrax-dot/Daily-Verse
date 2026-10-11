@@ -1,0 +1,39 @@
+{
+  "_about": "The passages Scripture Memory offers as a weekly suggestion. Canonical locations and editorial metadata only — never a word of Scripture. The words are read out of data/bible/ in whichever edition the reader locked when they began, exactly as every other surface in this app resolves a reference.",
+  "_authoring": {
+    "whatBelongsHere": "A passage somebody could reasonably carry in memory: short, coherent on its own, and worth the weeks it will take. Breadth across the canon matters more than covering a topic.",
+    "whatDoesNot": "A verse that only means what people think it means when it is lifted out of its paragraph. Length is not the only test — a short verse can still be a misquotation when it stands alone.",
+    "status": "Every entry is `proposed` until a person has read it in context and approved it. `npm run memory:verify` prints what is still waiting. See MEMORY-REVIEW.md.",
+    "deliberatelyExcluded": [
+      "Jeremiah 29:11 — addressed to exiles in Babylon about a seventy-year timeline, and the single most reliably proof-texted verse in English-speaking Christianity. Memorised alone it teaches the opposite of what it says.",
+      "Philippians 4:13 — in context it is about contentment in plenty and in want. Alone it reads as a promise about performance, which is not what Paul wrote.",
+      "Proverbs 22:6 — a proverb, which is a genre of general truth rather than a guarantee, and it is routinely carried as a guarantee by parents who then blame themselves."
+    ]
+  },
+  "version": 1,
+  "maxVerses": 6,
+  "passages": [
+    { "id": "mem-jos-1-9",   "ref": "Joshua 1:9",          "theme": "Courage",      "status": "proposed" },
+    { "id": "mem-psa-23-1",  "ref": "Psalm 23:1",          "theme": "God's care",   "status": "proposed" },
+    { "id": "mem-psa-46-1",  "ref": "Psalm 46:1",          "theme": "Refuge",       "status": "proposed" },
+    { "id": "mem-psa-119-105", "ref": "Psalm 119:105",     "theme": "Scripture",    "status": "proposed" },
+    { "id": "mem-pro-3-5",   "ref": "Proverbs 3:5-6",      "theme": "Trust",        "status": "proposed" },
+    { "id": "mem-isa-41-10", "ref": "Isaiah 41:10",        "theme": "Fear",         "status": "proposed" },
+    { "id": "mem-lam-3-22",  "ref": "Lamentations 3:22-23", "theme": "Mercy",       "status": "proposed" },
+    { "id": "mem-mic-6-8",   "ref": "Micah 6:8",           "theme": "Obedience",    "status": "proposed" },
+    { "id": "mem-mat-6-33",  "ref": "Matthew 6:33",        "theme": "Priorities",   "status": "proposed" },
+    { "id": "mem-mat-11-28", "ref": "Matthew 11:28",       "theme": "Rest",         "status": "proposed" },
+    { "id": "mem-jhn-3-16",  "ref": "John 3:16",           "theme": "God's love",   "status": "proposed" },
+    { "id": "mem-rom-5-8",   "ref": "Romans 5:8",          "theme": "The cross",    "status": "proposed" },
+    { "id": "mem-rom-8-28",  "ref": "Romans 8:28",         "theme": "Providence",   "status": "proposed" },
+    { "id": "mem-rom-12-2",  "ref": "Romans 12:2",         "theme": "Renewal",      "status": "proposed" },
+    { "id": "mem-1co-10-13", "ref": "1 Corinthians 10:13", "theme": "Temptation",   "status": "proposed" },
+    { "id": "mem-2co-5-17",  "ref": "2 Corinthians 5:17",  "theme": "New life",     "status": "proposed" },
+    { "id": "mem-gal-5-22",  "ref": "Galatians 5:22-23",   "theme": "The Spirit",   "status": "proposed" },
+    { "id": "mem-eph-2-8",   "ref": "Ephesians 2:8-9",     "theme": "Grace",        "status": "proposed" },
+    { "id": "mem-php-4-6",   "ref": "Philippians 4:6-7",   "theme": "Anxiety",      "status": "proposed" },
+    { "id": "mem-heb-11-1",  "ref": "Hebrews 11:1",        "theme": "Faith",        "status": "proposed" },
+    { "id": "mem-jas-1-5",   "ref": "James 1:5",           "theme": "Wisdom",       "status": "proposed" },
+    { "id": "mem-1jn-1-9",   "ref": "1 John 1:9",          "theme": "Confession",   "status": "proposed" }
+  ]
+}

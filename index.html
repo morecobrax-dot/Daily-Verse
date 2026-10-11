@@ -1834,6 +1834,63 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
   font-size: var(--fs-meta); color: var(--text-faint);
   margin: var(--space-xs) 0 var(--space-md);
 }
+/* ---------- Scripture Memory ----------
+   Scripture study, not a flashcard game: the verse keeps the serif and the
+   reading size it has everywhere else, and the controls stay quiet beside
+   it. No progress ring, no score, no colour that means "right". */
+.mem-head{
+  display: flex; align-items: baseline; gap: var(--space-sm);
+  margin: 0 0 var(--space-lg);
+}
+.mem-ref{
+  font-size: var(--fs-title); font-style: normal; color: var(--text);
+}
+.mem-verse{ margin: 0 0 var(--space-xl); }
+.mem-hint, .mem-note{
+  font-size: var(--fs-support); line-height: var(--lh-body);
+  color: var(--text-faint); margin: 0 0 var(--space-lg);
+}
+.mem-prompt{
+  font-size: var(--fs-body); line-height: var(--lh-body);
+  color: var(--text-dim); margin: var(--space-2xl) 0;
+  text-align: center;
+}
+
+/* A gap stands for words that are there. It keeps the space they occupy, so
+   the shape of the sentence survives and the reader is recalling a line
+   rather than reading a different one. The rule is drawn with a border so it
+   does not depend on an underscore glyph lining up in seven editions. */
+.mem-gap{
+  display: inline-block; border-bottom: 1px solid var(--text-faint);
+  margin-bottom: 0.12em; vertical-align: baseline;
+}
+
+.mem-levels{
+  display: flex; gap: var(--space-xs); margin: 0 0 var(--space-xl);
+}
+.mem-level{
+  flex: 1; min-height: 44px; padding: var(--space-sm) var(--space-xs);
+  font-family: var(--font-ui); font-size: var(--fs-meta);
+  color: var(--text-dim); background: var(--surface);
+  border: 1px solid var(--border-quiet); border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.mem-level:active{ opacity: 0.6; transition-duration: 0s; }
+.mem-level[aria-pressed="true"]{
+  color: var(--text); background: var(--surface-raised);
+  border-color: var(--accent); }
+
+.mem-decide{ display: flex; gap: var(--space-sm); }
+.mem-decide > *{ flex: 1; }
+
+.mem-tools{
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: var(--space-sm); margin: var(--space-xl) 0 0;
+}
+
+/* The Today and Learn entry points reuse the existing row, so the memory
+   verse sits in the page the way a saved verse or a reflection does. */
+.mem-row .verse-row-note{ color: var(--text-dim); }
 .help-urgent-actions{ display: flex; flex-direction: column; gap: var(--space-sm); }
 .help-urgent-action{
   width: 100%; text-decoration: none; text-align: center;
@@ -2641,6 +2698,18 @@ body.scroll-locked{
 </div>
 
 <!-- HELP ME — one step. The reading surface. -->
+<!-- SCRIPTURE MEMORY. One passage, four levels of help, and no score. -->
+<div class="overlay overlay-page" id="memoryOverlay">
+  <div class="sheet">
+    <div class="page-topbar">
+      <button class="icon-btn" onclick="closeMemory()" aria-label="Back"></button>
+      <div class="page-topbar-title">Memory verse</div>
+      <span class="topbar-spacer"></span>
+    </div>
+    <div class="sheet-scroll" id="memoryBody"></div>
+  </div>
+</div>
+
 <div class="overlay overlay-page" id="helpStepOverlay">
   <div class="sheet">
     <div class="page-topbar">
@@ -3311,6 +3380,7 @@ const KEYS = {
      answer to a Consider question, and nothing at all about urgent help
      being opened. A reader's worst week is not a data model. */
   helpProgress:   'data.helpProgress',
+  scriptureMemory: 'data.scriptureMemory',
 
   noteDraft:      'draft.note'
 };
@@ -4293,7 +4363,7 @@ const SCRIPTURE_SOURCE = {
   dailyHash: '0cb67c036256232a465fb4f979e5c675254c3129a8084e93f76cd63493006c41',
   dailyCount: 378,
   studyOnlyCount: 37,
-  built: '2026-10-08'
+  built: '2026-10-11'
 };
 
 /* One catalogue. `daily: 1` marks the passages the Today rotation may
@@ -5875,6 +5945,38 @@ const HELP = [
         consider: ['Could you pray something this short today, and again tomorrow?'],
         nextStep: { kind: 'today', text: 'Go to Today\'s reading. One passage, a short reflection, and another one tomorrow.' } }
     ] }
+];
+
+/* Scripture Memory. Canonical LOCATIONS and a theme, nothing else: the
+   words a reader memorises are read out of data/bible/ in the edition
+   they locked when they began, which is why changing translation later
+   cannot rewrite a passage somebody is halfway through learning. */
+const MEMORY_VERSION = 1;
+const MEMORY_MAX_VERSES = 6;
+
+const MEMORY = [
+  { id: 'mem-jos-1-9', c: 'JOS', ch: 1, from: 9, to: 9, theme: 'Courage', status: 'proposed' },
+  { id: 'mem-psa-23-1', c: 'PSA', ch: 23, from: 1, to: 1, theme: 'God\'s care', status: 'proposed' },
+  { id: 'mem-psa-46-1', c: 'PSA', ch: 46, from: 1, to: 1, theme: 'Refuge', status: 'proposed' },
+  { id: 'mem-psa-119-105', c: 'PSA', ch: 119, from: 105, to: 105, theme: 'Scripture', status: 'proposed' },
+  { id: 'mem-pro-3-5', c: 'PRO', ch: 3, from: 5, to: 6, theme: 'Trust', status: 'proposed' },
+  { id: 'mem-isa-41-10', c: 'ISA', ch: 41, from: 10, to: 10, theme: 'Fear', status: 'proposed' },
+  { id: 'mem-lam-3-22', c: 'LAM', ch: 3, from: 22, to: 23, theme: 'Mercy', status: 'proposed' },
+  { id: 'mem-mic-6-8', c: 'MIC', ch: 6, from: 8, to: 8, theme: 'Obedience', status: 'proposed' },
+  { id: 'mem-mat-6-33', c: 'MAT', ch: 6, from: 33, to: 33, theme: 'Priorities', status: 'proposed' },
+  { id: 'mem-mat-11-28', c: 'MAT', ch: 11, from: 28, to: 28, theme: 'Rest', status: 'proposed' },
+  { id: 'mem-jhn-3-16', c: 'JHN', ch: 3, from: 16, to: 16, theme: 'God\'s love', status: 'proposed' },
+  { id: 'mem-rom-5-8', c: 'ROM', ch: 5, from: 8, to: 8, theme: 'The cross', status: 'proposed' },
+  { id: 'mem-rom-8-28', c: 'ROM', ch: 8, from: 28, to: 28, theme: 'Providence', status: 'proposed' },
+  { id: 'mem-rom-12-2', c: 'ROM', ch: 12, from: 2, to: 2, theme: 'Renewal', status: 'proposed' },
+  { id: 'mem-1co-10-13', c: '1CO', ch: 10, from: 13, to: 13, theme: 'Temptation', status: 'proposed' },
+  { id: 'mem-2co-5-17', c: '2CO', ch: 5, from: 17, to: 17, theme: 'New life', status: 'proposed' },
+  { id: 'mem-gal-5-22', c: 'GAL', ch: 5, from: 22, to: 23, theme: 'The Spirit', status: 'proposed' },
+  { id: 'mem-eph-2-8', c: 'EPH', ch: 2, from: 8, to: 9, theme: 'Grace', status: 'proposed' },
+  { id: 'mem-php-4-6', c: 'PHP', ch: 4, from: 6, to: 7, theme: 'Anxiety', status: 'proposed' },
+  { id: 'mem-heb-11-1', c: 'HEB', ch: 11, from: 1, to: 1, theme: 'Faith', status: 'proposed' },
+  { id: 'mem-jas-1-5', c: 'JAS', ch: 1, from: 5, to: 5, theme: 'Wisdom', status: 'proposed' },
+  { id: 'mem-1jn-1-9', c: '1JN', ch: 1, from: 9, to: 9, theme: 'Confession', status: 'proposed' }
 ];
 
 /* The editions this app ships. A canonical id names a LOCATION; an
@@ -9811,6 +9913,10 @@ function loadVerseData(){
   devotionProgress = Array.isArray(dp) ? dp.filter(isDevotionProgressRecord) : [];
   const hp = Store.getJSON(KEYS.helpProgress, []);
   helpProgress = Array.isArray(hp) ? hp.filter(isHelpProgressRecord) : [];
+  /* A record that fails the shape check is dropped rather than repaired: an
+     absent memory verse is somebody who has not started one. */
+  const sm = Store.getJSON(KEYS.scriptureMemory, []);
+  scriptureMemory = Array.isArray(sm) ? sm.filter(isMemoryRecord).slice(0, 1) : [];
   loadPrefs();
   /* Absent is a new reader, not a broken one: the app opens on today. */
   if(!isDayKey(selectedDay)) selectedDay = todayKey();
@@ -10001,6 +10107,8 @@ function renderToday(){
     (chosenAroundFocus(passage, key)
       ? '<p class="chosen-note">Chosen around your focus.</p>'
       : '') +
+
+    memoryTodayHtml() +
 
     (note
       ? '<div class="section-label">Your reflection</div>' +
@@ -10502,6 +10610,13 @@ function inTranslation(p){
   return { id: p.id, ref: displayRef(p), themes: p.themes, daily: p.daily,
            text: text.text, sup: text.sup };
 }
+
+/* The same three facts about an edition, by id rather than by whichever one
+   the reader happens to be on. */
+function editionOf(ed){ return TRANSLATIONS[ed] || TRANSLATIONS[DEFAULT_TRANSLATION]; }
+function translationAbbrFor(ed){ return editionOf(ed).abbr; }
+function translationLangFor(ed){ return editionOf(ed).lang; }
+function translationName(ed){ return editionOf(ed).title; }
 
 /* What to print beside a verse, and what language to declare it in. */
 function translationAbbr(p){
@@ -11160,6 +11275,8 @@ function renderLearn(){
       '</div>';
   }
 
+  html += memoryLearnHtml();
+
   /* Two groups, one list component. The skills track is a heading and an
      order — not a second navigation system, and not a gate. Every level
      stays openable however far along someone is. */
@@ -11697,13 +11814,16 @@ function activeDevotionSeries(){
    name; a second copy of this is a second set of rules about what Scripture
    looks like, which is the one thing that may not fork. Extracted rather
    than generalised in advance — this is the second caller, not the first. */
-function passageRefLabel(ref){
-  const label = bibleBookName(translation, ref.c) + ' ' + ref.ch + ':' + ref.from;
+function passageRefLabel(ref, ed){
+  const label = bibleBookName(ed || translation, ref.c) + ' ' + ref.ch + ':' + ref.from;
   return ref.to !== ref.from ? label + '-' + ref.to : label;
 }
 
-function passageVerses(ref){
-  const book = cachedBibleBook(translation, ref.c);
+/* `ed` defaults to the edition the reader is on. Scripture Memory is the one
+   caller that passes it: a passage somebody is learning must keep the wording
+   it was begun in, whatever the Bible tab is set to now. */
+function passageVerses(ref, ed){
+  const book = cachedBibleBook(ed || translation, ref.c);
   if(!book) return null;
   const ch = book.ch[ref.ch - 1];
   if(!ch) return null;
@@ -12245,6 +12365,12 @@ function refreshDevotionsForEdition(){
    ========================================================= */
 
 let helpProgress = [];
+/* At most one record, and its id is the constant below. A singleton held in
+   the same shape as every other collection here, so export, merge, reset and
+   the data summary all reach it without a second mechanism: merging by id
+   with the newest updatedAt winning is exactly the behaviour a single active
+   passage wants when a backup lands on a device that already has one. */
+let scriptureMemory = [];
 let openHelpPathId = null;
 let openHelpStepId = null;
 /* Set while a completion screen is showing, so the step surface can present
@@ -12961,6 +13087,540 @@ function renderHelpUrgent(){
       '</section>' : '');
 }
 
+
+/* =========================================================
+   SCRIPTURE MEMORY
+   ---------------------------------------------------------
+   One passage at a time, carried for as long as it takes.
+
+   WHAT IS STORED: a canonical location, the edition it was
+   begun in, the day it began, and which practice level the
+   reader last used. No Scripture, no counts, no attempts, no
+   accuracy, no streak. There is nothing here to build a
+   record of how somebody is doing out of, which is deliberate:
+   a memory practice that scores you is a different product.
+
+   THE EDITION IS LOCKED. Memorising is memorising particular
+   words. A reader who begins in one translation and later
+   changes the app’s Bible edition keeps practising the
+   wording they started with, until they ask for it to change.
+   Everything else in this app follows the global edition; this
+   is the one place that must not.
+   ========================================================= */
+const MEMORY_ID = 'active';
+const MEMORY_STAGES = ['read', 'practice', 'hints', 'recall'];
+const MEMORY_STAGE_LABEL = { read: 'Read', practice: 'Practice', hints: 'Hints', recall: 'Recall' };
+/* How much of the verse Practice hides. Hints hides every segment and gives
+   back a first character instead, which is strictly less help. */
+const MEMORY_PRACTICE_HIDDEN = 0.35;
+
+function memoryRecord(){ return scriptureMemory[0] || null; }
+function memoryActive(){ const r = memoryRecord(); return r && !r.completedAt ? r : null; }
+
+/* A record carries a location and nothing that could be text. Checked on the
+   way in, so a hand-edited backup cannot introduce a words field that the
+   renderer would then prefer over the Bible. */
+function isMemoryRecord(r){
+  return isRecord(r) && r.id === MEMORY_ID &&
+    typeof r.c === 'string' && Number.isInteger(r.ch) &&
+    Number.isInteger(r.from) && Number.isInteger(r.to) && r.to >= r.from &&
+    typeof r.translation === 'string' && isDayKey(r.startedOn || '') &&
+    MEMORY_STAGES.indexOf(r.stage) !== -1;
+}
+
+/* The reference a record points at, in the shape every resolver here takes. */
+function memoryRef(r){ return { c: r.c, ch: r.ch, from: r.from, to: r.to }; }
+
+function persistMemory(){ Store.setJSON(KEYS.scriptureMemory, scriptureMemory); }
+
+/* ---------- the week ----------
+   A local civil week, named by the day key of its Sunday. Derived the same
+   way every other date here is: from the device’s own calendar, never from
+   toISOString(), which would hand half the world the previous week for part
+   of every day. */
+function weekKeyFor(key){
+  const d = dateFromKey(isDayKey(key) ? key : todayKey());
+  if(!d) return null;
+  return dayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay()));
+}
+function thisWeekKey(){ return weekKeyFor(todayKey()); }
+
+/* ---------- the weekly suggestion ----------
+   A pure function of the week. The same device on the same local week always
+   offers the same passage, and refreshing cannot shuffle it — a suggestion
+   somebody could re-roll is a suggestion they would re-roll. */
+/* Every passage a person has not rejected. "status" is the review ledger,
+   not a feature flag: npm run memory:verify prints what is still waiting,
+   and MEMORY-REVIEW.md is where somebody reads each one in its own
+   paragraph before a release. Hiding unreviewed passages from the app
+   instead would mean the thing being reviewed is not the thing anybody
+   can actually see. */
+function memoryPool(){
+  return MEMORY.filter(function(m){ return m.status !== 'rejected'; });
+}
+/* Which week this is, counted from a Sunday long before the app existed.
+   The week key is already a local calendar date; subtracting two calendar
+   dates as whole days is plain integer arithmetic on that calendar, with no
+   timezone in it and nothing for daylight saving to shift. */
+const MEMORY_EPOCH = '1970-01-04';   /* a Sunday */
+function memoryWeekIndex(weekKey){
+  const a = dateFromKey(MEMORY_EPOCH), b = dateFromKey(weekKey);
+  if(!a || !b) return 0;
+  const days = Math.round(
+    (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) -
+     Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86400000);
+  return Math.floor(days / 7);
+}
+
+/* A rotation through the curated order rather than a hash into it. A hash
+   repeats: over twelve weeks it offered the same passage twice on four
+   occasions while others went unoffered. Walking the list gives every
+   passage its turn before any comes round again, and is just as fixed —
+   the same local week always lands on the same entry, so refreshing cannot
+   shuffle it. */
+function memorySuggestion(weekKey){
+  const pool = memoryPool();
+  /* An honest absence. Nothing is invented when the catalogue is empty. */
+  if(!pool.length || !weekKey) return null;
+  const i = memoryWeekIndex(weekKey) % pool.length;
+  return pool[(i + pool.length) % pool.length];
+}
+
+/* ---------- eligibility ----------
+   Judged on the REFERENCE, never on rendered text. Verse count is a property
+   of the location and is identical in every edition; a word count is not, and
+   measuring it that way would offer a passage in Chinese and refuse the same
+   passage in German. */
+function memoryEligible(ref){
+  return !!ref && Number.isInteger(ref.from) && Number.isInteger(ref.to) &&
+    ref.to >= ref.from && (ref.to - ref.from + 1) <= MEMORY_MAX_VERSES;
+}
+function memoryTooLongMessage(ref){
+  const n = ref.to - ref.from + 1;
+  return 'That is ' + n + ' verses. Memory passages are up to ' + MEMORY_MAX_VERSES +
+    ', so choose a shorter range.';
+}
+
+/* ---------- starting, changing and finishing ---------- */
+async function startMemorizing(c, ch, from, to){
+  const ref = { c: c, ch: ch, from: Number(from), to: Number(to === undefined ? from : to) };
+  if(!memoryEligible(ref)){ toast(memoryTooLongMessage(ref), 'warning'); return false; }
+
+  const current = memoryActive();
+  if(current){
+    const same = current.c === ref.c && current.ch === ref.ch &&
+                 current.from === ref.from && current.to === ref.to;
+    if(same){ openMemory(); return true; }
+    /* Never a silent replacement: one active passage is the model, so
+       choosing another ends the one somebody may be halfway through. */
+    const ok = await confirmAction({
+      title: 'Learn a different verse?',
+      message: 'You are learning ' + passageRefLabel(memoryRef(current), current.translation) +
+        '. Starting ' + passageRefLabel(ref) + ' replaces it, and how far you had got is not kept.',
+      confirmLabel: 'Use ' + passageRefLabel(ref),
+      /* Named in the edition it was begun in, the same as the sentence
+         above it. Letting this one follow the global edition called the same
+         passage two different things inside one question. */
+      cancelLabel: 'Keep ' + passageRefLabel(memoryRef(current), current.translation)
+    });
+    if(!ok) return false;
+  }
+
+  scriptureMemory = [{
+    id: MEMORY_ID,
+    c: ref.c, ch: ref.ch, from: ref.from, to: ref.to,
+    /* The edition is captured HERE and nowhere else reads the global one. */
+    translation: translation,
+    startedOn: todayKey(),
+    stage: 'read',
+    completedAt: null,
+    updatedAt: new Date().toISOString()
+  }];
+  persistMemory();
+  renderAll();
+  openMemory();
+  return true;
+}
+
+function setMemoryStage(stage){
+  const r = memoryRecord();
+  if(!r || MEMORY_STAGES.indexOf(stage) === -1) return;
+  r.stage = stage;
+  r.updatedAt = new Date().toISOString();
+  persistMemory();
+  memoryRevealed = false;
+  renderMemory();
+}
+
+function finishMemoryVerse(){
+  const r = memoryRecord();
+  if(!r) return;
+  r.completedAt = new Date().toISOString();
+  r.updatedAt = r.completedAt;
+  persistMemory();
+  renderMemory();
+  renderAll();
+}
+function resumeMemoryVerse(){
+  const r = memoryRecord();
+  if(!r) return;
+  r.completedAt = null;
+  r.stage = 'recall';
+  r.updatedAt = new Date().toISOString();
+  persistMemory();
+  memoryRevealed = false;
+  renderMemory();
+  renderAll();
+}
+async function clearMemoryVerse(){
+  const r = memoryRecord();
+  if(!r) return;
+  const ok = await confirmAction({
+    title: 'Finish with this verse?',
+    message: passageRefLabel(memoryRef(r), r.translation) +
+      ' will no longer be your memory verse. Nothing else is removed.',
+    confirmLabel: 'Finish'
+  });
+  if(!ok) return;
+  scriptureMemory = [];
+  persistMemory();
+  closeMemory();
+  renderAll();
+}
+
+/* Changing the edition is a deliberate act with a visible consequence: the
+   words change. Never done silently, and never done by changing the app’s
+   Bible translation somewhere else. */
+async function relockMemoryTranslation(){
+  const r = memoryRecord();
+  if(!r || r.translation === translation) return;
+  const ok = await confirmAction({
+    title: 'Practise in ' + translationName(translation) + '?',
+    message: 'You began learning this in ' + translationName(r.translation) +
+      '. Changing now means practising different words from the ones you have been learning.',
+    confirmLabel: 'Change the wording'
+  });
+  if(!ok) return;
+  r.translation = translation;
+  r.updatedAt = new Date().toISOString();
+  persistMemory();
+  memoryRevealed = false;
+  renderMemory();
+  renderAll();
+}
+
+/* ---------- segmenting a verse, in any script ----------
+   A segment is a unit the practice can hide. Scripts that separate words
+   with spaces give one segment per word; scripts that do not — Han, above
+   all — are chunked, because one segment per character would hide nothing
+   useful and one segment per sentence would hide everything.
+
+   Whitespace tokenisation alone would have shipped a memory practice that
+   worked in four of the seven editions this app carries and silently did
+   nothing in the other three. Punctuation and spacing are never hidden: they
+   are the scaffolding that makes a gap readable as a gap. */
+const MEMORY_HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\u3005\u3006]/;
+const MEMORY_HAN_CHUNK = 3;
+const MEMORY_LETTER = /[\p{L}\p{N}\p{M}]/u;
+
+function memorySegments(text){
+  /* Array.from, not split(''), so a character outside the basic plane is one
+     unit rather than two halves of a surrogate pair. */
+  const chars = Array.from(String(text));
+  const segs = [];
+  const isGap = function(ch){ return /\s/.test(ch) || (!MEMORY_HAN.test(ch) && !MEMORY_LETTER.test(ch)); };
+  let i = 0;
+  while(i < chars.length){
+    if(isGap(chars[i])){
+      let j = i; while(j < chars.length && isGap(chars[j])) j++;
+      segs.push({ kind: 'gap', text: chars.slice(i, j).join('') });
+      i = j;
+    } else if(MEMORY_HAN.test(chars[i])){
+      let j = i; while(j < chars.length && MEMORY_HAN.test(chars[j])) j++;
+      for(let k = i; k < j; k += MEMORY_HAN_CHUNK){
+        segs.push({ kind: 'han', text: chars.slice(k, Math.min(k + MEMORY_HAN_CHUNK, j)).join('') });
+      }
+      i = j;
+    } else {
+      let j = i; while(j < chars.length && !isGap(chars[j]) && !MEMORY_HAN.test(chars[j])) j++;
+      segs.push({ kind: 'word', text: chars.slice(i, j).join('') });
+      i = j;
+    }
+  }
+  return segs;
+}
+
+/* Which segments Practice hides. Deterministic from the passage, the edition
+   and the verse, so the same gaps appear every time somebody opens it —
+   a practice whose blanks moved on each render would be a different exercise
+   every time, and nothing could be learned from it. Never Math.random. */
+function memoryHidden(segs, seed){
+  const idx = [];
+  segs.forEach(function(sg, i){ if(sg.kind !== 'gap') idx.push(i); });
+  if(!idx.length) return {};
+  const want = Math.max(1, Math.round(idx.length * MEMORY_PRACTICE_HIDDEN));
+  const ranked = idx.slice().sort(function(a, b){
+    const ha = fnv1a(seed + ':' + a), hb = fnv1a(seed + ':' + b);
+    return ha === hb ? a - b : ha - hb;
+  });
+  const out = {};
+  ranked.slice(0, want).forEach(function(i){ out[i] = true; });
+  return out;
+}
+
+/* One masked verse. The blank itself is aria-hidden and the segment carries
+   an accessible name of its own, so a screen reader says "blank" rather than
+   reading out a run of underscores — and never reads the word that is
+   supposed to be missing. */
+function memoryMaskedHtml(verses, stage, seed){
+  return verses.map(function(v){
+    const segs = memorySegments(v.t);
+    const hidden = stage === 'practice' ? memoryHidden(segs, seed + '|' + v.n) : null;
+    const body = segs.map(function(sg, i){
+      if(sg.kind === 'gap') return escapeHtml(sg.text);
+      const chars = Array.from(sg.text);
+      if(stage === 'hints'){
+        /* Every segment keeps its first character and loses the rest: the
+           first-letter method, and the same rule in every script. A segment
+           one character long has nothing to lose and is shown whole. */
+        if(chars.length < 2) return escapeHtml(sg.text);
+        return escapeHtml(chars[0]) +
+          '<span class="mem-gap" aria-label="blank" role="img">' +
+            '<span aria-hidden="true">' + repeatChar('\u2008', chars.length - 1) + '</span>' +
+          '</span>';
+      }
+      if(hidden && hidden[i]){
+        return '<span class="mem-gap" aria-label="blank" role="img">' +
+            '<span aria-hidden="true">' + repeatChar('\u2008', chars.length) + '</span>' +
+          '</span>';
+      }
+      return escapeHtml(sg.text);
+    }).join('');
+    return (verses.length > 1
+      ? '<span class="verse-no" aria-hidden="true">' + v.n + '</span>'
+      : '') + body + ' ';
+  }).join('');
+}
+function repeatChar(ch, n){ let out = ''; for(let i = 0; i < n; i++) out += ch; return out; }
+
+/* ---------- the surfaces ---------- */
+let memoryRevealed = false;
+
+function openMemory(){
+  memoryRevealed = false;
+  renderMemory();
+  pushOverlayHistory('memoryOverlay');
+  openOverlay('memoryOverlay');
+}
+function closeMemory(){
+  closeOverlay('memoryOverlay');
+  releaseOverlayHistory();
+  renderAll();
+}
+function revealMemory(){ memoryRevealed = true; renderMemory(); }
+
+/* Opening the reader over the practice, so Back comes back here. */
+function openMemoryInBible(){
+  const r = memoryRecord();
+  if(!r) return;
+  openBibleAt(r.c, r.ch, r.from);
+}
+
+function renderMemory(){
+  const host = document.getElementById('memoryBody');
+  if(!host) return;
+  const r = memoryRecord();
+  if(!r){
+    host.innerHTML = emptyStateHtml({
+      mark: bookIcon(30),
+      title: 'No verse yet',
+      body: 'Choose a verse to learn from Today, from the Bible, or from this week\u2019s suggestion.'
+    });
+    return;
+  }
+
+  const ref = memoryRef(r);
+  const label = passageRefLabel(ref, r.translation);
+  const head =
+    '<div class="mem-head">' +
+      '<cite class="mem-ref">' + escapeHtml(label) + '</cite>' +
+      '<span class="verse-translation">' + escapeHtml(translationAbbrFor(r.translation)) + '</span>' +
+    '</div>';
+
+  const verses = passageVerses(ref, r.translation);
+  if(!verses){
+    /* The reference and the edition, and a way to try again. Never another
+       edition’s words, and never remembered words from before. */
+    host.innerHTML = head + loadFailedHtml(
+      label + ' \u00b7 ' + translationName(r.translation),
+      'This passage has not been downloaded in ' + translationName(r.translation) + ' yet.',
+      'retryMemory()');
+    loadMemoryPassage();
+    return;
+  }
+
+  const done = !!r.completedAt;
+  const stage = done ? 'read' : r.stage;
+  const seed = r.c + '.' + r.ch + '.' + r.from + '-' + r.to + '|' + r.translation;
+
+  let scripture;
+  if(stage === 'recall' && !memoryRevealed){
+    /* The words are not in the document at all. Hiding them with CSS would
+       leave them for a screen reader to read out, which is the one thing a
+       recall exercise must not do. */
+    scripture = '<p class="mem-prompt">Say the verse from memory.</p>';
+  } else if(stage === 'read' || memoryRevealed){
+    scripture = '<blockquote class="verse-text mem-verse" lang="' + escapeAttr(translationLangFor(r.translation)) + '">' +
+      verses.map(function(v){
+        return (verses.length > 1
+          ? '<span class="verse-no" aria-hidden="true">' + v.n + '</span>'
+          : '') + escapeHtml(v.t) + ' ';
+      }).join('') + '</blockquote>';
+  } else {
+    scripture = '<blockquote class="verse-text mem-verse" lang="' + escapeAttr(translationLangFor(r.translation)) + '">' +
+      memoryMaskedHtml(verses, stage, seed) + '</blockquote>';
+  }
+
+  const levels = done ? '' :
+    '<div class="mem-levels" role="group" aria-label="Practice level">' +
+      MEMORY_STAGES.map(function(st){
+        return '<button class="mem-level" aria-pressed="' + (st === stage ? 'true' : 'false') + '" ' +
+          'onclick="setMemoryStage(\'' + st + '\')">' + escapeHtml(MEMORY_STAGE_LABEL[st]) + '</button>';
+      }).join('') +
+    '</div>';
+
+  let action = '';
+  if(done){
+    action = '<p class="mem-note">Keep it with you this week.</p>' +
+      '<button class="btn-primary btn-block" onclick="resumeMemoryVerse()">Practise again</button>';
+  } else if(stage === 'recall' && !memoryRevealed){
+    action = '<button class="btn-primary btn-block" onclick="revealMemory()">Reveal verse</button>';
+  } else if(stage === 'recall'){
+    /* The reader decides. Nothing here marks an answer right or wrong, and
+       nothing is recorded about how it went. */
+    action = '<div class="mem-decide">' +
+      '<button class="btn-secondary" onclick="setMemoryStage(\'recall\')">Practise again</button>' +
+      '<button class="btn-primary" onclick="finishMemoryVerse()">I know this verse</button>' +
+    '</div>';
+  } else {
+    const next = MEMORY_STAGES[MEMORY_STAGES.indexOf(stage) + 1];
+    action = '<button class="btn-primary btn-block" onclick="setMemoryStage(\'' + next + '\')">' +
+      escapeHtml(MEMORY_STAGE_LABEL[next]) + '</button>';
+  }
+
+  const hint = done ? '' :
+    stage === 'read' ? '<p class="mem-hint">Read it slowly a few times.</p>' :
+    stage === 'practice' ? '<p class="mem-hint">Fill the gaps as you read.</p>' :
+    /* Not "first letters": two of the seven editions are written in
+       characters, and the sentence has to be true in all of them. */
+    stage === 'hints' ? '<p class="mem-hint">Only the beginnings are left.</p>' : '';
+
+  host.innerHTML = head + hint + scripture + levels + action +
+    '<div class="mem-tools">' +
+      '<button class="btn-quiet" onclick="openMemoryInBible()">Read in context</button>' +
+      (r.translation !== translation
+        ? '<button class="btn-quiet" onclick="relockMemoryTranslation()">Practise in ' +
+            escapeHtml(translationAbbrFor(translation)) + '</button>'
+        : '') +
+      '<button class="btn-quiet" onclick="clearMemoryVerse()">Finish with this verse</button>' +
+    '</div>';
+}
+
+/* Which passage and edition have already been asked for. */
+let memoryLoadTried = '';
+function retryMemory(){ memoryLoadTried = ''; loadMemoryPassage(true); }
+
+/* Fetched once, then left alone.
+
+   The failure path re-renders so the reader sees why, and that render
+   asks for the passage again — which, without this, asked again on every
+   failure and turned one unreachable file into an endless retry: a
+   request storm on a bad connection, and a loop that never gives the
+   reader the Try again button it exists to offer. Trying again is theirs
+   to press. */
+function loadMemoryPassage(force){
+  const r = memoryRecord();
+  if(!r) return;
+  if(cachedBibleBook(r.translation, r.c)) return;
+  const key = r.translation + '/' + r.c;
+  if(!force && memoryLoadTried === key) return;
+  memoryLoadTried = key;
+  loadBibleBook(r.translation, r.c).then(function(){ renderMemory(); }, function(){ renderMemory(); });
+}
+
+/* ---------- Today ----------
+   An entry point, not a tracker. Today is about today’s Scripture; this is
+   one quiet row under it. */
+function memoryTodayHtml(){
+  const r = memoryActive();
+  if(r){
+    return '<div class="section-label">This week\u2019s verse</div>' +
+      '<button class="verse-row mem-row" onclick="openMemory()">' +
+        '<span class="verse-row-ref"><span>' +
+          escapeHtml(passageRefLabel(memoryRef(r), r.translation)) + '</span>' +
+          '<span class="verse-row-when">' + escapeHtml(translationAbbrFor(r.translation)) + '</span></span>' +
+        '<span class="verse-row-note">Continue practising\u00a0\u00b7\u00a0' +
+          escapeHtml(MEMORY_STAGE_LABEL[r.stage]) + '</span>' +
+      '</button>';
+  }
+  const done = memoryRecord();
+  if(done){
+    return '<div class="section-label">This week\u2019s verse</div>' +
+      '<button class="verse-row mem-row" onclick="openMemory()">' +
+        '<span class="verse-row-ref"><span>' +
+          escapeHtml(passageRefLabel(memoryRef(done), done.translation)) + '</span></span>' +
+        '<span class="verse-row-note">Keep it with you this week.</span>' +
+      '</button>';
+  }
+  const sug = memorySuggestion(thisWeekKey());
+  if(!sug) return '';
+  const ref = { c: sug.c, ch: sug.ch, from: sug.from, to: sug.to };
+  return '<div class="section-label">This week\u2019s verse</div>' +
+    '<button class="verse-row mem-row" onclick="startMemorizing(\'' + escapeAttr(sug.c) + '\', ' +
+      sug.ch + ', ' + sug.from + ', ' + sug.to + ')">' +
+      '<span class="verse-row-ref"><span>' + escapeHtml(passageRefLabel(ref)) + '</span>' +
+        '<span class="verse-row-when">' + escapeHtml(sug.theme) + '</span></span>' +
+      '<span class="verse-row-note">Learn this verse</span>' +
+    '</button>';
+}
+
+/* ---------- Learn ----------
+   The full home for the practice, beside the studies rather than under
+   today’s reading. */
+function memoryLearnHtml(){
+  const r = memoryRecord();
+  const sug = memorySuggestion(thisWeekKey());
+  let body;
+  if(r){
+    const label = passageRefLabel(memoryRef(r), r.translation);
+    const meta = r.completedAt ? 'Keep it with you this week.'
+               : 'Continue practising\u00a0\u00b7\u00a0' + MEMORY_STAGE_LABEL[r.stage];
+    body = '<button class="continue-card" onclick="openMemory()">' +
+        '<span class="continue-study">' + escapeHtml(label) + '</span>' +
+        '<span class="continue-lesson">' + escapeHtml(translationName(r.translation)) + '</span>' +
+        '<span class="continue-meta">' + escapeHtml(meta) + '</span>' +
+      '</button>';
+    /* A new week never takes an unfinished verse away. It offers. */
+    if(!r.completedAt && sug && weekKeyFor(r.startedOn) !== thisWeekKey()){
+      const nref = { c: sug.c, ch: sug.ch, from: sug.from, to: sug.to };
+      body += '<p class="track-intro">A new verse is ready: ' + escapeHtml(passageRefLabel(nref)) + '.</p>' +
+        '<button class="btn-quiet" onclick="startMemorizing(\'' + escapeAttr(sug.c) + '\', ' +
+          sug.ch + ', ' + sug.from + ', ' + sug.to + ')">Start this week\u2019s verse instead</button>';
+    }
+  } else if(sug){
+    const nref = { c: sug.c, ch: sug.ch, from: sug.from, to: sug.to };
+    body = '<div class="panel start-here">' +
+        '<p class="start-here-body">Learn one passage at a time. This week\u2019s suggestion is ' +
+          escapeHtml(passageRefLabel(nref)) + '.</p>' +
+        '<button class="btn-primary btn-block" onclick="startMemorizing(\'' + escapeAttr(sug.c) + '\', ' +
+          sug.ch + ', ' + sug.from + ', ' + sug.to + ')">Learn this verse</button>' +
+      '</div>';
+  } else {
+    body = '<p class="track-intro">Choose a verse from the Bible to begin.</p>';
+  }
+  return '<div class="section-label">Scripture memory</div>' +
+    '<p class="track-intro">One passage at a time, read, practised and recalled until you can say it. Nothing is scored.</p>' + body;
+}
 /* ---------- repairing a record that outlived its content ---------- */
 /* A path or step removed in a later release leaves a record pointing at
    nothing. It is ignored rather than deleted: the reader may upgrade again,
@@ -14069,6 +14729,9 @@ function renderVerseDock(){
       (anyHighlighted
         ? '<button class="btn-secondary" onclick="removeHighlight()">Remove</button>'
         : '') +
+      (memorizableSelection()
+        ? '<button class="btn-secondary" onclick="memorizeSelection()">Memorize</button>'
+        : '') +
       '<button class="btn-secondary" onclick="saveSelectedVerses()">Save</button>' +
       '<button class="btn-secondary" onclick="copySelectedVerses()">Copy</button>' +
       '<button class="btn-secondary" onclick="shareSelectedVerses()">Share</button>' +
@@ -14078,6 +14741,23 @@ function renderVerseDock(){
 /* Save and share operate on the same selection, so there is one place a
    verse is chosen and one place actions are offered - not a dock for
    colours and a separate sheet for everything else. */
+/* A memory passage is a RANGE, so a scattered selection is not one. Offered
+   only when the chosen verses are contiguous and within the limit, rather
+   than offered always and refused afterwards. */
+function memorizableSelection(){
+  if(!bibleSelection.length) return null;
+  const ns = bibleSelection.slice().sort(function(a, b){ return a - b; });
+  for(let i = 1; i < ns.length; i++) if(ns[i] !== ns[i - 1] + 1) return null;
+  const ref = { c: bibleBookCode, ch: bibleChapter, from: ns[0], to: ns[ns.length - 1] };
+  return memoryEligible(ref) ? ref : null;
+}
+function memorizeSelection(){
+  const ref = memorizableSelection();
+  if(!ref) return;
+  clearVerseSelection();
+  startMemorizing(ref.c, ref.ch, ref.from, ref.to);
+}
+
 function selectedVerseText(){
   const book = cachedBibleBook(translation, bibleBookCode);
   if(!book) return null;
@@ -14628,6 +15308,7 @@ function storedDataSummary(){
   add(bibleHighlights.length, 'highlight', 'highlights');
   add(notes.length, 'reflection', 'reflections');
   add(studyNotes.length, 'lesson note', 'lesson notes');
+  add(scriptureMemory.length, 'memory verse', 'memory verses');
   const progress = (studyProgress.length ? 1 : 0) + (devotionProgress.length ? 1 : 0) + (bibleRead.length ? 1 : 0);
   if(progress) parts.push('your reading and study progress');
   if(!parts.length) return '';

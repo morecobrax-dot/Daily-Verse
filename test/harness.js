@@ -355,6 +355,8 @@ const BRIDGE = [
   'STUDIES', 'STUDIES_VERSION', 'studyProgress', 'studyNotes', 'checkAnswers',
   'DEVOTIONS', 'DEVOTIONS_VERSION', 'devotionProgress',
   'HELP', 'HELP_VERSION', 'HELP_URGENT', 'CRISIS_ACTIONS', 'helpProgress',
+  'MEMORY', 'MEMORY_VERSION', 'MEMORY_MAX_VERSES', 'MEMORY_STAGES',
+  'scriptureMemory', 'memoryRevealed', 'memoryLoadTried',
   'openHelpPathId', 'openHelpStepId', 'helpStepCompleted',
   'openDevotionSeriesId', 'openDevotionEntryId',
   'openStudyId', 'openLessonId',

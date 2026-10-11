@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.14.2",
-  "phase": "Crisis action hotfix",
-  "status": "release_ready",
+  "phase": "Scripture Memory V1 (branch)",
+  "status": "building",
   "needsQa": true,
   "needsDecision": true,
-  "currentTask": "v1.14.2 corrects the text options in urgent help: they now open your messages, addressed to the crisis line, rather than starting a call. Calling, texting and opening a chat are each described to screen readers. No crisis wording, resource or source changed.",
-  "nextAction": "Short check on a physical iPhone that a text option in urgent help opens Messages and not Phone. The native iOS decisions from Gate 1 are still open.",
+  "currentTask": "Scripture Memory is built on a branch: one passage at a time, read, practised with gaps, prompted from memory, and revealed in the exact wording it was begun in. The 22 suggested passages still need a person to read each one in context before any release.",
+  "nextAction": "Review the 22 suggested passages, then check the practice on a physical iPhone. The v1.14.2 urgent-help check and the native iOS decisions are still open.",
   "blocker": null,
-  "updatedAt": "2026-10-08T19:46:50Z"
+  "updatedAt": "2026-10-11T22:37:19Z"
 }
