@@ -441,6 +441,59 @@ function svg(sceneName){
 /* ---------------------------------------------------------
    ASSETS — every file the app and its store listing use
    --------------------------------------------------------- */
+/* ---------------------------------------------------------
+   THE HOME SILHOUETTE
+   The same mark, reduced to two shapes: the outline of the book
+   and the column of light out of it. Those two carry the whole
+   recognition — the pages and the spine are detail that vanishes
+   at four per cent opacity anyway.
+
+   Emitted from MARK rather than drawn again, and written into
+   index.html between markers, so the watermark on Home cannot
+   drift away from the icon on the home screen. `npm run icons
+   verify` fails if they disagree.
+   --------------------------------------------------------- */
+const SILHOUETTE_LAYERS = { light: 0, book: 1 };
+
+function silhouettePaths(){
+  const out = {};
+  Object.keys(SILHOUETTE_LAYERS).forEach(function(k){
+    out[k] = svgD(MARK[SILHOUETTE_LAYERS[k]].path);
+  });
+  return out;
+}
+
+/* The one line index.html carries. A single declaration keeps the write
+   and the check trivially comparable. */
+function silhouetteSource(){
+  const p = silhouettePaths();
+  return "const HOME_MARK = { light: '" + p.light + "', book: '" + p.book + "' };";
+}
+
+const HOME_BEGIN = '/* HOME-MARK-BEGIN */';
+const HOME_END = '/* HOME-MARK-END */';
+
+function homeMarkIn(appText){
+  const a = appText.indexOf(HOME_BEGIN), b = appText.indexOf(HOME_END);
+  if(a === -1 || b === -1 || b < a) return null;
+  return appText.slice(a + HOME_BEGIN.length, b).trim();
+}
+
+function writeHomeMark(){
+  const file = path.join(ROOT, 'index.html');
+  const raw = fs.readFileSync(file, 'utf8');
+  const crlf = raw.indexOf('\r\n') !== -1;
+  const text = crlf ? raw.split('\r\n').join('\n') : raw;
+  const a = text.indexOf(HOME_BEGIN), b = text.indexOf(HOME_END);
+  if(a === -1 || b === -1 || b < a){
+    throw new Error('HOME-MARK markers not found in index.html — refusing to guess where the silhouette goes');
+  }
+  const next = text.slice(0, a + HOME_BEGIN.length) + '\n' + silhouetteSource() + '\n' + text.slice(b);
+  if(next === text) return false;
+  fs.writeFileSync(file, crlf ? next.split('\n').join('\r\n') : next);
+  return true;
+}
+
 const ASSETS = [
   { file: 'icon-512.png',                 scene: 'icon',    size: 512,  use: 'manifest, any + maskable' },
   { file: 'icon-192.png',                 scene: 'icon',    size: 192,  use: 'manifest, any + maskable' },
@@ -499,7 +552,15 @@ function run(mode){
       console.error('\n  Run `npm run icons` to redraw them.');
       return 1;
     }
-    console.log('icons:verify  ok — ' + ASSETS.length + ' assets match the mark');
+    /* The watermark on Home is the same artwork. If the mark moves and
+       index.html is not rewritten, Home shows the old logo. */
+    const inApp = homeMarkIn(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').split('\r\n').join('\n'));
+    if(inApp !== silhouetteSource()){
+      console.error('icons:verify  FAILED — the silhouette in index.html is not this mark.');
+      console.error('\n  Run `npm run icons` to rewrite it.');
+      return 1;
+    }
+    console.log('icons:verify  ok — ' + ASSETS.length + ' assets and the home silhouette match the mark');
     return 0;
   }
   fs.mkdirSync(path.join(ROOT, 'brand'), { recursive: true });
@@ -508,9 +569,12 @@ function run(mode){
     fs.writeFileSync(file, build(a));
     console.log('  wrote ' + a.file.padEnd(30) + (fs.statSync(file).size / 1024).toFixed(1).padStart(6) + ' KB   ' + a.use);
   });
+  const moved = writeHomeMark();
+  console.log('  ' + (moved ? 'wrote ' : 'checked').padEnd(30) + ' index.html HOME-MARK   the silhouette behind the daily verse');
   console.log('icons  done — solid mark within ' + solidExtent().toFixed(3) + ' of the width from centre (maskable limit 0.40)');
   return 0;
 }
 
 if(require.main === module) process.exit(run((process.argv[2] || '').toLowerCase()));
-module.exports = { ASSETS, PALETTE, PLACEMENT, SCENES, MARK, build, render, svg, matches, encodePng, decodePng, solidExtent };
+module.exports = { ASSETS, PALETTE, PLACEMENT, SCENES, MARK, build, render, svg, matches, encodePng, decodePng, solidExtent,
+                   silhouettePaths, silhouetteSource, homeMarkIn, writeHomeMark };

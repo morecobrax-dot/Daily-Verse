@@ -8877,8 +8877,120 @@ function testCrisisActions(){
       .indexOf('href') === -1);
 }
 
+/* =========================================================
+   CONTRACT 56 — HOME IS ART-DIRECTED, AND THE VERSE STILL WINS
+   ---------------------------------------------------------
+   Numbered 56 because feature/native-prep holds 54 and
+   feature/scripture-memory holds 55, each on its own branch.
+
+   Decoration on a Bible app is one bad decision away from being
+   the problem. The rules this holds:
+
+     - the mark on Home is the logo, emitted from the one place
+       the logo is drawn, so the watermark and the app icon
+       cannot drift into being two different drawings;
+     - it is in the document flow with a height of its own, so
+       it can never land on top of the words however long the
+       verse runs or however large the type is set;
+     - the card the Scripture sits in stays opaque in both
+       themes, so nothing behind it can take contrast away;
+     - the one animation is opacity, on one element, and the
+       stylesheet's existing reduced-motion rule switches it off;
+     - and Home shows a reader nothing it made up.
+   ========================================================= */
+function testHomeArt(){
+  section('CONTRACT 56 — Home is art-directed, and the verse still wins');
+  const store = new Map();
+  const app = H.loadApp({ sharedStorage: store });
+  const c = app.ctx;
+  const d = c.document;
+  const src = H.readApp();
+  const js = H.mainScript(src);
+  const style = (src.match(/<style>([\s\S]*?)<\/style>/) || ['', ''])[1];
+  const I = require('../scripts/icons.js');
+
+  sub('the mark on Home is the mark on the home screen');
+  /* One drawing. A second copy is a second logo, and the one nobody
+     regenerates is the one that goes stale. */
+  T('the silhouette is emitted from the icon generator, not drawn again',
+    c.HOME_MARK && c.HOME_MARK.book === I.silhouettePaths().book &&
+    c.HOME_MARK.light === I.silhouettePaths().light);
+  T('and it sits in a derived region that says not to edit it',
+    /HOME-MARK-BEGIN[\s\S]{0,400}HOME-MARK-END/.test(src) &&
+    /Written by .npm run icons./.test(src));
+  T('the paths really are the book and the light, not a placeholder',
+    c.HOME_MARK.book.length > 100 && c.HOME_MARK.light.length > 20 &&
+    c.HOME_MARK.book.indexOf('C') !== -1);
+
+  sub('nothing is allowed on top of the Scripture');
+  c.goToTab('today');
+  const todayHtml = d.getElementById('todayBody').innerHTML;
+  T('the art is on Today', todayHtml.indexOf('today-art') !== -1);
+  /* In flow with a height of its own. Absolute positioning over the page
+     is how decoration ends up on a word. */
+  const block = (style.match(/\.today-art\{[\s\S]*?\}/) || [''])[0];
+  T('it is in the flow with a height of its own, not floated over the page',
+    /position:\s*relative/.test(block) && /height:\s*\d+px/.test(block),
+    block.replace(/\s+/g, ' ').slice(0, 90));
+  T('and it is out of reach of a thumb and of a screen reader',
+    /pointer-events:\s*none/.test(block) && /class="today-art" aria-hidden="true"/.test(js));
+  /* The card is what guarantees contrast. If it ever goes translucent the
+     watermark starts showing through the verse. */
+  const card = (style.match(/\.verse-card\{[\s\S]*?\}/) || [''])[0];
+  T('the card the verse sits in is opaque',
+    !/rgba\([^)]*,\s*0?\.\d+\s*\)/.test((card.match(/background[^;]*/) || [''])[0]) &&
+    !/opacity:/.test(card), (card.match(/background[^;]*/) || ['none'])[0].slice(0, 60));
+  T('and the art is painted after the verse, not behind the words',
+    todayHtml.indexOf('today-art') > todayHtml.indexOf('verse-text'));
+
+  sub('one animation, and the stylesheet already knows how to stop it');
+  const anim = (style.match(/@keyframes mark-breathe\{[\s\S]*?\n\}/) || [''])[0];
+  T('the only motion here is a change of opacity',
+    !!anim && /opacity/.test(anim) && !/transform|left|top|width|height|margin/.test(anim),
+    anim.replace(/\s+/g, ' ').slice(0, 70));
+  T('and it is slow enough not to be watched',
+    /animation:\s*mark-breathe\s+(\d+)s/.test(style) &&
+    Number((style.match(/animation:\s*mark-breathe\s+(\d+)s/) || [0, 0])[1]) >= 10);
+  /* Not a second reduced-motion mechanism: the global rule already covers
+     every animation in the file, and a local one would be a thing to forget. */
+  T('the global reduced-motion rule covers it',
+    /@media \(prefers-reduced-motion: reduce\)\{[\s\S]{0,160}animation: none !important/.test(style));
+  T('and no compositing is asked for by hand',
+    !/will-change/.test(style.replace(/\/\*[\s\S]*?\*\//g, '')));
+
+  sub('Home carries on from where the reader was, and invents nothing');
+  /* A reader who has done nothing is shown nothing. A fabricated
+     "recommended for you" would be the app talking about itself. */
+  T('a reader with no history is offered no continuation',
+    c.homeContinueHtml() === '', c.homeContinueHtml().slice(0, 60));
+  c.rememberBibleLast('JHN', 15);
+  const withBible = c.homeContinueHtml();
+  T('a remembered chapter becomes one row',
+    withBible.indexOf('continue-row') !== -1 && withBible.indexOf('Continue reading') !== -1);
+  T('and it names the chapter in the reader\u2019s own edition',
+    withBible.indexOf(c.escapeHtml(c.bibleRefLabel(c.translation, 'JHN', 15))) !== -1);
+  /* Two is a pair of doors. Three is a dashboard. */
+  T('there are never more than two rows',
+    (withBible.match(/continue-row"/g) || []).length <= 2);
+  T('no row claims progress the data cannot support',
+    !/%|\bday \d|\bstreak\b|\d+ of \d+/i.test(withBible), withBible.slice(0, 80));
+  /* Opened OVER Today, so Back comes back here — rule 55. */
+  T('the row opens the real destination rather than a copy of it',
+    /onclick="openBibleAt\('JHN', 15\)"/.test(withBible));
+
+  sub('the page still belongs to the verse');
+  const order = ['verse-text', 'verse-cite', 'verse-actions', 'today-art'];
+  const at = order.map(k => todayHtml.indexOf(k));
+  T('Scripture is first, the art is last',
+    at.every((x, i) => x !== -1 && (i === 0 || x > at[i - 1])), at.join(' < '));
+  T('and the verse is still the largest type on the screen',
+    /--fs-verse:/.test(style) &&
+    /\.verse-text\{[^}]*font-size:\s*var\(--fs-verse\)/.test(style));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved, testDeviceMove, testHelpProduct,
+  testHomeArt,
   testCrisisActions,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,

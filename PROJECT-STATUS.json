@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.14.2",
-  "phase": "Crisis action hotfix",
-  "status": "release_ready",
+  "phase": "Home art direction (branch)",
+  "status": "building",
   "needsQa": true,
   "needsDecision": true,
-  "currentTask": "v1.14.2 corrects the text options in urgent help: they now open your messages, addressed to the crisis line, rather than starting a call. Calling, texting and opening a chat are each described to screen readers. No crisis wording, resource or source changed.",
-  "nextAction": "Short check on a physical iPhone that a text option in urgent help opens Messages and not Phone. The native iOS decisions from Gate 1 are still open.",
+  "currentTask": "Today is art-directed around the New Covenant mark: the logo now closes the page as a quiet watermark, a warm wash sits behind the reading, and the empty lower third carries one or two rows that pick up where you left off. The verse itself is unchanged.",
+  "nextAction": "Look at the new Today on a physical iPhone, in light and dark. Three other decisions are still open: a memory passage, the Mac build route and the bundle identifier.",
   "blocker": null,
-  "updatedAt": "2026-10-08T19:46:50Z"
+  "updatedAt": "2026-10-23T01:12:04Z"
 }

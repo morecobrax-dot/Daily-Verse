@@ -100,6 +100,14 @@
   --accent: var(--brand-accent);
   --accent-deep: var(--brand-accent-deep);
   --accent-soft: rgba(255,145,71,0.12);
+  /* The watermark and the wash behind the daily verse. Low enough that the
+     card over them keeps every bit of its contrast; present enough that the
+     page is recognisably this app and not a white rectangle with a verse in
+     it. Two values because dark needs light applied and light needs it taken
+     away. */
+  --mark-ink: rgba(244,238,231,0.065);
+  --mark-light: rgba(255,170,100,0.16);
+  --stage-wash: radial-gradient(118% 62% at 50% 4%, rgba(255,145,71,0.065), rgba(255,145,71,0) 68%);
   /* Highlighter washes. Referenced by stable NAME everywhere - a record
      stores "amber", never a colour - so the palette can be retuned
      without touching a single thing a reader kept. */
@@ -292,6 +300,9 @@ html.appearance-switching *::after{
   --accent: #A84A15;
   --accent-deep: #8A3A0E;
   --accent-soft: rgba(168,74,21,0.10);
+  --mark-ink: rgba(61,45,32,0.070);
+  --mark-light: rgba(200,101,43,0.15);
+  --stage-wash: radial-gradient(118% 62% at 50% 4%, rgba(200,101,43,0.055), rgba(200,101,43,0) 68%);
   /* Warmer and a little stronger on a light ground, where a thin wash
      disappears rather than marks. */
   --hl-amber:  rgba(255,196,84,0.55);
@@ -1834,6 +1845,95 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
   font-size: var(--fs-meta); color: var(--text-faint);
   margin: var(--space-xs) 0 var(--space-md);
 }
+/* ---------- the daily verse, and the page it sits on ----------
+   The card is opaque and unchanged. Everything added here sits BEHIND it:
+   a wash at the top of the page and the mark as a watermark, both large
+   enough to read as composition rather than as a logo someone dropped in.
+
+   Nothing overlaps the words. The silhouette is deliberately bigger than
+   the card so what shows is the light rising above it and the book curving
+   below — the card itself covers the middle, which is the part that would
+   have competed with Scripture. */
+.verse-stage{ position: relative; isolation: isolate; }
+
+/* The mark closes the page rather than sitting behind the words.
+
+   Behind the card it had to be faint enough to be pointless, and what did
+   show landed across the Save and Share row. Down here it is in nobody’s
+   way, it is allowed to be large enough to read as the logo, and it fills
+   the empty third that Today used to end on. In flow with a fixed height,
+   so it can never overlap anything however long the verse runs.
+
+   Bled past both edges on purpose: a shape that stops short of the screen
+   reads as a picture of a logo, and one that runs off it reads as the page
+   being made of the same thing. */
+.today-art{
+  position: relative; height: 168px; overflow: hidden;
+  margin: var(--space-2xl) calc(var(--space-lg) * -1) 0;
+  pointer-events: none;
+  /* Clipping alone left a hard edge across the column of light where the
+     box ended. The mask lets both shapes come up out of the page instead
+     of being cut out of it. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 42%);
+  mask-image: linear-gradient(to bottom, transparent, #000 42%);
+}
+.stage-art{
+  position: absolute; left: 50%; bottom: -44%;
+  width: 124%; aspect-ratio: 1 / 1;
+  transform: translateX(-50%);
+  display: block; overflow: visible;
+}
+.stage-art .mark-book{ fill: var(--mark-ink); }
+.stage-art .mark-light{ fill: url(#markLight); }
+
+/* The wash is a gradient, not an image: it costs one paint and scales to
+   any width without an asset. */
+.verse-stage::before{
+  content: ""; position: absolute; inset: -18% -24% -10%;
+  background: var(--stage-wash);
+  z-index: -2; pointer-events: none; border-radius: 50%;
+}
+
+/* The one piece of motion on this screen. Opacity only, on its own layer,
+   fourteen seconds end to end — slower than anybody watches, which is the
+   point. An inactive tab is display:none so it composites nothing, and the
+   global prefers-reduced-motion rule already switches it off entirely. */
+@keyframes mark-breathe{
+  from{ opacity: 0.72; }
+  to{ opacity: 1; }
+}
+.stage-art .mark-light{
+  /* No compositing hint is given: an opacity animation is promoted to its
+     own layer automatically, and asking for one by hand only pins the memory
+     for ever. A contract in the reader holds the whole stylesheet to that. */
+  animation: mark-breathe 14s ease-in-out infinite alternate;
+}
+
+/* ---------- carrying on from where you were ----------
+   Rows, not cards. A card here would compete with the verse, and the point
+   of this block is that it is secondary to it. */
+.home-continue{ margin-top: var(--space-2xl); }
+.continue-row{
+  display: flex; align-items: center; gap: var(--space-md);
+  width: 100%; min-height: 56px;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface); border: 1px solid var(--border-quiet);
+  border-radius: var(--radius-lg); cursor: pointer;
+  text-align: left; color: var(--text);
+}
+.continue-row + .continue-row{ margin-top: var(--space-sm); }
+.continue-row:active{ opacity: 0.6; transition-duration: 0s; }
+.continue-row .glyph{ flex: none; color: var(--text-faint); display: flex; }
+.continue-row-body{ flex: 1; min-width: 0; }
+.continue-row-title{
+  display: block; font-size: var(--fs-title); color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.continue-row-meta{
+  display: block; font-size: var(--fs-meta); color: var(--text-faint);
+  margin-top: 2px;
+}
+.continue-row-go{ flex: none; color: var(--text-faint); display: flex; }
 .help-urgent-actions{ display: flex; flex-direction: column; gap: var(--space-sm); }
 .help-urgent-action{
   width: 100%; text-decoration: none; text-align: center;
@@ -10002,6 +10102,8 @@ function renderToday(){
       ? '<p class="chosen-note">Chosen around your focus.</p>'
       : '') +
 
+    homeContinueHtml() +
+
     (note
       ? '<div class="section-label">Your reflection</div>' +
         '<button class="verse-row" onclick="openNote(\'' + escapeAttr(key) + '\')">' +
@@ -10009,7 +10111,71 @@ function renderToday(){
             '<span class="verse-row-when">' + escapeHtml(shortWhen(note.date)) + '</span></span>' +
           '<span class="verse-row-note">' + escapeHtml(note.text) + '</span>' +
         '</button>'
-      : '');
+      : '') +
+
+    stageArtHtml();
+}
+
+/* ---------- where you were ----------
+   Only what the reader actually left open, and at most two of them. This is
+   not a dashboard: there is no progress bar, no count of days, no suggestion
+   the app invented, and nothing at all for somebody who has not started
+   anything. An empty Home is the honest Home for a new reader.
+
+   Scripture Memory will add a third row here when that branch lands; the
+   single call below is the whole integration point. */
+function homeContinueHtml(){
+  const rows = [];
+
+  /* The Bible remembers a book and a chapter, and nothing else. */
+  const last = readBibleLast();
+  /* Hidden only when this edition is KNOWN not to carry the book — editions
+     ship different sets, and WEB has books the Berean does not. Before the
+     index arrives nothing is known, and treating that as absence hid the row
+     on every cold start, which is the one time somebody most wants it. */
+  const idx = cachedBibleIndex(translation);
+  if(last && (!idx || bibleHasBook(translation, last.c))){
+    rows.push(continueRowHtml(
+      bookIcon(17),
+      bibleRefLabel(translation, last.c, last.ch),
+      'Continue reading',
+      "openBibleAt('" + escapeAttr(last.c) + "', " + last.ch + ")"));
+  }
+
+  /* One series or study, whichever was touched last. Two would be a list,
+     and a list of things you have not finished is a different feeling. */
+  const dev = activeDevotionSeries();
+  const study = activeStudy();
+  const devRec = dev ? devotionSeriesById(dev.id) : null;
+  const studyRec = study ? studyById(study.id) : null;
+  const devWhen = dev ? String(dev.updatedAt || '') : '';
+  const studyWhen = study ? String(study.updatedAt || '') : '';
+  if(devRec && (!studyRec || devWhen >= studyWhen)){
+    rows.push(continueRowHtml(
+      sparkIcon(17),
+      devRec.title, 'Continue this devotion',
+      "openDevotionSeries('" + escapeAttr(devRec.id) + "')"));
+  } else if(studyRec){
+    rows.push(continueRowHtml(
+      compassIcon(17),
+      studyRec.title, 'Continue this study',
+      "openStudy('" + escapeAttr(studyRec.id) + "')"));
+  }
+
+  if(!rows.length) return '';
+  return '<div class="section-label">Carry on</div>' +
+    '<div class="home-continue">' + rows.join('') + '</div>';
+}
+
+function continueRowHtml(glyph, title, meta, action){
+  return '<button class="continue-row" onclick="' + action + '">' +
+    '<span class="glyph" aria-hidden="true">' + glyph + '</span>' +
+    '<span class="continue-row-body">' +
+      '<span class="continue-row-title">' + escapeHtml(title) + '</span>' +
+      '<span class="continue-row-meta">' + escapeHtml(meta) + '</span>' +
+    '</span>' +
+    '<span class="continue-row-go" aria-hidden="true">' + chevronRight(15) + '</span>' +
+  '</button>';
 }
 
 /* One reflection component, used on Today and again on the Reflect page, so
@@ -10130,6 +10296,33 @@ function copyText(payload){
     }
   }catch(e){}
   toast('Copying is not available in this browser.', 'warning');
+}
+
+/* ---------- the mark behind the daily verse ----------
+   DERIVED. Written by `npm run icons` out of the MARK in scripts/icons.js,
+   which is the one place the logo is drawn. `npm run icons verify` fails if
+   this and the icon ever stop being the same artwork. Do not edit by hand. */
+/* HOME-MARK-BEGIN */
+const HOME_MARK = { light: 'M458 704 L488 230 L512 230 L542 704 Z', book: 'M197 606 C312.14 522 433.34 605.8 500 652 C566.66 605.8 687.86 522 803 606 L803 778 C687.86 694 566.66 793.8 500 840 C433.34 793.8 312.14 694 197 778 Z' };
+/* HOME-MARK-END */
+
+/* Two shapes at four to ten per cent, behind an opaque card. The viewBox is
+   the mark’s own 1000-unit square, so the proportions are the logo’s and not
+   an approximation of them. aria-hidden because it says nothing a reader
+   needs; the verse below it says everything. */
+function stageArtHtml(){
+  return '<div class="today-art" aria-hidden="true">' +
+    '<svg class="stage-art" viewBox="0 0 1000 1000" aria-hidden="true" focusable="false">' +
+    '<defs><linearGradient id="markLight" gradientUnits="userSpaceOnUse" x1="0" y1="230" x2="0" y2="704">' +
+      '<stop offset="0" stop-color="var(--mark-light)" stop-opacity="0"/>' +
+      '<stop offset="1" stop-color="var(--mark-light)" stop-opacity="1"/>' +
+    '</linearGradient></defs>' +
+    '<g transform="translate(40 -4) scale(0.92)">' +
+      '<path class="mark-book" d="' + HOME_MARK.book + '"/>' +
+      '<path class="mark-light" d="' + HOME_MARK.light + '"/>' +
+    '</g>' +
+    '</svg>' +
+  '</div>';
 }
 
 /* ---------- reflections ---------- */
