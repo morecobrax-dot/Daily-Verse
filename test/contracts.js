@@ -8929,19 +8929,84 @@ function testHomeArt(){
   /* In flow with a height of its own. Absolute positioning over the page
      is how decoration ends up on a word. */
   const block = (style.match(/\.today-art\{[\s\S]*?\}/) || [''])[0];
-  T('it is in the flow with a height of its own, not floated over the page',
-    /position:\s*relative/.test(block) && /height:\s*\d+px/.test(block),
-    block.replace(/\s+/g, ' ').slice(0, 90));
-  T('and it is out of reach of a thumb and of a screen reader',
+  T('it is out of reach of a thumb and of a screen reader',
     /pointer-events:\s*none/.test(block) && /class="today-art" aria-hidden="true"/.test(js));
+  /* It sits behind the Scripture now, so the card must be above it. */
+  T('and everything the reader reads is layered above it',
+    /\.today-stage \.verse-card,[\s\S]{0,80}z-index: 1/.test(style) &&
+    /\.today-art\{[^}]*z-index:\s*0/.test(style));
+
+  /* THE GUARANTEE, MEASURED.
+     A watermark behind running text is one bad alpha away from being a
+     legibility bug, and "it looks fine" is not a check. This composites the
+     mark over the page at the alpha the stylesheet actually declares, then
+     computes the WCAG contrast of the verse against it — in both themes. */
+  /* A token resolved the way the browser resolves it: look in the theme's
+     own block first, fall back to :root, and follow a var() chain to the
+     colour at the end of it. */
+  const rawToken = (name, scope) => {
+    const at = style.indexOf(scope);
+    if(at === -1) return null;
+    const end = style.indexOf('\n}', at);
+    const blk = style.slice(at, end === -1 ? undefined : end);
+    const m = blk.match(new RegExp('--' + name + ':\\s*([^;]+);'));
+    return m ? m[1].trim() : null;
+  };
+  const tokenOf = (name, scope, depth) => {
+    if((depth || 0) > 6) return null;
+    let v = rawToken(name, scope);
+    if(v === null && scope !== ':root{') v = rawToken(name, ':root{');
+    if(v === null) return null;
+    const ref = v.match(/^var\(\s*--([a-z0-9-]+)\s*\)$/i);
+    return ref ? tokenOf(ref[1], scope, (depth || 0) + 1) : v;
+  };
+  const parse = v => {
+    let m = v.match(/^#([0-9a-f]{6})$/i);
+    if(m) return [parseInt(m[1].slice(0,2),16), parseInt(m[1].slice(2,4),16), parseInt(m[1].slice(4,6),16), 1];
+    m = v.match(/rgba?\(([^)]+)\)/);
+    if(!m) return null;
+    const p = m[1].split(',').map(x => parseFloat(x.trim()));
+    return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1];
+  };
+  const over = (fg, bg) => fg.slice(0,3).map((c,i) => c * fg[3] + bg[i] * (1 - fg[3]));
+  const lum = c => { const f = c.map(v => { v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    return 0.2126*f[0] + 0.7152*f[1] + 0.0722*f[2]; };
+  const ratio = (a, b) => { const la = lum(a), lb = lum(b); const hi = Math.max(la,lb), lo = Math.min(la,lb);
+    return (hi + 0.05) / (lo + 0.05); };
+
+  [['dark', ':root{'], ['light', ':root[data-theme="light"]{']].forEach(([name, scope]) => {
+    const bg = parse(tokenOf('bg', scope));
+    const text = parse(tokenOf('text', scope));
+    const ink = parse(tokenOf('mark-ink', scope));
+    const light = parse(tokenOf('mark-light', scope));
+    if(!bg || !text || !ink || !light){ T('the ' + name + ' tokens could be read', false, String([bg,text,ink,light])); return; }
+    /* Worst case: both shapes stacked on the page, which is what happens
+       where the light column crosses the book. */
+    const worst = over(light, over(ink, bg));
+    const r = ratio(text, [...worst, 1]);
+    T('in ' + name + ', the verse over the mark still clears WCAG AA',
+      r >= 4.5, r.toFixed(2) + ':1');
+    /* A ceiling on the DECLARED alpha, which is the number somebody would
+       raise if they wanted the logo to show more. This is the worst case
+       before the radial mask that dissolves the mark's edges, so what
+       actually reaches the screen is lower; the AA check above is the
+       legibility guarantee, and this one stops the tokens drifting up to
+       where no mask would save them. */
+    const shift = Math.max(...worst.map((c, i) => Math.abs(c - bg[i])));
+    T('and the declared alpha stays inside a watermark, before masking',
+      shift <= 20, 'largest channel shift ' + shift.toFixed(1) + '/255');
+  });
   /* The card is what guarantees contrast. If it ever goes translucent the
      watermark starts showing through the verse. */
   const card = (style.match(/\.verse-card\{[\s\S]*?\}/) || [''])[0];
   T('the card the verse sits in is opaque',
     !/rgba\([^)]*,\s*0?\.\d+\s*\)/.test((card.match(/background[^;]*/) || [''])[0]) &&
     !/opacity:/.test(card), (card.match(/background[^;]*/) || ['none'])[0].slice(0, 60));
-  T('and the art is painted after the verse, not behind the words',
-    todayHtml.indexOf('today-art') > todayHtml.indexOf('verse-text'));
+  /* The card lost its own background in this pass, so the thing that now
+     protects the words is the mark being faint and dissolved rather than
+     an opaque surface over it. That is measured above, in both themes. */
+  T('and the verse sits on the page itself, with no box around it',
+    /\.today-stage \.verse-card\{[^}]*background:\s*none[^}]*border:\s*none/.test(style));
 
   sub('one animation, and the stylesheet already knows how to stop it');
   const anim = (style.match(/@keyframes mark-breathe\{[\s\S]*?\n\}/) || [''])[0];
@@ -8957,6 +9022,56 @@ function testHomeArt(){
     /@media \(prefers-reduced-motion: reduce\)\{[\s\S]{0,160}animation: none !important/.test(style));
   T('and no compositing is asked for by hand',
     !/will-change/.test(style.replace(/\/\*[\s\S]*?\*\//g, '')));
+
+  sub('the page is composed, not stacked');
+  /* The screen used to be five rectangles — the date strip, the verse card,
+     three equal action boxes and the reflection — all carrying the same
+     border and the same weight, so nothing was subordinate to anything.
+     These hold the subtraction. */
+  const boxed = sel => {
+    const m = style.match(new RegExp(sel.replace(/[.#]/g, c => '\\' + c) + '\\{[^}]*\\}'));
+    return m ? /border:\s*1px|background:\s*var\(--surface/.test(m[0]) : null;
+  };
+  T('the verse wears no box on Today', boxed('.today-stage .verse-card') === false);
+  T('nor do its actions', boxed('.today-stage-actions .act') === false);
+  T('and the reflection is a rule, not a card', boxed('#view-today .reflection') === false);
+  /* The one treatment left on the selected day, instead of a fill and a
+     ring and a glow all saying the same thing. */
+  const sel = (style.match(/\.day-cell\[aria-selected="true"\]\{[^}]*\}/) || [''])[0];
+  T('the selected day is filled, not ringed and lit as well',
+    /border-color:\s*transparent/.test(sel) && /box-shadow:\s*none/.test(sel), sel.replace(/\s+/g, ' ').slice(0, 72));
+
+  sub('the Scripture arrives once, for a new day');
+  /* renderAll() runs after saving a verse, writing a note, importing a
+     backup and changing a preference. Hung on the card unconditionally the
+     entrance re-fired on every one of them, so the verse flashed each time
+     somebody tapped Save. */
+  T('the entrance is on a class, not on the card itself',
+    /\.today-stage \.verse-card\.is-arriving\{[^}]*animation:\s*verse-arrive/.test(style) &&
+    !/\.today-stage \.verse-card\{[^}]*animation:/.test(style));
+  c.goToTab('today');
+  /* Driven from a known starting point: the app already painted Today once
+     while booting, so asking about "the first paint" after the fact would
+     be asking about something that already happened. */
+  c._arrivedFor = null;
+  c.renderToday();
+  T('it plays when the day under it is new',
+    d.getElementById('todayBody').innerHTML.indexOf('is-arriving') !== -1);
+  c.renderToday();
+  T('and not again when the same day is repainted',
+    d.getElementById('todayBody').innerHTML.indexOf('is-arriving') === -1);
+  /* The repaint that caused the flash: saving changes nothing about the day. */
+  c.renderAll();
+  T('and not when a repaint comes from saving or writing',
+    d.getElementById('todayBody').innerHTML.indexOf('is-arriving') === -1);
+  /* A different day is a different reading, and does animate. */
+  const t = c.dateFromKey(c.todayKey());
+  c.selectedDay = c.dayKey(new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1));
+  c.renderToday();
+  T('but moving to another day does',
+    d.getElementById('todayBody').innerHTML.indexOf('is-arriving') !== -1);
+  c.selectedDay = c.todayKey();
+  c.renderToday();
 
   sub('Home carries on from where the reader was, and invents nothing');
   /* A reader who has done nothing is shown nothing. A fabricated
@@ -8979,10 +9094,17 @@ function testHomeArt(){
     /onclick="openBibleAt\('JHN', 15\)"/.test(withBible));
 
   sub('the page still belongs to the verse');
-  const order = ['verse-text', 'verse-cite', 'verse-actions', 'today-art'];
+  /* The mark is painted before the Scripture and the Scripture before its
+     own reference and actions: the reading order of the page, and the paint
+     order that keeps the words on top. */
+  const order = ['today-art', 'verse-text', 'verse-cite', 'verse-actions'];
   const at = order.map(k => todayHtml.indexOf(k));
-  T('Scripture is first, the art is last',
+  T('the mark is painted first and the Scripture reads before its actions',
     at.every((x, i) => x !== -1 && (i === 0 || x > at[i - 1])), at.join(' < '));
+  /* Read in context belongs to the passage, so it is inside the stage. */
+  T('and Read in context sits with the passage, not loose under it',
+    todayHtml.indexOf('read-context') > todayHtml.indexOf('verse-actions') &&
+    todayHtml.indexOf('read-context') < todayHtml.indexOf('reflection'));
   T('and the verse is still the largest type on the screen',
     /--fs-verse:/.test(style) &&
     /\.verse-text\{[^}]*font-size:\s*var\(--fs-verse\)/.test(style));

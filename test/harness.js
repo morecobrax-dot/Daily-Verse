@@ -352,6 +352,7 @@ const BRIDGE = [
   'Store', 'DATA_SCHEMA_VERSION', 'MIGRATIONS', 'migrationWarning', 'Domain',
   'SCRIPTURE', 'SCRIPTURE_SOURCE', 'REFLECTIONS', 'THEMES', 'FOCUS_CHOICES',
   'HOME_MARK',
+  '_arrivedFor',
   'TRANSLATIONS', 'TRANSLATION_TEXT', 'translation', 'DEFAULT_TRANSLATION',
   'STUDIES', 'STUDIES_VERSION', 'studyProgress', 'studyNotes', 'checkAnswers',
   'DEVOTIONS', 'DEVOTIONS_VERSION', 'devotionProgress',

@@ -105,8 +105,8 @@
      page is recognisably this app and not a white rectangle with a verse in
      it. Two values because dark needs light applied and light needs it taken
      away. */
-  --mark-ink: rgba(244,238,231,0.065);
-  --mark-light: rgba(255,170,100,0.16);
+  --mark-ink: rgba(244,238,231,0.026);
+  --mark-light: rgba(255,170,100,0.055);
   --stage-wash: radial-gradient(118% 62% at 50% 4%, rgba(255,145,71,0.065), rgba(255,145,71,0) 68%);
   /* Highlighter washes. Referenced by stable NAME everywhere - a record
      stores "amber", never a colour - so the palette can be retuned
@@ -300,8 +300,8 @@ html.appearance-switching *::after{
   --accent: #A84A15;
   --accent-deep: #8A3A0E;
   --accent-soft: rgba(168,74,21,0.10);
-  --mark-ink: rgba(61,45,32,0.070);
-  --mark-light: rgba(200,101,43,0.15);
+  --mark-ink: rgba(61,45,32,0.026);
+  --mark-light: rgba(200,101,43,0.052);
   --stage-wash: radial-gradient(118% 62% at 50% 4%, rgba(200,101,43,0.055), rgba(200,101,43,0) 68%);
   /* Warmer and a little stronger on a light ground, where a thin wash
      disappears rather than marks. */
@@ -444,16 +444,20 @@ button{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: non
   background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) calc(100% - 10px), transparent);
 }
 
+/* A bar, not a masthead. The product name was set at display size with a
+   rule under it, which is how a website introduces itself and not how an
+   app titles a screen. At title size it also buys back the room the 320px
+   note below was worried about. */
 .app-header{
-  padding: var(--space-xl) var(--space-lg) var(--space-md);
-  padding-top: calc(var(--space-xl) + var(--inset-top));
-  border-bottom: 1px solid var(--border);
+  padding: var(--space-sm) var(--space-lg);
+  padding-top: calc(var(--space-sm) + var(--inset-top));
+  border-bottom: none;
   max-width: var(--layout-max);
   margin: 0 auto;
 }
 .header-row{ display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
 .app-title{
-  font-size: var(--fs-display); font-weight: 700; letter-spacing: -0.02em; color: var(--text);
+  font-size: var(--fs-title); font-weight: 700; letter-spacing: -0.01em; color: var(--text);
 }
 .header-actions{ display: flex; align-items: center; gap: var(--space-xs); }
 
@@ -799,10 +803,14 @@ input.field-error, textarea.field-error{ border-color: var(--danger); box-shadow
 .day-rail-wrap::before{ left: 0; background: linear-gradient(to right, var(--bg), transparent); }
 .day-rail-wrap::after{ right: 0; background: linear-gradient(to left, var(--bg), transparent); }
 
+/* Shorter and filled rather than outlined. An amber ring around a cell is a
+   form control; a filled cell is a selection. Ten pixels came off the height,
+   which is ten pixels the Scripture gets. The touch target is held at 44 by
+   min-width and the padding, not by the box being tall. */
 .day-cell{
   flex: 0 0 auto; scroll-snap-align: center;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-width: var(--touch-min); min-height: 58px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  min-width: var(--touch-min); min-height: 48px;
   padding: var(--space-sm) var(--space-xs);
   background: none; border: 1px solid transparent; border-radius: var(--radius-lg);
   color: var(--text-faint); cursor: pointer;
@@ -819,9 +827,12 @@ input.field-error, textarea.field-error{ border-color: var(--danger); box-shadow
 }
 @media (hover: hover){ .day-cell:hover{ color: var(--text-dim); background: var(--surface); } }
 .day-cell:active{ opacity: 0.6; transition-duration: 0s; }
+/* A fill and nothing else. It used to carry a fill AND an amber ring AND a
+   glow, which is three ways of saying the same thing and reads as a form
+   control rather than a selection. */
 .day-cell[aria-selected="true"]{
-  background: var(--surface-raised); border-color: var(--accent);
-  color: var(--accent); box-shadow: var(--shadow-accent);
+  background: var(--accent-soft); border-color: transparent;
+  color: var(--accent); box-shadow: none;
 }
 /* Today keeps a mark of its own even when another day is selected, so
    "where am I" and "where is now" are never the same question. */
@@ -844,10 +855,14 @@ input.field-error, textarea.field-error{ border-color: var(--danger); box-shadow
    costs nothing. Horizontal is fastened shut. A background gradient cannot
    paint outside its own box, so the light now cannot widen the page however
    the ellipse below is tuned. */
+/* The wash is layered on top of that glow rather than replacing it: two
+   backgrounds in one box, both bounded by the same left:0/right:0, so
+   neither can widen the page. */
 .verse-stage::before{
   content: ''; position: absolute;
   left: 0; right: 0; top: -14%; bottom: -14%;
-  background: var(--glow-verse); pointer-events: none; z-index: 0;
+  background: var(--stage-wash), var(--glow-verse);
+  pointer-events: none; z-index: 0;
 }
 .verse-card{
   position: relative; z-index: 1;
@@ -1845,6 +1860,104 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
   font-size: var(--fs-meta); color: var(--text-faint);
   margin: var(--space-xs) 0 var(--space-md);
 }
+/* ============================================================
+   TODAY, COMPOSED
+   ------------------------------------------------------------
+   What was wrong with it: five stacked rectangles — the date
+   strip, the verse card, three equal action boxes and the
+   reflection — all carrying the same border, the same radius and
+   the same weight. Nothing was subordinate to anything, so the
+   eye had no route through the page and the whole thing read as a
+   web layout rather than a screen somebody designed.
+
+   The fix is subtraction. One surface, one hierarchy: the verse
+   on the page itself, its reference under it, the actions quiet
+   beside them, the reflection flowing on below a rule. The only
+   box left on the screen is the one the reader taps.
+
+   Scoped to Today on purpose. .verse-card and .reflection are
+   shared with Saved, Devotions and Learn, and this pass is not
+   redesigning those.
+   ============================================================ */
+
+/* ---------- the Scripture ---------- */
+/* No card. The verse sits on the page, which is the whole point:
+   a border around Scripture makes it an item in a list. */
+.today-stage .verse-card{
+  background: none; border: none; box-shadow: none;
+  padding: 0;
+}
+/* A measure, not a width. Running to the edge of a 430px phone is
+   already long; on a wide screen it was eighty characters. */
+.today-stage .verse-text{ max-width: 34rem; }
+.today-stage .verse-head{ margin-bottom: var(--space-lg); }
+.today-stage .verse-date{ color: var(--text-faint); }
+/* The theme was a bordered pill, which is another box. It is a
+   word now, set like the label it always was. */
+.today-stage .badge{
+  background: none; border: none; padding: 0;
+  color: var(--text-faint);
+}
+/* The reference carries the weight the card used to. */
+.today-stage .verse-cite{
+  margin-top: var(--space-lg); padding-top: 0; border-top: none;
+}
+.today-stage .verse-ref{ font-size: var(--fs-title); }
+
+/* ---------- the actions ---------- */
+/* Three equal bordered boxes, sixty pixels tall, competing with the
+   verse above them. Now a quiet row: full targets, no containers. */
+.today-stage-actions{
+  display: flex; align-items: center; gap: var(--space-xs);
+  margin: var(--space-lg) 0 0;
+}
+.today-stage-actions .act{
+  flex: 0 0 auto; min-width: 56px;
+  background: none; border: none; border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-xs);
+  /* Dim, not faint: these are the three things a reader does with the verse.
+     Faint is for Read in context, which is genuinely secondary. */
+  color: var(--text-dim);
+}
+.today-stage-actions .act[aria-pressed="true"]{ color: var(--accent); }
+.today-stage-actions .act:active{ opacity: 0.55; transition-duration: 0s; }
+/* Read in context belongs to the passage, so it sits with the
+   passage rather than orphaned under the buttons. */
+.today-stage-actions .read-context{
+  margin-left: auto; color: var(--text-faint);
+}
+
+/* ---------- the reflection ---------- */
+/* Not a card. A rule, a label and the words — the way a note
+   beside a text is set in a book. */
+#view-today .reflection{
+  background: none; border: none;
+  border-top: 1px solid var(--border-quiet);
+  border-radius: 0;
+  padding: var(--space-lg) 0 0;
+  margin-top: var(--space-xl);
+}
+#view-today .reflection-body{ max-width: 34rem; }
+
+/* ---------- carrying on ---------- */
+/* Rows on the page, separated by rules, rather than bordered
+   cards stacked on more cards. */
+#view-today .continue-row{
+  background: none; border: none; border-radius: 0;
+  border-top: 1px solid var(--border-quiet);
+  padding: var(--space-md) 0;
+}
+#view-today .continue-row + .continue-row{ margin-top: 0; }
+
+/* ---------- the verse arriving ---------- */
+/* One entrance, on the Scripture only, when the day changes. Opacity
+   and a few pixels of travel — no layout property is touched, so it
+   cannot cost a reflow. The global reduced-motion rule turns it off. */
+@keyframes verse-arrive{
+  from{ opacity: 0; transform: translateY(6px); }
+  to{ opacity: 1; transform: none; }
+}
+.today-stage .verse-card.is-arriving{ animation: verse-arrive 0.26s var(--ease) both; }
 /* ---------- the daily verse, and the page it sits on ----------
    The card is opaque and unchanged. Everything added here sits BEHIND it:
    a wash at the top of the page and the mark as a watermark, both large
@@ -1854,45 +1967,44 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
    the card so what shows is the light rising above it and the book curving
    below — the card itself covers the middle, which is the part that would
    have competed with Scripture. */
-.verse-stage{ position: relative; isolation: isolate; }
+/* The mark now sits behind the Scripture, which is where the logo belongs
+   once the card around the verse is gone. It is in flow with a height of
+   its own and painted first, so it cannot land on anything. */
+/* Behind the Scripture, which is where the logo belongs now that the card
+   is gone. Placed so the mark’s own composition does the work: the book is
+   heavy and sits LOW, under the reference and the actions, while only the
+   column of light — narrow, and fading to nothing at its top — passes behind
+   the words. That is the logo’s arrangement, not a crop of it.
 
-/* The mark closes the page rather than sitting behind the words.
-
-   Behind the card it had to be faint enough to be pointless, and what did
-   show landed across the Save and Share row. Down here it is in nobody’s
-   way, it is allowed to be large enough to read as the logo, and it fills
-   the empty third that Today used to end on. In flow with a fixed height,
-   so it can never overlap anything however long the verse runs.
-
-   Bled past both edges on purpose: a shape that stops short of the screen
-   reads as a picture of a logo, and one that runs off it reads as the page
-   being made of the same thing. */
+   Ink is cut to a third of what it was when this sat at the foot of the page
+   with nothing over it. CONTRACT 56 measures the verse’s contrast against the
+   page with the mark present and holds it to WCAG AA, so this is checked
+   rather than eyeballed. */
 .today-art{
-  position: relative; height: 168px; overflow: hidden;
-  margin: var(--space-2xl) calc(var(--space-lg) * -1) 0;
-  pointer-events: none;
-  /* Clipping alone left a hard edge across the column of light where the
-     box ended. The mask lets both shapes come up out of the page instead
-     of being cut out of it. */
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 42%);
-  mask-image: linear-gradient(to bottom, transparent, #000 42%);
+  position: absolute; left: 50%; top: 50%;
+  width: 152%; aspect-ratio: 1 / 1; height: auto;
+  transform: translate(-50%, -40%);
+  margin: 0; overflow: visible; pointer-events: none;
+  z-index: 0;
+  /* The edges are the problem, not the opacity. A hard outline behind
+     running text reads as a shape at almost any alpha, so the mark is
+     dissolved toward its own edges and only its middle carries any tone. */
+  -webkit-mask-image: radial-gradient(62% 54% at 50% 54%, #000 0%, rgba(0,0,0,0.55) 46%, transparent 78%);
+  mask-image: radial-gradient(62% 54% at 50% 54%, #000 0%, rgba(0,0,0,0.55) 46%, transparent 78%);
 }
 .stage-art{
-  position: absolute; left: 50%; bottom: -44%;
-  width: 124%; aspect-ratio: 1 / 1;
-  transform: translateX(-50%);
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
   display: block; overflow: visible;
 }
+/* Everything the reader reads sits above it. */
+.today-stage .verse-card,
+.today-stage .verse-actions{ position: relative; z-index: 1; }
 .stage-art .mark-book{ fill: var(--mark-ink); }
 .stage-art .mark-light{ fill: url(#markLight); }
 
 /* The wash is a gradient, not an image: it costs one paint and scales to
    any width without an asset. */
-.verse-stage::before{
-  content: ""; position: absolute; inset: -18% -24% -10%;
-  background: var(--stage-wash);
-  z-index: -2; pointer-events: none; border-radius: 50%;
-}
 
 /* The one piece of motion on this screen. Opacity only, on its own layer,
    fourteen seconds end to end — slower than anybody watches, which is the
@@ -10034,6 +10146,10 @@ function centreSelectedDay(){
 }
 
 /* ---------- today ---------- */
+/* The last day the Scripture was animated in for. Not state a reader owns:
+   it exists so a repaint is not mistaken for a new day. */
+let _arrivedFor = null;
+
 function renderToday(){
   renderDayRail();
 
@@ -10057,6 +10173,8 @@ function renderToday(){
     return;
   }
 
+  const arriving = key !== _arrivedFor;
+  _arrivedFor = key;
   const note = noteFor(key);
   const saved = isSaved(passage.id);
   const reflection = reflectionFor(passage.id);
@@ -10067,8 +10185,9 @@ function renderToday(){
       '<div style="text-align:center;margin-bottom:var(--space-lg)">' +
         '<button class="btn-secondary" onclick="goToToday()">Back to today</button></div>') +
 
-    '<section class="verse-stage">' +
-      '<article class="verse-card">' +
+    '<section class="verse-stage today-stage">' +
+      stageArtHtml() +
+      '<article class="verse-card' + (arriving ? ' is-arriving' : '') + '">' +
         '<div class="verse-head">' +
           '<span class="verse-date">' + escapeHtml(longDate(key)) + '</span>' +
           '<span class="badge">' + escapeHtml((passage.themes || [])[0] || '') + '</span>' +
@@ -10080,9 +10199,8 @@ function renderToday(){
           '<span class="verse-translation">' + escapeHtml(translationAbbr(passage)) + '</span>' +
         '</div>' +
       '</article>' +
-    '</section>' +
 
-    '<div class="verse-actions">' +
+      '<div class="verse-actions today-stage-actions">' +
       '<button class="act" aria-pressed="' + (saved ? 'true' : 'false') + '" ' +
         'onclick="toggleSaved(\'' + escapeAttr(passage.id) + '\')">' +
         '<span class="glyph" aria-hidden="true">' + (saved ? bookmarkFilledIcon(17) : bookmarkIcon(17)) + '</span>' +
@@ -10092,9 +10210,9 @@ function renderToday(){
       '<button class="act" onclick="openNote(\'' + escapeAttr(key) + '\')">' +
         '<span class="glyph" aria-hidden="true">' + pencilIcon(17) + '</span>' +
         (note ? 'Edit note' : 'Reflect') + '</button>' +
-    '</div>' +
-
-    readInContextHtml(passage.id) +
+        readInContextHtml(passage.id) +
+      '</div>' +
+    '</section>' +
 
     (showReflections && reflection ? reflectionHtml(reflection) : '') +
 
@@ -10111,9 +10229,7 @@ function renderToday(){
             '<span class="verse-row-when">' + escapeHtml(shortWhen(note.date)) + '</span></span>' +
           '<span class="verse-row-note">' + escapeHtml(note.text) + '</span>' +
         '</button>'
-      : '') +
-
-    stageArtHtml();
+      : '');
 }
 
 /* ---------- where you were ----------

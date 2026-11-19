@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.14.2",
-  "phase": "Home art direction (branch)",
+  "phase": "Home redesign (branch)",
   "status": "building",
   "needsQa": true,
   "needsDecision": true,
-  "currentTask": "Today is art-directed around the New Covenant mark: the logo now closes the page as a quiet watermark, a warm wash sits behind the reading, and the empty lower third carries one or two rows that pick up where you left off. The verse itself is unchanged.",
-  "nextAction": "Look at the new Today on a physical iPhone, in light and dark. Three other decisions are still open: a memory passage, the Mac build route and the bundle identifier.",
+  "currentTask": "Today was rebuilt as one composed screen instead of five stacked boxes: the verse now sits on the page with the New Covenant mark behind it, the date strip and the action row are compact, and the reflection flows under a rule. The words and the reading are unchanged.",
+  "nextAction": "Look at the new Today on a phone, in light and dark. Three decisions are still open: a memory passage, the Mac build route and the bundle identifier.",
   "blocker": null,
-  "updatedAt": "2026-10-23T01:12:04Z"
+  "updatedAt": "2026-11-19T01:30:45Z"
 }
