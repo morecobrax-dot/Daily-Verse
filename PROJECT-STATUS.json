@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "appId": "daily-verse",
   "version": "1.14.2",
-  "phase": "Home redesign (branch)",
+  "phase": "App-wide UI polish (branch)",
   "status": "building",
   "needsQa": true,
   "needsDecision": true,
-  "currentTask": "Today was rebuilt as one composed screen instead of five stacked boxes: the verse now sits on the page with the New Covenant mark behind it, the date strip and the action row are compact, and the reflection flows under a rule. The words and the reading are unchanged.",
-  "nextAction": "Look at the new Today on a phone, in light and dark. Three decisions are still open: a memory passage, the Mac build route and the bundle identifier.",
+  "currentTask": "Every screen now looks like one app: the header names the screen you are on, all five tabs open at the same height, and Scripture keeps one line length wherever it is read. Two real faults fixed - the page could scroll sideways, and a tab entrance could leave it blank.",
+  "nextAction": "Look at the polished screens on a phone, light and dark. Three decisions are still open: a memory passage, the Mac build route and the bundle identifier.",
   "blocker": null,
-  "updatedAt": "2026-11-19T01:30:45Z"
+  "updatedAt": "2026-11-19T02:19:00Z"
 }

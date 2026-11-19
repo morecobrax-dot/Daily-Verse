@@ -798,7 +798,18 @@ function testMobile(){
 
   sub('touch targets');
   T('the minimum is a token', /--touch-min: 44px;/.test(style));
-  ['.tab-btn', '.btn-primary', '.btn-secondary', '.icon-btn', '.list-row', '.segmented button']
+  /* The tab bar is the one control whose height is owned by a different
+     token, because body reserves --tabbar-h at the foot of every screen and
+     a bar that is not that tall makes the clearance a guess. So it is
+     checked by value: derived from the bar, and the bar still over the
+     floor. A literal token match would pass a --tabbar-h of 30px. */
+  const num = n => { const m = style.match(new RegExp('--' + n + ':\\s*(\\d+)px')); return m ? Number(m[1]) : null; };
+  const barH = num('tabbar-h'), floor = num('touch-min');
+  T('a tab derives its height from the bar it is in',
+    /\.tab-btn\{[^}]*min-height: calc\(var\(--tabbar-h\) - 1px\)/.test(style));
+  T('and the bar is tall enough for a thumb',
+    barH !== null && floor !== null && barH - 1 >= floor, barH + ' - 1 >= ' + floor);
+  ['.btn-primary', '.btn-secondary', '.icon-btn', '.list-row', '.segmented button']
     .forEach(sel => {
       const re = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\{[^}]*(min-height|height):\\s*var\\(--touch-min\\)');
       T(sel + ' meets the floor', re.test(style));
@@ -5371,8 +5382,13 @@ function testDevotionsExperience(){
   T('a label can never wrap to a second line', /\.tab-btn\{ white-space: nowrap; \}/.test(src));
   T('and crowding was not solved by shrinking the type',
     /\.tab-btn\{[^}]*font-size: var\(--fs-micro\);/.test(src));
+  /* Measured, not matched: see the touch-targets group in CONTRACT 2. The
+     bar's height is derived from --tabbar-h so the clearance body reserves
+     cannot disagree with the bar a reader actually taps. */
+  const barPx = (src.match(/--tabbar-h:\s*(\d+)px/) || [])[1];
   T('every tab still clears the touch minimum',
-    /\.tab-btn\{[^}]*min-height: var\(--touch-min\);/.test(src));
+    /\.tab-btn\{[^}]*min-height: calc\(var\(--tabbar-h\) - 1px\)/.test(src) &&
+    Number(barPx) - 1 >= 44, barPx + 'px bar');
   T('the bar still respects the bottom inset',
     /\.tabbar\{[^}]*padding-bottom: var\(--inset-bottom\);/.test(src));
   T('no tab carries a badge, a dot or a NEW mark', !/badge|NEW<|notification/i.test(nav));
@@ -9110,9 +9126,173 @@ function testHomeArt(){
     /\.verse-text\{[^}]*font-size:\s*var\(--fs-verse\)/.test(style));
 }
 
+/* =========================================================
+   CONTRACT 57 — EVERY SCREEN IS THE SAME APPLICATION
+   ---------------------------------------------------------
+   Five tabs that each opened differently, a header that said the same
+   word on all of them, and a mark that made the page wider than the
+   phone. Each assertion below is named after the thing that was wrong.
+   ========================================================= */
+function testScreenSystem(){
+  section('CONTRACT 57 — every screen is the same application');
+  const app = H.loadApp({ sharedStorage: new Map() });
+  const c = app.ctx;
+  const d = c.document;
+  const src = H.readApp();
+  const style = (src.match(/<style>([\s\S]*?)<\/style>/) || ['', ''])[1];
+  const js = H.mainScript(src);
+
+  sub('the header names the screen a reader is on');
+  /* It showed the product name on all five tabs. That answers a question
+     nobody has after the first launch, and leaves four screens with no
+     title at all — which is why each one had invented its own opening.
+
+     The five names are read off the tab bar at run time, so this checks the
+     bar: that every tab carries a named label, that the labels are the five
+     screen names, and that nothing else in the button could be mistaken for
+     one. The harness's DOM holds the elements but not their text, so the
+     titles themselves are proved against the markup rather than painted. */
+  const nav = src.slice(src.indexOf('<nav class="tabbar"'), src.indexOf('</nav>'));
+  const buttons = nav.split('<button').slice(1);
+  T('there are five tabs to name', buttons.length === 5, String(buttons.length));
+  const pairs = buttons.map(b => {
+    const t = (b.match(/data-tab="([a-z]+)"/) || [])[1];
+    const l = (b.match(/<span class="tab-label">([^<]*)<\/span>/) || [])[1];
+    return t + '=' + l;
+  });
+  T('each tab carries its name in an element of its own, not loose beside the icon',
+    pairs.join(',') === 'today=Today,bible=Bible,help=Help Me,devotions=Devotions,learn=Learn',
+    pairs.join(','));
+  /* Anything else readable in the button is a second candidate for the
+     title. The icon is an SVG, and asking a button for its text once would
+     have returned whatever that SVG happened to contain. */
+  const strayText = buttons.map(b => b
+    .slice(b.indexOf('>') + 1)
+    .replace(/<span class="glyph"[\s\S]*?<\/span>/, '')
+    .replace(/<span class="tab-label">[^<]*<\/span>/, '')
+    .replace(/<[^>]*>/g, '').trim()).filter(Boolean);
+  T('and nothing else in the button reads as text', strayText.length === 0, strayText.join('|'));
+  T('the title is read from that label, not from the button',
+    /querySelector\("\.tab-label"\)/.test(js) && !/\.tab-btn\[data-tab/.test(js));
+
+  sub('a screen is never left with an empty name');
+  /* The lookup can legitimately find nothing — an unknown tab, or a bar a
+     future change has not finished painting. A blank header is worse than a
+     repeated one, so it falls back to the product. */
+  T('Today carries the product name, because Today is the front door',
+    c.screenTitle('today') === c.APP_CONFIG.name, c.screenTitle('today'));
+  T('and an unknown screen shows the product rather than nothing',
+    c.screenTitle('no-such-tab') === c.APP_CONFIG.name, c.screenTitle('no-such-tab'));
+  c.goToTab('today');
+  T('entering a tab paints the header',
+    d.getElementById('appTitle').textContent === c.APP_CONFIG.name,
+    d.getElementById('appTitle').textContent);
+
+  sub('every tab opens its content at the same height');
+  /* Help Me started 24px below the other four, because its own header
+     carried a top margin nothing else had. A reader moving between tabs
+     watched the first line jump. */
+  const topMargin = sel => {
+    const m = style.match(new RegExp(sel.replace(/[.]/g, '\\.') + '\\{[^}]*\\}'));
+    if(!m) return null;
+    const g = m[0].match(/margin:\s*([^;]+);/);
+    if(g) return g[1].trim().split(/\s+/)[0];
+    const t = m[0].match(/margin-top:\s*([^;]+);/);
+    return t ? t[1].trim() : '0';
+  };
+  [['.help-intro', 'Help Me'], ['.help-urgent-lead', 'urgent help'], ['.track-intro', 'a track intro']]
+    .forEach(pair => {
+      T(pair[1] + ' adds no margin of its own above the first line',
+        topMargin(pair[0]) === '0', pair[0] + ' = ' + topMargin(pair[0]));
+    });
+  /* The negative margin that used to cancel part of a label’s own: two
+     rules fighting to produce a number neither of them states. */
+  T('and no opening element pulls itself up with a negative margin',
+    !/\.(help-intro|help-urgent-lead|track-intro)\{[^}]*margin:[^;]*calc\(var\(--space-[a-z]+\) \* -1\)/.test(style));
+
+  sub('the page can never be made wider than the screen');
+  /* The mark was 152% of the stage and centred with a negative translate,
+     so its box reached 77px past a 390px phone and 28px past a landscape
+     one — and a document wider than its viewport scrolls sideways. That is
+     the failure the comment above .verse-stage::before already describes. */
+  const art = (style.match(/\.today-art\{[^}]*\}/) || [''])[0];
+  T('the mark is pinned to both edges of the stage',
+    /left:\s*0;/.test(art) && /right:\s*0;/.test(art), art.replace(/\s+/g, ' ').slice(0, 70));
+  T('and never given a width that could exceed them',
+    !/width:\s*\d+%/.test(art) && !/translate\(/.test(art));
+  const svg = (style.match(/\.stage-art\{[^}]*\}/) || [''])[0];
+  T('the drawing is cropped by its own box rather than spilling out of it',
+    /overflow:\s*hidden/.test(svg) && !/overflow:\s*visible/.test(svg));
+  /* Cropping is only safe because it keeps the mark the size it was: the
+     window is 658 of 1000 units, which at the stage’s width is the same
+     pixels per unit the 152% box gave. */
+  T('and the crop keeps the mark the size it was',
+    src.indexOf('viewBox="171 137 658 658"') !== -1);
+
+  sub('Scripture is set to one measure, wherever it is read');
+  /* The same words at the same size ran to 34rem on Today and to whatever
+     the sheet allowed in the reader. */
+  T('the measure is a token', /--measure-read:\s*\d/.test(style));
+  ['.today-stage .verse-text', '#view-today .reflection-body', '.bible-text'].forEach(sel => {
+    const m = style.match(new RegExp(sel.replace(/[.#]/g, ch => '\\' + ch) + '\\{[^}]*\\}'));
+    T(sel + ' reads to that measure and not a literal',
+      !!m && /max-width:\s*var\(--measure-read\)/.test(m[0]));
+  });
+
+  sub('a tab arrives on a tab change, and on nothing else');
+  /* renderAll() runs after saving a verse, writing a note and importing a
+     backup. An entrance hung on the view itself would replay on every one
+     of them. It is hung on the class switchTab() adds, and renderAll()
+     never touches a view’s classes — only what is inside one. */
+  T('the entrance is on the class a tab change adds',
+    /\.view\.active\{[^}]*animation:\s*view-arrive/.test(style) &&
+    /@keyframes view-arrive\{/.test(style));
+  /* Written with fill-mode `both` it held the from-state until it ran — and
+     an animation does not run in a background tab. Opening the app and
+     switching away left every word at opacity 0 under a working tab bar.
+     Without a fill, a screen that never animates is simply a screen. */
+  T('a view that never animates is still a visible view',
+    !/\.view\.active\{[^}]*animation:[^;]*(both|backwards|forwards)/.test(style),
+    (style.match(/\.view\.active\{[^}]*\}/) || [''])[0]);
+  T('and it moves nothing that costs a layout',
+    /@keyframes view-arrive\{[^}]*opacity[^}]*transform: translateY\(3px\)/.test(style) &&
+    !/@keyframes view-arrive\{[^}]*(height|width|margin|top):/.test(style));
+  c.goToTab('learn');
+  const before = d.getElementById('view-learn').className;
+  c.renderAll();
+  T('a repaint does not re-announce the screen',
+    d.getElementById('view-learn').className === before, before);
+  c.goToTab('today');
+  T('and switching tabs does', d.getElementById('view-today').className.indexOf('active') !== -1 &&
+    d.getElementById('view-learn').className.indexOf('active') === -1);
+
+  sub('what is new is a list of releases, not a wall of cards');
+  /* Seven bordered panels around content its own version numbers already
+     separated, and six inline styles doing the spacing a class should own. */
+  c.renderUpdates();
+  const up = d.getElementById('updatesBody').innerHTML;
+  const releases = (up.match(/class="release"/g) || []).length;
+  T('there are releases to show', releases >= 3, String(releases));
+  T('none of them is a card', up.indexOf('class="panel"') === -1);
+  T('and none of them carries an inline style',
+    up.indexOf(' style=') === -1, (up.match(/ style="[^"]*"/) || [''])[0]);
+  T('a release still says which version and when',
+    /release-head/.test(up) && /detail-label/.test(up) && /1\.14\.2/.test(up));
+
+  sub('the bar at the foot is as tall as the room reserved for it');
+  /* body reserves --tabbar-h under every screen. The bar measured 55px
+     against a token of 58, so the clearance was a guess that happened to be
+     generous. The bar is derived from the token now. */
+  T('the tab derives its height from the bar',
+    /\.tab-btn\{[^}]*min-height: calc\(var\(--tabbar-h\) - 1px\)/.test(style));
+  T('and body reserves that same token',
+    /padding-bottom: calc\(var\(--tabbar-h\)/.test(style));
+}
+
 module.exports = {
   T, section, sub, results, reset, testPortability, testHelpMe, testColdSaved, testDeviceMove, testHelpProduct,
   testHomeArt,
+  testScreenSystem,
   testCrisisActions,
   testBoot, testConfig, testStorage, testCollision, testMigration,
   testNavigation, testOverlays, testToast, testConfirmation, testForms,

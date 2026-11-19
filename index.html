@@ -173,6 +173,11 @@
   --space-xl: 24px;
   --space-2xl: 32px;
 
+  /* The longest a line of reading should get, wherever it is set. Scripture
+     on Today and Scripture in the reader are the same words at the same
+     size; they had different line lengths because only one of them capped. */
+  --measure-read: 34rem;
+
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -444,7 +449,25 @@ button{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: non
   background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) calc(100% - 10px), transparent);
 }
 
-/* A bar, not a masthead. The product name was set at display size with a
+/* ---- The four header patterns ----
+   Every screen in this app wears one of these, and no screen invents a
+   fifth. Measured at 390px: each lands its first content 16px below its
+   own bar, so moving between them does not move the content.
+
+     .app-header          PRIMARY TAB. 60px. No rule — the tab bar is the
+                          other edge of the frame and one line is enough.
+                          Names the screen; see paintScreenTitle().
+     .page-topbar         DETAIL. 61px, back control, centred 17px title,
+                          a spacer so the title is centred on the screen
+                          and not on what is left of it.
+     .page-topbar         READER. The same bar with a 20px title and a
+      + .bible-reader-ref utility in the third slot instead of a spacer:
+                          a reader is somewhere, and the edition it is in
+                          is part of where.
+     .sheet + h2          UTILITY SHEET. No bar at all. A decision or a
+                          short form, titled by its own first line.
+
+   A bar, not a masthead. The product name was set at display size with a
    rule under it, which is how a website introduces itself and not how an
    app titles a screen. At title size it also buys back the room the 320px
    note below was worried about. */
@@ -467,7 +490,25 @@ button{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: non
   margin: 0 auto;
   padding: var(--space-lg) var(--space-lg) var(--space-2xl);
 }
-.view.active{ display: block; }
+/* A tab arrives rather than snaps. switchTab() is the only thing that adds
+   this class, so it plays on a tab change and never on a repaint —
+   renderAll() rewrites what is inside a view without touching the view.
+   Opacity and three pixels: a tab change only has to say that the screen
+   settled, and no view holds a fixed or sticky descendant for the transform
+   to become a containing block for. The global prefers-reduced-motion rule
+   above switches it off.
+
+   NO FILL MODE, deliberately. Written with `both` it held the from-state
+   whenever the animation had not run — and an animation does not run while
+   its tab is in the background. Measured 2.5s after a load in a backgrounded
+   tab, the whole of Today sat at opacity 0 under a working tab bar. Without
+   a fill the un-animated state is the view's own, so the worst this can
+   cost a reader is no animation, never no screen. */
+@keyframes view-arrive{
+  from{ opacity: 0; transform: translateY(3px); }
+  to{ opacity: 1; transform: none; }
+}
+.view.active{ display: block; animation: view-arrive var(--dur) var(--ease); }
 
 .section-label{
   font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
@@ -492,7 +533,11 @@ button{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: non
 }
 .tab-btn{
   flex: 1; background: none; border: none; cursor: pointer;
-  min-height: var(--touch-min);
+  /* --tabbar-h is what body reserves at the foot of every screen, so the
+     bar has to actually be that tall or the clearance is a guess. It
+     measured 55px against a token of 58, and the button is the only thing
+     in the bar that sets its height; the 1px is the rule above it. */
+  min-height: calc(var(--tabbar-h) - 1px);
   padding: var(--space-sm) var(--space-xs);
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   color: var(--text-faint);
@@ -644,6 +689,10 @@ input.field-error, textarea.field-error{ border-color: var(--danger); box-shadow
 /* =========================================================
    SURFACES
    ========================================================= */
+/* The one place in the app where two surfaces sit in the same group. It was
+   an inline margin at the use site, which is a spacing decision no rule
+   records and no other surface can inherit. */
+.panel + .list{ margin-top: var(--space-sm); }
 .panel{
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1076,6 +1125,9 @@ blockquote.verse-text{
   font-family: var(--font-scripture);
   font-size: var(--fs-verse); line-height: var(--lh-scripture);
   color: var(--text); text-align: left;
+  /* A chapter is the longest sitting of reading this app asks for, so it is
+     the surface where an unbounded measure costs the most. */
+  max-width: var(--measure-read); margin-inline: auto;
 }
 /* Verse numbers are an address, not part of the sentence: smaller, quieter,
    raised, and hidden from the accessibility tree so a screen reader reads
@@ -1462,13 +1514,37 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
 /* One line of orientation under a track heading. */
 .track-intro{
   font-size: var(--fs-support); line-height: var(--lh-body); color: var(--text-dim);
-  margin: calc(var(--space-xs) * -1) 0 var(--space-md);
+  margin: 0 0 var(--space-md);
 }
 /* A chosen row in a picker. The word carries the state; the tick and the
    accent only reinforce it. */
 /* The publisher's own licence wording, quoted rather than summarised. */
 /* The licence draws no rule of its own: the detail row above it already
    ends in one, and two hairlines a few pixels apart read as a mistake. */
+/* ---- What is new: a release is an entry in a list ----
+   A box around each one adds nothing a reader can use: the version number
+   and the date already say where one release stops and the next starts, and
+   seven outlines on one screen is the thing that made this read as a form.
+   A hairline between them is enough, and the last one draws none. */
+.release{ padding: var(--space-xl) 0; border-bottom: 1px solid var(--border-quiet); }
+.release:first-child{ padding-top: 0; }
+.release:last-child{ border-bottom: none; padding-bottom: 0; }
+.release-head{
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--space-lg); margin-bottom: var(--space-sm);
+}
+.release-title{ font-size: var(--fs-section); font-weight: 700; }
+.release-summary{
+  color: var(--text-dim); font-size: var(--fs-support);
+  line-height: var(--lh-body); margin-top: var(--space-xs);
+}
+.release-list{
+  margin: 0; padding-left: 1.1em;
+  color: var(--text-dim); font-size: var(--fs-support);
+}
+.release-list li{ margin-bottom: var(--space-xs); }
+.release-list li:last-child{ margin-bottom: 0; }
+
 .source-licence{
   margin-top: var(--space-md); padding-top: var(--space-md);
   font-size: var(--fs-meta); line-height: var(--lh-body); color: var(--text-faint);
@@ -1585,7 +1661,7 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
    ========================================================= */
 
 /* ---- the home ---- */
-.help-intro{ margin: var(--space-xl) 0 var(--space-lg); }
+.help-intro{ margin: 0 0 var(--space-lg); }
 .help-question{
   font-family: var(--font-display);
   font-size: var(--fs-section); line-height: var(--lh-tight);
@@ -1842,7 +1918,7 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
 /* People first, and nothing in front of them. */
 .help-urgent-lead{
   font-size: var(--fs-support); line-height: var(--lh-body);
-  color: var(--text); margin: var(--space-md) 0 var(--space-lg);
+  color: var(--text); margin: 0 0 var(--space-lg);
 }
 .help-urgent-territory{ margin-bottom: var(--space-lg); }
 /* The territory's name is a heading, never a caption: a resource is never
@@ -1889,7 +1965,7 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
 }
 /* A measure, not a width. Running to the edge of a 430px phone is
    already long; on a wide screen it was eighty characters. */
-.today-stage .verse-text{ max-width: 34rem; }
+.today-stage .verse-text{ max-width: var(--measure-read); }
 .today-stage .verse-head{ margin-bottom: var(--space-lg); }
 .today-stage .verse-date{ color: var(--text-faint); }
 /* The theme was a bordered pill, which is another box. It is a
@@ -1937,7 +2013,7 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
   padding: var(--space-lg) 0 0;
   margin-top: var(--space-xl);
 }
-#view-today .reflection-body{ max-width: 34rem; }
+#view-today .reflection-body{ max-width: var(--measure-read); }
 
 /* ---------- carrying on ---------- */
 /* Rows on the page, separated by rules, rather than bordered
@@ -1981,10 +2057,12 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
    page with the mark present and holds it to WCAG AA, so this is checked
    rather than eyeballed. */
 .today-art{
-  position: absolute; left: 50%; top: 50%;
-  width: 152%; aspect-ratio: 1 / 1; height: auto;
-  transform: translate(-50%, -40%);
-  margin: 0; overflow: visible; pointer-events: none;
+  /* left and right, never a width that exceeds them: the box cannot leave
+     the stage, so the page cannot be made wider than the screen. */
+  position: absolute; left: 0; right: 0; top: 50%;
+  aspect-ratio: 1 / 1; height: auto;
+  transform: translateY(-40%);
+  margin: 0; overflow: hidden; pointer-events: none;
   z-index: 0;
   /* The edges are the problem, not the opacity. A hard outline behind
      running text reads as a shape at almost any alpha, so the mark is
@@ -1995,7 +2073,9 @@ blockquote.verse-quote[data-hl]{ background: var(--hl-bg); }
 .stage-art{
   position: absolute; inset: 0;
   width: 100%; height: 100%;
-  display: block; overflow: visible;
+  /* hidden, not visible: the crop is what keeps the mark its old size
+     inside a box that no longer overhangs the screen. */
+  display: block; overflow: hidden;
 }
 /* Everything the reader reads sits above it. */
 .today-stage .verse-card,
@@ -2448,22 +2528,22 @@ body.scroll-locked{
 
   <nav class="tabbar" aria-label="Main">
     <button class="tab-btn active" data-tab="today" aria-current="page" onclick="goToTab('today')">
-      <span class="glyph" aria-hidden="true"></span>Today
+      <span class="glyph" aria-hidden="true"></span><span class="tab-label">Today</span>
     </button>
     <button class="tab-btn" data-tab="bible" onclick="goToTab('bible')">
-      <span class="glyph" aria-hidden="true"></span>Bible
+      <span class="glyph" aria-hidden="true"></span><span class="tab-label">Bible</span>
     </button>
     <!-- The only two-word label in the bar. At 320px it measures 44.0px in a
          56px box, where "Devotions" measures 52.4px — so it is not the tight
          one, and the bar is no tighter than it was with five single words. -->
     <button class="tab-btn" data-tab="help" onclick="goToTab('help')">
-      <span class="glyph" aria-hidden="true"></span>Help Me
+      <span class="glyph" aria-hidden="true"></span><span class="tab-label">Help Me</span>
     </button>
     <button class="tab-btn" data-tab="devotions" onclick="goToTab('devotions')">
-      <span class="glyph" aria-hidden="true"></span>Devotions
+      <span class="glyph" aria-hidden="true"></span><span class="tab-label">Devotions</span>
     </button>
     <button class="tab-btn" data-tab="learn" onclick="goToTab('learn')">
-      <span class="glyph" aria-hidden="true"></span>Learn
+      <span class="glyph" aria-hidden="true"></span><span class="tab-label">Learn</span>
     </button>
   </nav>
 </div>
@@ -2641,7 +2721,7 @@ body.scroll-locked{
                 aria-label="Show reflections" onclick="toggleReflections()"></button>
       </div>
     </div>
-    <div class="list" style="margin-top:var(--space-sm)">
+    <div class="list">
       <button class="list-row" onclick="openFocusSettings()">
         <span class="list-row-main">
           <span class="list-row-title">Reading focus</span>
@@ -10089,12 +10169,44 @@ function noteFor(key){
   return null;
 }
 
+/* The header names the screen a reader is on. It showed the product name
+   on all five tabs, which answers a question nobody has after the first
+   launch and leaves four screens with no title — each then improvising its
+   own opening, which is why Help Me started 24px lower than Bible.
+
+   Today keeps the product name, because Today IS the front door: rule 54
+   makes APP_CONFIG.name the thing a reader sees, and CONTRACT 46 checks
+   the header carries it once the app has started. The other four take the
+   label already printed on their own tab, so those five words have one
+   owner and a renamed tab cannot disagree with its own screen.
+
+   The name is read from the label element, never from the button. The
+   button's first child is the icon, and asking it for textContent would
+   hand back whatever that SVG happened to contain. */
+function screenTitle(tab){
+  if(tab === "today") return APP_CONFIG.name;
+  const tabs = document.querySelectorAll(".tab-btn");
+  for(let i = 0; i < tabs.length; i++){
+    if(tabs[i].dataset.tab !== tab) continue;
+    const label = tabs[i].querySelector(".tab-label");
+    const text = label ? label.textContent.trim() : "";
+    /* A screen with no name shows the product rather than an empty bar. */
+    return text || APP_CONFIG.name;
+  }
+  return APP_CONFIG.name;
+}
+function paintScreenTitle(tab){
+  const el = document.getElementById("appTitle");
+  if(el) el.textContent = screenTitle(tab);
+}
+
 /* switchTab belongs to the foundation and knows nothing about a day rail.
    Coming back to Today after its view has been hidden needs the rail put back
    where it belongs: while hidden it could not be measured, so nothing could
    have kept it right while the reader was on another tab. */
 function goToTab(tab){
   switchTab(tab);
+  paintScreenTitle(tab);
   if(tab === 'today'){ renderToday(); centreSelectedDay(); }
   if(tab === 'bible'){ enterBible(); }
   /* Continue reading is derived from progress, and progress can have
@@ -10428,7 +10540,7 @@ const HOME_MARK = { light: 'M458 704 L488 230 L512 230 L542 704 Z', book: 'M197 
    needs; the verse below it says everything. */
 function stageArtHtml(){
   return '<div class="today-art" aria-hidden="true">' +
-    '<svg class="stage-art" viewBox="0 0 1000 1000" aria-hidden="true" focusable="false">' +
+    '<svg class="stage-art" viewBox="171 137 658 658" aria-hidden="true" focusable="false">' +
     '<defs><linearGradient id="markLight" gradientUnits="userSpaceOnUse" x1="0" y1="230" x2="0" y2="704">' +
       '<stop offset="0" stop-color="var(--mark-light)" stop-opacity="0"/>' +
       '<stop offset="1" stop-color="var(--mark-light)" stop-opacity="1"/>' +
@@ -15008,18 +15120,18 @@ function renderUpdates(){
     const groups = [
       ['New', u.newFeatures], ['Improved', u.improvements], ['Fixed', u.fixes]
     ].filter(g => g[1] && g[1].length);
-    return '<section class="panel" style="margin-bottom:var(--space-lg)">' +
-      '<div class="detail-row" style="padding-top:0">' +
+    return '<section class="release">' +
+      '<div class="release-head">' +
         '<span class="detail-label">' + escapeHtml(u.version) +
           (i === 0 ? ' · Current' : '') + '</span>' +
         '<span class="detail-value">' + formatDate(u.date) + '</span>' +
       '</div>' +
-      '<h2 style="margin-top:var(--space-sm)">' + escapeHtml(u.title) + '</h2>' +
-      '<p class="sheet-sub">' + escapeHtml(u.summary) + '</p>' +
+      '<h2 class="release-title">' + escapeHtml(u.title) + '</h2>' +
+      '<p class="release-summary">' + escapeHtml(u.summary) + '</p>' +
       groups.map(g =>
-        '<div class="section-label">' + g[0] + '</div><ul style="margin:0;padding-left:1.1em;' +
-        'color:var(--text-dim);font-size:var(--fs-support)">' +
-        g[1].map(l => '<li style="margin-bottom:var(--space-xs)">' + escapeHtml(l) + '</li>').join('') +
+        '<div class="section-label">' + g[0] + '</div>' +
+        '<ul class="release-list">' +
+        g[1].map(l => '<li>' + escapeHtml(l) + '</li>').join('') +
         '</ul>').join('') +
     '</section>';
   }).join('');
